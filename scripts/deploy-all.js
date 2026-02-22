@@ -189,7 +189,8 @@ function deployWorkers() {
     }
 
     // Deploy
-    const success = exec('wrangler deploy', { cwd: workerDir, stdio: 'pipe' });
+    log.info(`  Running: npx -y wrangler@latest deploy`);
+    const success = exec('npx -y wrangler@latest deploy', { cwd: workerDir, stdio: 'inherit' });
 
     if (success) {
       log.success(`✓ ${workerName} deployed`);

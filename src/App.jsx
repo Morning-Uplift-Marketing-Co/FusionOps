@@ -100,10 +100,9 @@ export default function App() {
               db.loadDeploys(),
             ]);
 
-            // Merge: localStorage wins over Neon (user's most recent saves)
-            // then Neon fills in anything not in localStorage
             if (neonSettings && Object.keys(neonSettings).length > 0) {
-              const merged = { ...neonSettings, ...localSettings };
+              // Merge: Neon is the source of truth, localStorage is fallback
+              const merged = { ...localSettings, ...neonSettings };
               setSettings(merged);
               LS.set("settings", merged);
             }
@@ -160,8 +159,8 @@ export default function App() {
         if (!neonReady) {
           if (data.sites) setSites(data.sites);
           if (data.settings) {
-            // localStorage wins — user's local saves are most recent
-            const merged = { ...data.settings, ...localSettings };
+            // API wins — user's central saves are most recent
+            const merged = { ...localSettings, ...data.settings };
             setSettings(merged);
             LS.set("settings", merged);
           }
@@ -197,7 +196,7 @@ export default function App() {
           ]);
 
           if (neonSettings) {
-            const merged = { ...neonSettings, ...localSettings };
+            const merged = { ...localSettings, ...neonSettings };
             setSettings(merged);
             LS.set("settings", merged);
           }

@@ -3,6 +3,8 @@ import { THEME as T } from "../constants";
 import { Dot } from "./ui/dot";
 
 export function TopBar({ stats, settings, deploys, apiOk, neonOk, onReconnectNeon }) {
+    const voluumOk = !!(import.meta.env.PUBLIC_VOLUUM_API_KEY || (import.meta.env.PUBLIC_VOLUUM_ACCESS_KEY_ID && import.meta.env.PUBLIC_VOLUUM_ACCESS_KEY));
+
     return (
         <div className="h-12 border-b border-[hsl(var(--border))] flex items-center justify-between px-7 bg-[rgba(11,13,20,.85)] backdrop-blur-md sticky top-0 z-50">
             <div className="text-xs text-[hsl(var(--muted-foreground))]">
@@ -25,7 +27,8 @@ export function TopBar({ stats, settings, deploys, apiOk, neonOk, onReconnectNeo
                 )}
                 {settings.netlifyToken && <Dot c={T.success} label="Netlify" />}
                 <Dot c={settings.apiKey ? T.success : T.danger} label={settings.apiKey ? "AI OK" : "No AI"} />
-                <Dot c={settings.lcToken ? T.success : T.dim} label={settings.lcToken ? "LC ✓" : "LC"} />
+                <Dot c={voluumOk ? T.success : T.dim} label={voluumOk ? "Voluum ✓" : "Voluum"} />
+                <Dot c={import.meta.env.PUBLIC_LENDINGCARD_API_TOKEN ? T.success : T.dim} label={import.meta.env.PUBLIC_LENDINGCARD_API_TOKEN ? "LC ✓" : "LC"} />
                 <Dot c={settings.mlToken ? T.success : T.dim} label={settings.mlToken ? "ML ✓" : "ML"} />
             </div>
         </div>

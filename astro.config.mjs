@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 
 // Get API base URL from environment or use default
-const API_BASE = process.env.VITE_API_BASE || 'https://lp-factory-api.songsawat-w.workers.dev';
+const API_BASE = process.env.VITE_API_BASE || 'https://lp-factory-api.misty-feather-556e.workers.dev';
 
 export default defineConfig({
   integrations: [react()],

@@ -21,4 +21,4 @@ logs/
 *.zip
 test-artifacts/
 node_modules/
-dist/
+dist/nul

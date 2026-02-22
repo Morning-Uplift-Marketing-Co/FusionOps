@@ -26,6 +26,7 @@ export function SpendDashboard({ apiOk, neonOk }) {
         lendingCardFees: 0,
         vat: 0
     });
+    const [trendData, setTrendData] = useState([]);
 
     const [transactions, setTransactions] = useState([]);
 
@@ -50,19 +51,81 @@ export function SpendDashboard({ apiOk, neonOk }) {
                 console.warn("[SpendDashboard] No LendingCard API token found.");
             }
 
-            // Fake processing Voluum metrics delay
-            setTimeout(() => {
-                setStats({
-                    totalSpend: 2800,
-                    vat: 196,          // 7%
-                    lendingCardFees: 98, // 3.5%
-                    trueCost: 3204.6,  // spend * 1.07 * 1.035
-                    conversions: 145,
-                    revenue: 6100,
-                    roi: 90.3
-                });
-                setLoading(false);
-            }, 800);
+            const vKeyId = settings.voluumAccessKeyId || import.meta.env.PUBLIC_VOLUUM_ACCESS_KEY_ID;
+            const vKey = settings.voluumAccessKey || import.meta.env.PUBLIC_VOLUUM_ACCESS_KEY;
+
+            let realStats = {
+                totalSpend: 0,
+                vat: 0,
+                lendingCardFees: 0,
+                trueCost: 0,
+                conversions: 0,
+                revenue: 0,
+                roi: 0
+            };
+
+            let dailyTrend = [];
+
+            if (!vKeyId || !vKey) {
+                console.warn("[SpendDashboard] No Voluum API keys found. Using zeroed stats.");
+            } else {
+                try {
+                    const { fetchVoluumSession, fetchVoluumReport, extractMetrics } = await import("../services/voluum.js");
+                    const token = await fetchVoluumSession(vKeyId, vKey);
+
+                    // Fetch last 7 days for the top level KPI
+                    const toDate = new Date();
+                    const fromDate = new Date();
+                    fromDate.setDate(toDate.getDate() - 7);
+
+                    const report = await fetchVoluumReport(token, fromDate, toDate);
+                    const metrics = extractMetrics(report);
+
+                    const spend = metrics.cost || 0;
+                    const rev = metrics.revenue || 0;
+                    const vat = spend * 0.07;
+                    const lc = spend * 0.035;
+                    const tc = spend + vat + lc;
+                    const roi = tc > 0 ? ((rev - tc) / tc) * 100 : 0;
+
+                    realStats = {
+                        totalSpend: spend,
+                        vat: vat,
+                        lendingCardFees: lc,
+                        trueCost: tc,
+                        conversions: metrics.conversions || 0,
+                        revenue: rev,
+                        roi: parseFloat(roi.toFixed(1))
+                    };
+
+                    const trendReport = await fetchVoluumReport(token, fromDate, toDate, "UTC", "day");
+                    if (trendReport && trendReport.rows) {
+                        dailyTrend = trendReport.rows.map(row => {
+                            const dateStr = row.day || row.id || "";
+                            const shortDate = dateStr.slice(5, 10).replace("-", "/"); // Keep MM/DD
+
+                            const dSpend = row.cost || 0;
+                            const dRev = row.revenue || 0;
+                            const dTrueCost = dSpend + (dSpend * 0.07) + (dSpend * 0.035);
+                            const dRoi = dTrueCost > 0 ? ((dRev - dTrueCost) / dTrueCost) * 100 : 0;
+
+                            return {
+                                date: shortDate,
+                                spend: parseFloat(dSpend.toFixed(2)),
+                                trueCost: parseFloat(dTrueCost.toFixed(2)),
+                                revenue: parseFloat(dRev.toFixed(2)),
+                                roi: parseFloat(dRoi.toFixed(1))
+                            };
+                        }).reverse();
+                    }
+                } catch (err) {
+                    console.error("[SpendDashboard] Failed to fetch real Voluum data:", err);
+                }
+            }
+
+            setStats(realStats);
+            setTrendData(dailyTrend);
+            setLoading(false);
 
         } catch (e) {
             console.error(e);
@@ -121,7 +184,7 @@ export function SpendDashboard({ apiOk, neonOk }) {
                     <CardContent className="pt-2">
                         <div className="h-[280px] w-full mt-4">
                             <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={MOCK_DATA} margin={{ top: 5, right: 20, bottom: 5, left: -20 }}>
+                                <LineChart data={trendData.length > 0 ? trendData : MOCK_DATA} margin={{ top: 5, right: 20, bottom: 5, left: -20 }}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
                                     <XAxis dataKey="date" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
                                     <YAxis stroke="#888888" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />

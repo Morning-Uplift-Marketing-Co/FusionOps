@@ -385,7 +385,7 @@ export default {
           version: '2.1.0',
           description: 'Automation endpoints for LP Factory V2',
         },
-        servers: [{ url: 'https://lp-factory-api.songsawat-w.workers.dev', description: 'Production' }],
+        servers: [{ url: 'https://lp-factory-api.misty-feather-556e.workers.dev', description: 'Production' }],
         tags: [
           { name: 'Registrar', description: 'Domain registrar operations (Internet.bs)' },
           { name: 'Cloudflare', description: 'Cloudflare DNS and zone management' },
@@ -1446,6 +1446,13 @@ export default {
           .bind(id, body.email || "", body.apiKey || "", body.apiToken || "", body.accountId || "", body.label || "").run();
         return json({ id, success: true }, 201);
       }
+      if (path.match(/^\/api\/cf-accounts\/[\w-]+$/) && method === "PUT") {
+        const id = path.split("/").pop();
+        const body = await request.json();
+        await db.prepare("UPDATE cf_accounts SET email = ?, api_key = ?, api_token = ?, account_id = ?, label = ? WHERE id = ?")
+          .bind(body.email || "", body.apiKey || "", body.apiToken || "", body.accountId || "", body.label || "", id).run();
+        return json({ success: true });
+      }
       if (path.match(/^\/api\/cf-accounts\/[\w-]+$/) && method === "DELETE") {
         const id = path.split("/").pop();
         await db.prepare("DELETE FROM cf_accounts WHERE id = ?").bind(id).run();
@@ -1464,6 +1471,14 @@ export default {
           .bind(id, body.provider || "internetbs", body.label || "", body.apiKey || "", body.secretKey || "").run();
         await db.prepare('INSERT INTO ops_logs (id, msg) VALUES (?, ?)').bind(uid(), `Added registrar account: ${body.label || body.provider}`).run();
         return json({ id, success: true }, 201);
+      }
+      if (path.match(/^\/api\/registrar-accounts\/[\w-]+$/) && method === "PUT") {
+        const id = path.split("/").pop();
+        const body = await request.json();
+        await db.prepare("UPDATE registrar_accounts SET provider = ?, label = ?, api_key = ?, secret_key = ? WHERE id = ?")
+          .bind(body.provider || "internetbs", body.label || "", body.apiKey || "", body.secretKey || "", id).run();
+        await db.prepare('INSERT INTO ops_logs (id, msg) VALUES (?, ?)').bind(uid(), `Updated registrar account: ${body.label || body.provider}`).run();
+        return json({ success: true });
       }
       if (path.match(/^\/api\/registrar-accounts\/[\w-]+$/) && method === "DELETE") {
         const id = path.split("/").pop();
@@ -2088,6 +2103,31 @@ export default {
       }
 
       // ═══════════════════════════════════════════════════════════════════════════════
+      // VOLUUM API PROXY
+      // ═══════════════════════════════════════════════════════════════════════════════
+      if (path === '/api/voluum/session' && method === 'POST') {
+        const body = await request.json();
+        const res = await fetch('https://api.voluum.com/auth/access/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json().catch(() => ({}));
+        return json(data, res.status);
+      }
+
+      if (path === '/api/voluum/report' && method === 'GET') {
+        const token = request.headers.get('cwauth-token');
+        if (!token) return json({ error: 'Missing cwauth-token proxy header' }, 401);
+        const params = new URLSearchParams(url.search);
+        const res = await fetch(`https://api.voluum.com/report?${params.toString()}`, {
+          headers: { 'Accept': 'application/json', 'cwauth-token': token }
+        });
+        const data = await res.json().catch(() => ({}));
+        return json(data, res.status);
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════════════
       // AUTOMATION API — Structured endpoints for external automation tools
       // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -2140,8 +2180,6 @@ export default {
         const formData = new URLSearchParams({
           ApiKey: acctRow.api_key,
           Password: acctRow.secret_key,
-          responseformat: 'JSON',
-          Domain: domain,
           responseformat: 'JSON',
           Domain: domain,
           Period: period,

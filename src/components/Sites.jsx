@@ -5,7 +5,7 @@ import { LS, uid, now, hsl } from "../utils";
 import { makeThemeJson, htmlToZip, astroProjectToZip } from "../utils/lp-generator";
 import { generateHtmlByTemplate, generateAstroProjectByTemplate, generateApplyPageByTemplate } from "../utils/template-router";
 
-import { deployTo, DEPLOY_TARGETS, getAvailableTargets, checkDeployStatus } from "../utils/deployers";
+import { deployTo, DEPLOY_TARGETS, getAvailableTargets, checkDeployStatus, deleteProject } from "../utils/deployers";
 import { InputField as Inp } from "./ui/input-field";
 import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
@@ -102,15 +102,12 @@ export function Sites({ sites, del, notify, startCreate, settings, addDeploy, op
 
         setBulkDeleting(true);
         const results = { success: [], failed: [] };
-        
+
         try {
-            // Import deleteProject function
-            const { deleteProject } = await import("../utils/deployers/index.js");
-            
             // Delete from deployment platforms first
             for (const site of sites) {
                 const deployedTargets = getDeployedTargets(site.id);
-                
+
                 for (const target of deployedTargets) {
                     try {
                         const result = await deleteProject(target.target, site, settings);
@@ -124,16 +121,16 @@ export function Sites({ sites, del, notify, startCreate, settings, addDeploy, op
                     }
                 }
             }
-            
+
             // Clear all deploy URLs
             setDeployUrls({});
             LS.set("deployUrls", {});
-            
+
             // Delete all sites from dashboard
             for (const site of sites) {
                 del(site.id);
             }
-            
+
             // Show results
             if (results.success.length > 0) {
                 notify(`✅ Deleted ${results.success.length} projects:\n${results.success.join("\n")}`);
@@ -141,7 +138,7 @@ export function Sites({ sites, del, notify, startCreate, settings, addDeploy, op
             if (results.failed.length > 0) {
                 notify(`⚠️ Failed to delete ${results.failed.length} projects:\n${results.failed.join("\n")}`, "warning");
             }
-            
+
         } catch (error) {
             notify(`Bulk delete failed: ${error.message}`, "danger");
         } finally {
@@ -165,7 +162,7 @@ export function Sites({ sites, del, notify, startCreate, settings, addDeploy, op
     const handleDeploy = async (site, target) => {
         setOpenDeploy(null);
         setDeploying({ siteId: site.id, target });
-        
+
         // Comprehensive debug logging
         console.log("=== DEPLOY DEBUG START ===");
         console.log("[Sites] Deploying site:", {
@@ -174,7 +171,7 @@ export function Sites({ sites, del, notify, startCreate, settings, addDeploy, op
             templateId: site.templateId,
             target: target
         });
-        
+
         try {
             // For Git Push Pipeline, use Astro project files
             // For other targets, use HTML
@@ -562,8 +559,8 @@ export function Sites({ sites, del, notify, startCreate, settings, addDeploy, op
                 </div>
                 <div className="flex gap-2">
                     {sites.length > 0 && (
-                        <Button 
-                            onClick={handleBulkDelete} 
+                        <Button
+                            onClick={handleBulkDelete}
                             disabled={bulkDeleting}
                             variant="destructive"
                             className="px-3 py-2 text-xs"
@@ -650,7 +647,7 @@ export function Sites({ sites, del, notify, startCreate, settings, addDeploy, op
                             <div className="flex justify-between items-center mb-2.5 flex-wrap gap-2">
                                 <div className="text-[13px] font-bold">{group.label}</div>
                                 <div className="flex gap-1.5 flex-wrap">
-                                    {[{scope:"all",content:<Badge variant="default">{group.sites.length} site(s)</Badge>},{scope:"deployed",content:<Badge variant="success">{group.deployed} deployed</Badge>},{scope:"issues",content:<Badge variant="warning">{group.issue} issue</Badge>}].map((b,i)=>(
+                                    {[{ scope: "all", content: <Badge variant="default">{group.sites.length} site(s)</Badge> }, { scope: "deployed", content: <Badge variant="success">{group.deployed} deployed</Badge> }, { scope: "issues", content: <Badge variant="warning">{group.issue} issue</Badge> }].map((b, i) => (
                                         <button key={i} type="button" title={getScopeHelpText(b.scope)} onClick={() => applyQuickScope(b.scope)}
                                             className={cn("rounded-full px-0.5 py-0 border cursor-pointer transition-all", isQuickScopeActive(b.scope) ? "border-[hsl(var(--primary))/40] bg-[hsl(var(--primary))/12]" : "border-transparent bg-transparent")}>
                                             {b.content}
@@ -824,12 +821,12 @@ export function Sites({ sites, del, notify, startCreate, settings, addDeploy, op
 /* ─── Deploy Status Checker Component ─── */
 
 const STATUS_META = {
-    live:      { icon: "✅", label: "Live",     color: "#22c55e" },
-    building:  { icon: "🔄", label: "Building", color: "#f59e0b" },
-    pending:   { icon: "⏳", label: "Pending",  color: "#94a3b8" },
-    failed:    { icon: "❌", label: "Failed",   color: "#ef4444" },
-    unknown:   { icon: "❓", label: "Unknown",  color: "#94a3b8" },
-    no_deploys:{ icon: "📭", label: "No deploys", color: "#94a3b8" },
+    live: { icon: "✅", label: "Live", color: "#22c55e" },
+    building: { icon: "🔄", label: "Building", color: "#f59e0b" },
+    pending: { icon: "⏳", label: "Pending", color: "#94a3b8" },
+    failed: { icon: "❌", label: "Failed", color: "#ef4444" },
+    unknown: { icon: "❓", label: "Unknown", color: "#94a3b8" },
+    no_deploys: { icon: "📭", label: "No deploys", color: "#94a3b8" },
 };
 
 function DeployStatusChecker({ site, deployedTargets, settings }) {

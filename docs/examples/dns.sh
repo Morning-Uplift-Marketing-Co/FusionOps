@@ -2,7 +2,7 @@
 # LP Factory API - Cloudflare DNS Examples
 # Usage: ./dns.sh [create-zone|list-dns|create-dns|update-dns|delete-dns] [args]
 
-API_BASE="https://lp-factory-api.songsawat-w.workers.dev"
+API_BASE="https://lp-factory-api.misty-feather-556e.workers.dev"
 
 # Optional: Set your API secret if authentication is enabled
 # API_SECRET="your-secret-here"

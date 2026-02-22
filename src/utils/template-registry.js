@@ -8,26 +8,12 @@ import { generateLP, generateAstrodeckLoanPreview, generateLanderCorePreview } f
 import { generateAstroProject as generateAstrodeckAstro, generateLanderCore as generateLanderCoreAstro } from './astro-generator.jsx';
 import { api } from '../services/api';
 
-// Dynamic imports for module templates
-let getModuleTemplates = null;
-let getModuleTemplate = null;
-let moduleLoaded = false;
+import { getTemplates as getModuleTemplates, getTemplate as getModuleTemplate } from '#lp-template-generator/core/template-registry.js';
 
-async function loadModule() {
-  if (moduleLoaded) return;
-  try {
-    const module = await import('#lp-template-generator/core/template-registry.js');
-    getModuleTemplates = module.getTemplates;
-    getModuleTemplate = module.getTemplate;
-    moduleLoaded = true;
-  } catch (e) {
-    console.warn('Module templates not available:', e.message);
-    moduleLoaded = true;
-  }
-}
+// Static import achieved, maintain variables
+let moduleLoaded = true;
 
-// Initialize module loading
-loadModule();
+// Module natively loaded
 
 // Legacy templates not yet in the module
 const LEGACY_TEMPLATES = [

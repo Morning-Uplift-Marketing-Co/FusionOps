@@ -1,0 +1,5 @@
+
+X [ERROR] Couldn't find DB with name '6d699556-e9f6-4cf0-815f-f2ae077c4f5a'
+
+
+๐ชต  Logs were written to "C:\Users\Barbara\AppData\Roaming\xdg.config\.wrangler\logs\wrangler-2026-02-22_07-10-10_953.log"

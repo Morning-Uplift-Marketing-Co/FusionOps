@@ -5,10 +5,11 @@
 # Each account has its own callback token stored in D1.
 # ============================================================
 
-name = "lp-factory-callback"
+name = "fusionops-callback-worker"
 main = "src/index.ts"
 compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
+account_id = "ef771cfd6197dedb36bb3cea22ecf4fc"
 
 # Environment variables
 [vars]
@@ -17,8 +18,9 @@ ENVIRONMENT = "production"
 # D1 Database binding
 [[d1_databases]]
 binding = "DB"
-database_name = "ppc-gen-claude"
-database_id = "7d31d941-f863-46f5-99c2-2179de821573" 
+database_name = "fusionops-callback-new-v2"
+database_id = "5219aeec-c6d8-42e4-9a40-15573c6e53a4"
+preview_database_id = "5219aeec-c6d8-42e4-9a40-15573c6e53a4"
 
 # Worker routes — attach to your domains
 # Uncomment and configure per domain:
@@ -40,5 +42,5 @@ ENVIRONMENT = "staging"
 
 [[env.staging.d1_databases]]
 binding = "DB"
-database_name = "lp-factory-db-staging"
-database_id = "YOUR_STAGING_D1_DATABASE_ID"
+database_name = "fusionops-callback-new-v2"
+database_id = "507cd6ec-67c5-42ad-afba-4e292d0bdfc8"

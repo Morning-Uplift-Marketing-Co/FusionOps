@@ -8,7 +8,7 @@
  *   node deploy.js cf-workers <scriptName> <cfAccountId>
  */
 
-const API_BASE = 'https://lp-factory-api.songsawat-w.workers.dev';
+const API_BASE = 'https://lp-factory-api.misty-feather-556e.workers.dev';
 
 // Optional: Set your API secret if authentication is enabled
 // const API_SECRET = 'your-secret-here';
@@ -77,7 +77,7 @@ async function linkCFWorkers(scriptName, cfAccountId) {
 
 // CLI
 async function main() {
-  const [,, command, ...args] = process.argv;
+  const [, , command, ...args] = process.argv;
 
   switch (command) {
     case 'vercel': {

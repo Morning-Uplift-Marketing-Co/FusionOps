@@ -189,7 +189,7 @@
 2026-02-22T00:31:24.5579649Z [36;1mfi[0m
 2026-02-22T00:31:24.5609398Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
 2026-02-22T00:31:24.5609719Z env:
-2026-02-22T00:31:24.5609978Z   API_BASE: https://lp-factory-api.songsawat-w.workers.dev
+2026-02-22T00:31:24.5609978Z   API_BASE: https://lp-factory-api.misty-feather-556e.workers.dev
 2026-02-22T00:31:24.5610285Z   API_SECRET: 
 2026-02-22T00:31:24.5610457Z ##[endgroup]
 2026-02-22T00:31:24.9834220Z {"success":true}

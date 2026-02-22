@@ -4,7 +4,7 @@
  * For Astro projects, sends all project files. For HTML templates, sends index.html.
  */
 
-const WORKER_BASE = "https://lp-factory-api.songsawat-w.workers.dev";
+const WORKER_BASE = "https://lp-factory-api.misty-feather-556e.workers.dev";
 
 export async function deploy(content, site, settings) {
   // If content is an object with multiple files (Astro project), use it directly

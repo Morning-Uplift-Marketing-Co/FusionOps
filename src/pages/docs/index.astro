@@ -1,8 +1,8 @@
 ---
-import Layout from '../../layouts/Layout.astro';
+import Layout from "../../layouts/Layout.astro";
 
 // Pre-compute code blocks with escaped curly braces
-const quickStartCode = `curl -X POST https://lp-factory-api.songsawat-w.workers.dev/api/automation/registrar/ping \\
+const quickStartCode = `curl -X POST https://lp-factory-api.misty-feather-556e.workers.devapi/automation/registrar/ping \\
   -H "Content-Type: application/json" \\
   -d '{"provider": "internetbs"}'`;
 
@@ -11,11 +11,11 @@ const jsonExample = `{
   "provider": "internetbs"
 }`;
 
-const bashExample = `curl -X POST https://lp-factory-api.songsawat-w.workers.dev/api/automation/registrar/check \\
+const bashExample = `curl -X POST https://lp-factory-api.misty-feather-556e.workers.devapi/automation/registrar/check \\
   -H "Content-Type: application/json" \\
   -d '{"domain": "example.com", "provider": "internetbs"}'`;
 
-const jsExample = `const API = 'https://lp-factory-api.songsawat-w.workers.dev';
+const jsExample = `const API = 'https://lp-factory-api.misty-feather-556e.workers.dev';
 
 async function checkDomain(domain) {
   const res = await fetch(\`\${API}/api/automation/registrar/check\`, {
@@ -31,7 +31,7 @@ console.log(result.available ? 'Available!' : 'Taken');`;
 
 const pythonExample = `import requests
 
-API = "https://lp-factory-api.songsawat-w.workers.dev"
+API = "https://lp-factory-api.misty-feather-556e.workers.dev"
 
 def check_domain(domain: str) -> dict:
     res = requests.post(
@@ -45,12 +45,13 @@ print("Available!" if result["available"] else "Taken")`;
 
 // Helper to escape HTML entities
 const escapeHtml = (str: string) =>
-  str.replace(/&/g, '&amp;')
-     .replace(/</g, '&lt;')
-     .replace(/>/g, '&gt;')
-     .replace(/"/g, '&quot;')
-     .replace(/{/g, '&lbrace;')
-     .replace(/}/g, '&rbrace;');
+  str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/{/g, "&lbrace;")
+    .replace(/}/g, "&rbrace;");
 ---
 
 <Layout title="API Documentation | LP Factory">
@@ -58,7 +59,12 @@ const escapeHtml = (str: string) =>
     <aside class="sidebar">
       <div class="sidebar-header">
         <h3>API Docs</h3>
-        <a href="/api/openapi.json" class="openapi-link" target="_blank" rel="noopener">OpenAPI Spec</a>
+        <a
+          href="/api/openapi.json"
+          class="openapi-link"
+          target="_blank"
+          rel="noopener">OpenAPI Spec</a
+        >
       </div>
       <nav class="sidebar-nav">
         <a href="#overview" class="nav-link">Overview</a>
@@ -75,30 +81,31 @@ const escapeHtml = (str: string) =>
     <main class="content">
       <h1>Automation API</h1>
       <p class="lead">
-        Programmatic access to LP Factory features. Integrate with automation tools like
-        n8n, Make, Zapier, or build custom workflows.
+        Programmatic access to LP Factory features. Integrate with automation
+        tools like n8n, Make, Zapier, or build custom workflows.
       </p>
 
       <div class="card base-url">
-        <code>https://lp-factory-api.songsawat-w.workers.dev</code>
+        <code>https://lp-factory-api.misty-feather-556e.workers.dev</code>
       </div>
 
       <section id="overview">
         <h2>Overview</h2>
         <p>
-          The Automation API provides structured endpoints for external tools to interact with
-          LP Factory. All endpoints return JSON with a consistent format containing a <code>success</code> boolean field.
+          The Automation API provides structured endpoints for external tools to
+          interact with LP Factory. All endpoints return JSON with a consistent
+          format containing a <code>success</code> boolean field.
         </p>
 
         <h3>Quick Start</h3>
-        <pre><code class="language-bash" set:html={escapeHtml(quickStartCode)}></code></pre>
+        <pre><code class="language-bash" set:html={escapeHtml(quickStartCode)} /></pre>
       </section>
 
       <section id="authentication">
         <h2>Authentication</h2>
         <p>
-          Authentication is optional. To enable, set the <code>API_SECRET</code> environment variable
-          in your Cloudflare Worker configuration.
+          Authentication is optional. To enable, set the <code>API_SECRET</code> environment
+          variable in your Cloudflare Worker configuration.
         </p>
 
         <h3>Bearer Token</h3>
@@ -106,7 +113,8 @@ const escapeHtml = (str: string) =>
         <pre><code class="language-bash">Authorization: Bearer your-api-secret-here</code></pre>
 
         <div class="warning">
-          <strong>Warning:</strong> Without <code>API_SECRET</code> set, all endpoints are publicly accessible.
+          <strong>Warning:</strong> Without <code>API_SECRET</code> set, all endpoints
+          are publicly accessible.
         </div>
       </section>
 
@@ -122,7 +130,7 @@ const escapeHtml = (str: string) =>
             <span class="path">/api/automation/registrar/check</span>
           </div>
           <p>Check domain availability.</p>
-          <pre><code class="language-json" set:html={escapeHtml(jsonExample)}></code></pre>
+          <pre><code class="language-json" set:html={escapeHtml(jsonExample)} /></pre>
         </div>
 
         <div class="endpoint">
@@ -173,7 +181,10 @@ const escapeHtml = (str: string) =>
         <div class="endpoint">
           <div class="method-header">
             <span class="method get">GET</span>
-            <span class="path">/api/automation/cf/dns?zoneId=<code>&lbrace;id&rbrace;</code>&cfAccountId=<code>&lbrace;id&rbrace;</code></span>
+            <span class="path"
+              >/api/automation/cf/dns?zoneId=<code>&lbrace;id&rbrace;</code
+              >&cfAccountId=<code>&lbrace;id&rbrace;</code></span
+            >
           </div>
           <p>List DNS records.</p>
         </div>
@@ -197,7 +208,12 @@ const escapeHtml = (str: string) =>
         <div class="endpoint">
           <div class="method-header">
             <span class="method delete">DELETE</span>
-            <span class="path">/api/automation/cf/dns?dnsRecordId=<code>&lbrace;id&rbrace;</code>&zoneId=<code>&lbrace;id&rbrace;</code>&cfAccountId=<code>&lbrace;id&rbrace;</code></span>
+            <span class="path"
+              >/api/automation/cf/dns?dnsRecordId=<code>&lbrace;id&rbrace;</code
+              >&zoneId=<code>&lbrace;id&rbrace;</code>&cfAccountId=<code
+                >&lbrace;id&rbrace;</code
+              ></span
+            >
           </div>
           <p>Delete DNS record.</p>
         </div>
@@ -242,7 +258,9 @@ const escapeHtml = (str: string) =>
 
       <section id="leadingcards">
         <h2>LeadingCards API</h2>
-        <p>Virtual card management. Requires <code>lcToken</code> configured in settings.</p>
+        <p>
+          Virtual card management. Requires <code>lcToken</code> configured in settings.
+        </p>
 
         <div class="endpoint">
           <div class="method-header">
@@ -279,7 +297,10 @@ const escapeHtml = (str: string) =>
 
       <section id="multilogin">
         <h2>Multilogin API</h2>
-        <p>Browser profile automation. Requires Multilogin credentials configured.</p>
+        <p>
+          Browser profile automation. Requires Multilogin credentials
+          configured.
+        </p>
 
         <div class="endpoint">
           <div class="method-header">
@@ -342,13 +363,13 @@ const escapeHtml = (str: string) =>
         <h2>Examples</h2>
 
         <h3>Bash (cURL)</h3>
-        <pre><code class="language-bash" set:html={escapeHtml(bashExample)}></code></pre>
+        <pre><code class="language-bash" set:html={escapeHtml(bashExample)} /></pre>
 
         <h3>JavaScript (Node.js)</h3>
-        <pre><code class="language-js" set:html={escapeHtml(jsExample)}></code></pre>
+        <pre><code class="language-js" set:html={escapeHtml(jsExample)} /></pre>
 
         <h3>Python</h3>
-        <pre><code class="language-python" set:html={escapeHtml(pythonExample)}></code></pre>
+        <pre><code class="language-python" set:html={escapeHtml(pythonExample)} /></pre>
       </section>
     </main>
   </div>
@@ -436,7 +457,7 @@ const escapeHtml = (str: string) =>
 
   .base-url code {
     color: #10b981;
-    font-family: 'SF Mono', Consolas, monospace;
+    font-family: "SF Mono", Consolas, monospace;
     font-size: 13px;
   }
 
@@ -482,13 +503,25 @@ const escapeHtml = (str: string) =>
     text-transform: uppercase;
   }
 
-  .method.get { background: #dbeafe; color: #1d4ed8; }
-  .method.post { background: #dcfce7; color: #16a34a; }
-  .method.put { background: #fef9c3; color: #ca8a04; }
-  .method.delete { background: #fecaca; color: #dc2626; }
+  .method.get {
+    background: #dbeafe;
+    color: #1d4ed8;
+  }
+  .method.post {
+    background: #dcfce7;
+    color: #16a34a;
+  }
+  .method.put {
+    background: #fef9c3;
+    color: #ca8a04;
+  }
+  .method.delete {
+    background: #fecaca;
+    color: #dc2626;
+  }
 
   .path {
-    font-family: 'SF Mono', Consolas, monospace;
+    font-family: "SF Mono", Consolas, monospace;
     font-size: 13px;
     color: var(--fg, #111827);
   }
@@ -510,7 +543,7 @@ const escapeHtml = (str: string) =>
 
   pre code {
     color: #e5e7eb;
-    font-family: 'SF Mono', Consolas, monospace;
+    font-family: "SF Mono", Consolas, monospace;
     font-size: 12px;
     line-height: 1.5;
   }

@@ -28,7 +28,7 @@ const DEPLOY_CONFIGS_KEY = "lpf2-deploy-configs";
 
 // Worker API base URL - use environment variable
 const WORKER_BASE = import.meta.env?.VITE_API_BASE?.replace(/\/api$/, '') ||
-    "https://lp-factory-api.songsawat-w.workers.dev";
+  "https://lp-factory-api.misty-feather-556e.workers.dev";
 
 /**
  * Helper to make API calls to the Worker
@@ -206,7 +206,7 @@ export async function deleteProject(target, site, settings) {
   if (!deployer || !deployer.deleteProject) {
     return { success: false, error: `Delete not supported for target: ${target}` };
   }
-  
+
   try {
     return await deployer.deleteProject(site, settings);
   } catch (error) {

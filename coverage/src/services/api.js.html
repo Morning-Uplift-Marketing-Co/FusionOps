@@ -262,7 +262,7 @@ function <span class="fstat-no" title="function not covered" >resolveApiBase(</s
     const isLocalDev = <span class="cstat-no" title="statement not covered" >typeof window !== "undefined" &amp;&amp; /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname);</span>
 &nbsp;
     // Default production API base - should be overridden by VITE_API_BASE
-    const PROD_API_BASE = <span class="cstat-no" title="statement not covered" >import.meta.env?.VITE_API_BASE || "https://lp-factory-api.songsawat-w.workers.dev/api";</span>
+    const PROD_API_BASE = <span class="cstat-no" title="statement not covered" >import.meta.env?.VITE_API_BASE || "https://lp-factory-api.misty-feather-556e.workers.devapi";</span>
     const fallback = <span class="cstat-no" title="statement not covered" >isLocalDev ? "/api" : PROD_API_BASE;</span>
 <span class="cstat-no" title="statement not covered" >    return String(fromWindow || fromEnv || fallback).replace(/\/+$/, "");</span>
 }

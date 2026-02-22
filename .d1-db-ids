@@ -1,0 +1,12 @@
+# Cloudflare D1 Database IDs for FusionOps
+# Generated: 2026-02-22T06:30:34.773Z
+
+D1_MAIN_ID="8ff4ce71-0711-4e7a-b300-3a811b52a9f6"
+D1_PIXEL_ID="96ec2b4b-7a83-4007-b6ce-bd48e6a28646"
+D1_CALLBACK_ID="85dbce87-6c4e-4099-8c3f-6fc82657f6d0"
+
+D1_MAIN_NAME="fusionops-main"
+D1_PIXEL_NAME="fusionops-pixel"
+D1_CALLBACK_NAME="fusionops-callback"
+
+CF_ACCOUNT_ID=""

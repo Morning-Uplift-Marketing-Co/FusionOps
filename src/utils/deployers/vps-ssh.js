@@ -4,7 +4,7 @@
  * Requires the Worker at lp-factory-api to have the /api/deploy/vps route.
  */
 
-const WORKER_BASE = "https://lp-factory-api.songsawat-w.workers.dev";
+const WORKER_BASE = "https://lp-factory-api.misty-feather-556e.workers.dev";
 
 export async function deploy(html, site, settings) {
   const { vpsHost, vpsUser, vpsPath, vpsPort, vpsAuthMethod, vpsKey } = settings;

@@ -1,0 +1,12 @@
+# Neon PostgreSQL Database IDs for FusionOps
+# Generated: 2026-02-22
+
+NEON_PROJECT_ID="steep-band-43331641"
+NEON_BRANCH_ID="br-withered-sun-aes8a2uw"
+NEON_DATABASE_NAME="neondb"
+
+# Connection String
+DATABASE_URL="postgresql://neondb_owner:npg_xVUwBMG4zTh5@ep-wispy-voice-ae1d0uiw-pooler.c-2.us-east-2.aws.neon.tech/neondb?channel_binding=require&sslmode=require"
+
+# Pooled Connection String (recommended for production)
+DATABASE_URL_POOL="postgresql://neondb_owner:npg_xVUwBMG4zTh5@ep-wispy-voice-ae1d0uiw-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require"

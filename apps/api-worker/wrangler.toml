@@ -1,9 +1,12 @@
 name = "lp-factory-api"
 main = "src/worker.js"
 compatibility_date = "2024-12-01"
+account_id = "ef771cfd6197dedb36bb3cea22ecf4fc"
 
 # D1 Database binding
+# CRITICAL RULE: DO NOT CHANGE THIS DATABASE. MUST USE fusionops-main-new-v2
 [[d1_databases]]
 binding = "DB"
-database_name = "ppc-gen-claude"
-database_id = "7d31d941-f863-46f5-99c2-2179de821573"
+database_name = "fusionops-main-new-v2"
+database_id = "4eaee76d-10fb-42a7-bb9d-50737c3da785"
+preview_database_id = "4eaee76d-10fb-42a7-bb9d-50737c3da785"

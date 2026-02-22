@@ -22,6 +22,11 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
     const [mlPassword, setMlPassword] = useState(settings.mlPassword || "");
     const [mlFolderId, setMlFolderId] = useState(settings.mlFolderId || "");
     const [defaultProxyProvider, setDefaultProxyProvider] = useState(settings.defaultProxyProvider || "multilogin");
+
+    // Voluum API
+    const [voluumAccessKeyId, setVoluumAccessKeyId] = useState(settings.voluumAccessKeyId || import.meta.env.PUBLIC_VOLUUM_ACCESS_KEY_ID || "");
+    const [voluumAccessKey, setVoluumAccessKey] = useState(settings.voluumAccessKey || import.meta.env.PUBLIC_VOLUUM_ACCESS_KEY || "");
+
     // Deploy credentials
     const [cfApiToken, setCfApiToken] = useState(settings.cfApiToken || "");
     const [cfAccountId, setCfAccountId] = useState(settings.cfAccountId || "");
@@ -195,6 +200,22 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
         setTesting(null);
     };
 
+    const testVoluum = async () => {
+        setTesting("voluum");
+        try {
+            const r = await api.post('/voluum/session', { accessId: voluumAccessKeyId, accessKey: voluumAccessKey });
+            if (r && r.token) {
+                setTestResult(p => ({ ...p, voluum: "ok" }));
+            } else {
+                setTestResult(p => ({ ...p, voluum: "fail" }));
+            }
+        } catch (e) {
+            console.warn("[Settings] Voluum test failed:", e?.message || e);
+            setTestResult(p => ({ ...p, voluum: "fail" }));
+        }
+        setTesting(null);
+    };
+
     const testD1 = async () => {
         setTesting("d1");
         let requestUrl = "";
@@ -339,7 +360,7 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                         </div>
                     )}
                     <div className="flex gap-1.5">
-                        <Button variant="ghost" onClick={testD1} disabled={!d1AccountId || !d1ApiToken || testing === "d1"} className="text-xs">{ testing === "d1" ? "..." : "🔑 Test"}</Button>
+                        <Button variant="ghost" onClick={testD1} disabled={!d1AccountId || !d1ApiToken || testing === "d1"} className="text-xs">{testing === "d1" ? "..." : "🔑 Test"}</Button>
                         <Button onClick={() => { const cleanId = d1AccountId.trim(); if (cleanId && !/^[0-9a-f]{32}$/i.test(cleanId)) { setD1Result({ success: false, error: `Account ID must be exactly 32 hex characters (got ${cleanId.length})` }); return; } save({ d1AccountId: cleanId, d1DatabaseId, d1ApiToken }); }} disabled={saving} className="text-xs">{saving ? "Saving..." : "💾 Save"}</Button>
                     </div>
                 </CardContent>
@@ -418,7 +439,7 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                         <div><Lbl>Secret Access Key</Lbl><Inp type="password" value={awsSecretKey} onChange={setAwsSecretKey} placeholder="••••••••" /></div>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                        <div><Lbl>Region</Lbl><Sel value={awsRegion} onChange={setAwsRegion} options={[{value:"us-east-1",label:"US East (N. Virginia)"},{value:"us-east-2",label:"US East (Ohio)"},{value:"us-west-1",label:"US West (N. California)"},{value:"us-west-2",label:"US West (Oregon)"},{value:"eu-west-1",label:"EU (Ireland)"},{value:"eu-central-1",label:"EU (Frankfurt)"},{value:"ap-southeast-1",label:"Asia Pacific (Singapore)"}]} /></div>
+                        <div><Lbl>Region</Lbl><Sel value={awsRegion} onChange={setAwsRegion} options={[{ value: "us-east-1", label: "US East (N. Virginia)" }, { value: "us-east-2", label: "US East (Ohio)" }, { value: "us-west-1", label: "US West (N. California)" }, { value: "us-west-2", label: "US West (Oregon)" }, { value: "eu-west-1", label: "EU (Ireland)" }, { value: "eu-central-1", label: "EU (Frankfurt)" }, { value: "ap-southeast-1", label: "Asia Pacific (Singapore)" }]} /></div>
                         <div><Lbl>S3 Bucket Name</Lbl><Inp value={s3Bucket} onChange={setS3Bucket} placeholder="my-lp-bucket" /></div>
                     </div>
                     <div><Lbl>CloudFront Distribution ID (optional)</Lbl><Inp value={cloudfrontDistId} onChange={setCloudfrontDistId} placeholder="E1234ABCDEF" /></div>
@@ -442,7 +463,7 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                         <div><Lbl>Username</Lbl><Inp value={vpsUser} onChange={setVpsUser} placeholder="deploy" /></div>
                         <div><Lbl>Remote Path</Lbl><Inp value={vpsPath} onChange={setVpsPath} placeholder="/var/www/html/" /></div>
                     </div>
-                    <div><Lbl>Auth Method</Lbl><Sel value={vpsAuthMethod} onChange={setVpsAuthMethod} options={[{value:"key",label:"SSH Key"},{value:"password",label:"Password"}]} /></div>
+                    <div><Lbl>Auth Method</Lbl><Sel value={vpsAuthMethod} onChange={setVpsAuthMethod} options={[{ value: "key", label: "SSH Key" }, { value: "password", label: "Password" }]} /></div>
                     <div><Lbl>{vpsAuthMethod === "key" ? "Private Key" : "Password"}</Lbl><Inp type="password" value={vpsKey} onChange={setVpsKey} placeholder={vpsAuthMethod === "key" ? "-----BEGIN OPENSSH PRIVATE KEY-----" : "••••••••"} /></div>
                     <div><Lbl>Worker Proxy URL</Lbl><Inp value={vpsWorkerUrl} onChange={setVpsWorkerUrl} placeholder="https://your-worker.workers.dev" /></div>
                     <Button onClick={() => save({ vpsHost, vpsPort, vpsUser, vpsPath, vpsAuthMethod, vpsKey, vpsWorkerUrl })} disabled={saving} className="text-xs self-start">{saving ? "Saving..." : "💾 Save VPS Config"}</Button>
@@ -480,6 +501,28 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
             </Card>
 
             <SectionHeader>🔗 External Services</SectionHeader>
+
+            <Card className="mb-4">
+                <CardHeader><CardTitle>Voluum Tracker</CardTitle></CardHeader>
+                <CardContent className="flex flex-col gap-2">
+                    <p className="text-[11px] text-[hsl(var(--muted-foreground))] -mt-2 mb-1">For fetching campaign spend and ROI metrics</p>
+                    <div className="grid grid-cols-2 gap-2">
+                        <div>
+                            <Lbl>Access Key ID</Lbl>
+                            <Inp type="password" value={voluumAccessKeyId} onChange={setVoluumAccessKeyId} placeholder="xxxx-xxxx-xxxx-xxxx" />
+                        </div>
+                        <div>
+                            <Lbl>Access Key</Lbl>
+                            <Inp type="password" value={voluumAccessKey} onChange={setVoluumAccessKey} placeholder="xxxx-xxxx-xxxx-xxxx" />
+                        </div>
+                    </div>
+                    {testResult.voluum && <div className={`text-[11px] ${testResult.voluum === "ok" ? "text-[hsl(var(--success))]" : "text-[hsl(var(--destructive))]"}`}>{testResult.voluum === "ok" ? "✓ Connected" : "✗ Failed"}</div>}
+                    <div className="flex gap-1.5">
+                        <Button variant="ghost" onClick={testVoluum} disabled={!voluumAccessKeyId || !voluumAccessKey || testing === "voluum"} className="text-xs">{testing === "voluum" ? "..." : "🔑 Test"}</Button>
+                        <Button onClick={() => save({ voluumAccessKeyId, voluumAccessKey })} disabled={saving} className="text-xs">{saving ? "Saving..." : "💾 Save"}</Button>
+                    </div>
+                </CardContent>
+            </Card>
 
             <Card className="mb-4">
                 <CardHeader><CardTitle>LeadingCards API</CardTitle></CardHeader>
@@ -532,8 +575,8 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                             </div>
                         )}
                     </div>
-                    <div><Lbl>Default Proxy Provider</Lbl><Sel value={defaultProxyProvider} onChange={setDefaultProxyProvider} options={[{value:"multilogin",label:"Multilogin"},{value:"custom",label:"Custom"}]} /></div>
-                    {testResult.ml && <div className={`text-[11px] ${["fail","expired","no-creds"].includes(testResult.ml) ? "text-[hsl(var(--destructive))]" : "text-[hsl(var(--success))]"}`}>{testResult.ml === "ok" ? "✓ Signed In — token acquired" : testResult.ml === "active" ? "✓ Token Valid — API connected" : testResult.ml === "expired" ? "✗ Token Expired — sign in or generate new" : testResult.ml === "no-creds" ? "✗ Enter token or email/password" : "✗ Connection Failed — check credentials"}</div>}
+                    <div><Lbl>Default Proxy Provider</Lbl><Sel value={defaultProxyProvider} onChange={setDefaultProxyProvider} options={[{ value: "multilogin", label: "Multilogin" }, { value: "custom", label: "Custom" }]} /></div>
+                    {testResult.ml && <div className={`text-[11px] ${["fail", "expired", "no-creds"].includes(testResult.ml) ? "text-[hsl(var(--destructive))]" : "text-[hsl(var(--success))]"}`}>{testResult.ml === "ok" ? "✓ Signed In — token acquired" : testResult.ml === "active" ? "✓ Token Valid — API connected" : testResult.ml === "expired" ? "✗ Token Expired — sign in or generate new" : testResult.ml === "no-creds" ? "✗ Enter token or email/password" : "✗ Connection Failed — check credentials"}</div>}
                     {launcherOk !== null && <div className={`text-[11px] ${launcherOk ? "text-[hsl(var(--success))]" : "text-[hsl(var(--muted-foreground))]"}`}>{launcherOk ? "✓ Local Launcher detected" : "— Launcher not detected (needed for start/stop)"}</div>}
                     <div className="flex gap-1.5 flex-wrap">
                         <Button variant="ghost" onClick={testMl} disabled={testing === "ml"} className="text-xs">{testing === "ml" ? "..." : "🔑 Test / Sign In"}</Button>

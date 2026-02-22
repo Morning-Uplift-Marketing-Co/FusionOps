@@ -6,7 +6,7 @@ info:
     Automation endpoints for LP Factory V2. Use these endpoints to integrate with
     external automation tools like n8n, Make, Zapier, or custom scripts.
 
-    **Base URL**: `https://lp-factory-api.songsawat-w.workers.dev`
+    **Base URL**: `https://lp-factory-api.misty-feather-556e.workers.dev`
 
     **Authentication**: Optional Bearer token via `Authorization: Bearer <API_SECRET>` header.
     Set `API_SECRET` environment variable in Worker to enable authentication.
@@ -17,7 +17,7 @@ info:
     name: MIT
 
 servers:
-  - url: https://lp-factory-api.songsawat-w.workers.dev
+  - url: https://lp-factory-api.misty-feather-556e.workers.dev
     description: Production
 
 security:

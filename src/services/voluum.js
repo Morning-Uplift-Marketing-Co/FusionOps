@@ -8,7 +8,9 @@
  * But for internal/ops dashboards where CORS is relaxed or bypassed, this works directly.
  */
 
-const API_BASE = "https://api.voluum.com";
+import { api } from "./api";
+
+const API_BASE = "/voluum";
 
 export async function fetchVoluumSession(accessId, accessKey) {
     if (!accessId || !accessKey) {
@@ -16,21 +18,17 @@ export async function fetchVoluumSession(accessId, accessKey) {
     }
 
     try {
-        const response = await fetch(`${API_BASE}/auth/access/session`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({ accessId, accessKey })
-        });
+        const response = await api.post(`${API_BASE}/session`, { accessId, accessKey });
 
-        if (!response.ok) {
-            throw new Error(`Voluum Auth Error: ${response.status} ${response.statusText}`);
+        if (response && response.token) {
+            return response.token; // cwauth-token
         }
 
-        const data = await response.json();
-        return data.token; // cwauth-token
+        if (response && response.error) {
+            throw new Error(`Voluum Auth Error: ${response.error}`);
+        }
+
+        throw new Error("Missing token in Voluum response");
     } catch (e) {
         console.error("[voluum] auth error:", e);
         throw e;
@@ -47,7 +45,19 @@ export async function fetchVoluumReport(token, fromDate, toDate, tz = "UTC", gro
     const url = `${API_BASE}/report?from=${fromStr}&to=${toStr}&tz=${tz}&groupBy=${groupBy}`;
 
     try {
-        const response = await fetch(url, {
+        // api.js doesn't allow passing custom headers easily via its wrapper methods.
+        // We will call fetch directly but using the resolved API base.
+        const fromWindow = typeof window !== "undefined" ? window.__LP_API__ : "";
+        const fromEnv = typeof import.meta !== "undefined" && import.meta.env ? import.meta.env.VITE_API_BASE : "";
+        const isLocalDev = typeof window !== "undefined" && /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname);
+
+        const PROD_API_BASE = import.meta.env?.VITE_API_BASE || "https://lp-factory-api.misty-feather-556e.workers.dev/api";
+        const fallback = isLocalDev ? "/api" : PROD_API_BASE;
+        const apiBase = String(fromWindow || fromEnv || fallback).replace(/\/+$/, "");
+
+        const fullUrl = `${apiBase}${url}`;
+
+        const response = await fetch(fullUrl, {
             method: 'GET',
             headers: {
                 'cwauth-token': token,

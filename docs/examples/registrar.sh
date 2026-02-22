@@ -2,7 +2,7 @@
 # LP Factory API - Registrar Examples
 # Usage: ./registrar.sh [check|register|nameservers|import|ping] [domain]
 
-API_BASE="https://lp-factory-api.songsawat-w.workers.dev"
+API_BASE="https://lp-factory-api.misty-feather-556e.workers.dev"
 PROVIDER="internetbs"
 
 # Optional: Set your API secret if authentication is enabled

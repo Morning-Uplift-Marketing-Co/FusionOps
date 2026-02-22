@@ -1,0 +1,8 @@
+
+ โ…๏ธ wrangler 4.63.0 (update available 4.67.0)
+โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+
+X [ERROR] Couldn't find DB with name 'fusionops-main-new-v2'
+
+
+๐ชต  Logs were written to "C:\Users\Barbara\AppData\Roaming\xdg.config\.wrangler\logs\wrangler-2026-02-22_07-10-23_862.log"

@@ -9,15 +9,17 @@ name = "lp-factory-pixel"
 main = "src/index.ts"
 compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
+account_id = "ef771cfd6197dedb36bb3cea22ecf4fc"
 
 [vars]
 ENVIRONMENT = "production"
 
-# D1 Database binding — same database as callback worker
+# D1 Database binding
 [[d1_databases]]
 binding = "DB"
-database_name = "ppc-gen-claude"
-database_id = "7d31d941-f863-46f5-99c2-2179de821573"
+database_name = "fusionops-pixel-new-v2"
+database_id = "99437cde-5e7c-4b58-97ad-69e43019c6ff"
+preview_database_id = "99437cde-5e7c-4b58-97ad-69e43019c6ff"
 
 # Worker routes — one per LP domain, pattern: t.{domain}/*
 # Add routes as domains are provisioned:
@@ -39,5 +41,5 @@ ENVIRONMENT = "staging"
 
 [[env.staging.d1_databases]]
 binding = "DB"
-database_name = "lp-factory-db-staging"
-database_id = "YOUR_STAGING_D1_DATABASE_ID"
+database_name = "fusionops-pixel-new-v2"
+database_id = "c1b8eed8-91bb-4188-bf93-59d8c6d09871"

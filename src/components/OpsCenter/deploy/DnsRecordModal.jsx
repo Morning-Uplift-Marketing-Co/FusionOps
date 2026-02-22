@@ -26,6 +26,8 @@ const S = {
     priorityRow: { display: "flex", alignItems: "center", gap: 10 },
 };
 
+import cloudflareDns from "../../../services/cloudflare-dns";
+
 export function DnsRecordModal({ mode, record, zoneId, zoneName, cfAccountId, cfApiToken, onSave, onCancel }) {
     const isEdit = mode === "edit";
     const [form, setForm] = useState({
@@ -92,8 +94,7 @@ export function DnsRecordModal({ mode, record, zoneId, zoneName, cfAccountId, cf
         setError("");
 
         try {
-            // Import dynamically to avoid circular dependency
-            const cloudflareDns = (await import("../../../services/cloudflare-dns")).default;
+            // Using statically imported cloudflareDns
 
             const recordData = {
                 type: form.type,
@@ -280,7 +281,7 @@ export function DnsRecordModal({ mode, record, zoneId, zoneName, cfAccountId, cf
 
                 {/* Buttons */}
                 <div style={S.btnRow}>
-                    <Button variant="ghost"  onClick={onCancel} disabled={saving}>
+                    <Button variant="ghost" onClick={onCancel} disabled={saving}>
                         Cancel
                     </Button>
                     <Button onClick={handleSave} disabled={saving}>

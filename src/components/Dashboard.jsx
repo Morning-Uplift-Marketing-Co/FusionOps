@@ -18,6 +18,12 @@ export function Dashboard({ sites, stats, ops, setPage, startCreate, settings = 
         || "local-dev"
     );
 
+    const configWarnings = [];
+    if (!neonOk) configWarnings.push("Neon Database is disconnected. Data may not sync to the central server.");
+    if (!settings.cfApiToken || !settings.cfAccountId) configWarnings.push("Cloudflare settings (Token/Account ID) are incomplete. Deployments will fail.");
+    if (!settings.lcToken) configWarnings.push("LeadingCards API token is missing. Card issuing features are disabled.");
+    if (!settings.voluumApiKey || !settings.voluumAccessKeyId) configWarnings.push("Voluum API keys are missing. Spend dashboard and campaign tracking will not function.");
+
     return (
         <div className="animate-[fadeIn_.3s_ease]">
             {/* Header */}
@@ -85,6 +91,24 @@ export function Dashboard({ sites, stats, ops, setPage, startCreate, settings = 
                     ))}
                     <button onClick={() => setPage("ops")} className="text-[11px] text-[hsl(var(--primary))] bg-transparent border-none cursor-pointer mt-1.5 p-0 hover:underline">
                         View Ops Center →
+                    </button>
+                </Card>
+            )}
+
+            {/* Config Warnings */}
+            {configWarnings.length > 0 && (
+                <Card className="mb-4 border-[hsl(var(--destructive))/40] bg-[hsl(var(--destructive))/10] p-4 animate-[pulse_3s_ease-in-out_infinite]">
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="text-sm">🚨</span>
+                        <div className="text-xs font-bold text-[hsl(var(--destructive))] tracking-wide uppercase">Critical Configuration Missing</div>
+                    </div>
+                    <ul className="list-disc list-inside space-y-1 mb-2">
+                        {configWarnings.map((w, i) => (
+                            <li key={i} className="text-[11px] text-[hsl(var(--foreground))] opacity-90">{w}</li>
+                        ))}
+                    </ul>
+                    <button onClick={() => setPage("settings")} className="text-[11px] text-[hsl(var(--destructive))] font-semibold bg-[hsl(var(--destructive))/10] border border-[hsl(var(--destructive))/20] px-3 py-1.5 rounded hover:bg-[hsl(var(--destructive))/20] transition-colors cursor-pointer block w-max">
+                        Fix in Settings &rarr;
                     </button>
                 </Card>
             )}
