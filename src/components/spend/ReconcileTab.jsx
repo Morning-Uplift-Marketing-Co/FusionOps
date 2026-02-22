@@ -1,5 +1,6 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 
 const fmt = (n) => `$${Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -11,10 +12,10 @@ const MOCK = [
     { date: "2/19", description: "Unknown $15.00", lcAmount: 15.00, ourAmount: 0, diff: 15.00, status: "missing" },
 ];
 
-const statusBadge = (s) => {
-    const map = { matched: { icon: "✅", label: "Match", cls: "bg-green-500/15 text-green-400" }, diff: { icon: "⚠️", label: "Diff", cls: "bg-yellow-500/15 text-yellow-400" }, missing: { icon: "❌", label: "Missing", cls: "bg-red-500/15 text-red-400" } };
-    const m = map[s] || map.missing;
-    return <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${m.cls}`}>{m.icon} {m.label}</span>;
+const statusMap = {
+    matched: { label: "Match", cls: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400" },
+    diff: { label: "Diff", cls: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400" },
+    missing: { label: "Missing", cls: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400" },
 };
 
 export function ReconcileTab({ reconcileData }) {
@@ -24,47 +25,49 @@ export function ReconcileTab({ reconcileData }) {
     const missing = rows.filter(r => r.status === "missing").length;
 
     return (
-        <div className="animate-[fadeIn_.3s_ease]">
-            <Card>
-                <CardHeader>
-                    <div className="flex justify-between items-center">
-                        <CardTitle className="text-sm font-semibold">🔄 Reconcile LendingCard — Feb 2026</CardTitle>
-                        <button className="text-[11px] px-3 py-1 rounded-md bg-[hsl(var(--primary))] text-white hover:opacity-90 transition">Upload Statement CSV</button>
+        <Card>
+            <CardHeader>
+                <div className="flex justify-between items-center">
+                    <div>
+                        <CardTitle>Reconcile LendingCard — Feb 2026</CardTitle>
+                        <p className="text-sm text-[hsl(var(--muted-foreground))]">{rows.length} transactions • {matched} matched • {diffs} diff • {missing} missing</p>
                     </div>
-                </CardHeader>
-                <CardContent>
-                    {/* Summary */}
-                    <div className="flex gap-4 mb-4 text-xs">
-                        <span>{rows.length} transactions</span>
-                        <span className="text-green-400">{matched} matched ✅</span>
-                        <span className="text-yellow-400">{diffs} diff ⚠️</span>
-                        <span className="text-red-400">{missing} missing ❌</span>
-                    </div>
-
-                    <table className="w-full text-xs">
-                        <thead>
-                            <tr className="border-b border-[hsl(var(--border))]">
-                                {["Date", "LC Statement", "Our Record", "Diff", "Status"].map(h => (
-                                    <th key={h} className="text-left py-2 px-3 text-[10px] font-bold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">{h}</th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {rows.map((r, i) => (
-                                <tr key={i} className="border-b border-[hsl(var(--border))]/30 hover:bg-[hsl(var(--muted))]/30 transition">
-                                    <td className="py-2.5 px-3 font-medium">{r.date}</td>
-                                    <td className="py-2.5 px-3">{r.description} <span className="font-mono">{fmt(r.lcAmount)}</span></td>
-                                    <td className="py-2.5 px-3 font-mono">{r.ourAmount ? fmt(r.ourAmount) : '—'}</td>
-                                    <td className={`py-2.5 px-3 font-mono font-bold ${r.diff === 0 ? '' : r.diff > 0 ? 'text-red-400' : 'text-yellow-400'}`}>
-                                        {r.diff === 0 ? '$0.00' : (r.diff > 0 ? '+' : '') + fmt(r.diff)}
-                                    </td>
-                                    <td className="py-2.5 px-3">{statusBadge(r.status)}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </CardContent>
-            </Card>
-        </div>
+                    <button className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md bg-[hsl(var(--foreground))] text-[hsl(var(--background))] hover:opacity-90 transition">
+                        Upload Statement CSV
+                    </button>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>LC Statement</TableHead>
+                            <TableHead className="text-right">Our Record</TableHead>
+                            <TableHead className="text-right">Diff</TableHead>
+                            <TableHead>Status</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {rows.map((r, i) => {
+                            const s = statusMap[r.status] || statusMap.missing;
+                            return (
+                                <TableRow key={i}>
+                                    <TableCell className="font-medium">{r.date}</TableCell>
+                                    <TableCell>{r.description}</TableCell>
+                                    <TableCell className="text-right font-mono">{r.ourAmount ? fmt(r.ourAmount) : '—'}</TableCell>
+                                    <TableCell className={`text-right font-mono font-semibold ${r.diff === 0 ? '' : r.diff > 0 ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                                        {fmt(r.diff)}
+                                    </TableCell>
+                                    <TableCell>
+                                        <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${s.cls}`}>{s.label}</span>
+                                    </TableCell>
+                                </TableRow>
+                            );
+                        })}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
     );
 }

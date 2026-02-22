@@ -1,5 +1,6 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 
 const fmt = (n) => `$${Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -14,42 +15,44 @@ const MOCK = [
 export function PerCardTab({ cardData }) {
     const rows = cardData?.length > 0 ? cardData : MOCK;
     return (
-        <div className="animate-[fadeIn_.3s_ease]">
-            <Card>
-                <CardHeader>
-                    <div className="flex justify-between items-center">
-                        <CardTitle className="text-sm font-semibold">💳 Per Card</CardTitle>
-                        <button className="text-[11px] px-3 py-1 rounded-md bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] hover:text-white transition">Export</button>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <table className="w-full text-xs">
-                        <thead>
-                            <tr className="border-b border-[hsl(var(--border))]">
-                                {["Card", "Account", "Total Charged", "LC Fee", "Net Spend", "Status"].map(h => (
-                                    <th key={h} className="text-left py-2 px-3 text-[10px] font-bold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">{h}</th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {rows.map((r, i) => (
-                                <tr key={i} className="border-b border-[hsl(var(--border))]/30 hover:bg-[hsl(var(--muted))]/30 transition cursor-pointer">
-                                    <td className="py-2.5 px-3 font-mono font-bold">{r.card}</td>
-                                    <td className="py-2.5 px-3">{r.account}</td>
-                                    <td className="py-2.5 px-3 font-mono">{fmt(r.totalCharged)}</td>
-                                    <td className="py-2.5 px-3 font-mono text-red-400">{fmt(r.lcFee)}</td>
-                                    <td className="py-2.5 px-3 font-mono">{fmt(r.netSpend)}</td>
-                                    <td className="py-2.5 px-3">
-                                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${r.status === 'Active' ? 'bg-green-500/15 text-green-400' : 'bg-yellow-500/15 text-yellow-400'}`}>
-                                            {r.status === 'Active' ? '🟢' : '⚠️'} {r.status}
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </CardContent>
-            </Card>
-        </div>
+        <Card>
+            <CardHeader>
+                <div className="flex justify-between items-center">
+                    <CardTitle>Per Card</CardTitle>
+                    <button className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md border border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] transition">Export</button>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Card</TableHead>
+                            <TableHead>Account</TableHead>
+                            <TableHead className="text-right">Total Charged</TableHead>
+                            <TableHead className="text-right">LC Fee</TableHead>
+                            <TableHead className="text-right">Net Spend</TableHead>
+                            <TableHead>Status</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {rows.map((r, i) => (
+                            <TableRow key={i} className="cursor-pointer">
+                                <TableCell className="font-mono font-bold">{r.card}</TableCell>
+                                <TableCell>{r.account}</TableCell>
+                                <TableCell className="text-right font-mono">{fmt(r.totalCharged)}</TableCell>
+                                <TableCell className="text-right font-mono text-red-600 dark:text-red-400">{fmt(r.lcFee)}</TableCell>
+                                <TableCell className="text-right font-mono">{fmt(r.netSpend)}</TableCell>
+                                <TableCell>
+                                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${r.status === 'Active'
+                                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400'
+                                            : 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400'
+                                        }`}>{r.status}</span>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
     );
 }

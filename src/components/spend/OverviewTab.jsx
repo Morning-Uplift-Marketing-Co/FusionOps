@@ -1,6 +1,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, BarChart, Bar } from "recharts";
 
 const MOCK_TREND = [
     { date: "02/17", spend: 450, trueCost: 515, revenue: 1000, roi: 94 },
@@ -14,13 +15,26 @@ const MOCK_TREND = [
 
 const fmt = (n) => `$${Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-function KpiCard({ label, value, sub, color }) {
-    const borderC = `hsl(var(--${color}))`;
+function KpiCard({ label, value, sub, change, changeType }) {
     return (
-        <Card className="relative p-4" style={{ borderColor: `${borderC}30`, background: `${borderC}08` }}>
-            <div className="text-[11px] font-bold uppercase tracking-wider" style={{ color: borderC }}>{label}</div>
-            <div className="text-[26px] font-bold mt-0.5">{value}</div>
-            <div className="text-[10px] text-[hsl(var(--muted-foreground))]">{sub}</div>
+        <Card>
+            <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium text-[hsl(var(--muted-foreground))]">{label}</CardTitle>
+                    {change !== undefined && (
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${changeType === "up" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
+                                : changeType === "down" ? "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400"
+                                    : "bg-gray-100 text-gray-600 dark:bg-gray-500/15 dark:text-gray-400"
+                            }`}>
+                            {changeType === "up" ? "+" : changeType === "down" ? "" : ""}{change}
+                        </span>
+                    )}
+                </div>
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">{value}</div>
+                {sub && <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">{sub}</p>}
+            </CardContent>
         </Card>
     );
 }
@@ -29,74 +43,131 @@ export function OverviewTab({ stats, trendData }) {
     const s = stats || {};
     const netProfit = (s.revenue || 0) - (s.trueCost || 0);
     const avgCpa = s.conversions > 0 ? s.trueCost / s.conversions : 0;
-    const rejRate = s.leadsSubmitted > 0 ? ((s.leadsRejected || 0) / s.leadsSubmitted) * 100 : 0;
-    const avgPayout = s.leadsSold > 0 ? s.revenue / s.leadsSold : 0;
     const chartData = trendData?.length > 0 ? trendData : MOCK_TREND;
 
     return (
-        <div className="space-y-6 animate-[fadeIn_.3s_ease]">
+        <div className="space-y-6">
             {/* Row 1: Core KPIs */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <KpiCard label="Ad Spend" value={fmt(s.totalSpend)} sub={`+ ${fmt(s.vat)} VAT (7%)`} color="warning" />
-                <KpiCard label="True Cost (Loaded)" value={fmt(s.trueCost)} sub={`+ ${fmt(s.lendingCardFees)} LC (3.5%)`} color="destructive" />
-                <KpiCard label="Gross Revenue" value={fmt(s.revenue)} sub={`${s.conversions || 0} Conversions`} color="success" />
-                <KpiCard label="True ROI" value={`${s.roi || 0}%`} sub="Loaded Cost Basis" color="primary" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <KpiCard label="Ad Spend" value={fmt(s.totalSpend)} sub={`+ ${fmt(s.vat)} VAT (7%)`} change="+6.1%" changeType="up" />
+                <KpiCard label="True Cost (Loaded)" value={fmt(s.trueCost)} sub={`+ ${fmt(s.lendingCardFees)} LC Fees`} change="+19.2%" changeType="up" />
+                <KpiCard label="Gross Revenue" value={fmt(s.revenue)} sub={`${s.conversions || 0} Conversions`} change="+12.5%" changeType="up" />
+                <KpiCard label="True ROI" value={`${s.roi || 0}%`} sub="Loaded Cost Basis" change="-1.2%" changeType="down" />
             </div>
 
-            {/* Row 2: Net KPIs */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <KpiCard label="Net Profit" value={fmt(netProfit)} sub={netProfit >= 0 ? "▲ Positive" : "▼ Negative"} color={netProfit >= 0 ? "success" : "destructive"} />
-                <KpiCard label="Avg CPA" value={fmt(avgCpa)} sub="per lead" color="primary" />
-                <KpiCard label="Avg Payout" value={fmt(avgPayout)} sub="per sold" color="primary" />
-                <KpiCard label="Rejection" value={`${rejRate.toFixed(1)}%`} sub="rate" color={rejRate > 20 ? "destructive" : "warning"} />
+            {/* Row 2: Secondary KPIs */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <KpiCard label="Net Profit" value={fmt(netProfit)} sub={netProfit >= 0 ? "▲ Positive" : "▼ Negative"} change={netProfit >= 0 ? "+15%" : "-5%"} changeType={netProfit >= 0 ? "up" : "down"} />
+                <KpiCard label="Avg CPA" value={fmt(avgCpa)} sub="per lead" />
+                <KpiCard label="Avg Payout" value={fmt(s.leadsSold > 0 ? s.revenue / s.leadsSold : 0)} sub="per sold" />
+                <KpiCard label="Rejection Rate" value={`${s.leadsSubmitted > 0 ? ((s.leadsRejected || 0) / s.leadsSubmitted * 100).toFixed(1) : '0.0'}%`} sub="rate" />
             </div>
 
-            {/* Chart + Top accounts */}
-            <div className="grid gap-4" style={{ gridTemplateColumns: "2fr 1.2fr" }}>
-                <Card>
-                    <CardHeader><CardTitle className="text-sm font-semibold">📈 7 Day Trend</CardTitle></CardHeader>
-                    <CardContent className="pt-2">
-                        <div className="h-[280px] w-full mt-2">
+            {/* Charts + Top Performers */}
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+                {/* Revenue Chart */}
+                <Card className="lg:col-span-3">
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <CardTitle>Total Revenue</CardTitle>
+                                <p className="text-sm text-[hsl(var(--muted-foreground))]">Income in the last 7 days</p>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="h-[300px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: -20 }}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-                                    <XAxis dataKey="date" stroke="#888" fontSize={11} tickLine={false} axisLine={false} />
-                                    <YAxis stroke="#888" fontSize={11} tickLine={false} axisLine={false} tickFormatter={v => `$${v}`} />
-                                    <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '8px', fontSize: '12px' }} itemStyle={{ color: '#f8fafc' }} />
+                                <BarChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: -10 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                                    <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={v => `$${v}`} />
+                                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px', fontSize: '12px', color: 'hsl(var(--foreground))' }} />
                                     <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
-                                    <Line type="monotone" name="True Cost" dataKey="trueCost" stroke="#ff4d4f" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                                    <Line type="monotone" name="Revenue" dataKey="revenue" stroke="#22c55e" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                                </LineChart>
+                                    <Bar name="Revenue" dataKey="revenue" fill="hsl(var(--foreground))" radius={[4, 4, 0, 0]} />
+                                    <Bar name="True Cost" dataKey="trueCost" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} opacity={0.5} />
+                                </BarChart>
                             </ResponsiveContainer>
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card>
-                    <CardHeader><CardTitle className="text-sm font-semibold">🏆 Top Performers</CardTitle></CardHeader>
-                    <CardContent>
-                        <div className="text-[11px] text-[hsl(var(--muted-foreground))] mb-3">Ranked by net profit (MTD)</div>
-                        {(s.topAccounts || [
-                            { name: "Acc-01", profit: 820, domain: "bearloannow" },
-                            { name: "Acc-03", profit: 650, domain: "loanbears" },
-                            { name: "Acc-07", profit: 540, domain: "petcarefin" },
-                        ]).map((a, i) => (
-                            <div key={i} className="flex justify-between items-center py-2 border-b border-[hsl(var(--border))] last:border-0">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[10px] font-bold text-[hsl(var(--muted-foreground))]">#{i + 1}</span>
-                                    <div>
-                                        <div className="text-xs font-semibold">{a.name}</div>
-                                        <div className="text-[10px] text-[hsl(var(--muted-foreground))]">{a.domain}</div>
-                                    </div>
-                                </div>
-                                <span className={`text-xs font-bold ${a.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                    {a.profit >= 0 ? '+' : ''}{fmt(a.profit)}
-                                </span>
+                {/* Returning Rate / Line chart */}
+                <Card className="lg:col-span-2">
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <CardTitle>ROI Trend</CardTitle>
+                                <p className="text-sm text-[hsl(var(--muted-foreground))]">7-day rolling</p>
                             </div>
-                        ))}
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400">+2.5%</span>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="h-[300px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: -10 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                                    <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
+                                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} tickFormatter={v => `${v}%`} />
+                                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px', fontSize: '12px', color: 'hsl(var(--foreground))' }} />
+                                    <Line type="monotone" dataKey="roi" stroke="hsl(var(--foreground))" strokeWidth={2} dot={false} />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Top Performers Table */}
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <CardTitle>Top Performers</CardTitle>
+                        <button className="text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition flex items-center gap-1">
+                            View more →
+                        </button>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Account</TableHead>
+                                <TableHead>Domain</TableHead>
+                                <TableHead className="text-right">Profit</TableHead>
+                                <TableHead className="text-right">ROI</TableHead>
+                                <TableHead>Status</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {(s.topAccounts || [
+                                { name: "Acc-01", domain: "bearloannow.com", profit: 2995, roi: 62.3, status: "active" },
+                                { name: "Acc-03", domain: "loanbears.com", profit: 1852, roi: 42.6, status: "active" },
+                                { name: "Acc-07", domain: "petcarefin.com", profit: 1570, roi: 85.8, status: "active" },
+                                { name: "Acc-09", domain: "loanfast.com", profit: -560, roi: -27.2, status: "paused" },
+                            ]).map((a, i) => (
+                                <TableRow key={i}>
+                                    <TableCell className="font-medium">{a.name}</TableCell>
+                                    <TableCell className="text-[hsl(var(--muted-foreground))]">{a.domain}</TableCell>
+                                    <TableCell className={`text-right font-mono font-semibold ${a.profit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                                        {a.profit >= 0 ? '+' : ''}{fmt(a.profit)}
+                                    </TableCell>
+                                    <TableCell className="text-right font-mono">{a.roi}%</TableCell>
+                                    <TableCell>
+                                        <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${a.status === 'active'
+                                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400'
+                                                : 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400'
+                                            }`}>
+                                            {a.status === 'active' ? 'Active' : 'Paused'}
+                                        </span>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
         </div>
     );
 }

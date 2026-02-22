@@ -1,5 +1,6 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "../ui/table";
 
 const fmt = (n) => `$${Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -17,54 +18,63 @@ export function PerAccountTab({ accountData }) {
     const totalRoi = totals.trueCost > 0 ? ((totals.revenue - totals.trueCost) / totals.trueCost * 100) : 0;
 
     return (
-        <div className="animate-[fadeIn_.3s_ease]">
-            <Card>
-                <CardHeader>
-                    <div className="flex justify-between items-center">
-                        <CardTitle className="text-sm font-semibold">👤 Per Account</CardTitle>
-                        <button className="text-[11px] px-3 py-1 rounded-md bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] hover:text-white transition">Export</button>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <table className="w-full text-xs">
-                        <thead>
-                            <tr className="border-b border-[hsl(var(--border))]">
-                                {["Account", "Vertical", "Spend", "True Cost", "Revenue", "P/L", "ROI"].map(h => (
-                                    <th key={h} className="text-left py-2 px-3 text-[10px] font-bold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">{h}</th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {rows.map((r, i) => (
-                                <tr key={i} className="border-b border-[hsl(var(--border))]/30 hover:bg-[hsl(var(--muted))]/30 transition cursor-pointer">
-                                    <td className="py-2.5 px-3 font-semibold">{r.account}</td>
-                                    <td className="py-2.5 px-3">{r.vertical}</td>
-                                    <td className="py-2.5 px-3 font-mono">{fmt(r.spend)}</td>
-                                    <td className="py-2.5 px-3 font-mono">{fmt(r.trueCost)}</td>
-                                    <td className="py-2.5 px-3 font-mono text-green-400">{fmt(r.revenue)}</td>
-                                    <td className={`py-2.5 px-3 font-mono font-bold ${r.pl >= 0 ? 'text-green-400' : 'text-red-400'}`}>{r.pl >= 0 ? '+' : ''}{fmt(r.pl)}</td>
-                                    <td className="py-2.5 px-3">
-                                        <span className={`inline-flex items-center gap-1 font-bold ${r.roi >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                            {r.roi.toFixed(1)}% {r.roi >= 0 ? '🟢' : '🔴'}
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                        <tfoot>
-                            <tr className="border-t-2 border-[hsl(var(--border))] font-bold">
-                                <td className="py-2.5 px-3">TOTAL</td>
-                                <td className="py-2.5 px-3"></td>
-                                <td className="py-2.5 px-3 font-mono">{fmt(totals.spend)}</td>
-                                <td className="py-2.5 px-3 font-mono">{fmt(totals.trueCost)}</td>
-                                <td className="py-2.5 px-3 font-mono text-green-400">{fmt(totals.revenue)}</td>
-                                <td className={`py-2.5 px-3 font-mono ${totals.pl >= 0 ? 'text-green-400' : 'text-red-400'}`}>{totals.pl >= 0 ? '+' : ''}{fmt(totals.pl)}</td>
-                                <td className="py-2.5 px-3 font-mono">{totalRoi.toFixed(1)}%</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </CardContent>
-            </Card>
-        </div>
+        <Card>
+            <CardHeader>
+                <div className="flex justify-between items-center">
+                    <CardTitle>Per Account</CardTitle>
+                    <button className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md border border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] transition">Export</button>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Account</TableHead>
+                            <TableHead>Vertical</TableHead>
+                            <TableHead className="text-right">Spend</TableHead>
+                            <TableHead className="text-right">True Cost</TableHead>
+                            <TableHead className="text-right">Revenue</TableHead>
+                            <TableHead className="text-right">P/L</TableHead>
+                            <TableHead className="text-right">ROI</TableHead>
+                            <TableHead>Status</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {rows.map((r, i) => (
+                            <TableRow key={i} className="cursor-pointer">
+                                <TableCell className="font-medium">{r.account}</TableCell>
+                                <TableCell className="text-[hsl(var(--muted-foreground))]">{r.vertical}</TableCell>
+                                <TableCell className="text-right font-mono">{fmt(r.spend)}</TableCell>
+                                <TableCell className="text-right font-mono">{fmt(r.trueCost)}</TableCell>
+                                <TableCell className="text-right font-mono">{fmt(r.revenue)}</TableCell>
+                                <TableCell className={`text-right font-mono font-semibold ${r.pl >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                                    {r.pl >= 0 ? '+' : ''}{fmt(r.pl)}
+                                </TableCell>
+                                <TableCell className="text-right font-mono">{r.roi.toFixed(1)}%</TableCell>
+                                <TableCell>
+                                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${r.roi >= 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400'
+                                            : 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400'
+                                        }`}>
+                                        {r.roi >= 0 ? 'Profitable' : 'Loss'}
+                                    </span>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                    <TableFooter>
+                        <TableRow>
+                            <TableCell className="font-bold">Total</TableCell>
+                            <TableCell></TableCell>
+                            <TableCell className="text-right font-mono font-bold">{fmt(totals.spend)}</TableCell>
+                            <TableCell className="text-right font-mono font-bold">{fmt(totals.trueCost)}</TableCell>
+                            <TableCell className="text-right font-mono font-bold">{fmt(totals.revenue)}</TableCell>
+                            <TableCell className={`text-right font-mono font-bold ${totals.pl >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>{totals.pl >= 0 ? '+' : ''}{fmt(totals.pl)}</TableCell>
+                            <TableCell className="text-right font-mono font-bold">{totalRoi.toFixed(1)}%</TableCell>
+                            <TableCell></TableCell>
+                        </TableRow>
+                    </TableFooter>
+                </Table>
+            </CardContent>
+        </Card>
     );
 }

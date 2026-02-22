@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "./ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "./ui/tabs";
 import { loadSettings } from "../services/neon";
 import { fetchLendingCardTransactions, normalizeTransactions } from "../services/lendingcard";
 
@@ -12,19 +13,18 @@ import { MonthlyPnLTab } from "./spend/MonthlyPnLTab";
 import { ReconcileTab } from "./spend/ReconcileTab";
 import { OpexTab } from "./spend/OpexTab";
 
-const TABS = [
-    { key: "overview", icon: "📊", label: "Overview" },
-    { key: "daily", icon: "📋", label: "Daily Log" },
-    { key: "account", icon: "👤", label: "Per Account" },
-    { key: "card", icon: "💳", label: "Per Card" },
-    { key: "domain", icon: "🌐", label: "Per Domain" },
-    { key: "pnl", icon: "📈", label: "Monthly P&L" },
-    { key: "reconcile", icon: "🔄", label: "Reconcile" },
-    { key: "opex", icon: "🏢", label: "Opex" },
+const TAB_ITEMS = [
+    { value: "overview", icon: "📊", label: "Overview" },
+    { value: "daily", icon: "📋", label: "Daily Log" },
+    { value: "account", icon: "👤", label: "Per Account" },
+    { value: "card", icon: "💳", label: "Per Card" },
+    { value: "domain", icon: "🌐", label: "Per Domain" },
+    { value: "pnl", icon: "📈", label: "P&L" },
+    { value: "reconcile", icon: "🔄", label: "Reconcile" },
+    { value: "opex", icon: "🏢", label: "Opex" },
 ];
 
 export function SpendDashboard({ apiOk, neonOk }) {
-    const [tab, setTab] = useState("overview");
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({
         totalSpend: 0, trueCost: 0, conversions: 0, revenue: 0, roi: 0,
@@ -52,7 +52,6 @@ export function SpendDashboard({ apiOk, neonOk }) {
 
             const vKeyId = settings.voluumAccessKeyId || import.meta.env.PUBLIC_VOLUUM_ACCESS_KEY_ID;
             const vKey = settings.voluumAccessKey || import.meta.env.PUBLIC_VOLUUM_ACCESS_KEY;
-
             let realStats = { ...stats };
             let dailyTrend = [];
 
@@ -66,7 +65,6 @@ export function SpendDashboard({ apiOk, neonOk }) {
                     const spend = m.cost || 0, rev = m.revenue || 0;
                     const vat = spend * 0.07, lc = spend * 0.035, tc = spend + vat + lc;
                     const roi = tc > 0 ? ((rev - tc) / tc) * 100 : 0;
-
                     realStats = {
                         totalSpend: spend, vat, lendingCardFees: lc, trueCost: tc,
                         conversions: m.conversions || 0, revenue: rev, roi: parseFloat(roi.toFixed(1)),
@@ -84,59 +82,46 @@ export function SpendDashboard({ apiOk, neonOk }) {
                     }
                 } catch (err) { console.error("[SpendDashboard] Voluum error:", err); }
             }
-
             setStats(realStats);
             setTrendData(dailyTrend);
         } catch (e) { console.error(e); }
         setLoading(false);
     };
 
-    const renderTab = () => {
-        switch (tab) {
-            case "overview": return <OverviewTab stats={stats} trendData={trendData} />;
-            case "daily": return <DailyLogTab />;
-            case "account": return <PerAccountTab />;
-            case "card": return <PerCardTab />;
-            case "domain": return <PerDomainTab />;
-            case "pnl": return <MonthlyPnLTab />;
-            case "reconcile": return <ReconcileTab />;
-            case "opex": return <OpexTab />;
-            default: return <OverviewTab stats={stats} trendData={trendData} />;
-        }
-    };
-
     return (
-        <div className="animate-[fadeIn_.3s_ease]">
+        <div className="space-y-6">
             {/* Header */}
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-2xl font-bold m-0 flex items-center gap-2">💳 Spend Dashboard</h1>
-                    <p className="text-[hsl(var(--muted-foreground))] text-sm mt-0.5">Full Accounting — True Cost & ROI Tracking</p>
+                    <h1 className="text-2xl font-bold tracking-tight">Spend Dashboard</h1>
+                    <p className="text-sm text-[hsl(var(--muted-foreground))]">Full Accounting — True Cost & ROI Tracking</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" onClick={loadData} disabled={loading} className="text-xs">
+                    <Button variant="outline" onClick={loadData} disabled={loading} className="text-xs h-9">
                         {loading ? "⏳ Syncing..." : "🔄 Sync Now"}
                     </Button>
                 </div>
             </div>
 
-            {/* Tab Navigation */}
-            <div className="flex gap-1 mb-6 overflow-x-auto pb-1 border-b border-[hsl(var(--border))]">
-                {TABS.map(t => (
-                    <button key={t.key} onClick={() => setTab(t.key)}
-                        className={`flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-t-lg transition whitespace-nowrap
-              ${tab === t.key
-                                ? 'bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] border-b-2 border-[hsl(var(--primary))] -mb-[1px]'
-                                : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/50'
-                            }`}
-                    >
-                        <span>{t.icon}</span> {t.label}
-                    </button>
-                ))}
-            </div>
+            {/* Shadcn Tabs */}
+            <Tabs defaultValue="overview" className="w-full">
+                <TabsList className="grid w-full grid-cols-8">
+                    {TAB_ITEMS.map(t => (
+                        <TabsTrigger key={t.value} value={t.value} className="text-xs gap-1">
+                            <span>{t.icon}</span> {t.label}
+                        </TabsTrigger>
+                    ))}
+                </TabsList>
 
-            {/* Active Tab Content */}
-            {renderTab()}
+                <TabsContent value="overview"><OverviewTab stats={stats} trendData={trendData} /></TabsContent>
+                <TabsContent value="daily"><DailyLogTab /></TabsContent>
+                <TabsContent value="account"><PerAccountTab /></TabsContent>
+                <TabsContent value="card"><PerCardTab /></TabsContent>
+                <TabsContent value="domain"><PerDomainTab /></TabsContent>
+                <TabsContent value="pnl"><MonthlyPnLTab /></TabsContent>
+                <TabsContent value="reconcile"><ReconcileTab /></TabsContent>
+                <TabsContent value="opex"><OpexTab /></TabsContent>
+            </Tabs>
         </div>
     );
 }

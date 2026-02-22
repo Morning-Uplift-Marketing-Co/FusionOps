@@ -536,7 +536,7 @@ export default function App() {
   };
 
   if (loading) return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: T.bg, color: T.text, fontFamily: "'DM Sans',system-ui,sans-serif" }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", fontFamily: "'Inter','DM Sans',system-ui,sans-serif" }}>
       <div style={{ textAlign: "center" }}>
         <div style={{ fontSize: 48, marginBottom: 12, animation: "pulse 1.5s infinite" }}>⚡</div>
         <div style={{ fontSize: 18, fontWeight: 700 }}>LP Factory V2</div>
@@ -558,7 +558,7 @@ export default function App() {
   const ml = sideCollapsed ? 64 : 220;
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: T.bg, color: T.text, fontFamily: "'DM Sans',system-ui,sans-serif" }}>
+    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'Inter','DM Sans',system-ui,sans-serif" }}>
       {toast && <Toast msg={toast.msg} type={toast.type} />}
 
       <Sidebar page={page} setPage={setPage} siteCount={sites.length} startCreate={startCreate} startTemplateGen={() => setTemplateGenOpen(true)}

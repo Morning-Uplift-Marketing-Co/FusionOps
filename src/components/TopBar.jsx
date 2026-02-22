@@ -1,20 +1,22 @@
 import React from "react";
 import { THEME as T } from "../constants";
 import { Dot } from "./ui/dot";
+import { ThemeToggle } from "./ui/theme-toggle";
 
 export function TopBar({ stats, settings, deploys, apiOk, neonOk, onReconnectNeon }) {
     const voluumOk = !!(import.meta.env.PUBLIC_VOLUUM_API_KEY || (import.meta.env.PUBLIC_VOLUUM_ACCESS_KEY_ID && import.meta.env.PUBLIC_VOLUUM_ACCESS_KEY));
 
     return (
-        <div className="h-12 border-b border-[hsl(var(--border))] flex items-center justify-between px-7 bg-[rgba(11,13,20,.85)] backdrop-blur-md sticky top-0 z-50">
+        <div className="h-12 border-b border-[hsl(var(--border))] flex items-center justify-between px-7 bg-[hsl(var(--card))]/85 backdrop-blur-md sticky top-0 z-50">
             <div className="text-xs text-[hsl(var(--muted-foreground))]">
                 Builds: <b className="text-[hsl(var(--foreground))]">{stats.builds}</b>
                 <span className="mx-2.5 text-[hsl(var(--border))]">│</span>
-                Cost: <b className="text-[hsl(var(--accent))]">${stats.spend.toFixed(2)}</b>
+                Cost: <b className="text-[hsl(var(--foreground))]">${stats.spend.toFixed(2)}</b>
                 <span className="mx-2.5 text-[hsl(var(--border))]">│</span>
-                Deployed: <b className="text-[hsl(var(--success))]">{deploys?.length || 0}</b>
+                Deployed: <b className="text-[hsl(var(--foreground))]">{deploys?.length || 0}</b>
             </div>
             <div className="flex items-center gap-3">
+                <ThemeToggle />
                 <Dot c={neonOk ? T.success : T.warning} label={neonOk ? "Neon ✓" : apiOk ? "API ✓" : "Local"} />
                 {!neonOk && settings.neonUrl && (
                     <button
