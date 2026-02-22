@@ -144,7 +144,7 @@ export async function saveSite(site) {
     const id = rawId || `site-${Date.now().toString(36)}`;
     console.log("[neon] saveSite id:", id, "type:", typeof id);
     console.log("[neon] saveSite called with templateId:", data.templateId);
-    
+
     const safeData = JSON.parse(JSON.stringify(data, (_, v) =>
       typeof v === "function" || (v instanceof Node) || v === window ? undefined : v
     ));
@@ -213,6 +213,102 @@ export async function saveDeploy(deploy) {
     `;
     return true;
   } catch (e) {
+    return false;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// DAILY SPEND & ROI (Module 8)
+// ═══════════════════════════════════════════════════════
+
+/** Load spend records by date range */
+export async function loadDailySpend(startDate, endDate) {
+  if (!ensureConnection()) return null;
+  try {
+    const rows = await sql`
+      SELECT id, date, account_id, campaign_id, google_spend, vat, lendingcard_fee, true_cost, revenue, conversions, clicks, true_roi, created_at
+      FROM daily_spend
+      WHERE date >= ${startDate} AND date <= ${endDate}
+      ORDER BY date DESC
+    `;
+    return rows;
+  } catch (e) {
+    console.error("[neon] loadDailySpend error:", e);
+    return null;
+  }
+}
+
+/** Save daily spend record */
+export async function saveDailySpend(spend) {
+  if (!ensureConnection()) return false;
+  try {
+    const id = spend.id || `${spend.date}-${spend.account_id}`;
+    await sql`
+      INSERT INTO daily_spend (
+        id, date, account_id, campaign_id, google_spend, vat, lendingcard_fee, true_cost, revenue, conversions, clicks, true_roi
+      ) VALUES (
+        ${id}, ${spend.date}, ${spend.account_id}, ${spend.campaign_id || null}, 
+        ${spend.google_spend || 0}, ${spend.vat || 0}, ${spend.lendingcard_fee || 0}, 
+        ${spend.true_cost || 0}, ${spend.revenue || 0}, ${spend.conversions || 0}, 
+        ${spend.clicks || 0}, ${spend.true_roi || 0}
+      )
+      ON CONFLICT (id) DO UPDATE SET
+        google_spend = EXCLUDED.google_spend,
+        vat = EXCLUDED.vat,
+        lendingcard_fee = EXCLUDED.lendingcard_fee,
+        true_cost = EXCLUDED.true_cost,
+        revenue = EXCLUDED.revenue,
+        conversions = EXCLUDED.conversions,
+        clicks = EXCLUDED.clicks,
+        true_roi = EXCLUDED.true_roi,
+        updated_at = now()
+    `;
+    return true;
+  } catch (e) {
+    console.error("[neon] saveDailySpend error:", e);
+    return false;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// LENDINGCARD TRANSACTIONS (Module 8)
+// ═══════════════════════════════════════════════════════
+
+/** Load lendingcard transactions within a date range */
+export async function loadLendingCardTransactions(startDate, endDate) {
+  if (!ensureConnection()) return null;
+  try {
+    const rows = await sql`
+      SELECT id, date, amount, deposit_fee, net_amount, card_id, card_last4, merchant, created_at
+      FROM lendingcard_transactions
+      WHERE date >= ${startDate} AND date <= ${endDate}
+      ORDER BY date DESC
+    `;
+    return rows;
+  } catch (e) {
+    console.error("[neon] loadLendingCardTransactions error:", e);
+    return null;
+  }
+}
+
+/** Save multiple transactions in bulk from API */
+export async function saveLendingCardTransactions(transactions) {
+  if (!ensureConnection() || !transactions || transactions.length === 0) return false;
+  try {
+    for (const tx of transactions) {
+      await sql`
+        INSERT INTO lendingcard_transactions (
+          id, date, amount, deposit_fee, net_amount, card_id, card_last4, merchant
+        ) VALUES (
+          ${tx.id}, ${tx.date}, ${tx.amount}, ${tx.deposit_fee || 0}, ${tx.net_amount}, 
+          ${tx.card_id}, ${tx.card_last4}, ${tx.merchant}
+        )
+        ON CONFLICT (id) DO NOTHING
+      `;
+    }
+    return true;
+  } catch (e) {
+    console.error("[neon] saveLendingCardTransactions error:", e);
     return false;
   }
 }

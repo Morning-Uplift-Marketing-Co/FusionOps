@@ -22,6 +22,7 @@ import { DeployHistory } from "./components/DeployHistory";
 import { TemplateEditor } from "./components/TemplateEditor";
 import { TemplateGeneratorModal } from "./components/TemplateGenerator";
 import { ErrorLog, logError } from "./components/ErrorLog";
+import { SpendDashboard } from "./components/SpendDashboard";
 
 // Neon connection string — stored in settings or hardcoded for now
 const NEON_URL = import.meta.env.PUBLIC_NEON_URL || "";
@@ -235,7 +236,7 @@ export default function App() {
   };
 
   // Keep only plain serializable site fields — drops React event/DOM properties
-  const SITE_FIELDS = new Set(["id","brand","domain","tagline","email","templateId","loanType","amountMin","amountMax","aprMin","aprMax","colorId","fontId","layout","radius","trustBadgeStyle","trustBadgeIconTone","h1","h1span","badge","cta","sub","conversionId","formStartLabel","formSubmitLabel","aid","network","redirectUrl","voluumId","voluumDomain","lang","faviconDataUrl","ogImageDataUrl","formEmbed","status","createdAt","updatedAt","cost"]);
+  const SITE_FIELDS = new Set(["id", "brand", "domain", "tagline", "email", "templateId", "loanType", "amountMin", "amountMax", "aprMin", "aprMax", "colorId", "fontId", "layout", "radius", "trustBadgeStyle", "trustBadgeIconTone", "h1", "h1span", "badge", "cta", "sub", "conversionId", "formStartLabel", "formSubmitLabel", "aid", "network", "redirectUrl", "voluumId", "voluumDomain", "lang", "faviconDataUrl", "ogImageDataUrl", "formEmbed", "status", "createdAt", "updatedAt", "cost"]);
   const sanitizeSite = (obj) => Object.fromEntries(
     Object.entries(obj).filter(([k, v]) => SITE_FIELDS.has(k) && typeof v !== "function")
   );
@@ -568,6 +569,7 @@ export default function App() {
         <TopBar stats={stats} settings={settings} deploys={deploys} apiOk={apiOk} neonOk={neonOk} onReconnectNeon={recoverNeonConnection} />
         <div style={{ padding: "24px 28px" }}>
           {page === "dashboard" && <Dashboard sites={sites} stats={stats} ops={ops} setPage={setPage} startCreate={startCreate} settings={settings} apiOk={apiOk} neonOk={neonOk} />}
+          {page === "spend" && <SpendDashboard apiOk={apiOk} neonOk={neonOk} />}
           {page === "sites" && <Sites sites={sites} del={delSite} notify={notify} startCreate={startCreate} settings={settings} addDeploy={addDeploy} ops={ops} updateSite={updateSite} />}
           {page === "template-editor" && <TemplateEditor notify={notify} />}
           {page === "create" && wizData && <Wizard config={wizData} setConfig={setWizData} addSite={addSite} setPage={setPage} settings={settings} notify={notify} />}

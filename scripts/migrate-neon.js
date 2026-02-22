@@ -62,6 +62,37 @@ CREATE TABLE IF NOT EXISTS templates (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Daily spend table (Cost & ROI Tracking)
+CREATE TABLE IF NOT EXISTS daily_spend (
+  id TEXT PRIMARY KEY,
+  date DATE NOT NULL,
+  account_id TEXT NOT NULL,
+  campaign_id TEXT,
+  google_spend NUMERIC(10, 2) DEFAULT 0,
+  vat NUMERIC(10, 2) DEFAULT 0,
+  lendingcard_fee NUMERIC(10, 2) DEFAULT 0,
+  true_cost NUMERIC(10, 2) DEFAULT 0,
+  revenue NUMERIC(10, 2) DEFAULT 0,
+  conversions INTEGER DEFAULT 0,
+  clicks INTEGER DEFAULT 0,
+  true_roi NUMERIC(10, 2) DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- LendingCard transactions table
+CREATE TABLE IF NOT EXISTS lendingcard_transactions (
+  id TEXT PRIMARY KEY, -- Maps to LeadingCards API transaction uuid
+  date TIMESTAMPTZ NOT NULL,
+  amount NUMERIC(10, 2) NOT NULL,
+  deposit_fee NUMERIC(10, 2) DEFAULT 0,
+  net_amount NUMERIC(10, 2) NOT NULL,
+  card_id TEXT,
+  card_last4 TEXT,
+  merchant TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_deploy_history_site_id ON deploy_history(site_id);
 CREATE INDEX IF NOT EXISTS idx_deploy_history_created_at ON deploy_history(created_at DESC);

@@ -57,6 +57,7 @@ export function Sidebar({ page, setPage, siteCount, startCreate, startTemplateGe
 
     const items = [
         { id: "dashboard", icon: "📊", label: "Dashboard" },
+        { id: "spend", icon: "💳", label: "Spend Dashboard" },
         { id: "sites", icon: "🌐", label: "My Sites", badge: siteCount },
         { id: "template-editor", icon: "🎨", label: "Template Editor" },
         { id: "template-gen", icon: "🧙", label: "Template Wizard", action: startTemplateGen },
