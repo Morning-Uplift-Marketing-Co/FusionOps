@@ -1,0 +1,8 @@
+# Production Environment
+# Approval rules for production deployments
+
+approval_rules:
+  - required_approving_count: 2
+  # Wait 5 minutes before allowing deployment (allows cancellation)
+  wait_timer: 5
+environment: production

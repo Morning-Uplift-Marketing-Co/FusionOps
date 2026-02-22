@@ -1,0 +1,907 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for src/utils/deployers/cf-pages.js</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../../prettify.css" />
+    <link rel="stylesheet" href="../../../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../../../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../../../index.html">All files</a> / <a href="index.html">src/utils/deployers</a> cf-pages.js</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>0/141</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>0/72</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>0/9</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>0/117</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line low'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a>
+<a name='L85'></a><a href='#L85'>85</a>
+<a name='L86'></a><a href='#L86'>86</a>
+<a name='L87'></a><a href='#L87'>87</a>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a>
+<a name='L97'></a><a href='#L97'>97</a>
+<a name='L98'></a><a href='#L98'>98</a>
+<a name='L99'></a><a href='#L99'>99</a>
+<a name='L100'></a><a href='#L100'>100</a>
+<a name='L101'></a><a href='#L101'>101</a>
+<a name='L102'></a><a href='#L102'>102</a>
+<a name='L103'></a><a href='#L103'>103</a>
+<a name='L104'></a><a href='#L104'>104</a>
+<a name='L105'></a><a href='#L105'>105</a>
+<a name='L106'></a><a href='#L106'>106</a>
+<a name='L107'></a><a href='#L107'>107</a>
+<a name='L108'></a><a href='#L108'>108</a>
+<a name='L109'></a><a href='#L109'>109</a>
+<a name='L110'></a><a href='#L110'>110</a>
+<a name='L111'></a><a href='#L111'>111</a>
+<a name='L112'></a><a href='#L112'>112</a>
+<a name='L113'></a><a href='#L113'>113</a>
+<a name='L114'></a><a href='#L114'>114</a>
+<a name='L115'></a><a href='#L115'>115</a>
+<a name='L116'></a><a href='#L116'>116</a>
+<a name='L117'></a><a href='#L117'>117</a>
+<a name='L118'></a><a href='#L118'>118</a>
+<a name='L119'></a><a href='#L119'>119</a>
+<a name='L120'></a><a href='#L120'>120</a>
+<a name='L121'></a><a href='#L121'>121</a>
+<a name='L122'></a><a href='#L122'>122</a>
+<a name='L123'></a><a href='#L123'>123</a>
+<a name='L124'></a><a href='#L124'>124</a>
+<a name='L125'></a><a href='#L125'>125</a>
+<a name='L126'></a><a href='#L126'>126</a>
+<a name='L127'></a><a href='#L127'>127</a>
+<a name='L128'></a><a href='#L128'>128</a>
+<a name='L129'></a><a href='#L129'>129</a>
+<a name='L130'></a><a href='#L130'>130</a>
+<a name='L131'></a><a href='#L131'>131</a>
+<a name='L132'></a><a href='#L132'>132</a>
+<a name='L133'></a><a href='#L133'>133</a>
+<a name='L134'></a><a href='#L134'>134</a>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a>
+<a name='L142'></a><a href='#L142'>142</a>
+<a name='L143'></a><a href='#L143'>143</a>
+<a name='L144'></a><a href='#L144'>144</a>
+<a name='L145'></a><a href='#L145'>145</a>
+<a name='L146'></a><a href='#L146'>146</a>
+<a name='L147'></a><a href='#L147'>147</a>
+<a name='L148'></a><a href='#L148'>148</a>
+<a name='L149'></a><a href='#L149'>149</a>
+<a name='L150'></a><a href='#L150'>150</a>
+<a name='L151'></a><a href='#L151'>151</a>
+<a name='L152'></a><a href='#L152'>152</a>
+<a name='L153'></a><a href='#L153'>153</a>
+<a name='L154'></a><a href='#L154'>154</a>
+<a name='L155'></a><a href='#L155'>155</a>
+<a name='L156'></a><a href='#L156'>156</a>
+<a name='L157'></a><a href='#L157'>157</a>
+<a name='L158'></a><a href='#L158'>158</a>
+<a name='L159'></a><a href='#L159'>159</a>
+<a name='L160'></a><a href='#L160'>160</a>
+<a name='L161'></a><a href='#L161'>161</a>
+<a name='L162'></a><a href='#L162'>162</a>
+<a name='L163'></a><a href='#L163'>163</a>
+<a name='L164'></a><a href='#L164'>164</a>
+<a name='L165'></a><a href='#L165'>165</a>
+<a name='L166'></a><a href='#L166'>166</a>
+<a name='L167'></a><a href='#L167'>167</a>
+<a name='L168'></a><a href='#L168'>168</a>
+<a name='L169'></a><a href='#L169'>169</a>
+<a name='L170'></a><a href='#L170'>170</a>
+<a name='L171'></a><a href='#L171'>171</a>
+<a name='L172'></a><a href='#L172'>172</a>
+<a name='L173'></a><a href='#L173'>173</a>
+<a name='L174'></a><a href='#L174'>174</a>
+<a name='L175'></a><a href='#L175'>175</a>
+<a name='L176'></a><a href='#L176'>176</a>
+<a name='L177'></a><a href='#L177'>177</a>
+<a name='L178'></a><a href='#L178'>178</a>
+<a name='L179'></a><a href='#L179'>179</a>
+<a name='L180'></a><a href='#L180'>180</a>
+<a name='L181'></a><a href='#L181'>181</a>
+<a name='L182'></a><a href='#L182'>182</a>
+<a name='L183'></a><a href='#L183'>183</a>
+<a name='L184'></a><a href='#L184'>184</a>
+<a name='L185'></a><a href='#L185'>185</a>
+<a name='L186'></a><a href='#L186'>186</a>
+<a name='L187'></a><a href='#L187'>187</a>
+<a name='L188'></a><a href='#L188'>188</a>
+<a name='L189'></a><a href='#L189'>189</a>
+<a name='L190'></a><a href='#L190'>190</a>
+<a name='L191'></a><a href='#L191'>191</a>
+<a name='L192'></a><a href='#L192'>192</a>
+<a name='L193'></a><a href='#L193'>193</a>
+<a name='L194'></a><a href='#L194'>194</a>
+<a name='L195'></a><a href='#L195'>195</a>
+<a name='L196'></a><a href='#L196'>196</a>
+<a name='L197'></a><a href='#L197'>197</a>
+<a name='L198'></a><a href='#L198'>198</a>
+<a name='L199'></a><a href='#L199'>199</a>
+<a name='L200'></a><a href='#L200'>200</a>
+<a name='L201'></a><a href='#L201'>201</a>
+<a name='L202'></a><a href='#L202'>202</a>
+<a name='L203'></a><a href='#L203'>203</a>
+<a name='L204'></a><a href='#L204'>204</a>
+<a name='L205'></a><a href='#L205'>205</a>
+<a name='L206'></a><a href='#L206'>206</a>
+<a name='L207'></a><a href='#L207'>207</a>
+<a name='L208'></a><a href='#L208'>208</a>
+<a name='L209'></a><a href='#L209'>209</a>
+<a name='L210'></a><a href='#L210'>210</a>
+<a name='L211'></a><a href='#L211'>211</a>
+<a name='L212'></a><a href='#L212'>212</a>
+<a name='L213'></a><a href='#L213'>213</a>
+<a name='L214'></a><a href='#L214'>214</a>
+<a name='L215'></a><a href='#L215'>215</a>
+<a name='L216'></a><a href='#L216'>216</a>
+<a name='L217'></a><a href='#L217'>217</a>
+<a name='L218'></a><a href='#L218'>218</a>
+<a name='L219'></a><a href='#L219'>219</a>
+<a name='L220'></a><a href='#L220'>220</a>
+<a name='L221'></a><a href='#L221'>221</a>
+<a name='L222'></a><a href='#L222'>222</a>
+<a name='L223'></a><a href='#L223'>223</a>
+<a name='L224'></a><a href='#L224'>224</a>
+<a name='L225'></a><a href='#L225'>225</a>
+<a name='L226'></a><a href='#L226'>226</a>
+<a name='L227'></a><a href='#L227'>227</a>
+<a name='L228'></a><a href='#L228'>228</a>
+<a name='L229'></a><a href='#L229'>229</a>
+<a name='L230'></a><a href='#L230'>230</a>
+<a name='L231'></a><a href='#L231'>231</a>
+<a name='L232'></a><a href='#L232'>232</a>
+<a name='L233'></a><a href='#L233'>233</a>
+<a name='L234'></a><a href='#L234'>234</a>
+<a name='L235'></a><a href='#L235'>235</a>
+<a name='L236'></a><a href='#L236'>236</a>
+<a name='L237'></a><a href='#L237'>237</a>
+<a name='L238'></a><a href='#L238'>238</a>
+<a name='L239'></a><a href='#L239'>239</a>
+<a name='L240'></a><a href='#L240'>240</a>
+<a name='L241'></a><a href='#L241'>241</a>
+<a name='L242'></a><a href='#L242'>242</a>
+<a name='L243'></a><a href='#L243'>243</a>
+<a name='L244'></a><a href='#L244'>244</a>
+<a name='L245'></a><a href='#L245'>245</a>
+<a name='L246'></a><a href='#L246'>246</a>
+<a name='L247'></a><a href='#L247'>247</a>
+<a name='L248'></a><a href='#L248'>248</a>
+<a name='L249'></a><a href='#L249'>249</a>
+<a name='L250'></a><a href='#L250'>250</a>
+<a name='L251'></a><a href='#L251'>251</a>
+<a name='L252'></a><a href='#L252'>252</a>
+<a name='L253'></a><a href='#L253'>253</a>
+<a name='L254'></a><a href='#L254'>254</a>
+<a name='L255'></a><a href='#L255'>255</a>
+<a name='L256'></a><a href='#L256'>256</a>
+<a name='L257'></a><a href='#L257'>257</a>
+<a name='L258'></a><a href='#L258'>258</a>
+<a name='L259'></a><a href='#L259'>259</a>
+<a name='L260'></a><a href='#L260'>260</a>
+<a name='L261'></a><a href='#L261'>261</a>
+<a name='L262'></a><a href='#L262'>262</a>
+<a name='L263'></a><a href='#L263'>263</a>
+<a name='L264'></a><a href='#L264'>264</a>
+<a name='L265'></a><a href='#L265'>265</a>
+<a name='L266'></a><a href='#L266'>266</a>
+<a name='L267'></a><a href='#L267'>267</a>
+<a name='L268'></a><a href='#L268'>268</a>
+<a name='L269'></a><a href='#L269'>269</a>
+<a name='L270'></a><a href='#L270'>270</a>
+<a name='L271'></a><a href='#L271'>271</a>
+<a name='L272'></a><a href='#L272'>272</a>
+<a name='L273'></a><a href='#L273'>273</a>
+<a name='L274'></a><a href='#L274'>274</a>
+<a name='L275'></a><a href='#L275'>275</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
+ * Cloudflare Pages Deploy (P1 - Primary)
+ *
+ * Uses the correct Wrangler-compatible Direct Upload flow:
+ *   1. Ensure project exists
+ *   2. Get upload JWT token
+ *   3. Check which file hashes are missing (MD5)
+ *   4. Upload missing files via JWT
+ *   5. Register hashes (upsert-hashes)
+ *   6. Create deployment with manifest
+ *   7. Update DNS records if domain is configured
+ *
+ * IMPORTANT: CF Pages uses MD5 hashes, NOT SHA-256.
+ */
+&nbsp;
+import { getCfApiBase } from "../api-proxy.js";
+import { updateDnsAfterDeploy as updateCfDns } from "../../services/cloudflare-dns.js";
+&nbsp;
+/* ── MD5 implementation (browser-compatible) ─────────────────────── */
+function <span class="fstat-no" title="function not covered" >md5(</span>data) {
+  // Accepts Uint8Array, returns hex string
+  const K = <span class="cstat-no" title="statement not covered" >[</span>
+    0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee,
+    0xf57c0faf, 0x4787c62a, 0xa8304613, 0xfd469501,
+    0x698098d8, 0x8b44f7af, 0xffff5bb1, 0x895cd7be,
+    0x6b901122, 0xfd987193, 0xa679438e, 0x49b40821,
+    0xf61e2562, 0xc040b340, 0x265e5a51, 0xe9b6c7aa,
+    0xd62f105d, 0x02441453, 0xd8a1e681, 0xe7d3fbc8,
+    0x21e1cde6, 0xc33707d6, 0xf4d50d87, 0x455a14ed,
+    0xa9e3e905, 0xfcefa3f8, 0x676f02d9, 0x8d2a4c8a,
+    0xfffa3942, 0x8771f681, 0x6d9d6122, 0xfde5380c,
+    0xa4beea44, 0x4bdecfa9, 0xf6bb4b60, 0xbebfbc70,
+    0x289b7ec6, 0xeaa127fa, 0xd4ef3085, 0x04881d05,
+    0xd9d4d039, 0xe6db99e5, 0x1fa27cf8, 0xc4ac5665,
+    0xf4292244, 0x432aff97, 0xab9423a7, 0xfc93a039,
+    0x655b59c3, 0x8f0ccc92, 0xffeff47d, 0x85845dd1,
+    0x6fa87e4f, 0xfe2ce6e0, 0xa3014314, 0x4e0811a1,
+    0xf7537e82, 0xbd3af235, 0x2ad7d2bb, 0xeb86d391,
+  ];
+  const S = <span class="cstat-no" title="statement not covered" >[</span>
+    7,12,17,22,7,12,17,22,7,12,17,22,7,12,17,22,
+    5,9,14,20,5,9,14,20,5,9,14,20,5,9,14,20,
+    4,11,16,23,4,11,16,23,4,11,16,23,4,11,16,23,
+    6,10,15,21,6,10,15,21,6,10,15,21,6,10,15,21,
+  ];
+&nbsp;
+  // Pre-processing: add padding
+  const origLen = <span class="cstat-no" title="statement not covered" >data.length;</span>
+  const bitLen = <span class="cstat-no" title="statement not covered" >origLen * 8;</span>
+  // Pad to 56 mod 64 bytes, then add 8-byte length
+  let padded = <span class="cstat-no" title="statement not covered" >new Uint8Array(origLen + 1 + ((55 - origLen % 64 + 64) % 64) + 8);</span>
+<span class="cstat-no" title="statement not covered" >  padded.set(data);</span>
+<span class="cstat-no" title="statement not covered" >  padded[origLen] = 0x80;</span>
+  // Little-endian 64-bit bit length
+  const view = <span class="cstat-no" title="statement not covered" >new DataView(padded.buffer);</span>
+<span class="cstat-no" title="statement not covered" >  view.setUint32(padded.length - 8, bitLen &gt;&gt;&gt; 0, true);</span>
+<span class="cstat-no" title="statement not covered" >  view.setUint32(padded.length - 4, (bitLen / 0x100000000) &gt;&gt;&gt; 0, true);</span>
+&nbsp;
+  let a0 = <span class="cstat-no" title="statement not covered" >0x67452301,</span> b0 = <span class="cstat-no" title="statement not covered" >0xefcdab89,</span> c0 = <span class="cstat-no" title="statement not covered" >0x98badcfe,</span> d0 = <span class="cstat-no" title="statement not covered" >0x10325476;</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  for (let i = <span class="cstat-no" title="statement not covered" >0;</span> i &lt; padded.length; i += 64) {</span>
+    const M = <span class="cstat-no" title="statement not covered" >new Uint32Array(16);</span>
+<span class="cstat-no" title="statement not covered" >    for (let j = <span class="cstat-no" title="statement not covered" >0;</span> j &lt; 16; j++) {</span>
+<span class="cstat-no" title="statement not covered" >      M[j] = view.getUint32(i + j * 4, true);</span>
+    }
+    let A = <span class="cstat-no" title="statement not covered" >a0,</span> B = <span class="cstat-no" title="statement not covered" >b0,</span> C = <span class="cstat-no" title="statement not covered" >c0,</span> D = <span class="cstat-no" title="statement not covered" >d0;</span>
+<span class="cstat-no" title="statement not covered" >    for (let j = <span class="cstat-no" title="statement not covered" >0;</span> j &lt; 64; j++) {</span>
+      let F, g;
+<span class="cstat-no" title="statement not covered" >      if (j &lt; 16) { <span class="cstat-no" title="statement not covered" >F = (B &amp; C) | (~B &amp; D); <span class="cstat-no" title="statement not covered" ></span>g = j; </span>}</span>
+      else <span class="cstat-no" title="statement not covered" >if (j &lt; 32) { <span class="cstat-no" title="statement not covered" >F = (D &amp; B) | (~D &amp; C); <span class="cstat-no" title="statement not covered" ></span>g = (5 * j + 1) % 16; </span>}</span>
+      else <span class="cstat-no" title="statement not covered" >if (j &lt; 48) { <span class="cstat-no" title="statement not covered" >F = B ^ C ^ D; <span class="cstat-no" title="statement not covered" ></span>g = (3 * j + 5) % 16; </span>}</span>
+      else { <span class="cstat-no" title="statement not covered" >F = C ^ (B | ~D); <span class="cstat-no" title="statement not covered" ></span>g = (7 * j) % 16; </span>}
+<span class="cstat-no" title="statement not covered" >      F = (F + A + K[j] + M[g]) &gt;&gt;&gt; 0;</span>
+<span class="cstat-no" title="statement not covered" >      A = D; <span class="cstat-no" title="statement not covered" ></span>D = C; <span class="cstat-no" title="statement not covered" ></span>C = B;</span>
+<span class="cstat-no" title="statement not covered" >      B = (B + ((F &lt;&lt; S[j]) | (F &gt;&gt;&gt; (32 - S[j])))) &gt;&gt;&gt; 0;</span>
+    }
+<span class="cstat-no" title="statement not covered" >    a0 = (a0 + A) &gt;&gt;&gt; 0;</span>
+<span class="cstat-no" title="statement not covered" >    b0 = (b0 + B) &gt;&gt;&gt; 0;</span>
+<span class="cstat-no" title="statement not covered" >    c0 = (c0 + C) &gt;&gt;&gt; 0;</span>
+<span class="cstat-no" title="statement not covered" >    d0 = (d0 + D) &gt;&gt;&gt; 0;</span>
+  }
+&nbsp;
+  // Output as little-endian hex
+  const hex = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(v</span>) =&gt; {</span>
+    const b = <span class="cstat-no" title="statement not covered" >new Uint8Array(4);</span>
+<span class="cstat-no" title="statement not covered" >    new DataView(b.buffer).setUint32(0, v, true);</span>
+<span class="cstat-no" title="statement not covered" >    return Array.from(b).map(<span class="fstat-no" title="function not covered" >x </span>=&gt; <span class="cstat-no" title="statement not covered" >x.toString(16).padStart(2, "0"))</span>.join("");</span>
+  };
+<span class="cstat-no" title="statement not covered" >  return hex(a0) + hex(b0) + hex(c0) + hex(d0);</span>
+}
+&nbsp;
+/* ── Helper: call CF API with JSON response ──────────────────────── */
+async function <span class="fstat-no" title="function not covered" >cfFetch(</span>url, opts = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+  const res = <span class="cstat-no" title="statement not covered" >await fetch(url, opts);</span>
+  const json = <span class="cstat-no" title="statement not covered" >await res.json().catch(<span class="fstat-no" title="function not covered" >()</span> =&gt; (<span class="cstat-no" title="statement not covered" >{})</span>);</span>
+<span class="cstat-no" title="statement not covered" >  return { ok: res.ok, status: res.status, json };</span>
+}
+&nbsp;
+export async function <span class="fstat-no" title="function not covered" >deploy(</span>content, site, settings) {
+  const cfApiToken = <span class="cstat-no" title="statement not covered" >(settings.cfApiToken || "").trim();</span>
+  const cfAccountId = <span class="cstat-no" title="statement not covered" >(settings.cfAccountId || "").trim();</span>
+<span class="cstat-no" title="statement not covered" >  if (!cfApiToken || !cfAccountId) {</span>
+<span class="cstat-no" title="statement not covered" >    return { success: false, error: "Missing Cloudflare API Token or Account ID. Configure in Settings." };</span>
+  }
+<span class="cstat-no" title="statement not covered" >  if (!/^[0-9a-f]{32}$/i.test(cfAccountId)) {</span>
+<span class="cstat-no" title="statement not covered" >    return { success: false, error: `Invalid Account ID: must be exactly 32 hex characters (got ${cfAccountId.length}). Check Settings.` };</span>
+  }
+&nbsp;
+  // Normalize content: string → single file, object → multi-file
+  const fileEntries = <span class="cstat-no" title="statement not covered" >typeof content === "string"</span>
+    ? { "/index.html": content }
+    : Object.fromEntries(
+        Object.entries(content).map(<span class="fstat-no" title="function not covered" >([</span>k, v]) =&gt; <span class="cstat-no" title="statement not covered" >[k.startsWith("/") ? k : `/${k}`, v])</span>
+      );
+&nbsp;
+  const slug = <span class="cstat-no" title="statement not covered" >(site.domain || site.brand || "lp")</span>
+    .toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").slice(0, 40);
+  const projectName = <span class="cstat-no" title="statement not covered" >`lp-${slug}-${(site.id || "x").slice(0, 6)}`;</span>
+  const apiAuth = <span class="cstat-no" title="statement not covered" >{ Authorization: `Bearer ${cfApiToken}` };</span>
+  const cfBase =<span class="cstat-no" title="statement not covered" > getCfApiBase();</span>
+  const projectsUrl = <span class="cstat-no" title="statement not covered" >`${cfBase}/accounts/${cfAccountId}/pages/projects`;</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  try {</span>
+    // ── Step 1: Ensure project exists ──────────────────────────────
+    const checkRes = <span class="cstat-no" title="statement not covered" >await fetch(`${projectsUrl}/${projectName}`, { headers: apiAuth });</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    if (checkRes.status === 404 || !checkRes.ok) {</span>
+      const createRes = <span class="cstat-no" title="statement not covered" >await fetch(projectsUrl, {</span>
+        method: "POST",
+        headers: { ...apiAuth, "Content-Type": "application/json" },
+        body: JSON.stringify({ name: projectName, production_branch: "main" }),
+      });
+<span class="cstat-no" title="statement not covered" >      if (!createRes.ok) {</span>
+        const err = <span class="cstat-no" title="statement not covered" >await createRes.json().catch(<span class="fstat-no" title="function not covered" >()</span> =&gt; (<span class="cstat-no" title="statement not covered" >{})</span>);</span>
+<span class="cstat-no" title="statement not covered" >        if (createRes.status !== 409) {</span>
+<span class="cstat-no" title="statement not covered" >          return { success: false, error: `Create project failed: ${err.errors?.[0]?.message || createRes.statusText}` };</span>
+        }
+      }
+    }
+&nbsp;
+    // ── Step 2: Compute MD5 hashes for all files ─────────────────
+    const encoder = <span class="cstat-no" title="statement not covered" >new TextEncoder();</span>
+    const fileDataMap = <span class="cstat-no" title="statement not covered" >{};</span> // { path: { data, hash } }
+    const allHashes = <span class="cstat-no" title="statement not covered" >[];</span>
+    
+<span class="cstat-no" title="statement not covered" >    for (const [filePath, fileContent] of Object.entries(fileEntries)) {</span>
+      const data = <span class="cstat-no" title="statement not covered" >encoder.encode(fileContent);</span>
+      const hash = <span class="cstat-no" title="statement not covered" >md5(data);</span>
+<span class="cstat-no" title="statement not covered" >      fileDataMap[filePath] = { data, hash };</span>
+<span class="cstat-no" title="statement not covered" >      allHashes.push(hash);</span>
+    }
+&nbsp;
+    // ── Step 3: Get upload JWT token ───────────────────────────────
+    const tokenRes = <span class="cstat-no" title="statement not covered" >await cfFetch(</span>
+      `${projectsUrl}/${projectName}/upload-token`,
+      { headers: apiAuth }
+    );
+<span class="cstat-no" title="statement not covered" >    if (!tokenRes.ok || !tokenRes.json.result?.jwt) {</span>
+<span class="cstat-no" title="statement not covered" >      return { success: false, error: `Failed to get upload token: ${tokenRes.json.errors?.[0]?.message || tokenRes.status}` };</span>
+    }
+    const jwt = <span class="cstat-no" title="statement not covered" >tokenRes.json.result.jwt;</span>
+    const jwtAuth = <span class="cstat-no" title="statement not covered" >{ Authorization: `Bearer ${jwt}`, "Content-Type": "application/json" };</span>
+&nbsp;
+    // ── Step 4: Check which files need uploading ───────────────────
+    const checkMissing = <span class="cstat-no" title="statement not covered" >await cfFetch(</span>
+      `${cfBase}/pages/assets/check-missing`,
+      { method: "POST", headers: jwtAuth, body: JSON.stringify({ hashes: allHashes }) }
+    );
+    const missingHashes = <span class="cstat-no" title="statement not covered" >checkMissing.json?.result || [];</span>
+&nbsp;
+    // ── Step 5: Upload missing files ───────────────────────────────
+<span class="cstat-no" title="statement not covered" >    if (missingHashes.length &gt; 0) {</span>
+      const uploadPayload = <span class="cstat-no" title="statement not covered" >[];</span>
+<span class="cstat-no" title="statement not covered" >      for (const [, file] of Object.entries(fileDataMap)) {</span>
+<span class="cstat-no" title="statement not covered" >        if (!missingHashes.includes(file.hash)) <span class="cstat-no" title="statement not covered" >continue;</span></span>
+        // Convert file content to base64 safely (spread operator fails &gt; 65KB)
+        let b64 = <span class="cstat-no" title="statement not covered" >"";</span>
+        const CHUNK = <span class="cstat-no" title="statement not covered" >0x8000;</span> // 32KB chunks
+<span class="cstat-no" title="statement not covered" >        for (let i = <span class="cstat-no" title="statement not covered" >0;</span> i &lt; file.data.length; i += CHUNK) {</span>
+<span class="cstat-no" title="statement not covered" >          b64 += String.fromCharCode.apply(null, file.data.subarray(i, i + CHUNK));</span>
+        }
+<span class="cstat-no" title="statement not covered" >        b64 = btoa(b64);</span>
+<span class="cstat-no" title="statement not covered" >        uploadPayload.push({</span>
+          key: file.hash,
+          value: b64,
+          metadata: { contentType: "text/html" },
+          base64: true,
+        });
+      }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >      if (uploadPayload.length &gt; 0) {</span>
+        const uploadRes = <span class="cstat-no" title="statement not covered" >await cfFetch(</span>
+          `${cfBase}/pages/assets/upload`,
+          { method: "POST", headers: jwtAuth, body: JSON.stringify(uploadPayload) }
+        );
+<span class="cstat-no" title="statement not covered" >        if (!uploadRes.ok) {</span>
+<span class="cstat-no" title="statement not covered" >          return { success: false, error: `File upload failed: ${uploadRes.json.errors?.[0]?.message || uploadRes.status}` };</span>
+        }
+      }
+    }
+&nbsp;
+    // ── Step 6: Register hashes (upsert) ───────────────────────────
+<span class="cstat-no" title="statement not covered" >    await cfFetch(</span>
+      `${cfBase}/pages/assets/upsert-hashes`,
+      { method: "POST", headers: jwtAuth, body: JSON.stringify({ hashes: allHashes }) }
+    );
+&nbsp;
+    // ── Step 7: Create deployment ──────────────────────────────────
+    const manifest = <span class="cstat-no" title="statement not covered" >{};</span>
+<span class="cstat-no" title="statement not covered" >    for (const [filePath, file] of Object.entries(fileDataMap)) {</span>
+<span class="cstat-no" title="statement not covered" >      manifest[filePath] = file.hash;</span>
+    }
+    const formData = <span class="cstat-no" title="statement not covered" >new FormData();</span>
+<span class="cstat-no" title="statement not covered" >    formData.append("manifest", JSON.stringify(manifest));</span>
+<span class="cstat-no" title="statement not covered" >    formData.append("branch", "main");</span>
+<span class="cstat-no" title="statement not covered" >    formData.append("commit_message", `Deploy ${site.domain || site.brand || "LP"} — ${new Date().toISOString()}`);</span>
+&nbsp;
+    const deployRes = <span class="cstat-no" title="statement not covered" >await fetch(</span>
+      `${projectsUrl}/${projectName}/deployments`,
+      { method: "POST", headers: apiAuth, body: formData }
+    );
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    if (!deployRes.ok) {</span>
+      const errBody = <span class="cstat-no" title="statement not covered" >await deployRes.text().catch(<span class="fstat-no" title="function not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >"")</span>;</span>
+      let errMsg = <span class="cstat-no" title="statement not covered" >`HTTP ${deployRes.status}`;</span>
+<span class="cstat-no" title="statement not covered" >      try {</span>
+        const j = <span class="cstat-no" title="statement not covered" >JSON.parse(errBody);</span>
+<span class="cstat-no" title="statement not covered" >        errMsg = j.errors?.[0]?.message || errMsg;</span>
+      } catch (e) {
+<span class="cstat-no" title="statement not covered" >        console.warn("[CFPages] Failed to parse error response:", e?.message || e);</span>
+<span class="cstat-no" title="statement not covered" >        errMsg = errBody.slice(0, 200) || errMsg;</span>
+      }
+<span class="cstat-no" title="statement not covered" >      return { success: false, error: `Deploy failed: ${errMsg}` };</span>
+    }
+&nbsp;
+    const deployData = <span class="cstat-no" title="statement not covered" >await deployRes.json();</span>
+    const deployId = <span class="cstat-no" title="statement not covered" >deployData.result?.id;</span>
+    const url = <span class="cstat-no" title="statement not covered" >deployData.result?.url || `https://${projectName}.pages.dev`;</span>
+&nbsp;
+    // ═════════════════════════════════════════════════════════════════════
+    // Step 8: Update DNS records if custom domain is configured
+    // ═════════════════════════════════════════════════════════════════════
+    let dnsUpdated = <span class="cstat-no" title="statement not covered" >false;</span>
+    let dnsError = <span class="cstat-no" title="statement not covered" >null;</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    if (site.domain &amp;&amp; cfAccountId &amp;&amp; cfApiToken) {</span>
+<span class="cstat-no" title="statement not covered" >      try {</span>
+        const dnsResult = <span class="cstat-no" title="statement not covered" >await updateCfDns({</span>
+          domain: site.domain,
+          cfAccountId,
+          cfApiToken,
+          deployTarget: "cf-pages",
+          deployUrl: url,
+          proxied: true,
+        });
+<span class="cstat-no" title="statement not covered" >        dnsUpdated = dnsResult.success;</span>
+<span class="cstat-no" title="statement not covered" >        dnsError = dnsResult.error;</span>
+      } catch (e) {
+<span class="cstat-no" title="statement not covered" >        dnsError = e.message;</span>
+      }
+    }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    return {</span>
+      success: true,
+      url,
+      deployId,
+      target: "cf-pages",
+      dnsUpdated,
+      dnsError,
+    };
+  } catch (e) {
+<span class="cstat-no" title="statement not covered" >    return { success: false, error: e.message };</span>
+  }
+}
+&nbsp;</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-02-18T00:24:36.068Z
+            </div>
+        <script src="../../../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../../../sorter.js"></script>
+        <script src="../../../block-navigation.js"></script>
+    </body>
+</html>
+    

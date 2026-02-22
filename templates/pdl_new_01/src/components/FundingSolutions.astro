@@ -1,0 +1,84 @@
+---
+import { Home, HeartPulse, PieChart } from "lucide-astro";
+
+const solutions = [
+    {
+        title: "Home & Auto",
+        subtitle: "Repairs & Maintenance",
+        desc: "Don't let unexpected repairs stall your life. Get the funding you need for urgent home fixes or vehicle maintenance today.",
+        icon: Home,
+        color: "text-accent",
+        bg: "bg-green-50",
+    },
+    {
+        title: "Medical Bills",
+        subtitle: "Health & Wellness",
+        desc: "Healthcare costs shouldn't be a burden. Access quick funding to cover treatment, prescriptions, or emergency medical expenses.",
+        icon: HeartPulse,
+        color: "text-accent",
+        bg: "bg-green-50",
+    },
+    {
+        title: "Debt Relief",
+        subtitle: "Management & Growth",
+        desc: "Consolidate high-interest debt or manage your monthly obligations more effectively with a single, manageable funding solution.",
+        icon: PieChart,
+        color: "text-accent",
+        bg: "bg-green-50",
+    },
+];
+---
+
+<section id="solutions" class="py-24 bg-gray-50 overflow-hidden">
+    <div class="container-custom">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center space-y-4 mb-16">
+                <h2
+                    class="text-[10px] font-black text-accent uppercase tracking-[0.3em]"
+                >
+                    Flexible Funding Solutions
+                </h2>
+                <p
+                    class="text-3xl md:text-4xl font-black text-primary tracking-tight"
+                >
+                    How will you use your <span class="text-accent"
+                        >cash advance?</span>
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {
+                    solutions.map((s) => (
+                        <div class="group p-8 rounded-[2rem] bg-white border border-gray-100 hover:border-accent/30 hover:shadow-premium transition-all duration-300">
+                            <div
+                                class={`w-14 h-14 ${s.bg} ${s.color} rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}
+                            >
+                                <s.icon class="w-8 h-8" />
+                            </div>
+                            <div class="space-y-1 mb-4">
+                                <h3 class="text-xl font-black text-primary">
+                                    {s.title}
+                                </h3>
+                                <p class="text-[10px] font-black text-accent uppercase tracking-widest">
+                                    {s.subtitle}
+                                </p>
+                            </div>
+                            <p class="text-charcoal-light text-sm font-medium leading-relaxed">
+                                {s.desc}
+                            </p>
+                        </div>
+                    ))
+                }
+            </div>
+
+            <div class="mt-12 text-center">
+                <a
+                    href="#apply"
+                    class="btn btn-secondary px-10 py-4 text-sm font-black uppercase tracking-widest hover:border-accent hover:text-accent"
+                >
+                    View All Use Cases
+                </a>
+            </div>
+        </div>
+    </div>
+</section>

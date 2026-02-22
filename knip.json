@@ -1,0 +1,21 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "src/pages/index.astro"
+  ],
+  "project": [
+    "src/**/*.{js,jsx,ts,tsx,astro}"
+  ],
+  "ignore": [
+    ".claude/worktrees/**",
+    ".claude/hooks/**",
+    "apps/**",
+    ".reports/**",
+    "docs/**",
+    "node_modules/**",
+    "dist/**",
+    ".astro/**",
+    "**/*.config.{js,mjs,cjs}",
+    "**/migrations/**"
+  ]
+}

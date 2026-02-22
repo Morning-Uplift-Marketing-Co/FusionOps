@@ -1,0 +1,546 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+// Pre-compute code blocks with escaped curly braces
+const quickStartCode = `curl -X POST https://lp-factory-api.songsawat-w.workers.dev/api/automation/registrar/ping \\
+  -H "Content-Type: application/json" \\
+  -d '{"provider": "internetbs"}'`;
+
+const jsonExample = `{
+  "domain": "example.com",
+  "provider": "internetbs"
+}`;
+
+const bashExample = `curl -X POST https://lp-factory-api.songsawat-w.workers.dev/api/automation/registrar/check \\
+  -H "Content-Type: application/json" \\
+  -d '{"domain": "example.com", "provider": "internetbs"}'`;
+
+const jsExample = `const API = 'https://lp-factory-api.songsawat-w.workers.dev';
+
+async function checkDomain(domain) {
+  const res = await fetch(\`\${API}/api/automation/registrar/check\`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ domain, provider: 'internetbs' }),
+  });
+  return await res.json();
+}
+
+const result = await checkDomain('example.com');
+console.log(result.available ? 'Available!' : 'Taken');`;
+
+const pythonExample = `import requests
+
+API = "https://lp-factory-api.songsawat-w.workers.dev"
+
+def check_domain(domain: str) -> dict:
+    res = requests.post(
+        f"\{API\}/api/automation/registrar/check",
+        json={"domain": domain, "provider": "internetbs"}
+    )
+    return res.json()
+
+result = check_domain("example.com")
+print("Available!" if result["available"] else "Taken")`;
+
+// Helper to escape HTML entities
+const escapeHtml = (str: string) =>
+  str.replace(/&/g, '&amp;')
+     .replace(/</g, '&lt;')
+     .replace(/>/g, '&gt;')
+     .replace(/"/g, '&quot;')
+     .replace(/{/g, '&lbrace;')
+     .replace(/}/g, '&rbrace;');
+---
+
+<Layout title="API Documentation | LP Factory">
+  <div class="docs-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h3>API Docs</h3>
+        <a href="/api/openapi.json" class="openapi-link" target="_blank" rel="noopener">OpenAPI Spec</a>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#overview" class="nav-link">Overview</a>
+        <a href="#authentication" class="nav-link">Authentication</a>
+        <a href="#registrar" class="nav-link">Registrar</a>
+        <a href="#cloudflare" class="nav-link">Cloudflare DNS</a>
+        <a href="#deploy" class="nav-link">Deploy Adapters</a>
+        <a href="#leadingcards" class="nav-link">LeadingCards</a>
+        <a href="#multilogin" class="nav-link">Multilogin</a>
+        <a href="#examples" class="nav-link">Examples</a>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <h1>Automation API</h1>
+      <p class="lead">
+        Programmatic access to LP Factory features. Integrate with automation tools like
+        n8n, Make, Zapier, or build custom workflows.
+      </p>
+
+      <div class="card base-url">
+        <code>https://lp-factory-api.songsawat-w.workers.dev</code>
+      </div>
+
+      <section id="overview">
+        <h2>Overview</h2>
+        <p>
+          The Automation API provides structured endpoints for external tools to interact with
+          LP Factory. All endpoints return JSON with a consistent format containing a <code>success</code> boolean field.
+        </p>
+
+        <h3>Quick Start</h3>
+        <pre><code class="language-bash" set:html={escapeHtml(quickStartCode)}></code></pre>
+      </section>
+
+      <section id="authentication">
+        <h2>Authentication</h2>
+        <p>
+          Authentication is optional. To enable, set the <code>API_SECRET</code> environment variable
+          in your Cloudflare Worker configuration.
+        </p>
+
+        <h3>Bearer Token</h3>
+        <p>When <code>API_SECRET</code> is set, include the header:</p>
+        <pre><code class="language-bash">Authorization: Bearer your-api-secret-here</code></pre>
+
+        <div class="warning">
+          <strong>Warning:</strong> Without <code>API_SECRET</code> set, all endpoints are publicly accessible.
+        </div>
+      </section>
+
+      <section id="registrar">
+        <h2>Registrar API</h2>
+        <p>Domain registration and management via Internet.bs.</p>
+
+        <h3>Endpoints</h3>
+
+        <div class="endpoint">
+          <div class="method-header">
+            <span class="method post">POST</span>
+            <span class="path">/api/automation/registrar/check</span>
+          </div>
+          <p>Check domain availability.</p>
+          <pre><code class="language-json" set:html={escapeHtml(jsonExample)}></code></pre>
+        </div>
+
+        <div class="endpoint">
+          <div class="method-header">
+            <span class="method post">POST</span>
+            <span class="path">/api/automation/registrar/register</span>
+          </div>
+          <p>Register a new domain.</p>
+        </div>
+
+        <div class="endpoint">
+          <div class="method-header">
+            <span class="method put">PUT</span>
+            <span class="path">/api/automation/registrar/nameservers</span>
+          </div>
+          <p>Update domain nameservers.</p>
+        </div>
+
+        <div class="endpoint">
+          <div class="method-header">
+            <span class="method post">POST</span>
+            <span class="path">/api/automation/registrar/import</span>
+          </div>
+          <p>Import all domains from registrar.</p>
+        </div>
+
+        <div class="endpoint">
+          <div class="method-header">
+            <span class="method post">POST</span>
+            <span class="path">/api/automation/registrar/ping</span>
+          </div>
+          <p>Test connection and get account balance.</p>
+        </div>
+      </section>
+
+      <section id="cloudflare">
+        <h2>Cloudflare DNS API</h2>
+        <p>Zone and DNS record management.</p>
+
+        <div class="endpoint">
+          <div class="method-header">
+            <span class="method post">POST</span>
+            <span class="path">/api/automation/cf/zone</span>
+          </div>
+          <p>Create or get a zone.</p>
+        </div>
+
+        <div class="endpoint">
+          <div class="method-header">
+            <span class="method get">GET</span>
+            <span class="path">/api/automation/cf/dns?zoneId=<code>&lbrace;id&rbrace;</code>&cfAccountId=<code>&lbrace;id&rbrace;</code></span>
+          </div>
+          <p>List DNS records.</p>
+        </div>
+
+        <div class="endpoint">
+          <div class="method-header">
+            <span class="method post">POST</span>
+            <span class="path">/api/automation/cf/dns</span>
+          </div>
+          <p>Create DNS record.</p>
+        </div>
+
+        <div class="endpoint">
+          <div class="method-header">
+            <span class="method put">PUT</span>
+            <span class="path">/api/automation/cf/dns</span>
+          </div>
+          <p>Update DNS record.</p>
+        </div>
+
+        <div class="endpoint">
+          <div class="method-header">
+            <span class="method delete">DELETE</span>
+            <span class="path">/api/automation/cf/dns?dnsRecordId=<code>&lbrace;id&rbrace;</code>&zoneId=<code>&lbrace;id&rbrace;</code>&cfAccountId=<code>&lbrace;id&rbrace;</code></span>
+          </div>
+          <p>Delete DNS record.</p>
+        </div>
+      </section>
+
+      <section id="deploy">
+        <h2>Deploy Adapters API</h2>
+        <p>Link deployment platforms.</p>
+
+        <div class="endpoint">
+          <div class="method-header">
+            <span class="method post">POST</span>
+            <span class="path">/api/automation/deploy/vercel</span>
+          </div>
+          <p>Link Vercel project.</p>
+        </div>
+
+        <div class="endpoint">
+          <div class="method-header">
+            <span class="method post">POST</span>
+            <span class="path">/api/automation/deploy/netlify</span>
+          </div>
+          <p>Link Netlify site.</p>
+        </div>
+
+        <div class="endpoint">
+          <div class="method-header">
+            <span class="method post">POST</span>
+            <span class="path">/api/automation/deploy/cf-pages</span>
+          </div>
+          <p>Link Cloudflare Pages project.</p>
+        </div>
+
+        <div class="endpoint">
+          <div class="method-header">
+            <span class="method post">POST</span>
+            <span class="path">/api/automation/deploy/cf-workers</span>
+          </div>
+          <p>Link Cloudflare Workers script.</p>
+        </div>
+      </section>
+
+      <section id="leadingcards">
+        <h2>LeadingCards API</h2>
+        <p>Virtual card management. Requires <code>lcToken</code> configured in settings.</p>
+
+        <div class="endpoint">
+          <div class="method-header">
+            <span class="method post">POST</span>
+            <span class="path">/api/automation/lc/create</span>
+          </div>
+          <p>Create virtual card.</p>
+        </div>
+
+        <div class="endpoint">
+          <div class="method-header">
+            <span class="method post">POST</span>
+            <span class="path">/api/automation/lc/block</span>
+          </div>
+          <p>Block card.</p>
+        </div>
+
+        <div class="endpoint">
+          <div class="method-header">
+            <span class="method post">POST</span>
+            <span class="path">/api/automation/lc/activate</span>
+          </div>
+          <p>Activate card.</p>
+        </div>
+
+        <div class="endpoint">
+          <div class="method-header">
+            <span class="method post">POST</span>
+            <span class="path">/api/automation/lc/change_limit</span>
+          </div>
+          <p>Change card limit.</p>
+        </div>
+      </section>
+
+      <section id="multilogin">
+        <h2>Multilogin API</h2>
+        <p>Browser profile automation. Requires Multilogin credentials configured.</p>
+
+        <div class="endpoint">
+          <div class="method-header">
+            <span class="method post">POST</span>
+            <span class="path">/api/automation/ml/signin</span>
+          </div>
+          <p>Sign in and store token.</p>
+        </div>
+
+        <div class="endpoint">
+          <div class="method-header">
+            <span class="method post">POST</span>
+            <span class="path">/api/automation/ml/refresh_token</span>
+          </div>
+          <p>Refresh authentication token.</p>
+        </div>
+
+        <div class="endpoint">
+          <div class="method-header">
+            <span class="method get">GET</span>
+            <span class="path">/api/automation/ml/profiles</span>
+          </div>
+          <p>List all profiles.</p>
+        </div>
+
+        <div class="endpoint">
+          <div class="method-header">
+            <span class="method post">POST</span>
+            <span class="path">/api/automation/ml/profiles</span>
+          </div>
+          <p>Create new profile.</p>
+        </div>
+
+        <div class="endpoint">
+          <div class="method-header">
+            <span class="method post">POST</span>
+            <span class="path">/api/automation/ml/profiles/start</span>
+          </div>
+          <p>Start profile and get connection URL.</p>
+        </div>
+
+        <div class="endpoint">
+          <div class="method-header">
+            <span class="method post">POST</span>
+            <span class="path">/api/automation/ml/profiles/stop</span>
+          </div>
+          <p>Stop running profile.</p>
+        </div>
+
+        <div class="endpoint">
+          <div class="method-header">
+            <span class="method post">POST</span>
+            <span class="path">/api/automation/ml/profiles/clone</span>
+          </div>
+          <p>Clone existing profile.</p>
+        </div>
+      </section>
+
+      <section id="examples">
+        <h2>Examples</h2>
+
+        <h3>Bash (cURL)</h3>
+        <pre><code class="language-bash" set:html={escapeHtml(bashExample)}></code></pre>
+
+        <h3>JavaScript (Node.js)</h3>
+        <pre><code class="language-js" set:html={escapeHtml(jsExample)}></code></pre>
+
+        <h3>Python</h3>
+        <pre><code class="language-python" set:html={escapeHtml(pythonExample)}></code></pre>
+      </section>
+    </main>
+  </div>
+</Layout>
+
+<style>
+  .docs-container {
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    gap: 32px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px 20px;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    position: sticky;
+    top: 32px;
+    align-self: start;
+  }
+
+  .sidebar-header {
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border, #e5e7eb);
+    margin-bottom: 16px;
+  }
+
+  .sidebar-header h3 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .openapi-link {
+    font-size: 11px;
+    padding: 4px 8px;
+    background: var(--accent-bg, #f0f9ff);
+    color: var(--accent, #0284c7);
+    border-radius: 4px;
+    text-decoration: none;
+  }
+
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .nav-link {
+    padding: 8px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--muted, #6b7280);
+    font-size: 13px;
+    transition: all 0.15s ease;
+  }
+
+  .nav-link:hover {
+    background: var(--hover-bg, #f3f4f6);
+    color: var(--fg, #111827);
+  }
+
+  .content h1 {
+    font-size: 32px;
+    margin: 0 0 8px 0;
+    font-weight: 700;
+  }
+
+  .lead {
+    font-size: 16px;
+    color: var(--muted, #6b7280);
+    margin-bottom: 24px;
+    line-height: 1.6;
+  }
+
+  .base-url {
+    background: var(--code-bg, #1f2937);
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 32px;
+  }
+
+  .base-url code {
+    color: #10b981;
+    font-family: 'SF Mono', Consolas, monospace;
+    font-size: 13px;
+  }
+
+  .content h2 {
+    font-size: 24px;
+    margin: 40px 0 16px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border, #e5e7eb);
+  }
+
+  .content h3 {
+    font-size: 18px;
+    margin: 24px 0 12px 0;
+  }
+
+  .content p {
+    line-height: 1.7;
+    color: var(--muted, #6b7280);
+    margin-bottom: 12px;
+  }
+
+  .endpoint {
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .method-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .method {
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: monospace;
+    text-transform: uppercase;
+  }
+
+  .method.get { background: #dbeafe; color: #1d4ed8; }
+  .method.post { background: #dcfce7; color: #16a34a; }
+  .method.put { background: #fef9c3; color: #ca8a04; }
+  .method.delete { background: #fecaca; color: #dc2626; }
+
+  .path {
+    font-family: 'SF Mono', Consolas, monospace;
+    font-size: 13px;
+    color: var(--fg, #111827);
+  }
+
+  .path code {
+    font-size: inherit;
+    color: inherit;
+    background: transparent;
+    padding: 0;
+  }
+
+  pre {
+    background: var(--code-bg, #1f2937);
+    padding: 12px 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 8px 0 16px 0;
+  }
+
+  pre code {
+    color: #e5e7eb;
+    font-family: 'SF Mono', Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .warning {
+    background: #fef3c7;
+    border-left: 4px solid #f59e0b;
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin: 16px 0;
+  }
+
+  .warning strong {
+    color: #92400e;
+  }
+
+  @media (max-width: 768px) {
+    .docs-container {
+      grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+      position: static;
+    }
+
+    .sidebar-nav {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+  }
+</style>

@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "beforePrompt": [
+      "node ~/.claude/hooks/skill-activation-hook.js"
+    ]
+  },
+
+  "permissions": {
+    "external": true
+  },
+
+  "logging": {
+    "level": "info"
+  }
+}

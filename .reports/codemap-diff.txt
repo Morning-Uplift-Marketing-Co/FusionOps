@@ -1,0 +1,151 @@
+# Codebase Diff Report
+# Generated: 2026-02-16
+# Project: LP Factory V2 (ppc-claude-web)
+
+## Summary
+- Total files analyzed: 43 source files
+- New codemaps created: 4 (INDEX.md, frontend.md, backend.md, data.md, integrations.md)
+- Documentation lines: ~800
+
+## File Structure
+
+### Source Files by Directory
+
+src/components/ (13 files):
+- AppRoot.jsx - React StrictMode wrapper
+- Dashboard.jsx - Main landing page with metrics
+- Sites.jsx - Site management & multi-target deployment
+- Wizard.jsx - 6-step LP creation wizard
+- VariantStudio.jsx - AI variant generation
+- OpsCenter.jsx - Operations management (large file, 100KB+)
+- Settings.jsx - Configuration page
+- DeployHistory.jsx - Deployment log viewer
+- Atoms.jsx - Reusable UI components (Card, Inp, Btn, etc.)
+- OpsCenter/deploy/ - Sub-components for deployment UI
+  - DeployTab.jsx
+  - QuickActionsPanel.jsx
+  - DnsSection.jsx
+  - DnsRecordModal.jsx
+  - DeploySection.jsx
+  - DeployHistory.jsx
+  - DeployDashboard.jsx
+- ErrorBoundary.jsx
+- Sidebar.jsx
+- TopBar.jsx
+
+src/pages/ (2 files):
+- index.astro - Main entry point
+- docs/index.astro - Documentation page
+
+src/layouts/ (1 file):
+- Layout.astro - Base layout wrapper
+
+src/services/ (7 files):
+- api.js - Legacy API wrapper (fetch-based)
+- neon.js - Neon Postgres client (browser-compatible)
+- leadingCards.js - LeadingCards API client
+- multilogin.js - Multilogin X API (direct integration)
+- registrar.js - Domain registrar API
+- cloudflare-dns.js - Cloudflare DNS API
+- cloudflare-zone.js - Cloudflare Zones API
+
+src/utils/ (2 core + 6 deployers):
+- index.js - LS helper, uid, now, hsl
+- api-proxy.js - API proxy utilities
+- deployers/index.js - Deploy orchestrator
+- deployers/cf-pages.js - Cloudflare Pages (P1)
+- deployers/netlify.js - Netlify (P2)
+- deployers/vercel.js - Vercel (P3) [NEW - untracked]
+- deployers/cf-workers.js - CF Workers Sites (P4)
+- deployers/s3-cloudfront.js - AWS S3 (P5)
+- deployers/vps-ssh.js - VPS SSH (P6)
+- lp-generator.js - Static HTML generation
+- astro-generator.js - Astro project scaffolding
+- risk-engine.js - Correlation risk detection
+- gtm-exporter.js - GTM container export
+
+src/constants/ (1 file):
+- index.js - Theme, loan types, colors, fonts, DNS templates
+
+apps/api-worker/ (1 file):
+- src/worker.js - Cloudflare Workers backend with D1 binding
+
+## Recent Changes (v2.1.0)
+
+Since v2.0.0 (commit 42c4695):
+- PageSpeed optimization fixes
+- Meta tag improvements for SEO
+- Changelog UI component added
+- Multilogin X API integration
+- Ops Center deployment dashboard
+- DNS record management UI
+- Deploy targets expanded (Vercel added)
+
+## New Files (Untracked)
+
+- src/utils/deployers/vercel.js - Vercel deployment module
+- src/utils/cf-zone.js - Cloudflare Zones utility
+- src/utils/registrar.js - Registrar integration utility
+- apps/api-worker/migrations/ - Database migrations
+
+## Modified Files (Staged)
+
+- src/App.jsx - Main app state management
+- src/components/Atoms.jsx - UI components
+- src/components/OpsCenter.jsx - Operations center
+- src/constants/index.js - App constants
+- src/utils/api-proxy.js - API proxy
+- src/utils/deployers/cf-pages.js - CF Pages deployer
+- src/utils/deployers/cf-workers.js - CF Workers deployer
+- src/utils/deployers/index.js - Deploy orchestrator
+- src/utils/deployers/netlify.js - Netlify deployer
+
+## Key Architectural Decisions
+
+1. **Dual Data Storage**: Neon Postgres (primary) + D1 (legacy) + localStorage (fallback)
+2. **Multi-Target Deployment**: 6 deployment targets with unified interface
+3. **Direct Service Integration**: Multilogin X directly from browser (no proxy needed)
+4. **Islands Architecture**: Astro shell + React interactive components
+5. **Worker Proxy**: SSH deployment via Cloudflare Workers (browser cannot do SSH directly)
+
+## Dependencies
+
+Production:
+- astro (framework)
+- react (UI)
+- @neondatabase/serverless (database)
+
+Dev:
+- @tailwindcss/vite
+- typescript
+
+## Deploy Target Matrix
+
+| Target | Priority | Status | Config Required |
+|--------|----------|--------|-----------------|
+| CF Pages | P1 | Active | cfApiToken, cfAccountId |
+| Netlify | P2 | Active | netlifyToken |
+| Vercel | P3 | New | vercelToken |
+| CF Workers | P4 | Active | cfApiToken, cfAccountId |
+| S3+CF | P5 | Active | AWS credentials |
+| VPS SSH | P6 | Active | SSH credentials + Worker proxy |
+
+## External APIs
+
+1. Anthropic Claude - AI copy generation
+2. Gemini - AI asset generation
+3. LeadingCards - Virtual card management
+4. Multilogin X - Browser profiles
+5. Cloudflare - DNS, Pages, Workers
+6. Neon - Serverless Postgres
+7. Netlify - Deployment
+8. Vercel - Deployment (new)
+9. AWS S3 - Static hosting
+10. Domain registrars - Namecheap, GoDaddy, etc.
+
+## Notes
+
+- No previous codemaps existed (first documentation generation)
+- All documentation generated from actual source code analysis
+- Total documentation: ~5 files, ~800 lines
+- Coverage: All major modules documented

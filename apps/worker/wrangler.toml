@@ -1,0 +1,44 @@
+# ============================================================
+# Wrangler Configuration — LP Factory Callback Worker
+# ============================================================
+# Supports multi-account via route parameters.
+# Each account has its own callback token stored in D1.
+# ============================================================
+
+name = "lp-factory-callback"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Environment variables
+[vars]
+ENVIRONMENT = "production"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "ppc-gen-claude"
+database_id = "7d31d941-f863-46f5-99c2-2179de821573" 
+
+# Worker routes — attach to your domains
+# Uncomment and configure per domain:
+#
+# [[routes]]
+# pattern = "api.yourdomain1.com/*"
+# zone_name = "yourdomain1.com"
+#
+# [[routes]]
+# pattern = "api.yourdomain2.com/*"
+# zone_name = "yourdomain2.com"
+
+# --- Staging environment override ---
+[env.staging]
+name = "lp-factory-worker-staging"
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "lp-factory-db-staging"
+database_id = "YOUR_STAGING_D1_DATABASE_ID"

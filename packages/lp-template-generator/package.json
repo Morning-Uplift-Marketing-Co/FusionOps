@@ -1,0 +1,38 @@
+{
+  "name": "@lp-factory/template-generator",
+  "version": "1.0.0",
+  "description": "Astro landing page template generator for LP Factory",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "lp-gen": "bin/lp-gen.js"
+  },
+  "exports": {
+    ".": "./src/index.js",
+    "./core": "./src/core/index.js",
+    "./templates": "./src/templates/index.js"
+  },
+  "scripts": {
+    "test": "node src/cli.js --help",
+    "test:classic": "node src/cli.js --template classic --config '{\"brand\":\"Test\",\"amountMin\":100,\"amountMax\":5000}'",
+    "test:pdl": "node src/cli.js --template pdl-loans-v1 --config '{\"brand\":\"PDL Test\",\"amountMin\":100,\"amountMax\":5000}'"
+  },
+  "keywords": [
+    "astro",
+    "template",
+    "landing-page",
+    "generator"
+  ],
+  "author": "LP Factory",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "src/**/*",
+    "bin/**/*",
+    "README.md"
+  ]
+}

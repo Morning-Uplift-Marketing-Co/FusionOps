@@ -1,0 +1,66 @@
+
+    Directory: F:\AI_Workspace\astro_test\virtual-visual\src
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+d----           20/2/2569    18:45                assets
+d----           22/2/2569     0:10                compon
+                                                  ents
+d----           20/2/2569    18:45                layout
+                                                  s
+d----           20/2/2569    18:54                pages
+d----           22/2/2569     0:08                styles
+
+    Directory: F:\AI_Workspace\astro_test\virtual-visual\src\assets
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a---           29/1/2569    22:35           2914 astro.
+                                                  svg
+-a---           29/1/2569    22:35           1454 backgr
+                                                  ound.s
+                                                  vg
+
+    Directory: F:\AI_Workspace\astro_test\virtual-visual\src\components
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a---           22/2/2569     0:10           7619 HeroSe
+                                                  ction.
+                                                  astro
+-a---           29/1/2569    22:35           4921 Welcom
+                                                  e.astr
+                                                  o
+
+    Directory: F:\AI_Workspace\astro_test\virtual-visual\src\layouts
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a---           22/2/2569     0:08           1899 Layout
+                                                  .astro
+
+    Directory: F:\AI_Workspace\astro_test\virtual-visual\src\pages
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a---           20/2/2569    18:54           2915 ccpa.a
+                                                  stro
+-a---           20/2/2569    18:53           7805 contac
+                                                  t.astr
+                                                  o
+-a---           20/2/2569    18:54           2388 econse
+                                                  nt.ast
+                                                  ro
+-a---           22/2/2569     0:08           1404 index.
+                                                  astro
+-a---           20/2/2569    18:53           4901 privac
+                                                  y.astr
+                                                  o
+-a---           20/2/2569    18:53           4311 rates.
+                                                  astro
+-a---           20/2/2569    18:54           3041 terms.
+                                                  astro
+-a---           20/2/2569    18:54           1854 unsubs
+                                                  cribe.
+                                                  astro
+

@@ -1,0 +1,6 @@
+﻿2026-02-22T00:30:51.8889026Z ##[group]Run set -euo pipefail
+2026-02-22T00:30:51.8890366Z [36;1mset -euo pipefail[0m
+2026-02-22T00:30:51.8891732Z [36;1mM="sites/c00f0f47b7ce4d47/deploy-manifest.json"[0m
+2026-02-22T00:30:51.8893656Z [36;1mecho "providers=$(jq -c '[.targets[].provider]' "$M")" >> "$GITHUB_OUTPUT"[0m
+2026-02-22T00:30:51.8931406Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-02-22T00:30:51.8933142Z ##[endgroup]

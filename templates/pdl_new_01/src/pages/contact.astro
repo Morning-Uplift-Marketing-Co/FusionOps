@@ -1,0 +1,153 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Navbar from "../components/Navbar.astro";
+import Footer from "../components/Footer.astro";
+import { Mail, Phone, MapPin, Send } from "lucide-astro";
+
+const title = "Contact Us | ElasticCredits";
+---
+
+<Layout title={title}>
+    <Navbar />
+    <main class="pt-32 pb-20 bg-background-alt min-h-screen">
+        <div class="container-custom">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+                <!-- Info -->
+                <div class="space-y-12">
+                    <div class="space-y-6">
+                        <h1
+                            class="text-5xl md:text-7xl font-black text-primary leading-tight"
+                        >
+                            Get in <br /><span class="text-accent">Touch.</span>
+                        </h1>
+                        <p
+                            class="text-xl text-charcoal-light font-medium max-w-md"
+                        >
+                            Our team is here to help with any questions about
+                            our service. We typically respond within 24 hours.
+                        </p>
+                    </div>
+
+                    <div class="space-y-8">
+                        <div class="flex items-center gap-6 group">
+                            <div
+                                class="w-14 h-14 bg-white rounded-2xl shadow-soft flex items-center justify-center text-accent group-hover:bg-accent group-hover:text-white transition-all duration-300"
+                            >
+                                <Mail class="w-7 h-7" />
+                            </div>
+                            <div>
+                                <div
+                                    class="text-xs font-black text-charcoal/40 uppercase tracking-widest mb-1"
+                                >
+                                    Email Us
+                                </div>
+                                <div class="text-lg font-bold text-primary">
+                                    support@elasticcredits.com
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-6 group">
+                            <div
+                                class="w-14 h-14 bg-white rounded-2xl shadow-soft flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300"
+                            >
+                                <Phone class="w-7 h-7" />
+                            </div>
+                            <div>
+                                <div
+                                    class="text-xs font-black text-charcoal/40 uppercase tracking-widest mb-1"
+                                >
+                                    Call Us
+                                </div>
+                                <div class="text-lg font-bold text-primary">
+                                    1-800-555-0199
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-6 group">
+                            <div
+                                class="w-14 h-14 bg-white rounded-2xl shadow-soft flex items-center justify-center text-purple-500 group-hover:bg-purple-500 group-hover:text-white transition-all duration-300"
+                            >
+                                <MapPin class="w-7 h-7" />
+                            </div>
+                            <div>
+                                <div
+                                    class="text-xs font-black text-charcoal/40 uppercase tracking-widest mb-1"
+                                >
+                                    Office
+                                </div>
+                                <div class="text-lg font-bold text-primary">
+                                    123 Financial Plaza, Dallas, TX 75201
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form -->
+                <div
+                    class="bg-white p-10 md:p-12 rounded-[2.5rem] shadow-premium border border-gray-100"
+                >
+                    <form class="space-y-6">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <label
+                                    class="text-xs font-black text-primary uppercase tracking-widest ml-1"
+                                    >First Name</label
+                                >
+                                <input
+                                    type="text"
+                                    class="w-full px-5 py-4 bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-accent focus:bg-white outline-none transition-all"
+                                    required
+                                />
+                            </div>
+                            <div class="space-y-2">
+                                <label
+                                    class="text-xs font-black text-primary uppercase tracking-widest ml-1"
+                                    >Last Name</label
+                                >
+                                <input
+                                    type="text"
+                                    class="w-full px-5 py-4 bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-accent focus:bg-white outline-none transition-all"
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <label
+                                class="text-xs font-black text-primary uppercase tracking-widest ml-1"
+                                >Email Address</label
+                            >
+                            <input
+                                type="email"
+                                class="w-full px-5 py-4 bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-accent focus:bg-white outline-none transition-all"
+                                required
+                            />
+                        </div>
+                        <div class="space-y-2">
+                            <label
+                                class="text-xs font-black text-primary uppercase tracking-widest ml-1"
+                                >Message</label
+                            >
+                            <textarea
+                                rows="5"
+                                class="w-full px-5 py-4 bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-accent focus:bg-white outline-none transition-all resize-none"
+                                required></textarea>
+                        </div>
+                        <button
+                            type="submit"
+                            class="btn btn-primary w-full py-5 text-xl uppercase tracking-widest group"
+                        >
+                            Send Message
+                            <Send
+                                class="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform"
+                            />
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+    <Footer />
+</Layout>

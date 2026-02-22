@@ -1,0 +1,15 @@
+## UI Pro Max Stack Guidelines
+**Stack:** html-tailwind | **Query:** landing page
+**Source:** stacks/html-tailwind.csv | **Found:** 1 results
+
+### Result 1
+- **Category:** Animation
+- **Guideline:** Limit bounce animations
+- **Description:** Continuous bounce is distracting and causes motion sickness
+- **Do:** Use animate-bounce sparingly on CTAs only
+- **Don't:** Multiple bounce animations on page
+- **Code Good:** Single CTA with animate-bounce
+- **Code Bad:** 5+ elements with animate-bounce
+- **Severity:** High
+- **Docs URL:** 
+

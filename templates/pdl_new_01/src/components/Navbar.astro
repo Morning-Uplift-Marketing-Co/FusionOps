@@ -1,0 +1,104 @@
+---
+import { Menu, X, ShieldCheck } from "lucide-astro";
+---
+
+<nav
+    class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm"
+    id="main-nav"
+>
+    <div class="container-custom py-4 flex items-center justify-between">
+        <a href="/" class="flex items-center gap-2 group">
+            <div
+                class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white group-hover:bg-accent transition-colors"
+            >
+                <ShieldCheck class="w-6 h-6" aria-hidden="true" />
+            </div>
+            <span class="text-xl font-black text-primary tracking-tight"
+                >Elastic<span class="text-accent">Credits</span></span
+            >
+        </a>
+
+        <div class="hidden md:flex items-center gap-8">
+            <a
+                href="/#features"
+                class="text-sm font-bold text-charcoal/80 hover:text-accent transition-colors uppercase tracking-widest"
+                >How It Works</a
+            >
+            <a
+                href="/rates"
+                class="text-sm font-bold text-charcoal/80 hover:text-accent transition-colors uppercase tracking-widest"
+                >Rates & Terms</a
+            >
+            <a
+                href="/contact"
+                class="text-sm font-bold text-charcoal/80 hover:text-accent transition-colors uppercase tracking-widest"
+                >Contact</a
+            >
+            <a
+                href="/#apply"
+                class="btn btn-primary text-xs px-6 py-2.5 uppercase tracking-widest"
+                >Apply Now</a
+            >
+        </div>
+
+        <button
+            class="md:hidden text-primary p-2 hover:bg-gray-50 rounded-lg transition-colors"
+            id="mobile-menu-btn"
+            aria-label="Toggle Menu"
+        >
+            <Menu id="menu-icon" class="w-8 h-8" aria-hidden="true" />
+            <X id="close-icon" class="w-8 h-8 hidden" />
+        </button>
+    </div>
+
+    <!-- Mobile Menu -->
+    <div
+        class="hidden md:hidden bg-white border-t border-gray-100 p-6 space-y-4 shadow-xl"
+        id="mobile-menu"
+    >
+        <a
+            href="/#features"
+            class="block text-lg font-bold text-primary py-3 border-b border-gray-50"
+            >How It Works</a
+        >
+        <a
+            href="/rates"
+            class="block text-lg font-bold text-primary py-3 border-b border-gray-50"
+            >Rates & Terms</a
+        >
+        <a
+            href="/contact"
+            class="block text-lg font-bold text-primary py-3 border-b border-gray-50"
+            >Contact Us</a
+        >
+        <a
+            href="/#apply"
+            class="btn btn-primary w-full py-4 uppercase tracking-widest mt-4"
+            >Get Started</a
+        >
+    </div>
+</nav>
+
+<script>
+    const nav = document.getElementById("main-nav");
+    const mobileBtn = document.getElementById("mobile-menu-btn");
+    const mobileMenu = document.getElementById("mobile-menu");
+    const menuIcon = document.getElementById("menu-icon");
+    const closeIcon = document.getElementById("close-icon");
+
+    window.addEventListener("scroll", () => {
+        if (window.scrollY > 20) {
+            nav?.classList.add("py-2");
+            nav?.classList.remove("py-4");
+        } else {
+            nav?.classList.remove("py-2");
+            nav?.classList.add("py-4");
+        }
+    });
+
+    mobileBtn?.addEventListener("click", () => {
+        mobileMenu?.classList.toggle("hidden");
+        menuIcon?.classList.toggle("hidden");
+        closeIcon?.classList.toggle("hidden");
+    });
+</script>

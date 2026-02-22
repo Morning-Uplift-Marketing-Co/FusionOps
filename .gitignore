@@ -1,0 +1,24 @@
+node_modules
+dist
+.env
+.env.local
+.env.production
+
+# Astro
+.astro/
+
+# Wrangler
+.wrangler/
+.dev.vars
+
+# OS
+.DS_Store
+Thumbs.db
+.claude/
+.windsurf/
+.planning/
+logs/
+*.zip
+test-artifacts/
+node_modules/
+dist/

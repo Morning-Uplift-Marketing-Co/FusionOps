@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#001F3F;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#003366;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Main Shield Shape -->
+  <path d="M50 5 L10 20 L10 50 C10 75 50 95 50 95 C50 95 90 75 90 50 L90 20 L50 5Z" fill="url(#shieldGrad)" />
+  <!-- Inner Detail / Glow -->
+  <path d="M50 15 L22 25.5 L22 50 C22 68 50 83 50 83 C50 83 78 68 78 50 L78 25.5 L50 15Z" fill="#22c55e" opacity="0.8" />
+  <!-- Center Accent -->
+  <path d="M50 30 L50 70 M35 50 L65 50" stroke="white" stroke-width="8" stroke-linecap="round" />
+</svg>

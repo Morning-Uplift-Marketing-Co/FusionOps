@@ -1,0 +1,43 @@
+﻿2026-02-22T00:31:24.5568776Z ##[group]Run set -euo pipefail
+2026-02-22T00:31:24.5569118Z [36;1mset -euo pipefail[0m
+2026-02-22T00:31:24.5569343Z [36;1mDEPLOY_ID='0e31f3c5da1b'[0m
+2026-02-22T00:31:24.5569819Z [36;1mRUN_URL='https://github.com/Morning-Uplift-Marketing-Co/lp-factory-core/actions/runs/22267265839'[0m
+2026-02-22T00:31:24.5570285Z [36;1mPROD_URL=''[0m
+2026-02-22T00:31:24.5570516Z [36;1mif [ -z "$PROD_URL" ]; then PROD_URL=''; fi[0m
+2026-02-22T00:31:24.5570827Z [36;1mif [ -z "$PROD_URL" ]; then PROD_URL=''; fi[0m
+2026-02-22T00:31:24.5571141Z [36;1mif [ -z "$PROD_URL" ]; then PROD_URL="$RUN_URL"; fi[0m
+2026-02-22T00:31:24.5571437Z [36;1mSTATUS='success'[0m
+2026-02-22T00:31:24.5571676Z [36;1mif [ "$STATUS" = "success" ]; then[0m
+2026-02-22T00:31:24.5571937Z [36;1m  FINAL_STATUS='success'[0m
+2026-02-22T00:31:24.5572161Z [36;1m  ERROR_MSG=''[0m
+2026-02-22T00:31:24.5572405Z [36;1melif [ "$STATUS" = "cancelled" ]; then[0m
+2026-02-22T00:31:24.5572905Z [36;1m  FINAL_STATUS='failed'[0m
+2026-02-22T00:31:24.5573171Z [36;1m  ERROR_MSG='Workflow cancelled'[0m
+2026-02-22T00:31:24.5573409Z [36;1melse[0m
+2026-02-22T00:31:24.5573582Z [36;1m  FINAL_STATUS='failed'[0m
+2026-02-22T00:31:24.5573810Z [36;1m  ERROR_MSG='Workflow failed'[0m
+2026-02-22T00:31:24.5574039Z [36;1mfi[0m
+2026-02-22T00:31:24.5574192Z [36;1m[0m
+2026-02-22T00:31:24.5574782Z [36;1mBODY=$(jq -n --arg status "$FINAL_STATUS" --arg url "$PROD_URL" --arg err "$ERROR_MSG" --arg run "$RUN_URL" '{status:$status, url:$url, errorMessage:$err, config:{runUrl:$run}}')[0m
+2026-02-22T00:31:24.5575421Z [36;1m[0m
+2026-02-22T00:31:24.5575587Z [36;1mAUTH_HEADER=""[0m
+2026-02-22T00:31:24.5575797Z [36;1mif [ -n "${API_SECRET:-}" ]; then[0m
+2026-02-22T00:31:24.5576400Z [36;1m  AUTH_HEADER="Authorization: ***"[0m
+2026-02-22T00:31:24.5576725Z [36;1mfi[0m
+2026-02-22T00:31:24.5576884Z [36;1m[0m
+2026-02-22T00:31:24.5577061Z [36;1mif [ -n "$AUTH_HEADER" ]; then[0m
+2026-02-22T00:31:24.5577427Z [36;1m  curl -sS -X PATCH "${API_BASE}/api/ops/deployments/${DEPLOY_ID}" \[0m
+2026-02-22T00:31:24.5577838Z [36;1m    -H "Content-Type: application/json" \[0m
+2026-02-22T00:31:24.5578112Z [36;1m    -H "$AUTH_HEADER" \[0m
+2026-02-22T00:31:24.5578340Z [36;1m    --data "$BODY"[0m
+2026-02-22T00:31:24.5578547Z [36;1melse[0m
+2026-02-22T00:31:24.5578811Z [36;1m  curl -sS -X PATCH "${API_BASE}/api/ops/deployments/${DEPLOY_ID}" \[0m
+2026-02-22T00:31:24.5579186Z [36;1m    -H "Content-Type: application/json" \[0m
+2026-02-22T00:31:24.5579445Z [36;1m    --data "$BODY"[0m
+2026-02-22T00:31:24.5579647Z [36;1mfi[0m
+2026-02-22T00:31:24.5609390Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-02-22T00:31:24.5609716Z env:
+2026-02-22T00:31:24.5609975Z   API_BASE: https://lp-factory-api.songsawat-w.workers.dev
+2026-02-22T00:31:24.5610282Z   API_SECRET: 
+2026-02-22T00:31:24.5610455Z ##[endgroup]
+2026-02-22T00:31:24.9834192Z {"success":true}

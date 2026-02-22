@@ -1,0 +1,108 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+}
+
+@layer base {
+  :root {
+    --primary: 350 75% 38%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 200 70% 45%;
+    --secondary-foreground: 0 0% 100%;
+    --accent: 40 90% 55%;
+    --accent-foreground: 0 0% 100%;
+    --background: 350 15% 97%;
+    --foreground: 350 40% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 350 40% 12%;
+    --muted: 350 15% 95%;
+    --muted-foreground: 350 16% 47%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 350 32% 91%;
+    --input: 350 32% 91%;
+    --ring: 350 75% 38%;
+    --radius: 1rem;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: 'Lexend', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  .btn-cta {
+    @apply inline-flex items-center justify-center gap-2
+      text-white font-bold text-lg
+      h-14 px-8 rounded-xl
+      shadow-cta
+      transition-all duration-200
+      hover:shadow-xl
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
+      active:scale-[0.98]
+      disabled:opacity-50 disabled:pointer-events-none;
+    background: linear-gradient(135deg, hsl(40 90% 55%) 0%, hsl(40 90% 45%) 100%);
+  }
+  .btn-cta:hover {
+    transform: scale(1.02);
+  }
+
+  .card-elevated {
+    @apply bg-card rounded-xl border border-border shadow-card p-6
+      transition-all duration-300
+      hover:shadow-lg;
+  }
+  .card-elevated:hover {
+    transform: translateY(-2px);
+  }
+
+  .section-padding {
+    @apply py-16 md:py-24;
+  }
+
+  .glass-card {
+    @apply bg-white/80 border border-white/60 rounded-2xl shadow-lg;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  /* Native FAQ accordion styling */
+  .faq-details[open] {
+    @apply border-primary/20 shadow-sm;
+    background: hsl(var(--primary) / 0.02);
+  }
+
+  .faq-details summary::-webkit-details-marker,
+  .faq-details summary::marker {
+    display: none;
+  }
+
+  .faq-details summary {
+    list-style: none;
+  }
+}

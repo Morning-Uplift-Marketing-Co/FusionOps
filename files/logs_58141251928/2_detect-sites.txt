@@ -1,0 +1,141 @@
+﻿2026-02-22T00:30:31.2663655Z Current runner version: '2.331.0'
+2026-02-22T00:30:31.2686150Z ##[group]Runner Image Provisioner
+2026-02-22T00:30:31.2686918Z Hosted Compute Agent
+2026-02-22T00:30:31.2687455Z Version: 20260123.484
+2026-02-22T00:30:31.2688120Z Commit: 6bd6555ca37d84114959e1c76d2c01448ff61c5d
+2026-02-22T00:30:31.2688815Z Build Date: 2026-01-23T19:41:17Z
+2026-02-22T00:30:31.2689449Z Worker ID: {966797af-60c7-4fd7-89e0-1e84acf8e54e}
+2026-02-22T00:30:31.2690232Z Azure Region: westus
+2026-02-22T00:30:31.2690776Z ##[endgroup]
+2026-02-22T00:30:31.2692115Z ##[group]Operating System
+2026-02-22T00:30:31.2692893Z Ubuntu
+2026-02-22T00:30:31.2693331Z 24.04.3
+2026-02-22T00:30:31.2693787Z LTS
+2026-02-22T00:30:31.2694283Z ##[endgroup]
+2026-02-22T00:30:31.2694803Z ##[group]Runner Image
+2026-02-22T00:30:31.2695333Z Image: ubuntu-24.04
+2026-02-22T00:30:31.2696061Z Version: 20260201.15.1
+2026-02-22T00:30:31.2697210Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260201.15/images/ubuntu/Ubuntu2404-Readme.md
+2026-02-22T00:30:31.2698711Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260201.15
+2026-02-22T00:30:31.2699558Z ##[endgroup]
+2026-02-22T00:30:31.2700515Z ##[group]GITHUB_TOKEN Permissions
+2026-02-22T00:30:31.2702318Z Contents: read
+2026-02-22T00:30:31.2702875Z Metadata: read
+2026-02-22T00:30:31.2703363Z ##[endgroup]
+2026-02-22T00:30:31.2705678Z Secret source: Actions
+2026-02-22T00:30:31.2706420Z Prepare workflow directory
+2026-02-22T00:30:31.3019185Z Prepare all required actions
+2026-02-22T00:30:31.3059305Z Getting action download info
+2026-02-22T00:30:31.7550195Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+2026-02-22T00:30:31.9484090Z Complete job name: detect-sites
+2026-02-22T00:30:32.0276550Z ##[group]Run actions/checkout@v4
+2026-02-22T00:30:32.0277419Z with:
+2026-02-22T00:30:32.0277790Z   fetch-depth: 2
+2026-02-22T00:30:32.0278322Z   repository: Morning-Uplift-Marketing-Co/lp-factory-core
+2026-02-22T00:30:32.0279070Z   token: ***
+2026-02-22T00:30:32.0279479Z   ssh-strict: true
+2026-02-22T00:30:32.0279873Z   ssh-user: git
+2026-02-22T00:30:32.0280280Z   persist-credentials: true
+2026-02-22T00:30:32.0280724Z   clean: true
+2026-02-22T00:30:32.0281135Z   sparse-checkout-cone-mode: true
+2026-02-22T00:30:32.0281620Z   fetch-tags: false
+2026-02-22T00:30:32.0282022Z   show-progress: true
+2026-02-22T00:30:32.0282421Z   lfs: false
+2026-02-22T00:30:32.0282778Z   submodules: false
+2026-02-22T00:30:32.0283181Z   set-safe-directory: true
+2026-02-22T00:30:32.0283819Z ##[endgroup]
+2026-02-22T00:30:32.1367333Z Syncing repository: Morning-Uplift-Marketing-Co/lp-factory-core
+2026-02-22T00:30:32.1370182Z ##[group]Getting Git version info
+2026-02-22T00:30:32.1371551Z Working directory is '/home/runner/work/lp-factory-core/lp-factory-core'
+2026-02-22T00:30:32.1373362Z [command]/usr/bin/git version
+2026-02-22T00:30:32.1489609Z git version 2.52.0
+2026-02-22T00:30:32.1515465Z ##[endgroup]
+2026-02-22T00:30:32.1528371Z Temporarily overriding HOME='/home/runner/work/_temp/b7ef0045-eeee-4167-89ba-8691fc0c28ec' before making global git config changes
+2026-02-22T00:30:32.1541676Z Adding repository directory to the temporary git global config as a safe directory
+2026-02-22T00:30:32.1543749Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/lp-factory-core/lp-factory-core
+2026-02-22T00:30:32.1579493Z Deleting the contents of '/home/runner/work/lp-factory-core/lp-factory-core'
+2026-02-22T00:30:32.1583107Z ##[group]Initializing the repository
+2026-02-22T00:30:32.1588194Z [command]/usr/bin/git init /home/runner/work/lp-factory-core/lp-factory-core
+2026-02-22T00:30:32.1678026Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-02-22T00:30:32.1679364Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-02-22T00:30:32.1680466Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-02-22T00:30:32.1681617Z hint: call:
+2026-02-22T00:30:32.1682004Z hint:
+2026-02-22T00:30:32.1683164Z hint: 	git config --global init.defaultBranch <name>
+2026-02-22T00:30:32.1684222Z hint:
+2026-02-22T00:30:32.1685225Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-02-22T00:30:32.1687066Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-02-22T00:30:32.1688390Z hint:
+2026-02-22T00:30:32.1689038Z hint: 	git branch -m <name>
+2026-02-22T00:30:32.1689778Z hint:
+2026-02-22T00:30:32.1690778Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-02-22T00:30:32.1692682Z Initialized empty Git repository in /home/runner/work/lp-factory-core/lp-factory-core/.git/
+2026-02-22T00:30:32.1696079Z [command]/usr/bin/git remote add origin https://github.com/Morning-Uplift-Marketing-Co/lp-factory-core
+2026-02-22T00:30:32.1727826Z ##[endgroup]
+2026-02-22T00:30:32.1729064Z ##[group]Disabling automatic garbage collection
+2026-02-22T00:30:32.1732584Z [command]/usr/bin/git config --local gc.auto 0
+2026-02-22T00:30:32.1760986Z ##[endgroup]
+2026-02-22T00:30:32.1762178Z ##[group]Setting up auth
+2026-02-22T00:30:32.1768460Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-02-22T00:30:32.1798934Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-02-22T00:30:32.2112771Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-02-22T00:30:32.2142673Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-02-22T00:30:32.2357514Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-02-22T00:30:32.2390393Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-02-22T00:30:32.2632241Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-02-22T00:30:32.2666553Z ##[endgroup]
+2026-02-22T00:30:32.2667302Z ##[group]Fetching the repository
+2026-02-22T00:30:32.2674401Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=2 origin +a2a3927eb94290c2ba1010b1b0251fd2e3eac23f:refs/remotes/origin/deploy/auto
+2026-02-22T00:30:33.4152476Z From https://github.com/Morning-Uplift-Marketing-Co/lp-factory-core
+2026-02-22T00:30:33.4154754Z  * [new ref]         a2a3927eb94290c2ba1010b1b0251fd2e3eac23f -> origin/deploy/auto
+2026-02-22T00:30:33.4186820Z ##[endgroup]
+2026-02-22T00:30:33.4188458Z ##[group]Determining the checkout info
+2026-02-22T00:30:33.4190286Z ##[endgroup]
+2026-02-22T00:30:33.4193817Z [command]/usr/bin/git sparse-checkout disable
+2026-02-22T00:30:33.4234951Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-02-22T00:30:33.4261987Z ##[group]Checking out the ref
+2026-02-22T00:30:33.4266406Z [command]/usr/bin/git checkout --progress --force -B deploy/auto refs/remotes/origin/deploy/auto
+2026-02-22T00:30:33.4968169Z Switched to a new branch 'deploy/auto'
+2026-02-22T00:30:33.4971496Z branch 'deploy/auto' set up to track 'origin/deploy/auto'.
+2026-02-22T00:30:33.4976513Z ##[endgroup]
+2026-02-22T00:30:33.5013481Z [command]/usr/bin/git log -1 --format=%H
+2026-02-22T00:30:33.5035384Z a2a3927eb94290c2ba1010b1b0251fd2e3eac23f
+2026-02-22T00:30:33.5256149Z ##[group]Run set -euo pipefail
+2026-02-22T00:30:33.5257482Z [36;1mset -euo pipefail[0m
+2026-02-22T00:30:33.5259272Z [36;1mif [ "workflow_dispatch" = "workflow_dispatch" ] && [ -n "c00f0f47b7ce4d47" ]; then[0m
+2026-02-22T00:30:33.5261509Z [36;1m  echo "site_ids=[\"c00f0f47b7ce4d47\"]" >> "$GITHUB_OUTPUT"[0m
+2026-02-22T00:30:33.5263106Z [36;1m  exit 0[0m
+2026-02-22T00:30:33.5264060Z [36;1mfi[0m
+2026-02-22T00:30:33.5264978Z [36;1m[0m
+2026-02-22T00:30:33.5266412Z [36;1mif [ "workflow_dispatch" = "workflow_dispatch" ]; then[0m
+2026-02-22T00:30:33.5269304Z [36;1m  SITE_IDS=$(find sites -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort -u | jq -Rsc 'split("\n")|map(select(length>0))')[0m
+2026-02-22T00:30:33.5271898Z [36;1m  echo "site_ids=$SITE_IDS" >> "$GITHUB_OUTPUT"[0m
+2026-02-22T00:30:33.5273279Z [36;1m  exit 0[0m
+2026-02-22T00:30:33.5274245Z [36;1mfi[0m
+2026-02-22T00:30:33.5275142Z [36;1m[0m
+2026-02-22T00:30:33.5276264Z [36;1mBASE=""[0m
+2026-02-22T00:30:33.5277689Z [36;1mif [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then[0m
+2026-02-22T00:30:33.5279478Z [36;1m  BASE="$(git rev-parse HEAD~1 || true)"[0m
+2026-02-22T00:30:33.5280739Z [36;1mfi[0m
+2026-02-22T00:30:33.5282560Z [36;1mFILES=$(git diff --name-only "$BASE" "a2a3927eb94290c2ba1010b1b0251fd2e3eac23f" | grep '^sites/' || true)[0m
+2026-02-22T00:30:33.5285418Z [36;1mSITE_IDS=$(echo "$FILES" | awk -F/ '{print $2}' | sort -u | jq -Rsc 'split("\n")|map(select(length>0))')[0m
+2026-02-22T00:30:33.5287705Z [36;1mecho "site_ids=$SITE_IDS" >> "$GITHUB_OUTPUT"[0m
+2026-02-22T00:30:33.5326408Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-02-22T00:30:33.5327794Z ##[endgroup]
+2026-02-22T00:30:33.5608952Z Post job cleanup.
+2026-02-22T00:30:33.6535698Z [command]/usr/bin/git version
+2026-02-22T00:30:33.6570115Z git version 2.52.0
+2026-02-22T00:30:33.6611944Z Temporarily overriding HOME='/home/runner/work/_temp/aba4f4f5-b402-4e7f-8b78-445c0375f710' before making global git config changes
+2026-02-22T00:30:33.6614701Z Adding repository directory to the temporary git global config as a safe directory
+2026-02-22T00:30:33.6617766Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/lp-factory-core/lp-factory-core
+2026-02-22T00:30:33.6652992Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-02-22T00:30:33.6684572Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-02-22T00:30:33.6912724Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-02-22T00:30:33.6933782Z http.https://github.com/.extraheader
+2026-02-22T00:30:33.6946492Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-02-22T00:30:33.6978933Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-02-22T00:30:33.7198437Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-02-22T00:30:33.7231928Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-02-22T00:30:33.7569713Z Evaluate and set job outputs
+2026-02-22T00:30:33.7577075Z Set output 'site_ids'
+2026-02-22T00:30:33.7579828Z Cleaning up orphan processes

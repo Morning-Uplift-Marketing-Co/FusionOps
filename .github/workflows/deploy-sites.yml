@@ -1,0 +1,297 @@
+name: Deploy Sites
+
+on:
+  push:
+    branches:
+      - main
+      - 'release/**'
+      - 'deploy/auto'
+      - 'deploy-pipeline-fixed'
+    paths:
+      - 'sites/**'
+      - 'schemas/deploy-manifest.schema.json'
+  workflow_dispatch:
+    inputs:
+      site_id:
+        description: "Optional single site id to deploy"
+        required: false
+        type: string
+      environment:
+        description: "Optional environment label"
+        required: false
+        type: string
+      deploy_record_id:
+        description: "Optional ops deployment record id for status callback"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  deployments: write
+  actions: read
+
+jobs:
+  detect-sites:
+    runs-on: ubuntu-latest
+    outputs:
+      site_ids: ${{ steps.detect.outputs.site_ids }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed site folders
+        id: detect
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.site_id }}" ]; then
+            echo "site_ids=[\"${{ inputs.site_id }}\"]" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            SITE_IDS=$(find sites -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort -u | jq -Rsc 'split("\n")|map(select(length>0))')
+            echo "site_ids=$SITE_IDS" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          BASE="${{ github.event.before }}"
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+            BASE="$(git rev-parse HEAD~1 || true)"
+          fi
+          FILES=$(git diff --name-only "$BASE" "${{ github.sha }}" | grep '^sites/' || true)
+          SITE_IDS=$(echo "$FILES" | awk -F/ '{print $2}' | sort -u | jq -Rsc 'split("\n")|map(select(length>0))')
+          echo "site_ids=$SITE_IDS" >> "$GITHUB_OUTPUT"
+
+  validate-manifest:
+    needs: detect-sites
+    if: ${{ needs.detect-sites.outputs.site_ids != '[]' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        site_id: ${{ fromJson(needs.detect-sites.outputs.site_ids) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install schema validator
+        run: npm i -g ajv-cli
+
+      - name: Validate deploy manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          ajv validate \
+            -s schemas/deploy-manifest.schema.json \
+            -d "sites/${{ matrix.site_id }}/deploy-manifest.json"
+
+      - name: Ensure required files exist
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIR="sites/${{ matrix.site_id }}"
+          test -f "$DIR/index.html"
+          # TODO: Re-enable apply.html check when template engine generates it with Java code
+          # test -f "$DIR/apply.html"
+
+  deploy:
+    needs: [detect-sites, validate-manifest]
+    if: ${{ needs.detect-sites.outputs.site_ids != '[]' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        site_id: ${{ fromJson(needs.detect-sites.outputs.site_ids) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse targets
+        id: targets
+        shell: bash
+        run: |
+          set -euo pipefail
+          M="sites/${{ matrix.site_id }}/deploy-manifest.json"
+
+          # Get providers array
+          PROVIDERS=$(jq -c '[.targets[].provider]' "$M")
+          echo "providers=$PROVIDERS" >> "$GITHUB_OUTPUT"
+
+          # Check if github-actions is in the providers list
+          if echo "$PROVIDERS" | jq -e '.[] | select(. == "github-actions")' > /dev/null 2>&1; then
+            DEPLOY_TARGETS="cloudflare,netlify,vercel"
+            echo "Detected github-actions provider - deploying to all platforms"
+          else
+            # Check for specific providers
+            HAS_CLOUDFLARE=$(echo "$PROVIDERS" | jq -r '.[] | select(. == "cloudflare-pages")' | head -n1)
+            HAS_NETLIFY=$(echo "$PROVIDERS" | jq -r '.[] | select(. == "netlify")' | head -n1)
+            HAS_VERCEL=$(echo "$PROVIDERS" | jq -r '.[] | select(. == "vercel")' | head -n1)
+            DEPLOY_TARGETS=""
+            [ -n "$HAS_CLOUDFLARE" ] && DEPLOY_TARGETS="cloudflare"
+            [ -n "$HAS_NETLIFY" ] && DEPLOY_TARGETS="${DEPLOY_TARGETS}${DEPLOY_TARGETS:+,}netlify"
+            [ -n "$HAS_VERCEL" ] && DEPLOY_TARGETS="${DEPLOY_TARGETS}${DEPLOY_TARGETS:+,}vercel"
+          fi
+          echo "deploy_targets=$DEPLOY_TARGETS" >> "$GITHUB_OUTPUT"
+
+          # Debug output
+          echo "### 🎯 Deployment Targets" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Setting | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Providers | $PROVIDERS |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Deploy Targets | $DEPLOY_TARGETS |" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat "$M" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Parse callback metadata
+        id: callback
+        shell: bash
+        run: |
+          set -euo pipefail
+          M="sites/${{ matrix.site_id }}/deploy-manifest.json"
+          MANIFEST_DEPLOY_ID=$(jq -r '.meta.deployRecordId // ""' "$M")
+          INPUT_DEPLOY_ID="${{ inputs.deploy_record_id }}"
+          if [ -n "$INPUT_DEPLOY_ID" ]; then
+            DEPLOY_ID="$INPUT_DEPLOY_ID"
+          else
+            DEPLOY_ID="$MANIFEST_DEPLOY_ID"
+          fi
+          echo "deploy_record_id=$DEPLOY_ID" >> "$GITHUB_OUTPUT"
+          echo "run_url=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install deploy CLIs
+        run: npm i -g wrangler netlify-cli vercel && sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Deploy to Cloudflare Pages
+        if: |
+          contains(steps.targets.outputs.providers, 'cloudflare-pages') ||
+          contains(steps.targets.outputs.deploy_targets, 'cloudflare')
+        shell: bash
+        run: |
+          set -euo pipefail
+          M="sites/${{ matrix.site_id }}/deploy-manifest.json"
+
+          # Get projectName - try manifest first, then use defaults
+          PROJECT=$(jq -r '.targets[] | select(.provider=="cloudflare-pages" or .provider=="github-actions") | .projectName // empty' "$M" | head -n1)
+
+          # Fallback to project name from secrets or defaults
+          if [ -z "$PROJECT" ]; then
+            PROJECT="${CF_PROJECT_NAME:-lp-factory}"
+            echo "Using default project name: $PROJECT"
+          fi
+
+          echo "Deploying to Cloudflare Pages project: $PROJECT"
+          wrangler pages deploy "sites/${{ matrix.site_id }}" --project-name "$PROJECT"
+        env:
+          CF_PROJECT_NAME: ${{ vars.CF_PROJECT_NAME }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Deploy to Netlify
+        if: |
+          contains(steps.targets.outputs.providers, 'netlify') ||
+          contains(steps.targets.outputs.deploy_targets, 'netlify')
+        shell: bash
+        run: |
+          set -euo pipefail
+          M="sites/${{ matrix.site_id }}/deploy-manifest.json"
+
+          # Get siteId - try manifest first, then use secrets/defaults
+          SITE_ID=$(jq -r '.targets[] | select(.provider=="netlify" or .provider=="github-actions") | .siteId // empty' "$M" | head -n1)
+
+          # Fallback to site ID from secrets
+          if [ -z "$SITE_ID" ]; then
+            SITE_ID="${NETLIFY_SITE_ID}"
+            echo "Using site ID from secrets: $SITE_ID"
+          fi
+
+          if [ -z "$SITE_ID" ]; then
+            echo "❌ Error: No Netlify Site ID found in manifest or secrets"
+            exit 1
+          fi
+
+          echo "Deploying to Netlify site: $SITE_ID"
+          netlify deploy --dir="sites/${{ matrix.site_id }}" --site "$SITE_ID" --prod
+        env:
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+
+      - name: Deploy to Vercel
+        if: |
+          contains(steps.targets.outputs.providers, 'vercel') ||
+          contains(steps.targets.outputs.deploy_targets, 'vercel')
+        shell: bash
+        run: |
+          set -euo pipefail
+          M="sites/${{ matrix.site_id }}/deploy-manifest.json"
+
+          # Get project ID - try manifest first, then use secrets
+          PROJECT_ID=$(jq -r '.targets[] | select(.provider=="vercel" or .provider=="github-actions") | .vercelProjectId // empty' "$M" | head -n1)
+
+          # Fallback to project ID from secrets
+          if [ -z "$PROJECT_ID" ]; then
+            PROJECT_ID="${VERCEL_PROJECT_ID}"
+          fi
+
+          echo "Deploying to Vercel project: ${PROJECT_ID:-default}"
+          vercel deploy "sites/${{ matrix.site_id }}" --prod --yes --token "${{ secrets.VERCEL_TOKEN }}"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Summary
+        if: always()
+        shell: bash
+        run: |
+          echo "✅ Deploy pipeline completed for ${{ matrix.site_id }}"
+
+      - name: Callback deployment status to API
+        if: always() && steps.callback.outputs.deploy_record_id != ''
+        shell: bash
+        env:
+          API_BASE: ${{ vars.LP_API_BASE || 'https://lp-factory-api.songsawat-w.workers.dev' }}
+          API_SECRET: ${{ secrets.LP_API_SECRET }}
+        run: |
+          set -euo pipefail
+          DEPLOY_ID='${{ steps.callback.outputs.deploy_record_id }}'
+          RUN_URL='${{ steps.callback.outputs.run_url }}'
+          STATUS='${{ job.status }}'
+          if [ "$STATUS" = "success" ]; then
+            FINAL_STATUS='success'
+            ERROR_MSG=''
+          elif [ "$STATUS" = "cancelled" ]; then
+            FINAL_STATUS='failed'
+            ERROR_MSG='Workflow cancelled'
+          else
+            FINAL_STATUS='failed'
+            ERROR_MSG='Workflow failed'
+          fi
+
+          BODY=$(jq -n --arg status "$FINAL_STATUS" --arg url "$RUN_URL" --arg err "$ERROR_MSG" '{status:$status, url:$url, errorMessage:$err}')
+
+          AUTH_HEADER=""
+          if [ -n "${API_SECRET:-}" ]; then
+            AUTH_HEADER="Authorization: Bearer ${API_SECRET}"
+          fi
+
+          if [ -n "$AUTH_HEADER" ]; then
+            curl -sS -X PATCH "${API_BASE}/api/ops/deployments/${DEPLOY_ID}" \
+              -H "Content-Type: application/json" \
+              -H "$AUTH_HEADER" \
+              --data "$BODY"
+          else
+            curl -sS -X PATCH "${API_BASE}/api/ops/deployments/${DEPLOY_ID}" \
+              -H "Content-Type: application/json" \
+              --data "$BODY"
+          fi

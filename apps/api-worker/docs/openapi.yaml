@@ -1,0 +1,941 @@
+openapi: 3.0.3
+info:
+  title: LP Factory Automation API
+  version: 2.1.0
+  description: |
+    Automation endpoints for LP Factory V2. Use these endpoints to integrate with
+    external automation tools like n8n, Make, Zapier, or custom scripts.
+
+    **Base URL**: `https://lp-factory-api.songsawat-w.workers.dev`
+
+    **Authentication**: Optional Bearer token via `Authorization: Bearer <API_SECRET>` header.
+    Set `API_SECRET` environment variable in Worker to enable authentication.
+  contact:
+    name: LP Factory
+    url: https://lp-factory.songsawat-w.workers.dev
+  license:
+    name: MIT
+
+servers:
+  - url: https://lp-factory-api.songsawat-w.workers.dev
+    description: Production
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Registrar
+    description: Domain registrar operations (Internet.bs)
+  - name: Cloudflare
+    description: Cloudflare DNS and zone management
+  - name: Deploy
+    description: Deployment platform linking (Vercel, Netlify, CF Pages, CF Workers)
+  - name: LeadingCards
+    description: Virtual card management
+  - name: Multilogin
+    description: Browser profile automation
+
+paths:
+  /api/automation/registrar/check:
+    post:
+      tags: [Registrar]
+      summary: Check domain availability
+      description: Check if a domain is available for registration via Internet.bs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [domain, provider]
+              properties:
+                domain:
+                  type: string
+                  example: example.com
+                  description: Domain to check
+                provider:
+                  type: string
+                  enum: [internetbs]
+                  example: internetbs
+                accountId:
+                  type: string
+                  description: Registrar account ID (optional, uses first account if omitted)
+      responses:
+        '200':
+          description: Availability check result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  available:
+                    type: boolean
+                  domain:
+                    type: string
+                  provider:
+                    type: string
+                  status:
+                    type: string
+                  message:
+                    type: string
+        '400':
+          description: Missing parameters
+        '404':
+          description: Registrar account not found
+
+  /api/automation/registrar/register:
+    post:
+      tags: [Registrar]
+      summary: Register a domain
+      description: Register a new domain via Internet.bs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [domain, provider]
+              properties:
+                domain:
+                  type: string
+                  example: example.com
+                provider:
+                  type: string
+                  enum: [internetbs]
+                accountId:
+                  type: string
+                period:
+                  type: string
+                  default: 1Y
+                  enum: [1Y, 2Y, 3Y, 4Y, 5Y, 6Y, 7Y, 8Y, 9Y, 10Y]
+                  description: Registration period
+      responses:
+        '200':
+          description: Registration result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  domain:
+                    type: string
+                  provider:
+                    type: string
+                  transactionId:
+                    type: string
+                  status:
+                    type: string
+                  message:
+                    type: string
+                  product:
+                    type: object
+
+  /api/automation/registrar/nameservers:
+    put:
+      tags: [Registrar]
+      summary: Update domain nameservers
+      description: Update nameservers for a domain via Internet.bs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [domain, nameservers, provider]
+              properties:
+                domain:
+                  type: string
+                  example: example.com
+                nameservers:
+                  type: array
+                  items:
+                    type: string
+                  example: ["ns1.cloudflare.com", "ns2.cloudflare.com"]
+                provider:
+                  type: string
+                  enum: [internetbs]
+                accountId:
+                  type: string
+      responses:
+        '200':
+          description: Nameserver update result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  domain:
+                    type: string
+                  nameservers:
+                    type: array
+                    items:
+                      type: string
+                  status:
+                    type: string
+                  message:
+                    type: string
+
+  /api/automation/registrar/import:
+    post:
+      tags: [Registrar]
+      summary: Import all domains
+      description: List all domains from the registrar account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [provider]
+              properties:
+                provider:
+                  type: string
+                  enum: [internetbs]
+                accountId:
+                  type: string
+      responses:
+        '200':
+          description: Domain list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  provider:
+                    type: string
+                  count:
+                    type: integer
+                  domains:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        domain:
+                          type: string
+                        status:
+                          type: string
+                        expiration:
+                          type: string
+                          nullable: true
+                        autoRenew:
+                          type: boolean
+                          nullable: true
+
+  /api/automation/registrar/ping:
+    post:
+      tags: [Registrar]
+      summary: Test registrar connection
+      description: Ping the registrar API and get account balance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [provider]
+              properties:
+                provider:
+                  type: string
+                  enum: [internetbs]
+                accountId:
+                  type: string
+      responses:
+        '200':
+          description: Connection status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  provider:
+                    type: string
+                  balance:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        currency:
+                          type: string
+                        amount:
+                          type: string
+                  currency:
+                    type: string
+                  message:
+                    type: string
+
+  /api/automation/cf/zone:
+    post:
+      tags: [Cloudflare]
+      summary: Create or get zone
+      description: Check if a zone exists, create it if not
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [domain, cfAccountId]
+              properties:
+                domain:
+                  type: string
+                  example: example.com
+                cfAccountId:
+                  type: string
+                  description: Cloudflare account ID from cf_accounts table
+      responses:
+        '200':
+          description: Zone info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  exists:
+                    type: boolean
+                  zoneId:
+                    type: string
+                  zone:
+                    type: object
+        '400':
+          description: Missing parameters or zone creation failed
+        '404':
+          description: Cloudflare account not found
+
+  /api/automation/cf/dns:
+    get:
+      tags: [Cloudflare]
+      summary: List DNS records
+      description: Get all DNS records for a zone
+      parameters:
+        - name: zoneId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: cfAccountId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: DNS records
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  records:
+                    type: array
+                    items:
+                      type: object
+    post:
+      tags: [Cloudflare]
+      summary: Create DNS record
+      description: Add a new DNS record to a zone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [zoneId, cfAccountId, type, name, content]
+              properties:
+                zoneId:
+                  type: string
+                cfAccountId:
+                  type: string
+                type:
+                  type: string
+                  enum: [A, AAAA, CNAME, TXT, NS, MX, SRV]
+                  example: A
+                name:
+                  type: string
+                  example: www
+                content:
+                  type: string
+                  example: 192.0.2.1
+                ttl:
+                  type: integer
+                  default: 3600
+                proxied:
+                  type: boolean
+                  default: false
+      responses:
+        '200':
+          description: Created record
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  record:
+                    type: object
+    put:
+      tags: [Cloudflare]
+      summary: Update DNS record
+      description: Update an existing DNS record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [dnsRecordId, zoneId, cfAccountId]
+              properties:
+                dnsRecordId:
+                  type: string
+                zoneId:
+                  type: string
+                cfAccountId:
+                  type: string
+                type:
+                  type: string
+                name:
+                  type: string
+                content:
+                  type: string
+                ttl:
+                  type: integer
+                proxied:
+                  type: boolean
+      responses:
+        '200':
+          description: Updated record
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  record:
+                    type: object
+    delete:
+      tags: [Cloudflare]
+      summary: Delete DNS record
+      description: Remove a DNS record from a zone
+      parameters:
+        - name: dnsRecordId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: zoneId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: cfAccountId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deletion result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /api/automation/deploy/vercel:
+    post:
+      tags: [Deploy]
+      summary: Link Vercel project
+      description: Check if a Vercel project exists and can be linked
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [projectName, accessToken]
+              properties:
+                projectName:
+                  type: string
+                  example: my-app
+                accessToken:
+                  type: string
+                  description: Vercel API token
+                teamId:
+                  type: string
+                  description: Optional team ID for team projects
+      responses:
+        '200':
+          description: Project link status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  linked:
+                    type: boolean
+                  project:
+                    type: object
+
+  /api/automation/deploy/netlify:
+    post:
+      tags: [Deploy]
+      summary: Link Netlify site
+      description: Check if a Netlify site exists and can be linked
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [siteName, accessToken]
+              properties:
+                siteName:
+                  type: string
+                  description: Site name or ID
+                  example: my-site
+                accessToken:
+                  type: string
+                  description: Netlify personal access token
+      responses:
+        '200':
+          description: Site link status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  linked:
+                    type: boolean
+                  site:
+                    type: object
+                    nullable: true
+
+  /api/automation/deploy/cf-pages:
+    post:
+      tags: [Deploy]
+      summary: Link Cloudflare Pages project
+      description: Check if a CF Pages project exists and can be linked
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [projectName, cfAccountId]
+              properties:
+                projectName:
+                  type: string
+                  example: my-app
+                cfAccountId:
+                  type: string
+                  description: Cloudflare account ID from cf_accounts table
+      responses:
+        '200':
+          description: Project link status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  linked:
+                    type: boolean
+                  project:
+                    type: object
+                    nullable: true
+
+  /api/automation/deploy/cf-workers:
+    post:
+      tags: [Deploy]
+      summary: Link Cloudflare Workers script
+      description: Check if a CF Workers script exists and can be linked
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [scriptName, cfAccountId]
+              properties:
+                scriptName:
+                  type: string
+                  example: my-worker
+                cfAccountId:
+                  type: string
+                  description: Cloudflare account ID from cf_accounts table
+      responses:
+        '200':
+          description: Script link status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  linked:
+                    type: boolean
+                  script:
+                    type: object
+                    nullable: true
+
+  /api/automation/lc/create:
+    post:
+      tags: [LeadingCards]
+      summary: Create virtual card
+      description: Create a new virtual card via LeadingCards
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: LeadingCards card creation parameters (see LeadingCards API docs)
+              example:
+                limit: 1000
+                currency: USD
+      responses:
+        '200':
+          description: Card creation result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  card:
+                    type: object
+                  status:
+                    type: integer
+        '400':
+          description: LeadingCards token not configured
+
+  /api/automation/lc/block:
+    post:
+      tags: [LeadingCards]
+      summary: Block virtual card
+      description: Block an active virtual card
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cardUuid]
+              properties:
+                cardUuid:
+                  type: string
+                  description: Card UUID
+      responses:
+        '200':
+          description: Block result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  card:
+                    type: object
+                  status:
+                    type: integer
+
+  /api/automation/lc/activate:
+    post:
+      tags: [LeadingCards]
+      summary: Activate virtual card
+      description: Activate a blocked virtual card
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cardUuid]
+              properties:
+                cardUuid:
+                  type: string
+      responses:
+        '200':
+          description: Activation result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  card:
+                    type: object
+                  status:
+                    type: integer
+
+  /api/automation/lc/change_limit:
+    post:
+      tags: [LeadingCards]
+      summary: Change card limit
+      description: Update the spending limit on a virtual card
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cardUuid, limit]
+              properties:
+                cardUuid:
+                  type: string
+                limit:
+                  type: number
+                  description: New limit amount
+      responses:
+        '200':
+          description: Limit change result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  card:
+                    type: object
+                  status:
+                    type: integer
+
+  /api/automation/ml/signin:
+    post:
+      tags: [Multilogin]
+      summary: Sign in to Multilogin
+      description: Authenticate with Multilogin and store the token
+      responses:
+        '200':
+          description: Sign in result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  token:
+                    type: string
+                    nullable: true
+                  message:
+                    type: string
+        '400':
+          description: Multilogin credentials not configured
+
+  /api/automation/ml/refresh_token:
+    post:
+      tags: [Multilogin]
+      summary: Refresh Multilogin token
+      description: Refresh the stored Multilogin authentication token
+      responses:
+        '200':
+          description: Token refresh result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  token:
+                    type: string
+                    nullable: true
+                  message:
+                    type: string
+
+  /api/automation/ml/profiles:
+    get:
+      tags: [Multilogin]
+      summary: List Multilogin profiles
+      description: Get all browser profiles
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Profile list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  profiles:
+                    type: array
+                    items:
+                      type: object
+                  total:
+                    type: integer
+    post:
+      tags: [Multilogin]
+      summary: Create Multilogin profile
+      description: Create a new browser profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Multilogin profile creation parameters
+              example:
+                name: My Profile
+                os: windows
+                browser_type: chrome
+      responses:
+        '200':
+          description: Profile creation result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  profileId:
+                    type: string
+                    nullable: true
+                  profile:
+                    type: object
+                    nullable: true
+
+  /api/automation/ml/profiles/start:
+    post:
+      tags: [Multilogin]
+      summary: Start Multilogin profile
+      description: Launch a browser profile and get the connection URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [profileId]
+              properties:
+                profileId:
+                  type: string
+                  description: Profile ID to start
+      responses:
+        '200':
+          description: Profile start result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  connectionUrl:
+                    type: string
+                    nullable: true
+                    description: WebSocket URL for browser connection
+                  profileId:
+                    type: string
+
+  /api/automation/ml/profiles/stop:
+    post:
+      tags: [Multilogin]
+      summary: Stop Multilogin profile
+      description: Stop a running browser profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [profileId]
+              properties:
+                profileId:
+                  type: string
+      responses:
+        '200':
+          description: Profile stop result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  profileId:
+                    type: string
+                  message:
+                    type: string
+
+  /api/automation/ml/profiles/clone:
+    post:
+      tags: [Multilogin]
+      summary: Clone Multilogin profile
+      description: Create a copy of an existing profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [profileId]
+              properties:
+                profileId:
+                  type: string
+                  description: Profile ID to clone
+      responses:
+        '200':
+          description: Profile clone result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  newProfileId:
+                    type: string
+                    nullable: true
+                  profile:
+                    type: object
+                    nullable: true
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API_SECRET
+      description: |
+        Optional Bearer authentication. Set the `API_SECRET` environment variable
+        in the Worker to enable. Include `Authorization: Bearer <API_SECRET>` header
+        in requests to authenticate.

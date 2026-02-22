@@ -1,0 +1,77 @@
+---
+const steps = [
+    {
+        num: "01",
+        title: "Apply Online",
+        desc: "Fill out our simple, secure online form in about 2 minutes.",
+    },
+    {
+        num: "02",
+        title: "Get Matched",
+        desc: "We scan our network of 100+ lenders to find your best potential matches.",
+    },
+    {
+        num: "03",
+        title: "Receive Funds",
+        desc: "If approved, review your offer and receive funds in your account fast.",
+    },
+];
+---
+
+<section id="how-it-works" class="py-24 bg-gray-50 overflow-hidden">
+    <div class="container-custom relative">
+        <div
+            class="absolute -top-10 -left-20 text-[20rem] font-black text-primary/[0.03] select-none leading-none pointer-events-none"
+        >
+            Process
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+            <div class="lg:col-span-5 space-y-8">
+                <div class="space-y-4">
+                    <h2
+                        class="text-[10px] font-black text-accent uppercase tracking-[0.3em]"
+                    >
+                        Simple 3-Step Process
+                    </h2>
+                    <p
+                        class="text-4xl md:text-5xl font-black text-primary tracking-tight leading-tight"
+                    >
+                        Fast. Secure. <br class="hidden md:block" /> Transparent.
+                    </p>
+                </div>
+                <p
+                    class="text-lg text-charcoal-light font-medium leading-relaxed max-w-md"
+                >
+                    We've streamlined the borrowing experience so you can focus
+                    on what matters. No paperwork, no faxing, no hassle.
+                </p>
+                <div class="pt-4">
+                    <a href="#apply" class="btn btn-primary px-10 py-4 text-lg"
+                        >Start Application</a
+                    >
+                </div>
+            </div>
+
+            <div class="lg:col-span-7 space-y-4">
+                {
+                    steps.map((s) => (
+                        <div class="group flex gap-8 p-8 bg-white rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-premium transition-all duration-300">
+                            <div class="text-4xl font-black text-primary/10 group-hover:text-accent transition-colors self-start">
+                                {s.num}
+                            </div>
+                            <div class="space-y-2">
+                                <h3 class="text-xl font-black text-primary">
+                                    {s.title}
+                                </h3>
+                                <p class="text-charcoal-light font-medium leading-relaxed">
+                                    {s.desc}
+                                </p>
+                            </div>
+                        </div>
+                    ))
+                }
+            </div>
+        </div>
+    </div>
+</section>

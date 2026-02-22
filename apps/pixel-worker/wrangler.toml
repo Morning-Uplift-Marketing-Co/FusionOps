@@ -1,0 +1,43 @@
+# ============================================================
+# Wrangler Configuration — LP Factory Pixel Worker
+# ============================================================
+# Receives sendBeacon events from LP pages at t.{domain}/e
+# Stores all events in D1 for first-party analytics.
+# ============================================================
+
+name = "lp-factory-pixel"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+ENVIRONMENT = "production"
+
+# D1 Database binding — same database as callback worker
+[[d1_databases]]
+binding = "DB"
+database_name = "ppc-gen-claude"
+database_id = "7d31d941-f863-46f5-99c2-2179de821573"
+
+# Worker routes — one per LP domain, pattern: t.{domain}/*
+# Add routes as domains are provisioned:
+#
+# [[routes]]
+# pattern = "t.bearloannow.com/*"
+# zone_name = "bearloannow.com"
+#
+# [[routes]]
+# pattern = "t.loanbears.com/*"
+# zone_name = "loanbears.com"
+
+# --- Staging ---
+[env.staging]
+name = "lp-factory-pixel-staging"
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "lp-factory-db-staging"
+database_id = "YOUR_STAGING_D1_DATABASE_ID"

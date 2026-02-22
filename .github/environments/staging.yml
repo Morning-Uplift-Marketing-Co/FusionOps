@@ -1,0 +1,6 @@
+# Staging Environment
+# Approval rules for staging deployments
+
+approval_rules:
+  - required_approving_count: 1
+environment: staging

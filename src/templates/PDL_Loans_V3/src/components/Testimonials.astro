@@ -1,0 +1,48 @@
+---
+const testimonials = [
+  {
+    initials: 'JM',
+    name: 'John M.',
+    location: 'Texas',
+    text: 'Got approved in literally 2 minutes. Funds hit my account the next day. Exactly what I needed!',
+    gradient: 'from-blue-500 to-purple-600',
+  },
+  {
+    initials: 'SK',
+    name: 'Sarah K.',
+    location: 'California',
+    text: 'The process was so simple. No hidden fees, and the rate was better than my credit card. Highly recommend!',
+    gradient: 'from-emerald-500 to-teal-600',
+  },
+  {
+    initials: 'RM',
+    name: 'Robert M.',
+    location: 'Florida',
+    text: 'I was skeptical at first, but they delivered. Fast approval, clear terms, and great customer service.',
+    gradient: 'from-orange-500 to-red-500',
+  },
+];
+---
+
+<div class="grid md:grid-cols-3 gap-6">
+  {testimonials.map((t) => (
+    <article class="bg-card rounded-2xl p-6 shadow-card border border-border transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+      <div class="flex items-center gap-3 mb-4">
+        <div class={`w-12 h-12 rounded-full bg-gradient-to-br ${t.gradient} flex items-center justify-center text-white font-bold text-sm shadow-md`} aria-hidden="true">
+          {t.initials}
+        </div>
+        <div>
+          <p class="font-semibold text-foreground">{t.name}</p>
+          <p class="text-sm text-muted-foreground">Verified Borrower &bull; {t.location}</p>
+        </div>
+      </div>
+      <blockquote>
+        <p class="text-muted-foreground leading-relaxed">"{t.text}"</p>
+      </blockquote>
+      <div class="flex items-center gap-2 mt-4" aria-label="5 out of 5 stars">
+        <span class="text-amber-400 text-lg" aria-hidden="true">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+        <span class="text-sm text-muted-foreground">5.0</span>
+      </div>
+    </article>
+  ))}
+</div>

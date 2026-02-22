@@ -1,0 +1,47 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Navbar from "../components/Navbar.astro";
+import Footer from "../components/Footer.astro";
+
+const title = "Unsubscribe | ElasticCredits";
+---
+
+<Layout title={title} index={false}>
+    <Navbar />
+    <main class="pt-32 pb-20 bg-background-alt min-h-screen">
+        <div class="container-custom max-w-2xl">
+            <div
+                class="bg-white rounded-3xl p-10 md:p-16 shadow-premium border border-gray-100 text-center"
+            >
+                <h1 class="text-4xl font-black text-primary mb-6">
+                    Unsubscribe
+                </h1>
+                <p class="text-lg text-charcoal-light mb-10">
+                    Enter your email address to stop receiving marketing
+                    communications from ElasticCredits.
+                </p>
+
+                <form class="space-y-6">
+                    <input
+                        type="email"
+                        placeholder="Your Email Address"
+                        required
+                        class="w-full px-6 py-4 bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-accent focus:bg-white outline-none transition-all text-center font-bold"
+                    />
+                    <button
+                        type="submit"
+                        class="btn btn-primary w-full py-4 text-lg uppercase tracking-widest"
+                    >
+                        Confirm Unsubscribe
+                    </button>
+                </form>
+
+                <p class="mt-8 text-xs text-charcoal-light/60">
+                    Please note it may take up to 10 business days for the
+                    removal to be fully processed across all our systems.
+                </p>
+            </div>
+        </div>
+    </main>
+    <Footer />
+</Layout>

@@ -1,0 +1,1621 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for src/utils/lp-generator.js</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">src/utils</a> lp-generator.js</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>0/221</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>0/203</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>0/27</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>0/181</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line low'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a>
+<a name='L85'></a><a href='#L85'>85</a>
+<a name='L86'></a><a href='#L86'>86</a>
+<a name='L87'></a><a href='#L87'>87</a>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a>
+<a name='L97'></a><a href='#L97'>97</a>
+<a name='L98'></a><a href='#L98'>98</a>
+<a name='L99'></a><a href='#L99'>99</a>
+<a name='L100'></a><a href='#L100'>100</a>
+<a name='L101'></a><a href='#L101'>101</a>
+<a name='L102'></a><a href='#L102'>102</a>
+<a name='L103'></a><a href='#L103'>103</a>
+<a name='L104'></a><a href='#L104'>104</a>
+<a name='L105'></a><a href='#L105'>105</a>
+<a name='L106'></a><a href='#L106'>106</a>
+<a name='L107'></a><a href='#L107'>107</a>
+<a name='L108'></a><a href='#L108'>108</a>
+<a name='L109'></a><a href='#L109'>109</a>
+<a name='L110'></a><a href='#L110'>110</a>
+<a name='L111'></a><a href='#L111'>111</a>
+<a name='L112'></a><a href='#L112'>112</a>
+<a name='L113'></a><a href='#L113'>113</a>
+<a name='L114'></a><a href='#L114'>114</a>
+<a name='L115'></a><a href='#L115'>115</a>
+<a name='L116'></a><a href='#L116'>116</a>
+<a name='L117'></a><a href='#L117'>117</a>
+<a name='L118'></a><a href='#L118'>118</a>
+<a name='L119'></a><a href='#L119'>119</a>
+<a name='L120'></a><a href='#L120'>120</a>
+<a name='L121'></a><a href='#L121'>121</a>
+<a name='L122'></a><a href='#L122'>122</a>
+<a name='L123'></a><a href='#L123'>123</a>
+<a name='L124'></a><a href='#L124'>124</a>
+<a name='L125'></a><a href='#L125'>125</a>
+<a name='L126'></a><a href='#L126'>126</a>
+<a name='L127'></a><a href='#L127'>127</a>
+<a name='L128'></a><a href='#L128'>128</a>
+<a name='L129'></a><a href='#L129'>129</a>
+<a name='L130'></a><a href='#L130'>130</a>
+<a name='L131'></a><a href='#L131'>131</a>
+<a name='L132'></a><a href='#L132'>132</a>
+<a name='L133'></a><a href='#L133'>133</a>
+<a name='L134'></a><a href='#L134'>134</a>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a>
+<a name='L142'></a><a href='#L142'>142</a>
+<a name='L143'></a><a href='#L143'>143</a>
+<a name='L144'></a><a href='#L144'>144</a>
+<a name='L145'></a><a href='#L145'>145</a>
+<a name='L146'></a><a href='#L146'>146</a>
+<a name='L147'></a><a href='#L147'>147</a>
+<a name='L148'></a><a href='#L148'>148</a>
+<a name='L149'></a><a href='#L149'>149</a>
+<a name='L150'></a><a href='#L150'>150</a>
+<a name='L151'></a><a href='#L151'>151</a>
+<a name='L152'></a><a href='#L152'>152</a>
+<a name='L153'></a><a href='#L153'>153</a>
+<a name='L154'></a><a href='#L154'>154</a>
+<a name='L155'></a><a href='#L155'>155</a>
+<a name='L156'></a><a href='#L156'>156</a>
+<a name='L157'></a><a href='#L157'>157</a>
+<a name='L158'></a><a href='#L158'>158</a>
+<a name='L159'></a><a href='#L159'>159</a>
+<a name='L160'></a><a href='#L160'>160</a>
+<a name='L161'></a><a href='#L161'>161</a>
+<a name='L162'></a><a href='#L162'>162</a>
+<a name='L163'></a><a href='#L163'>163</a>
+<a name='L164'></a><a href='#L164'>164</a>
+<a name='L165'></a><a href='#L165'>165</a>
+<a name='L166'></a><a href='#L166'>166</a>
+<a name='L167'></a><a href='#L167'>167</a>
+<a name='L168'></a><a href='#L168'>168</a>
+<a name='L169'></a><a href='#L169'>169</a>
+<a name='L170'></a><a href='#L170'>170</a>
+<a name='L171'></a><a href='#L171'>171</a>
+<a name='L172'></a><a href='#L172'>172</a>
+<a name='L173'></a><a href='#L173'>173</a>
+<a name='L174'></a><a href='#L174'>174</a>
+<a name='L175'></a><a href='#L175'>175</a>
+<a name='L176'></a><a href='#L176'>176</a>
+<a name='L177'></a><a href='#L177'>177</a>
+<a name='L178'></a><a href='#L178'>178</a>
+<a name='L179'></a><a href='#L179'>179</a>
+<a name='L180'></a><a href='#L180'>180</a>
+<a name='L181'></a><a href='#L181'>181</a>
+<a name='L182'></a><a href='#L182'>182</a>
+<a name='L183'></a><a href='#L183'>183</a>
+<a name='L184'></a><a href='#L184'>184</a>
+<a name='L185'></a><a href='#L185'>185</a>
+<a name='L186'></a><a href='#L186'>186</a>
+<a name='L187'></a><a href='#L187'>187</a>
+<a name='L188'></a><a href='#L188'>188</a>
+<a name='L189'></a><a href='#L189'>189</a>
+<a name='L190'></a><a href='#L190'>190</a>
+<a name='L191'></a><a href='#L191'>191</a>
+<a name='L192'></a><a href='#L192'>192</a>
+<a name='L193'></a><a href='#L193'>193</a>
+<a name='L194'></a><a href='#L194'>194</a>
+<a name='L195'></a><a href='#L195'>195</a>
+<a name='L196'></a><a href='#L196'>196</a>
+<a name='L197'></a><a href='#L197'>197</a>
+<a name='L198'></a><a href='#L198'>198</a>
+<a name='L199'></a><a href='#L199'>199</a>
+<a name='L200'></a><a href='#L200'>200</a>
+<a name='L201'></a><a href='#L201'>201</a>
+<a name='L202'></a><a href='#L202'>202</a>
+<a name='L203'></a><a href='#L203'>203</a>
+<a name='L204'></a><a href='#L204'>204</a>
+<a name='L205'></a><a href='#L205'>205</a>
+<a name='L206'></a><a href='#L206'>206</a>
+<a name='L207'></a><a href='#L207'>207</a>
+<a name='L208'></a><a href='#L208'>208</a>
+<a name='L209'></a><a href='#L209'>209</a>
+<a name='L210'></a><a href='#L210'>210</a>
+<a name='L211'></a><a href='#L211'>211</a>
+<a name='L212'></a><a href='#L212'>212</a>
+<a name='L213'></a><a href='#L213'>213</a>
+<a name='L214'></a><a href='#L214'>214</a>
+<a name='L215'></a><a href='#L215'>215</a>
+<a name='L216'></a><a href='#L216'>216</a>
+<a name='L217'></a><a href='#L217'>217</a>
+<a name='L218'></a><a href='#L218'>218</a>
+<a name='L219'></a><a href='#L219'>219</a>
+<a name='L220'></a><a href='#L220'>220</a>
+<a name='L221'></a><a href='#L221'>221</a>
+<a name='L222'></a><a href='#L222'>222</a>
+<a name='L223'></a><a href='#L223'>223</a>
+<a name='L224'></a><a href='#L224'>224</a>
+<a name='L225'></a><a href='#L225'>225</a>
+<a name='L226'></a><a href='#L226'>226</a>
+<a name='L227'></a><a href='#L227'>227</a>
+<a name='L228'></a><a href='#L228'>228</a>
+<a name='L229'></a><a href='#L229'>229</a>
+<a name='L230'></a><a href='#L230'>230</a>
+<a name='L231'></a><a href='#L231'>231</a>
+<a name='L232'></a><a href='#L232'>232</a>
+<a name='L233'></a><a href='#L233'>233</a>
+<a name='L234'></a><a href='#L234'>234</a>
+<a name='L235'></a><a href='#L235'>235</a>
+<a name='L236'></a><a href='#L236'>236</a>
+<a name='L237'></a><a href='#L237'>237</a>
+<a name='L238'></a><a href='#L238'>238</a>
+<a name='L239'></a><a href='#L239'>239</a>
+<a name='L240'></a><a href='#L240'>240</a>
+<a name='L241'></a><a href='#L241'>241</a>
+<a name='L242'></a><a href='#L242'>242</a>
+<a name='L243'></a><a href='#L243'>243</a>
+<a name='L244'></a><a href='#L244'>244</a>
+<a name='L245'></a><a href='#L245'>245</a>
+<a name='L246'></a><a href='#L246'>246</a>
+<a name='L247'></a><a href='#L247'>247</a>
+<a name='L248'></a><a href='#L248'>248</a>
+<a name='L249'></a><a href='#L249'>249</a>
+<a name='L250'></a><a href='#L250'>250</a>
+<a name='L251'></a><a href='#L251'>251</a>
+<a name='L252'></a><a href='#L252'>252</a>
+<a name='L253'></a><a href='#L253'>253</a>
+<a name='L254'></a><a href='#L254'>254</a>
+<a name='L255'></a><a href='#L255'>255</a>
+<a name='L256'></a><a href='#L256'>256</a>
+<a name='L257'></a><a href='#L257'>257</a>
+<a name='L258'></a><a href='#L258'>258</a>
+<a name='L259'></a><a href='#L259'>259</a>
+<a name='L260'></a><a href='#L260'>260</a>
+<a name='L261'></a><a href='#L261'>261</a>
+<a name='L262'></a><a href='#L262'>262</a>
+<a name='L263'></a><a href='#L263'>263</a>
+<a name='L264'></a><a href='#L264'>264</a>
+<a name='L265'></a><a href='#L265'>265</a>
+<a name='L266'></a><a href='#L266'>266</a>
+<a name='L267'></a><a href='#L267'>267</a>
+<a name='L268'></a><a href='#L268'>268</a>
+<a name='L269'></a><a href='#L269'>269</a>
+<a name='L270'></a><a href='#L270'>270</a>
+<a name='L271'></a><a href='#L271'>271</a>
+<a name='L272'></a><a href='#L272'>272</a>
+<a name='L273'></a><a href='#L273'>273</a>
+<a name='L274'></a><a href='#L274'>274</a>
+<a name='L275'></a><a href='#L275'>275</a>
+<a name='L276'></a><a href='#L276'>276</a>
+<a name='L277'></a><a href='#L277'>277</a>
+<a name='L278'></a><a href='#L278'>278</a>
+<a name='L279'></a><a href='#L279'>279</a>
+<a name='L280'></a><a href='#L280'>280</a>
+<a name='L281'></a><a href='#L281'>281</a>
+<a name='L282'></a><a href='#L282'>282</a>
+<a name='L283'></a><a href='#L283'>283</a>
+<a name='L284'></a><a href='#L284'>284</a>
+<a name='L285'></a><a href='#L285'>285</a>
+<a name='L286'></a><a href='#L286'>286</a>
+<a name='L287'></a><a href='#L287'>287</a>
+<a name='L288'></a><a href='#L288'>288</a>
+<a name='L289'></a><a href='#L289'>289</a>
+<a name='L290'></a><a href='#L290'>290</a>
+<a name='L291'></a><a href='#L291'>291</a>
+<a name='L292'></a><a href='#L292'>292</a>
+<a name='L293'></a><a href='#L293'>293</a>
+<a name='L294'></a><a href='#L294'>294</a>
+<a name='L295'></a><a href='#L295'>295</a>
+<a name='L296'></a><a href='#L296'>296</a>
+<a name='L297'></a><a href='#L297'>297</a>
+<a name='L298'></a><a href='#L298'>298</a>
+<a name='L299'></a><a href='#L299'>299</a>
+<a name='L300'></a><a href='#L300'>300</a>
+<a name='L301'></a><a href='#L301'>301</a>
+<a name='L302'></a><a href='#L302'>302</a>
+<a name='L303'></a><a href='#L303'>303</a>
+<a name='L304'></a><a href='#L304'>304</a>
+<a name='L305'></a><a href='#L305'>305</a>
+<a name='L306'></a><a href='#L306'>306</a>
+<a name='L307'></a><a href='#L307'>307</a>
+<a name='L308'></a><a href='#L308'>308</a>
+<a name='L309'></a><a href='#L309'>309</a>
+<a name='L310'></a><a href='#L310'>310</a>
+<a name='L311'></a><a href='#L311'>311</a>
+<a name='L312'></a><a href='#L312'>312</a>
+<a name='L313'></a><a href='#L313'>313</a>
+<a name='L314'></a><a href='#L314'>314</a>
+<a name='L315'></a><a href='#L315'>315</a>
+<a name='L316'></a><a href='#L316'>316</a>
+<a name='L317'></a><a href='#L317'>317</a>
+<a name='L318'></a><a href='#L318'>318</a>
+<a name='L319'></a><a href='#L319'>319</a>
+<a name='L320'></a><a href='#L320'>320</a>
+<a name='L321'></a><a href='#L321'>321</a>
+<a name='L322'></a><a href='#L322'>322</a>
+<a name='L323'></a><a href='#L323'>323</a>
+<a name='L324'></a><a href='#L324'>324</a>
+<a name='L325'></a><a href='#L325'>325</a>
+<a name='L326'></a><a href='#L326'>326</a>
+<a name='L327'></a><a href='#L327'>327</a>
+<a name='L328'></a><a href='#L328'>328</a>
+<a name='L329'></a><a href='#L329'>329</a>
+<a name='L330'></a><a href='#L330'>330</a>
+<a name='L331'></a><a href='#L331'>331</a>
+<a name='L332'></a><a href='#L332'>332</a>
+<a name='L333'></a><a href='#L333'>333</a>
+<a name='L334'></a><a href='#L334'>334</a>
+<a name='L335'></a><a href='#L335'>335</a>
+<a name='L336'></a><a href='#L336'>336</a>
+<a name='L337'></a><a href='#L337'>337</a>
+<a name='L338'></a><a href='#L338'>338</a>
+<a name='L339'></a><a href='#L339'>339</a>
+<a name='L340'></a><a href='#L340'>340</a>
+<a name='L341'></a><a href='#L341'>341</a>
+<a name='L342'></a><a href='#L342'>342</a>
+<a name='L343'></a><a href='#L343'>343</a>
+<a name='L344'></a><a href='#L344'>344</a>
+<a name='L345'></a><a href='#L345'>345</a>
+<a name='L346'></a><a href='#L346'>346</a>
+<a name='L347'></a><a href='#L347'>347</a>
+<a name='L348'></a><a href='#L348'>348</a>
+<a name='L349'></a><a href='#L349'>349</a>
+<a name='L350'></a><a href='#L350'>350</a>
+<a name='L351'></a><a href='#L351'>351</a>
+<a name='L352'></a><a href='#L352'>352</a>
+<a name='L353'></a><a href='#L353'>353</a>
+<a name='L354'></a><a href='#L354'>354</a>
+<a name='L355'></a><a href='#L355'>355</a>
+<a name='L356'></a><a href='#L356'>356</a>
+<a name='L357'></a><a href='#L357'>357</a>
+<a name='L358'></a><a href='#L358'>358</a>
+<a name='L359'></a><a href='#L359'>359</a>
+<a name='L360'></a><a href='#L360'>360</a>
+<a name='L361'></a><a href='#L361'>361</a>
+<a name='L362'></a><a href='#L362'>362</a>
+<a name='L363'></a><a href='#L363'>363</a>
+<a name='L364'></a><a href='#L364'>364</a>
+<a name='L365'></a><a href='#L365'>365</a>
+<a name='L366'></a><a href='#L366'>366</a>
+<a name='L367'></a><a href='#L367'>367</a>
+<a name='L368'></a><a href='#L368'>368</a>
+<a name='L369'></a><a href='#L369'>369</a>
+<a name='L370'></a><a href='#L370'>370</a>
+<a name='L371'></a><a href='#L371'>371</a>
+<a name='L372'></a><a href='#L372'>372</a>
+<a name='L373'></a><a href='#L373'>373</a>
+<a name='L374'></a><a href='#L374'>374</a>
+<a name='L375'></a><a href='#L375'>375</a>
+<a name='L376'></a><a href='#L376'>376</a>
+<a name='L377'></a><a href='#L377'>377</a>
+<a name='L378'></a><a href='#L378'>378</a>
+<a name='L379'></a><a href='#L379'>379</a>
+<a name='L380'></a><a href='#L380'>380</a>
+<a name='L381'></a><a href='#L381'>381</a>
+<a name='L382'></a><a href='#L382'>382</a>
+<a name='L383'></a><a href='#L383'>383</a>
+<a name='L384'></a><a href='#L384'>384</a>
+<a name='L385'></a><a href='#L385'>385</a>
+<a name='L386'></a><a href='#L386'>386</a>
+<a name='L387'></a><a href='#L387'>387</a>
+<a name='L388'></a><a href='#L388'>388</a>
+<a name='L389'></a><a href='#L389'>389</a>
+<a name='L390'></a><a href='#L390'>390</a>
+<a name='L391'></a><a href='#L391'>391</a>
+<a name='L392'></a><a href='#L392'>392</a>
+<a name='L393'></a><a href='#L393'>393</a>
+<a name='L394'></a><a href='#L394'>394</a>
+<a name='L395'></a><a href='#L395'>395</a>
+<a name='L396'></a><a href='#L396'>396</a>
+<a name='L397'></a><a href='#L397'>397</a>
+<a name='L398'></a><a href='#L398'>398</a>
+<a name='L399'></a><a href='#L399'>399</a>
+<a name='L400'></a><a href='#L400'>400</a>
+<a name='L401'></a><a href='#L401'>401</a>
+<a name='L402'></a><a href='#L402'>402</a>
+<a name='L403'></a><a href='#L403'>403</a>
+<a name='L404'></a><a href='#L404'>404</a>
+<a name='L405'></a><a href='#L405'>405</a>
+<a name='L406'></a><a href='#L406'>406</a>
+<a name='L407'></a><a href='#L407'>407</a>
+<a name='L408'></a><a href='#L408'>408</a>
+<a name='L409'></a><a href='#L409'>409</a>
+<a name='L410'></a><a href='#L410'>410</a>
+<a name='L411'></a><a href='#L411'>411</a>
+<a name='L412'></a><a href='#L412'>412</a>
+<a name='L413'></a><a href='#L413'>413</a>
+<a name='L414'></a><a href='#L414'>414</a>
+<a name='L415'></a><a href='#L415'>415</a>
+<a name='L416'></a><a href='#L416'>416</a>
+<a name='L417'></a><a href='#L417'>417</a>
+<a name='L418'></a><a href='#L418'>418</a>
+<a name='L419'></a><a href='#L419'>419</a>
+<a name='L420'></a><a href='#L420'>420</a>
+<a name='L421'></a><a href='#L421'>421</a>
+<a name='L422'></a><a href='#L422'>422</a>
+<a name='L423'></a><a href='#L423'>423</a>
+<a name='L424'></a><a href='#L424'>424</a>
+<a name='L425'></a><a href='#L425'>425</a>
+<a name='L426'></a><a href='#L426'>426</a>
+<a name='L427'></a><a href='#L427'>427</a>
+<a name='L428'></a><a href='#L428'>428</a>
+<a name='L429'></a><a href='#L429'>429</a>
+<a name='L430'></a><a href='#L430'>430</a>
+<a name='L431'></a><a href='#L431'>431</a>
+<a name='L432'></a><a href='#L432'>432</a>
+<a name='L433'></a><a href='#L433'>433</a>
+<a name='L434'></a><a href='#L434'>434</a>
+<a name='L435'></a><a href='#L435'>435</a>
+<a name='L436'></a><a href='#L436'>436</a>
+<a name='L437'></a><a href='#L437'>437</a>
+<a name='L438'></a><a href='#L438'>438</a>
+<a name='L439'></a><a href='#L439'>439</a>
+<a name='L440'></a><a href='#L440'>440</a>
+<a name='L441'></a><a href='#L441'>441</a>
+<a name='L442'></a><a href='#L442'>442</a>
+<a name='L443'></a><a href='#L443'>443</a>
+<a name='L444'></a><a href='#L444'>444</a>
+<a name='L445'></a><a href='#L445'>445</a>
+<a name='L446'></a><a href='#L446'>446</a>
+<a name='L447'></a><a href='#L447'>447</a>
+<a name='L448'></a><a href='#L448'>448</a>
+<a name='L449'></a><a href='#L449'>449</a>
+<a name='L450'></a><a href='#L450'>450</a>
+<a name='L451'></a><a href='#L451'>451</a>
+<a name='L452'></a><a href='#L452'>452</a>
+<a name='L453'></a><a href='#L453'>453</a>
+<a name='L454'></a><a href='#L454'>454</a>
+<a name='L455'></a><a href='#L455'>455</a>
+<a name='L456'></a><a href='#L456'>456</a>
+<a name='L457'></a><a href='#L457'>457</a>
+<a name='L458'></a><a href='#L458'>458</a>
+<a name='L459'></a><a href='#L459'>459</a>
+<a name='L460'></a><a href='#L460'>460</a>
+<a name='L461'></a><a href='#L461'>461</a>
+<a name='L462'></a><a href='#L462'>462</a>
+<a name='L463'></a><a href='#L463'>463</a>
+<a name='L464'></a><a href='#L464'>464</a>
+<a name='L465'></a><a href='#L465'>465</a>
+<a name='L466'></a><a href='#L466'>466</a>
+<a name='L467'></a><a href='#L467'>467</a>
+<a name='L468'></a><a href='#L468'>468</a>
+<a name='L469'></a><a href='#L469'>469</a>
+<a name='L470'></a><a href='#L470'>470</a>
+<a name='L471'></a><a href='#L471'>471</a>
+<a name='L472'></a><a href='#L472'>472</a>
+<a name='L473'></a><a href='#L473'>473</a>
+<a name='L474'></a><a href='#L474'>474</a>
+<a name='L475'></a><a href='#L475'>475</a>
+<a name='L476'></a><a href='#L476'>476</a>
+<a name='L477'></a><a href='#L477'>477</a>
+<a name='L478'></a><a href='#L478'>478</a>
+<a name='L479'></a><a href='#L479'>479</a>
+<a name='L480'></a><a href='#L480'>480</a>
+<a name='L481'></a><a href='#L481'>481</a>
+<a name='L482'></a><a href='#L482'>482</a>
+<a name='L483'></a><a href='#L483'>483</a>
+<a name='L484'></a><a href='#L484'>484</a>
+<a name='L485'></a><a href='#L485'>485</a>
+<a name='L486'></a><a href='#L486'>486</a>
+<a name='L487'></a><a href='#L487'>487</a>
+<a name='L488'></a><a href='#L488'>488</a>
+<a name='L489'></a><a href='#L489'>489</a>
+<a name='L490'></a><a href='#L490'>490</a>
+<a name='L491'></a><a href='#L491'>491</a>
+<a name='L492'></a><a href='#L492'>492</a>
+<a name='L493'></a><a href='#L493'>493</a>
+<a name='L494'></a><a href='#L494'>494</a>
+<a name='L495'></a><a href='#L495'>495</a>
+<a name='L496'></a><a href='#L496'>496</a>
+<a name='L497'></a><a href='#L497'>497</a>
+<a name='L498'></a><a href='#L498'>498</a>
+<a name='L499'></a><a href='#L499'>499</a>
+<a name='L500'></a><a href='#L500'>500</a>
+<a name='L501'></a><a href='#L501'>501</a>
+<a name='L502'></a><a href='#L502'>502</a>
+<a name='L503'></a><a href='#L503'>503</a>
+<a name='L504'></a><a href='#L504'>504</a>
+<a name='L505'></a><a href='#L505'>505</a>
+<a name='L506'></a><a href='#L506'>506</a>
+<a name='L507'></a><a href='#L507'>507</a>
+<a name='L508'></a><a href='#L508'>508</a>
+<a name='L509'></a><a href='#L509'>509</a>
+<a name='L510'></a><a href='#L510'>510</a>
+<a name='L511'></a><a href='#L511'>511</a>
+<a name='L512'></a><a href='#L512'>512</a>
+<a name='L513'></a><a href='#L513'>513</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { COLORS, FONTS, RADIUS, LOAN_TYPES } from "../constants";
+&nbsp;
+function <span class="fstat-no" title="function not covered" >esc(</span>str) {
+<span class="cstat-no" title="statement not covered" >  return String(str).replace(/&amp;/g, '&amp;amp;').replace(/&lt;/g, '&amp;lt;').replace(/&gt;/g, '&amp;gt;').replace(/"/g, '&amp;quot;').replace(/'/g, '&amp;#39;');</span>
+}
+&nbsp;
+function <span class="fstat-no" title="function not covered" >sanitizeUrl(</span>url) {
+<span class="cstat-no" title="statement not covered" >  if (!url || typeof url !== 'string') <span class="cstat-no" title="statement not covered" >return '#';</span></span>
+  const trimmed = <span class="cstat-no" title="statement not covered" >url.trim();</span>
+  // Only allow http, https, and anchor protocols
+<span class="cstat-no" title="statement not covered" >  if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('#') || trimmed.startsWith('/')) {</span>
+<span class="cstat-no" title="statement not covered" >    return esc(trimmed);</span>
+  }
+<span class="cstat-no" title="statement not covered" >  return '#';</span>
+}
+&nbsp;
+function <span class="fstat-no" title="function not covered" >validConversionId(</span>id) {
+<span class="cstat-no" title="statement not covered" >  return id &amp;&amp; /^AW-\d+$/i.test(id);</span>
+}
+&nbsp;
+// Real US business addresses (coworking/virtual office locations verifiable on Google Maps)
+const BUSINESS_ADDRESSES = <span class="cstat-no" title="statement not covered" >[</span>
+  { street: "1209 Orange St", city: "Wilmington", state: "DE", zip: "19801" },
+  { street: "251 Little Falls Dr", city: "Wilmington", state: "DE", zip: "19808" },
+  { street: "8 The Green, Ste A", city: "Dover", state: "DE", zip: "19901" },
+  { street: "30 N Gould St, Ste R", city: "Sheridan", state: "WY", zip: "82801" },
+  { street: "1603 Capitol Ave, Ste 310", city: "Cheyenne", state: "WY", zip: "82001" },
+  { street: "5830 E 2nd St, Ste 7000", city: "Casper", state: "WY", zip: "82609" },
+  { street: "1007 N Orange St, 4th Fl", city: "Wilmington", state: "DE", zip: "19801" },
+  { street: "16192 Coastal Hwy", city: "Lewes", state: "DE", zip: "19958" },
+  { street: "108 West 13th St", city: "Wilmington", state: "DE", zip: "19801" },
+  { street: "1712 Pioneer Ave, Ste 500", city: "Cheyenne", state: "WY", zip: "82001" },
+  { street: "99 Wall St, Ste 5868", city: "New York", state: "NY", zip: "10005" },
+  { street: "8 The Green, Ste 14095", city: "Dover", state: "DE", zip: "19901" },
+];
+&nbsp;
+function <span class="fstat-no" title="function not covered" >pickAddress(</span>siteId) {
+  // Deterministic selection based on site ID hash
+  let hash = <span class="cstat-no" title="statement not covered" >0;</span>
+  const id = <span class="cstat-no" title="statement not covered" >siteId || 'default';</span>
+<span class="cstat-no" title="statement not covered" >  for (let i = <span class="cstat-no" title="statement not covered" >0;</span> i &lt; id.length; i++) {</span>
+<span class="cstat-no" title="statement not covered" >    hash = ((hash &lt;&lt; 5) - hash) + id.charCodeAt(i);</span>
+<span class="cstat-no" title="statement not covered" >    hash |= 0;</span>
+  }
+<span class="cstat-no" title="statement not covered" >  return BUSINESS_ADDRESSES[Math.abs(hash) % BUSINESS_ADDRESSES.length];</span>
+}
+&nbsp;
+export function <span class="fstat-no" title="function not covered" >generateApplyPage(</span>site) {
+  const c = <span class="cstat-no" title="statement not covered" >COLORS.find(<span class="fstat-no" title="function not covered" >x </span>=&gt; <span class="cstat-no" title="statement not covered" >x.id === site.colorId)</span> || COLORS[0];</span>
+  const f = <span class="cstat-no" title="statement not covered" >FONTS.find(<span class="fstat-no" title="function not covered" >x </span>=&gt; <span class="cstat-no" title="statement not covered" >x.id === site.fontId)</span> || FONTS[0];</span>
+  const brand = <span class="cstat-no" title="statement not covered" >esc(site.brand || "LoanBridge");</span>
+  const loanLabel = <span class="cstat-no" title="statement not covered" >LOAN_TYPES.find(<span class="fstat-no" title="function not covered" >l </span>=&gt; <span class="cstat-no" title="statement not covered" >l.id === site.loanType)</span>?.label || "Personal Loans";</span>
+  const hasGads = <span class="cstat-no" title="statement not covered" >validConversionId(site.conversionId);</span>
+&nbsp;
+  const fingerprint = <span class="cstat-no" title="statement not covered" >`${site.id?.slice(0, 8) || 'xxxx'}-${Date.now().toString(36)}`;</span>
+&nbsp;
+  // Determine form content — priority: aid (auto LeadsGate) &gt; formEmbed (raw paste) &gt; redirectUrl
+  let formContent;
+<span class="cstat-no" title="statement not covered" >  if (site.aid?.trim()) {</span>
+    // Auto-generate LeadsGate form with full tracking callbacks (Module 2 spec)
+<span class="cstat-no" title="statement not covered" >    formContent = `&lt;script type="text/javascript"&gt;</span>
+var clickid=new URLSearchParams(window.location.search).get('clickid')||'';
+var formStartFired=sessionStorage.getItem('_fs')==='1';
+var _lg_form_init_={
+  aid:"${esc(site.aid)}",
+  template:"fresh",
+  click_id:clickid,
+  onFormLoad:function(){
+    if(!formStartFired){formStartFired=true;sessionStorage.setItem('_fs','1');${hasGads ? `gtag('event','conversion',{send_to:'${site.conversionId}/${esc(site.formStartLabel || '')}'});` : ''}}
+    if(window.__pixel)__pixel('fl');
+  },
+  onStepChange:function(step){if(window.__pixel)__pixel('step',{step:step});},
+  onSubmit:function(){
+    ${hasGads ? `gtag('event','conversion',{send_to:'${site.conversionId}/${esc(site.formSubmitLabel || '')}'});` : ''}
+    if(window.__pixel)__pixel('fs',{clickid:clickid});
+  },
+  onSuccess:function(response){
+    if(window.__pixel)__pixel('success',{clickid:clickid,lead_id:response&amp;&amp;response.lead_id||''});
+  }
+};
+&lt;/script&gt;
+&lt;script type="text/javascript" async="true" src="https://apikeep.com/form/applicationInit.js"&gt;&lt;/script&gt;
+&lt;div id="_lg_form_"&gt;&lt;/div&gt;`;
+  } else <span class="cstat-no" title="statement not covered" >if (site.formEmbed?.trim()) {</span>
+<span class="cstat-no" title="statement not covered" >    formContent = /&lt;(script|div|iframe|form|link)/i.test(site.formEmbed)</span>
+      ? site.formEmbed
+      : `&lt;script&gt;${site.formEmbed}&lt;/script&gt;`;
+  } else <span class="cstat-no" title="statement not covered" >if (site.redirectUrl?.trim()) {</span>
+<span class="cstat-no" title="statement not covered" >    formContent = `&lt;script&gt;window.location.href=${JSON.stringify(sanitizeUrl(site.redirectUrl))};&lt;/script&gt;`;</span>
+  } else {
+<span class="cstat-no" title="statement not covered" >    formContent = `&lt;p style="text-align:center;padding:40px;color:#999"&gt;No form configured.&lt;/p&gt;`;</span>
+  }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  return `&lt;!DOCTYPE html&gt;</span>
+&lt;html lang="en"&gt;
+&lt;head&gt;
+&lt;meta charset="UTF-8"&gt;
+&lt;meta name="viewport" content="width=device-width,initial-scale=1.0"&gt;
+&lt;title&gt;Apply - ${brand}&lt;/title&gt;
+&lt;meta name="robots" content="noindex,nofollow"&gt;
+&lt;!-- v2|${site.id || 'x'}|${fingerprint} --&gt;
+${hasGads ? `&lt;script async src="https://www.googletagmanager.com/gtag/js?id=${site.conversionId}"&gt;&lt;/script&gt;&lt;script&gt;window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${site.conversionId}');&lt;/script&gt;` : '&lt;!-- No Google Ads conversion ID configured --&gt;'}
+&lt;style&gt;*{margin:0;padding:0;box-sizing:border-box}body{font-family:${f.family},system-ui,sans-serif;background:hsl(${c.bg[0]},${c.bg[1]}%,${c.bg[2]}%);min-height:100vh}&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;script&gt;(function(){var PX='https://t.'+window.location.hostname+'/e';var sid=crypto.randomUUID();var up=new URLSearchParams(window.location.search);var cid=up.get('clickid')||'';var gid=up.get('gclid')||'';function fire(e,d){var p=new URLSearchParams({e:e,sid:sid,cid:cid,gid:gid,ts:Date.now(),url:window.location.pathname,ref:document.referrer});if(d)for(var k in d)p.set(k,d[k]);navigator.sendBeacon(PX,p);}window.__pixel=fire;fire('pv',{ua:navigator.userAgent,sw:screen.width,sh:screen.height});})();&lt;/script&gt;
+${formContent}
+&lt;/body&gt;
+&lt;/html&gt;`;
+}
+&nbsp;
+export function <span class="fstat-no" title="function not covered" >generateAstrodeckLoanPreview(</span>site) {
+  const c = <span class="cstat-no" title="statement not covered" >COLORS.find(<span class="fstat-no" title="function not covered" >x </span>=&gt; <span class="cstat-no" title="statement not covered" >x.id === site.colorId)</span> || COLORS[0];</span>
+  const f = <span class="cstat-no" title="statement not covered" >FONTS.find(<span class="fstat-no" title="function not covered" >x </span>=&gt; <span class="cstat-no" title="statement not covered" >x.id === site.fontId)</span> || FONTS[0];</span>
+  const brand = <span class="cstat-no" title="statement not covered" >esc(site.brand || "LoanBridge");</span>
+  const loanLabel = <span class="cstat-no" title="statement not covered" >LOAN_TYPES.find(<span class="fstat-no" title="function not covered" >l </span>=&gt; <span class="cstat-no" title="statement not covered" >l.id === site.loanType)</span>?.label || "Personal Loans";</span>
+  const h1 = <span class="cstat-no" title="statement not covered" >esc(site.h1 || `Get ${loanLabel} up to $${(site.amountMax || 5000).toLocaleString()}`);</span>
+  const sub = <span class="cstat-no" title="statement not covered" >esc(site.sub || "Compare lender offers in minutes with no impact to your credit score.");</span>
+  const badge = <span class="cstat-no" title="statement not covered" >esc(site.badge || "No Credit Impact");</span>
+  const cta = <span class="cstat-no" title="statement not covered" >esc(site.cta || "See My Options");</span>
+  const midAmount = <span class="cstat-no" title="statement not covered" >Math.round(((site.amountMin || 100) + (site.amountMax || 5000)) / 2);</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  return `&lt;!DOCTYPE html&gt;</span>
+&lt;html lang="en"&gt;
+&lt;head&gt;
+&lt;meta charset="UTF-8"&gt;&lt;meta name="viewport" content="width=device-width,initial-scale=1"&gt;
+&lt;title&gt;${brand} — AstroDeck Loan Preview&lt;/title&gt;
+&lt;style&gt;
+*{box-sizing:border-box;margin:0;padding:0}body{font-family:${f.family},system-ui,sans-serif;background:hsl(${c.bg[0]},${c.bg[1]}%,${c.bg[2]}%);color:hsl(${c.fg[0]},${c.fg[1]}%,${c.fg[2]}%)}
+.hero{padding:56px 20px 26px;background:linear-gradient(180deg,hsl(${c.p[0]},${Math.max(c.p[1]-25,25)}%,96%),hsl(${c.bg[0]},${c.bg[1]}%,${c.bg[2]}%))}
+.container{max-width:980px;margin:0 auto}
+.badge{display:inline-flex;background:hsl(${c.p[0]},${c.p[1]}%,${Math.min(c.p[2]+45,90)}%);color:hsl(${c.p[0]},${c.p[1]}%,${Math.max(c.p[2]-8,20)}%);padding:6px 12px;border-radius:999px;font-weight:700;font-size:12px;margin-bottom:14px}
+h1{font-size:clamp(30px,4.2vw,52px);line-height:1.1;letter-spacing:-.02em;max-width:720px}
+.sub{margin-top:12px;font-size:16px;opacity:.85;max-width:680px}
+.grid{display:grid;grid-template-columns:1.05fr .95fr;gap:20px;padding:0 20px 28px}
+.card{background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:16px;box-shadow:0 14px 40px rgba(0,0,0,.08);padding:18px}
+.k{font-size:12px;color:#6b7280;margin-bottom:6px}.amt{font-size:34px;font-weight:800;color:hsl(${c.p[0]},${c.p[1]}%,${c.p[2]}%);margin-bottom:10px}
+input[type=range]{width:100%}.zip{display:flex;gap:8px;margin-top:10px}.zip input{flex:1;border:1px solid #d1d5db;border-radius:12px;padding:12px 14px;font-weight:600}
+.btn{border:none;border-radius:12px;padding:12px 16px;background:hsl(${c.s[0]},${c.s[1]}%,${c.s[2]}%);color:#fff;font-weight:800;cursor:pointer;white-space:nowrap}
+.trust{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.t{background:#fff;border:1px solid rgba(0,0,0,.07);padding:10px;border-radius:12px;font-size:12px;text-align:center}
+@media(max-width:860px){.grid{grid-template-columns:1fr}.trust{grid-template-columns:1fr 1fr 1fr}}
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;section class="hero"&gt;&lt;div class="container"&gt;&lt;div class="badge"&gt;${badge}&lt;/div&gt;&lt;h1&gt;${h1}&lt;/h1&gt;&lt;p class="sub"&gt;${sub}&lt;/p&gt;&lt;/div&gt;&lt;/section&gt;
+  &lt;section class="container grid"&gt;
+    &lt;div class="card"&gt;
+      &lt;div class="k"&gt;Loan Type&lt;/div&gt;&lt;div style="font-weight:700;margin-bottom:8px"&gt;${loanLabel}&lt;/div&gt;
+      &lt;div class="k"&gt;How it works&lt;/div&gt;
+      &lt;ol style="padding-left:18px;line-height:1.8;font-size:14px"&gt;&lt;li&gt;Choose your amount&lt;/li&gt;&lt;li&gt;Enter ZIP code&lt;/li&gt;&lt;li&gt;See your matched options&lt;/li&gt;&lt;/ol&gt;
+      &lt;div class="trust"&gt;&lt;div class="t"&gt;🔒 SSL Secured&lt;/div&gt;&lt;div class="t"&gt;⏱ 2-Min Form&lt;/div&gt;&lt;div class="t"&gt;✅ Soft Pull&lt;/div&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class="card"&gt;
+      &lt;div class="k"&gt;Estimated amount&lt;/div&gt;&lt;div class="amt"&gt;$${midAmount.toLocaleString()}&lt;/div&gt;
+      &lt;input type="range" min="${site.amountMin || 100}" max="${site.amountMax || 5000}" value="${midAmount}" step="100" /&gt;
+      &lt;div class="zip"&gt;&lt;input type="text" placeholder="ZIP Code" maxlength="5"&gt;&lt;button class="btn"&gt;${cta}&lt;/button&gt;&lt;/div&gt;
+      &lt;div style="margin-top:10px;font-size:11px;color:#6b7280"&gt;Preview: AstroDeck Loan template style&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/section&gt;
+&lt;/body&gt;
+&lt;/html&gt;`;
+}
+&nbsp;
+export function <span class="fstat-no" title="function not covered" >generateLP(</span>site) {
+  const c = <span class="cstat-no" title="statement not covered" >COLORS.find(<span class="fstat-no" title="function not covered" >x </span>=&gt; <span class="cstat-no" title="statement not covered" >x.id === site.colorId)</span> || COLORS[0];</span>
+  const f = <span class="cstat-no" title="statement not covered" >FONTS.find(<span class="fstat-no" title="function not covered" >x </span>=&gt; <span class="cstat-no" title="statement not covered" >x.id === site.fontId)</span> || FONTS[0];</span>
+  const r = <span class="cstat-no" title="statement not covered" >RADIUS.find(<span class="fstat-no" title="function not covered" >x </span>=&gt; <span class="cstat-no" title="statement not covered" >x.id === site.radius)</span> || RADIUS[2];</span>
+  const brand = <span class="cstat-no" title="statement not covered" >esc(site.brand || "LoanBridge");</span>
+  const loanLabel = <span class="cstat-no" title="statement not covered" >LOAN_TYPES.find(<span class="fstat-no" title="function not covered" >l </span>=&gt; <span class="cstat-no" title="statement not covered" >l.id === site.loanType)</span>?.label || "Personal Loans";</span>
+  const h1 = <span class="cstat-no" title="statement not covered" >esc(site.h1 || `Fast ${loanLabel} Up To $${(site.amountMax || 5000).toLocaleString()}`);</span>
+  const badge = <span class="cstat-no" title="statement not covered" >esc(site.badge || "Trusted by 15,000+ borrowers");</span>
+  const cta = <span class="cstat-no" title="statement not covered" >esc(site.cta || "Check Your Rate");</span>
+  const sub = <span class="cstat-no" title="statement not covered" >esc(site.sub || "Get approved in minutes. Funds as fast as next business day.");</span>
+  const midAmount = <span class="cstat-no" title="statement not covered" >Math.round(((site.amountMin || 100) + (site.amountMax || 5000)) / 2);</span>
+&nbsp;
+  // Fingerprint for tracking only
+  const fingerprint = <span class="cstat-no" title="statement not covered" >`${site.id?.slice(0, 8) || 'xxxx'}-${Date.now().toString(36)}`;</span>
+  const cssVarPrefix = <span class="cstat-no" title="statement not covered" >'lp';</span>
+  const hasGads = <span class="cstat-no" title="statement not covered" >validConversionId(site.conversionId);</span>
+&nbsp;
+  // Dynamic meta generation — minimal for fast FCP
+  const metaTags = <span class="cstat-no" title="statement not covered" >[</span>
+    `&lt;meta charset="UTF-8"&gt;`,
+    `&lt;meta name="viewport" content="width=device-width,initial-scale=1.0"&gt;`,
+    `&lt;title&gt;${brand} – ${loanLabel} | Fast Approval&lt;/title&gt;`,
+    `&lt;meta name="description" content="${sub}"&gt;`,
+    `&lt;meta name="theme-color" content="hsl(${c.p[0]},${c.p[1]}%,${c.p[2]}%)"&gt;`,
+    `&lt;meta name="robots" content="${site.noindex ? 'noindex,nofollow' : 'index,follow'}"&gt;`,
+    `&lt;meta property="og:title" content="${brand} — ${loanLabel}"&gt;`,
+    `&lt;meta property="og:description" content="${sub}"&gt;`,
+    `&lt;meta property="og:image" content="${site.ogImageDataUrl || `https://${site.domain || 'example.com'}/og.jpg`}"&gt;`,
+    `&lt;meta property="og:url" content="https://${site.domain || 'example.com'}/"&gt;`,
+    `&lt;meta property="og:type" content="website"&gt;`,
+    `&lt;link rel="canonical" href="https://${site.domain || 'example.com'}/"&gt;`,
+    site.faviconDataUrl
+      ? `&lt;link rel="icon" href="${site.faviconDataUrl}" type="image/svg+xml"&gt;`
+      : `&lt;link rel="icon" href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'&gt;&lt;rect width='64' height='64' rx='14' fill='hsl(${c.p[0]},${c.p[1]}%25,${c.p[2]}%25)'/&gt;&lt;text x='32' y='44' text-anchor='middle' font-family='system-ui' font-size='36' font-weight='800' fill='white'&gt;${brand[0]}&lt;/text&gt;&lt;/svg&gt;" type="image/svg+xml"&gt;`,
+    `&lt;!-- v2|${site.id || 'x'}|${fingerprint} --&gt;`,
+  ].join('\n');
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  return `&lt;!DOCTYPE html&gt;</span>
+&lt;html lang="en" dir="ltr"&gt;
+&lt;head&gt;
+${metaTags}
+${hasGads ? `&lt;script async src="https://www.googletagmanager.com/gtag/js?id=${site.conversionId}"&gt;&lt;/script&gt;&lt;script&gt;window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${site.conversionId}');&lt;/script&gt;` : ''}
+&lt;style&gt;:root{--${cssVarPrefix}-p:${c.p[0]} ${c.p[1]}% ${c.p[2]}%;--${cssVarPrefix}-s:${c.s[0]} ${c.s[1]}% ${c.s[2]}%;--${cssVarPrefix}-a:${c.a[0]} ${c.a[1]}% ${c.a[2]}%;--${cssVarPrefix}-bg:${c.bg[0]} ${c.bg[1]}% ${c.bg[2]}%;--${cssVarPrefix}-fg:${c.fg[0]} ${c.fg[1]}% ${c.fg[2]}%;--${cssVarPrefix}-radius:${r.v}}*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;text-size-adjust:100%}body{font-family:${f.family},system-ui,-apple-system,sans-serif;background:hsl(var(--${cssVarPrefix}-bg));color:hsl(var(--${cssVarPrefix}-fg));-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;font-size:1rem;line-height:1.5}img,svg{display:block;max-width:100%;height:auto}a{color:inherit;text-decoration:none}a:focus-visible,.btn:focus-visible,input:focus-visible{outline:3px solid hsl(var(--${cssVarPrefix}-p));outline-offset:2px;border-radius:4px}.container{width:100%;max-width:1120px;margin:0 auto;padding:0 20px}.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;border-radius:var(--${cssVarPrefix}-radius);font-weight:700;font-size:1rem;border:none;cursor:pointer;transition:transform .2s,box-shadow .2s;text-decoration:none;min-height:48px;min-width:48px;line-height:1.2}.btn-cta{background:linear-gradient(135deg,hsl(var(--${cssVarPrefix}-a)),hsl(var(--${cssVarPrefix}-a)/.85));color:#fff;box-shadow:0 4px 16px hsl(var(--${cssVarPrefix}-a)/.3)}.btn-cta:hover,.btn-cta:focus-visible{transform:translateY(-1px);box-shadow:0 6px 24px hsl(var(--${cssVarPrefix}-a)/.4)}.btn-cta:active{transform:translateY(0)}.card{background:#fff;border:1px solid hsl(var(--${cssVarPrefix}-fg)/.08);border-radius:var(--${cssVarPrefix}-radius);padding:20px}header{position:fixed;top:0;left:0;right:0;z-index:50;background:rgba(255,255,255,.97);border-bottom:1px solid hsl(var(--${cssVarPrefix}-fg)/.06);contain:layout style}header nav{display:flex;align-items:center;justify-content:space-between;height:60px}header .btn-cta{display:none}@media(min-width:768px){header .btn-cta{display:inline-flex}}.hero{padding:80px 0 40px;background:linear-gradient(135deg,hsl(var(--${cssVarPrefix}-p)),hsl(var(--${cssVarPrefix}-p)/.7));color:#fff;position:relative;overflow:hidden;text-align:center}.hero .grid{display:grid;grid-template-columns:1fr;gap:32px;align-items:center}.badge{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);font-size:.8125rem;color:rgba(255,255,255,.95);margin-bottom:16px}.badge .dot{width:8px;height:8px;border-radius:50%;background:hsl(var(--${cssVarPrefix}-s));animation:pulse 2s infinite}@media(prefers-reduced-motion:reduce){.badge .dot{animation:none}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}h1{font-size:clamp(1.75rem,8vw,3.25rem);font-weight:800;line-height:1.1;margin-bottom:16px;text-wrap:balance}h1 .accent{color:hsl(var(--${cssVarPrefix}-a))}.hero p{font-size:1rem;color:rgba(255,255,255,.8);margin:0 auto 24px;max-width:480px;text-wrap:pretty}.form-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:var(--${cssVarPrefix}-radius);padding:24px;text-align:left}.form-card h2{font-size:1.125rem;font-weight:700;margin-bottom:4px}.slider-wrap{margin-bottom:20px}.slider-label{display:flex;justify-content:space-between;font-size:.8125rem;margin-bottom:8px}.slider-amount{font-size:1.625rem;font-weight:800;color:hsl(var(--${cssVarPrefix}-a))}input[type=range]{width:100%;height:8px;-webkit-appearance:none;appearance:none;background:rgba(255,255,255,.15);border-radius:4px;outline:none;cursor:pointer}input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:28px;height:28px;border-radius:50%;background:hsl(var(--${cssVarPrefix}-a));cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);border:2px solid #fff}input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;background:hsl(var(--${cssVarPrefix}-a));cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);border:2px solid #fff}input[type=range]:focus-visible{outline:3px solid hsl(var(--${cssVarPrefix}-a));outline-offset:2px}.zip-group{margin-top:4px}.zip-input-wrap{display:flex;border-radius:var(--${cssVarPrefix}-radius);overflow:hidden;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.15)}.zip-input-wrap input{flex:1;padding:16px;border:none;background:#fff;color:#1a1a2e;font-size:1rem;font-weight:600;outline:none;min-width:0}.zip-input-wrap input::placeholder{color:#999;font-weight:400}.zip-cta{border:none;padding:16px 28px;font-size:.9375rem;font-weight:700;white-space:nowrap;border-radius:0;cursor:pointer;background:hsl(var(--${cssVarPrefix}-a));color:#fff;transition:opacity .15s}.zip-cta:hover{opacity:.9}.zip-error{font-size:.75rem;color:#fca5a5;margin-top:6px;min-height:18px}.form-trust-note{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;font-size:.75rem;color:rgba(255,255,255,.8);font-weight:600}@media(max-width:480px){.zip-input-wrap{flex-direction:column}.zip-cta{border-radius:0;padding:14px}}.checks{display:flex;flex-direction:column;gap:12px;margin-bottom:20px;align-items:center}.checks li{display:flex;align-items:center;gap:6px;font-size:.8125rem;color:rgba(255,255,255,.8);list-style:none}.check-icon{color:hsl(var(--${cssVarPrefix}-s))}&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&nbsp;
+&lt;header role="banner"&gt;&lt;div class="container"&gt;&lt;nav aria-label="Main navigation"&gt;
+  &lt;a href="/" aria-label="${brand} homepage" style="font-weight:700"&gt;${brand}&lt;/a&gt;
+  &lt;a href="apply.html" class="btn btn-cta" style="padding:10px 20px;font-size:.875rem"&gt;${cta}&lt;/a&gt;
+&lt;/nav&gt;&lt;/div&gt;&lt;/header&gt;
+&nbsp;
+&lt;main id="main-content"&gt;
+&nbsp;
+&lt;section class="hero" aria-labelledby="hero-heading"&gt;&lt;div class="container"&gt;&lt;div class="grid"&gt;
+  &lt;div&gt;
+    &lt;p class="badge" aria-label="Trust indicator"&gt;&lt;span class="dot" aria-hidden="true"&gt;&lt;/span&gt; ${badge}&lt;/p&gt;
+    &lt;h1 id="hero-heading"&gt;${h1.replace(/(\$[\d,]+)/g, '&lt;span class="accent"&gt;$1&lt;/span&gt;')}&lt;/h1&gt;
+    &lt;p&gt;${sub}&lt;/p&gt;
+    &lt;ul class="checks" aria-label="Key benefits" role="list"&gt;
+      &lt;li&gt;&lt;span class="check-icon" aria-hidden="true"&gt;✓&lt;/span&gt; All Credit Welcome&lt;/li&gt;
+      &lt;li&gt;&lt;span class="check-icon" aria-hidden="true"&gt;✓&lt;/span&gt; 2-Min Application&lt;/li&gt;
+      &lt;li&gt;&lt;span class="check-icon" aria-hidden="true"&gt;✓&lt;/span&gt; No Hidden Fees&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/div&gt;
+  &lt;div class="form-card" role="form" aria-labelledby="form-heading"&gt;
+    &lt;h2 id="form-heading"&gt;How much do you need?&lt;/h2&gt;
+    &lt;div class="slider-wrap"&gt;
+      &lt;div class="slider-label"&gt;&lt;label for="loan-amount"&gt;Amount&lt;/label&gt;&lt;/div&gt;
+      &lt;output id="amount-display" class="slider-amount" for="loan-amount" aria-live="polite"&gt;$${midAmount.toLocaleString()}&lt;/output&gt;
+      &lt;input type="range" id="loan-amount" name="amount" min="${site.amountMin || 100}" max="${site.amountMax || 5000}" value="${midAmount}" step="100"
+        aria-label="Loan amount from $${(site.amountMin || 100).toLocaleString()} to $${(site.amountMax || 5000).toLocaleString()}"
+        aria-valuemin="${site.amountMin || 100}" aria-valuemax="${site.amountMax || 5000}" aria-valuenow="${midAmount}"
+        aria-valuetext="$${midAmount.toLocaleString()}"&gt;
+    &lt;/div&gt;
+    &lt;div class="zip-group"&gt;
+      &lt;div class="zip-input-wrap"&gt;
+        &lt;input type="text" id="zip-input" inputmode="numeric" maxlength="5" pattern="[0-9]{5}" placeholder="Zip Code" autocomplete="postal-code" aria-label="Enter your 5-digit zip code"&gt;
+        &lt;button type="button" id="zip-btn" class="btn btn-cta zip-cta" aria-label="${cta}"&gt;
+          ${cta} →
+        &lt;/button&gt;
+      &lt;/div&gt;
+      &lt;div id="zip-error" class="zip-error" role="alert" aria-live="polite"&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class="form-trust-note"&gt;🔒 256-bit SSL • Won't affect credit score&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;&lt;/div&gt;&lt;/section&gt;
+&nbsp;
+&lt;section class="trust-badges" aria-label="Trust badges"&gt;&lt;div class="container"&gt;&lt;div class="wrap"&gt;
+  &lt;div class="trust-badge"&gt;&lt;strong&gt;🔒 SSL Secured&lt;/strong&gt;&lt;/div&gt;
+  &lt;div class="trust-badge"&gt;&lt;strong&gt;💰 No Upfront Fees&lt;/strong&gt;&lt;/div&gt;
+  &lt;div class="trust-badge"&gt;&lt;strong&gt;✅ Soft Credit Pull&lt;/strong&gt;&lt;/div&gt;
+  &lt;div class="trust-badge"&gt;&lt;strong&gt;🛡️ Licensed Partners&lt;/strong&gt;&lt;/div&gt;
+&lt;/div&gt;&lt;/div&gt;&lt;/section&gt;
+&nbsp;
+&lt;section id="how-it-works" aria-labelledby="steps-heading"&gt;&lt;div class="container"&gt;
+  &lt;div class="section-title"&gt;
+    &lt;span class="tag"&gt;How It Works&lt;/span&gt;
+    &lt;h2 id="steps-heading"&gt;Get Funded in 3 Simple Steps&lt;/h2&gt;
+    &lt;p&gt;No paperwork. No waiting. Everything happens online.&lt;/p&gt;
+  &lt;/div&gt;
+  &lt;ol class="steps" role="list" style="list-style:none"&gt;
+    &lt;li class="step card"&gt;&lt;div class="icon" aria-hidden="true"&gt;📝&lt;/div&gt;&lt;div class="num" aria-hidden="true"&gt;1&lt;/div&gt;&lt;h3&gt;Apply Online&lt;/h3&gt;&lt;p&gt;Fill out our simple 2-minute form. No impact on your credit score.&lt;/p&gt;&lt;/li&gt;
+    &lt;li class="step card"&gt;&lt;div class="icon" aria-hidden="true"&gt;🔄&lt;/div&gt;&lt;div class="num" aria-hidden="true"&gt;2&lt;/div&gt;&lt;h3&gt;Get Matched&lt;/h3&gt;&lt;p&gt;Our network of lenders competes to offer you the best rate.&lt;/p&gt;&lt;/li&gt;
+    &lt;li class="step card"&gt;&lt;div class="icon" aria-hidden="true"&gt;💵&lt;/div&gt;&lt;div class="num" aria-hidden="true"&gt;3&lt;/div&gt;&lt;h3&gt;Get Funded&lt;/h3&gt;&lt;p&gt;Accept your offer and receive funds as fast as next business day.&lt;/p&gt;&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/div&gt;&lt;/section&gt;
+&nbsp;
+&lt;section style="background:#fff" aria-labelledby="benefits-heading"&gt;&lt;div class="container"&gt;
+  &lt;div class="section-title"&gt;
+    &lt;span class="tag"&gt;Why ${brand}&lt;/span&gt;
+    &lt;h2 id="benefits-heading"&gt;Built for Real People&lt;/h2&gt;
+    &lt;p&gt;We make borrowing simple, transparent, and stress-free.&lt;/p&gt;
+  &lt;/div&gt;
+  &lt;ul class="benefits" role="list" style="list-style:none"&gt;
+    &lt;li class="card benefit"&gt;&lt;div style="font-size:2rem;margin-bottom:12px" aria-hidden="true"&gt;⚡&lt;/div&gt;&lt;h3&gt;Fast Approval&lt;/h3&gt;&lt;p&gt;Get a decision in minutes, not days.&lt;/p&gt;&lt;/li&gt;
+    &lt;li class="card benefit"&gt;&lt;div style="font-size:2rem;margin-bottom:12px" aria-hidden="true"&gt;🔒&lt;/div&gt;&lt;h3&gt;Bank-Level Security&lt;/h3&gt;&lt;p&gt;256-bit encryption. We never sell your info.&lt;/p&gt;&lt;/li&gt;
+    &lt;li class="card benefit"&gt;&lt;div style="font-size:2rem;margin-bottom:12px" aria-hidden="true"&gt;✅&lt;/div&gt;&lt;h3&gt;Transparent Terms&lt;/h3&gt;&lt;p&gt;No hidden fees. See your rate before you commit.&lt;/p&gt;&lt;/li&gt;
+    &lt;li class="card benefit"&gt;&lt;div style="font-size:2rem;margin-bottom:12px" aria-hidden="true"&gt;👥&lt;/div&gt;&lt;h3&gt;All Credit Welcome&lt;/h3&gt;&lt;p&gt;Options for excellent or rebuilding credit.&lt;/p&gt;&lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/div&gt;&lt;/section&gt;
+&nbsp;
+&lt;section aria-labelledby="cta-heading"&gt;&lt;div class="container"&gt;
+  &lt;div class="cta-section"&gt;
+    &lt;h2 id="cta-heading"&gt;Ready to Get Started?&lt;/h2&gt;
+    &lt;p&gt;Join thousands who've found a smarter way to borrow.&lt;/p&gt;
+    &lt;a href="apply.html" class="btn btn-cta" style="font-size:1.125rem;padding:16px 40px"&gt;${cta}&lt;/a&gt;
+  &lt;/div&gt;
+&lt;/div&gt;&lt;/section&gt;
+&nbsp;
+&lt;/main&gt;
+&nbsp;
+&lt;footer role="contentinfo"&gt;&lt;div class="container"&gt;
+  &lt;div class="footer-grid"&gt;
+    &lt;div&gt;
+      &lt;a href="/" style="display:flex;align-items:center;gap:8px;margin-bottom:12px" aria-label="${brand} homepage"&gt;&lt;span style="font-weight:700"&gt;${brand}&lt;/span&gt;&lt;/a&gt;
+      &lt;p style="font-size:.8125rem;color:hsl(var(--${cssVarPrefix}-fg)/.5);line-height:1.6"&gt;Trusted lenders for ${loanLabel.toLowerCase()} up to $${(site.amountMax || 5000).toLocaleString()}.&lt;/p&gt;
+      ${(<span class="fstat-no" title="function not covered" >()</span> =&gt; { const addr = <span class="cstat-no" title="statement not covered" >site.address || pickAddress(site.id);</span> <span class="cstat-no" title="statement not covered" >return `&lt;address style="font-style:normal;font-size:.75rem;color:hsl(var(--${cssVarPrefix}-fg)/.4);margin-top:10px"&gt;${addr.street}, ${addr.city}, ${addr.state} ${addr.zip}&lt;/address&gt;`; </span>})()}
+    &lt;/div&gt;
+    &lt;nav aria-label="Company links"&gt;&lt;h4&gt;Company&lt;/h4&gt;&lt;a href="#how-it-works"&gt;How It Works&lt;/a&gt;&lt;a href="apply.html"&gt;Apply Now&lt;/a&gt;&lt;/nav&gt;
+    &lt;nav aria-label="Legal links"&gt;&lt;h4&gt;Legal&lt;/h4&gt;&lt;a href="#" data-modal="privacy"&gt;Privacy Policy&lt;/a&gt;&lt;a href="#" data-modal="terms"&gt;Terms of Service&lt;/a&gt;&lt;a href="#" data-modal="disclosures"&gt;Disclosures&lt;/a&gt;&lt;a href="#" data-modal="nmls"&gt;NMLS Consumer Access&lt;/a&gt;&lt;/nav&gt;
+    &lt;div&gt;&lt;h4&gt;Support&lt;/h4&gt;&lt;a href="mailto:${esc(site.email || "support@" + (site.domain || "example.com"))}"&gt;${esc(site.email || "Contact Us")}&lt;/a&gt;&lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div class="compliance"&gt;
+    &lt;p&gt;&lt;strong&gt;APR:&lt;/strong&gt; ${site.aprMin || 5.99}%–${site.aprMax || 35.99}%. Example: $1,000 over 12 mo at ${site.aprMin || 5.99}% = $90.26/mo ($1,083.12 total). ${brand} is NOT a lender. &amp;copy; ${new Date().getFullYear()} ${brand}.&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/div&gt;&lt;/footer&gt;
+&nbsp;
+&lt;!-- Reusable Legal Modal --&gt;
+&lt;div class="modal-overlay" id="legal-modal" role="dialog" aria-labelledby="legal-modal-title" aria-modal="true"&gt;
+  &lt;div class="modal"&gt;
+    &lt;div class="modal-header"&gt;&lt;h3 id="legal-modal-title"&gt;Legal&lt;/h3&gt;&lt;button class="modal-close" aria-label="Close"&gt;&amp;times;&lt;/button&gt;&lt;/div&gt;
+    &lt;div class="modal-body" id="legal-modal-body"&gt;&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+&nbsp;
+&lt;style&gt;section{padding:48px 0;contain:layout style}.section-title{text-align:center;margin-bottom:32px;padding:0 20px}.section-title .tag{display:inline-block;padding:4px 12px;border-radius:999px;font-size:.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;background:hsl(var(--${cssVarPrefix}-p)/.08);color:hsl(var(--${cssVarPrefix}-p));margin-bottom:12px}.section-title h2{font-size:1.625rem;font-weight:800;text-wrap:balance}.section-title p{color:hsl(var(--${cssVarPrefix}-fg)/.6);margin:8px auto 0;font-size:.875rem}.steps,.benefits{display:grid;grid-template-columns:1fr;gap:20px}.step,.benefit{text-align:center}.step .icon{width:56px;height:56px;margin:0 auto 12px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;background:hsl(var(--${cssVarPrefix}-p)/.08)}.step .num{width:28px;height:28px;margin:-14px auto 8px;border-radius:50%;background:hsl(var(--${cssVarPrefix}-p));color:#fff;font-size:.75rem;font-weight:800;display:flex;align-items:center;justify-content:center}.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;padding:20px}.modal-overlay.active{display:flex}.modal{background:#fff;border-radius:12px;max-width:680px;width:100%;max-height:85vh;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3);display:flex;flex-direction:column}.modal-header{display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid #eee;flex-shrink:0}.modal-header h3{font-size:1.125rem;font-weight:700;color:#1a1a2e}.modal-close{width:32px;height:32px;border-radius:8px;border:none;background:#f5f5f5;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;color:#666;transition:all .15s}.modal-close:hover{background:#e5e5e5;color:#333}.modal-body{padding:24px;overflow-y:auto;font-size:.8125rem;color:#444;line-height:1.8}.modal-body p{margin-bottom:12px}.cta-section{background:linear-gradient(135deg,hsl(var(--${cssVarPrefix}-p)),hsl(var(--${cssVarPrefix}-p)/.8));color:#fff;text-align:center;padding:40px 20px;border-radius:var(--${cssVarPrefix}-radius);margin:0 20px}footer{background:hsl(var(--${cssVarPrefix}-fg)/.03);border-top:1px solid hsl(var(--${cssVarPrefix}-fg)/.06);padding:40px 0 24px}footer a{display:block;padding:4px 0;font-size:.8125rem;color:hsl(var(--${cssVarPrefix}-fg)/.5);transition:color .15s}footer a:hover{color:hsl(var(--${cssVarPrefix}-p))}footer h4{font-size:.875rem;font-weight:700;margin-bottom:8px}.footer-grid{display:grid;grid-template-columns:1fr;gap:32px;margin-bottom:32px}.compliance{border-top:1px solid hsl(var(--${cssVarPrefix}-fg)/.06);padding-top:24px;font-size:.6875rem;color:hsl(var(--${cssVarPrefix}-fg)/.4);line-height:1.7}.trust-badges{background:#f8fafb;border-bottom:1px solid hsl(var(--${cssVarPrefix}-fg)/.06);padding:20px 0}.trust-badges .wrap{display:grid;grid-template-columns:1fr;gap:10px}.trust-badge{display:flex;align-items:center;background:#fff;border:1px solid hsl(var(--${cssVarPrefix}-fg)/.1);border-radius:999px;padding:10px 14px;min-height:44px}.trust-badge strong{font-size:.8125rem;color:hsl(var(--${cssVarPrefix}-fg))}@media(min-width:768px){.btn{padding:14px 32px}header nav{height:64px}.hero{padding:120px 0 80px;text-align:left}.hero .grid{grid-template-columns:1fr 1fr;gap:48px}.hero p{margin:0 0 28px}.checks{flex-direction:row;align-items:center;gap:16px}.section-title h2{font-size:2.25rem}.steps{grid-template-columns:repeat(3,1fr);max-width:960px;margin:0 auto}.benefits{grid-template-columns:repeat(2,1fr);max-width:960px;margin:0 auto}.trust-badges .wrap{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.trust-badge{border-radius:14px}.footer-grid{grid-template-columns:2fr 1fr 1fr 1fr}.cta-section{padding:60px;margin:0 auto;max-width:1120px}}&lt;/style&gt;
+&lt;script&gt;(function(){var PX='https://t.'+window.location.hostname+'/e';var sid=crypto.randomUUID();var up=new URLSearchParams(window.location.search);var cid=up.get('clickid')||'';var gid=up.get('gclid')||'';function px(e,d){var p=new URLSearchParams({e:e,sid:sid,cid:cid,gid:gid,ts:Date.now(),url:window.location.pathname,ref:document.referrer});if(d)for(var k in d)p.set(k,d[k]);navigator.sendBeacon(PX,p);}window.__pixel=px;px('pv',{ua:navigator.userAgent,sw:screen.width,sh:screen.height});var sf={};window.addEventListener('scroll',function(){var h=document.documentElement.scrollHeight-window.innerHeight;if(h&lt;=0)return;var pct=Math.round(window.scrollY/h*100);[25,50,75,100].forEach(function(t){if(pct&gt;=t&amp;&amp;!sf[t]){sf[t]=true;px('s'+t);}});},{passive:true});setTimeout(function(){px('t30');},30000);setTimeout(function(){px('t60');},60000);var fsFired=sessionStorage.getItem('_fs')==='1';function fsOnce(){if(fsFired)return;fsFired=true;sessionStorage.setItem('_fs','1');${hasGads ? `gtag('event','conversion',{send_to:'${site.conversionId}/${esc(site.formStartLabel||"")}'})` : ''};px('form_start_interact');}var s=document.getElementById('loan-amount'),o=document.getElementById('amount-display');if(s&amp;&amp;o){s.addEventListener('input',function(){var v='$'+Number(this.value).toLocaleString();o.textContent=v;this.setAttribute('aria-valuenow',this.value);this.setAttribute('aria-valuetext',v);fsOnce();});s.addEventListener('change',function(){px('amt',{amount:this.value});});}var zipIn=document.getElementById('zip-input'),zipBtn=document.getElementById('zip-btn'),zipErr=document.getElementById('zip-error');if(zipIn&amp;&amp;zipBtn){zipIn.addEventListener('focus',fsOnce,{once:true});zipIn.addEventListener('input',function(){this.value=this.value.replace(/[^0-9]/g,'').slice(0,5);if(zipErr)zipErr.textContent='';if(this.value.length===5)px('ze',{zip:this.value});});zipIn.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();zipBtn.click();}});zipBtn.addEventListener('click',function(e){e.preventDefault();var val=zipIn.value.replace(/[^0-9]/g,'');if(val.length!==5){if(zipErr)zipErr.textContent='Please enter a 5-digit zip code';zipIn.focus();return;}if(zipErr)zipErr.textContent='';window.location.href='apply.html?zip='+val+'&amp;amount='+(s?s.value:'')+(cid?'&amp;clickid='+cid:'')+(gid?'&amp;gclid='+gid:'');});}var legalModal=document.getElementById('legal-modal'),legalModalTitle=document.getElementById('legal-modal-title'),legalModalBody=document.getElementById('legal-modal-body'),legalContent={privacy:{title:'Privacy Policy',body:'&lt;p class="updated"&gt;Last Updated: ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}&lt;/p&gt;&lt;p&gt;We collect application details, contact data, and technical usage data to match you with lenders, prevent fraud, and operate this service.&lt;/p&gt;&lt;p&gt;We may share information with lender partners and service providers for loan-matching and compliance. &lt;strong&gt;We do not sell personal data for unrelated marketing.&lt;/strong&gt;&lt;/p&gt;&lt;p&gt;Privacy requests: &lt;a href="mailto:${esc(site.email || 'privacy@' + (site.domain || 'example.com'))}" style="color:hsl(var(--${cssVarPrefix}-p))"&gt;${esc(site.email || 'privacy@' + (site.domain || 'example.com'))}&lt;/a&gt;&lt;/p&gt;'},terms:{title:'Terms of Service',body:'&lt;p class="updated"&gt;Last Updated: ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}&lt;/p&gt;&lt;p&gt;${brand} is a lead-generation service and &lt;strong&gt;not a lender&lt;/strong&gt;. Loan decisions and terms are made only by participating lenders.&lt;/p&gt;&lt;p&gt;Submitting an inquiry does not guarantee approval. Rate checks on this page use a soft inquiry; a lender may run a hard inquiry if you proceed.&lt;/p&gt;&lt;p&gt;Questions: &lt;a href="mailto:${esc(site.email || 'legal@' + (site.domain || 'example.com'))}" style="color:hsl(var(--${cssVarPrefix}-p))"&gt;${esc(site.email || 'legal@' + (site.domain || 'example.com'))}&lt;/a&gt;&lt;/p&gt;'},disclosures:{title:'Important Disclosures',body:'&lt;p&gt;&lt;strong&gt;APR Range:&lt;/strong&gt; ${site.aprMin || 5.99}% to ${site.aprMax || 35.99}%. Rates vary by credit profile, amount, term, and lender policy.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;Loan Range:&lt;/strong&gt; $${(site.amountMin || 100).toLocaleString()} to $${(site.amountMax || 5000).toLocaleString()} with terms typically from 3 to 60 months.&lt;/p&gt;&lt;p&gt;${brand} is not a lender. Late or missed payments may result in fees, collections, and credit impact under your lender agreement.&lt;/p&gt;'},nmls:{title:'NMLS Consumer Access',body:'&lt;p&gt;Verify licensing information via NMLS Consumer Access:&lt;/p&gt;&lt;p&gt;&lt;a href="https://www.nmlsconsumeraccess.org" target="_blank" rel="noopener" style="color:hsl(var(--${cssVarPrefix}-p));font-weight:600"&gt;www.nmlsconsumeraccess.org&lt;/a&gt;&lt;/p&gt;&lt;p&gt;&lt;strong&gt;Company:&lt;/strong&gt; ${brand}&lt;br&gt;&lt;strong&gt;NMLS ID:&lt;/strong&gt; ${site.nmls || 'Pending Registration'}&lt;/p&gt;&lt;p&gt;Support: &lt;a href="mailto:${esc(site.email || 'complaints@' + (site.domain || 'example.com'))}" style="color:hsl(var(--${cssVarPrefix}-p))"&gt;${esc(site.email || 'complaints@' + (site.domain || 'example.com'))}&lt;/a&gt;&lt;/p&gt;'}};document.querySelectorAll('[data-modal]').forEach(function(link){link.addEventListener('click',function(e){e.preventDefault();var key=this.getAttribute('data-modal'),content=legalContent[key];if(!content||!legalModal||!legalModalTitle||!legalModalBody)return;legalModalTitle.textContent=content.title;legalModalBody.innerHTML=content.body;legalModal.classList.add('active');document.body.style.overflow='hidden';});});document.querySelectorAll('.modal-close').forEach(function(btn){btn.addEventListener('click',function(){this.closest('.modal-overlay').classList.remove('active');document.body.style.overflow='';});});document.querySelectorAll('.modal-overlay').forEach(function(overlay){overlay.addEventListener('click',function(e){if(e.target===this){this.classList.remove('active');document.body.style.overflow='';}});});document.addEventListener('keydown',function(e){if(e.key==='Escape'){var open=document.querySelector('.modal-overlay.active');if(open){open.classList.remove('active');document.body.style.overflow='';}}});})();&lt;/script&gt;&lt;/body&gt;&lt;/html&gt;`
+}
+&nbsp;
+// Minimal ZIP creator (single HTML file)
+export async function <span class="fstat-no" title="function not covered" >htmlToZip(</span>html) {
+  const encoder = <span class="cstat-no" title="statement not covered" >new TextEncoder();</span>
+  const data = <span class="cstat-no" title="statement not covered" >encoder.encode(html);</span>
+  const name = <span class="cstat-no" title="statement not covered" >encoder.encode("index.html");</span>
+&nbsp;
+  const crc32 = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(b</span>uf) =&gt; {</span>
+    let c = <span class="cstat-no" title="statement not covered" >0xFFFFFFFF;</span>
+    const t = <span class="cstat-no" title="statement not covered" >new Uint32Array(256);</span>
+<span class="cstat-no" title="statement not covered" >    for (let n = <span class="cstat-no" title="statement not covered" >0;</span> n &lt; 256; n++) { let x = <span class="cstat-no" title="statement not covered" >n;</span> <span class="cstat-no" title="statement not covered" >for (let k = <span class="cstat-no" title="statement not covered" >0;</span> k &lt; 8; k++) <span class="cstat-no" title="statement not covered" >x = x &amp; 1 ? 0xEDB88320 ^ (x &gt;&gt;&gt; 1) : x &gt;&gt;&gt; 1; <span class="cstat-no" title="statement not covered" ></span></span>t[n] = x; </span>}</span>
+<span class="cstat-no" title="statement not covered" >    for (let i = <span class="cstat-no" title="statement not covered" >0;</span> i &lt; buf.length; i++) <span class="cstat-no" title="statement not covered" >c = t[(c ^ buf[i]) &amp; 0xFF] ^ (c &gt;&gt;&gt; 8);</span></span>
+<span class="cstat-no" title="statement not covered" >    return (c ^ 0xFFFFFFFF) &gt;&gt;&gt; 0;</span>
+  };
+&nbsp;
+  const crc = <span class="cstat-no" title="statement not covered" >crc32(data);</span>
+  const now = <span class="cstat-no" title="statement not covered" >new Date();</span>
+  const time = <span class="cstat-no" title="statement not covered" >((now.getHours() &lt;&lt; 11) | (now.getMinutes() &lt;&lt; 5) | (now.getSeconds() &gt;&gt; 1)) &amp; 0xFFFF;</span>
+  const date = <span class="cstat-no" title="statement not covered" >(((now.getFullYear() - 1980) &lt;&lt; 9) | ((now.getMonth() + 1) &lt;&lt; 5) | now.getDate()) &amp; 0xFFFF;</span>
+&nbsp;
+  const localHeader = <span class="cstat-no" title="statement not covered" >new Uint8Array(30 + name.length);</span>
+  const dv = <span class="cstat-no" title="statement not covered" >new DataView(localHeader.buffer);</span>
+<span class="cstat-no" title="statement not covered" >  dv.setUint32(0, 0x04034b50, true);</span>
+<span class="cstat-no" title="statement not covered" >  dv.setUint16(4, 20, true);</span>
+<span class="cstat-no" title="statement not covered" >  dv.setUint16(8, 0, true);</span>
+<span class="cstat-no" title="statement not covered" >  dv.setUint16(10, time, true);</span>
+<span class="cstat-no" title="statement not covered" >  dv.setUint16(12, date, true);</span>
+<span class="cstat-no" title="statement not covered" >  dv.setUint32(14, crc, true);</span>
+<span class="cstat-no" title="statement not covered" >  dv.setUint32(18, data.length, true);</span>
+<span class="cstat-no" title="statement not covered" >  dv.setUint32(22, data.length, true);</span>
+<span class="cstat-no" title="statement not covered" >  dv.setUint16(26, name.length, true);</span>
+<span class="cstat-no" title="statement not covered" >  localHeader.set(name, 30);</span>
+&nbsp;
+  const centralOffset = <span class="cstat-no" title="statement not covered" >localHeader.length + data.length;</span>
+  const centralDir = <span class="cstat-no" title="statement not covered" >new Uint8Array(46 + name.length);</span>
+  const cdv = <span class="cstat-no" title="statement not covered" >new DataView(centralDir.buffer);</span>
+<span class="cstat-no" title="statement not covered" >  cdv.setUint32(0, 0x02014b50, true);</span>
+<span class="cstat-no" title="statement not covered" >  cdv.setUint16(4, 20, true);</span>
+<span class="cstat-no" title="statement not covered" >  cdv.setUint16(6, 20, true);</span>
+<span class="cstat-no" title="statement not covered" >  cdv.setUint16(12, time, true);</span>
+<span class="cstat-no" title="statement not covered" >  cdv.setUint16(14, date, true);</span>
+<span class="cstat-no" title="statement not covered" >  cdv.setUint32(16, crc, true);</span>
+<span class="cstat-no" title="statement not covered" >  cdv.setUint32(20, data.length, true);</span>
+<span class="cstat-no" title="statement not covered" >  cdv.setUint32(24, data.length, true);</span>
+<span class="cstat-no" title="statement not covered" >  cdv.setUint16(28, name.length, true);</span>
+<span class="cstat-no" title="statement not covered" >  cdv.setUint32(42, 0, true);</span>
+<span class="cstat-no" title="statement not covered" >  centralDir.set(name, 46);</span>
+&nbsp;
+  const endRecord = <span class="cstat-no" title="statement not covered" >new Uint8Array(22);</span>
+  const ev = <span class="cstat-no" title="statement not covered" >new DataView(endRecord.buffer);</span>
+<span class="cstat-no" title="statement not covered" >  ev.setUint32(0, 0x06054b50, true);</span>
+<span class="cstat-no" title="statement not covered" >  ev.setUint16(4, 0, true);</span>
+<span class="cstat-no" title="statement not covered" >  ev.setUint16(6, 0, true);</span>
+<span class="cstat-no" title="statement not covered" >  ev.setUint16(8, 1, true);</span>
+<span class="cstat-no" title="statement not covered" >  ev.setUint16(10, 1, true);</span>
+<span class="cstat-no" title="statement not covered" >  ev.setUint32(12, centralDir.length, true);</span>
+<span class="cstat-no" title="statement not covered" >  ev.setUint32(16, centralOffset, true);</span>
+&nbsp;
+  const zip = <span class="cstat-no" title="statement not covered" >new Uint8Array(localHeader.length + data.length + centralDir.length + endRecord.length);</span>
+  let off = <span class="cstat-no" title="statement not covered" >0;</span>
+<span class="cstat-no" title="statement not covered" >  zip.set(localHeader, off); <span class="cstat-no" title="statement not covered" ></span>off += localHeader.length;</span>
+<span class="cstat-no" title="statement not covered" >  zip.set(data, off); <span class="cstat-no" title="statement not covered" ></span>off += data.length;</span>
+<span class="cstat-no" title="statement not covered" >  zip.set(centralDir, off); <span class="cstat-no" title="statement not covered" ></span>off += centralDir.length;</span>
+<span class="cstat-no" title="statement not covered" >  zip.set(endRecord, off);</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  return new Blob([zip], { type: "application/zip" });</span>
+}
+&nbsp;
+/**
+ * Multi-file ZIP creator for Astro project.
+ * Takes a file map { [filepath]: content } and returns a Blob.
+ */
+export async function <span class="fstat-no" title="function not covered" >astroProjectToZip(</span>files) {
+  const encoder = <span class="cstat-no" title="statement not covered" >new TextEncoder();</span>
+&nbsp;
+  const crc32 = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(b</span>uf) =&gt; {</span>
+    let c = <span class="cstat-no" title="statement not covered" >0xFFFFFFFF;</span>
+    const t = <span class="cstat-no" title="statement not covered" >new Uint32Array(256);</span>
+<span class="cstat-no" title="statement not covered" >    for (let n = <span class="cstat-no" title="statement not covered" >0;</span> n &lt; 256; n++) { let x = <span class="cstat-no" title="statement not covered" >n;</span> <span class="cstat-no" title="statement not covered" >for (let k = <span class="cstat-no" title="statement not covered" >0;</span> k &lt; 8; k++) <span class="cstat-no" title="statement not covered" >x = x &amp; 1 ? 0xEDB88320 ^ (x &gt;&gt;&gt; 1) : x &gt;&gt;&gt; 1; <span class="cstat-no" title="statement not covered" ></span></span>t[n] = x; </span>}</span>
+<span class="cstat-no" title="statement not covered" >    for (let i = <span class="cstat-no" title="statement not covered" >0;</span> i &lt; buf.length; i++) <span class="cstat-no" title="statement not covered" >c = t[(c ^ buf[i]) &amp; 0xFF] ^ (c &gt;&gt;&gt; 8);</span></span>
+<span class="cstat-no" title="statement not covered" >    return (c ^ 0xFFFFFFFF) &gt;&gt;&gt; 0;</span>
+  };
+&nbsp;
+  const now = <span class="cstat-no" title="statement not covered" >new Date();</span>
+  const time = <span class="cstat-no" title="statement not covered" >((now.getHours() &lt;&lt; 11) | (now.getMinutes() &lt;&lt; 5) | (now.getSeconds() &gt;&gt; 1)) &amp; 0xFFFF;</span>
+  const date = <span class="cstat-no" title="statement not covered" >(((now.getFullYear() - 1980) &lt;&lt; 9) | ((now.getMonth() + 1) &lt;&lt; 5) | now.getDate()) &amp; 0xFFFF;</span>
+&nbsp;
+  const entries = <span class="cstat-no" title="statement not covered" >Object.entries(files);</span>
+  const localHeaders = <span class="cstat-no" title="statement not covered" >[];</span>
+  const fileDataParts = <span class="cstat-no" title="statement not covered" >[];</span>
+  const centralDirs = <span class="cstat-no" title="statement not covered" >[];</span>
+  let offset = <span class="cstat-no" title="statement not covered" >0;</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  for (const [filepath, content] of entries) {</span>
+    const nameBytes = <span class="cstat-no" title="statement not covered" >encoder.encode(filepath);</span>
+    const dataBytes = <span class="cstat-no" title="statement not covered" >encoder.encode(content);</span>
+    const crc = <span class="cstat-no" title="statement not covered" >crc32(dataBytes);</span>
+&nbsp;
+    // Local file header
+    const lh = <span class="cstat-no" title="statement not covered" >new Uint8Array(30 + nameBytes.length);</span>
+    const ldv = <span class="cstat-no" title="statement not covered" >new DataView(lh.buffer);</span>
+<span class="cstat-no" title="statement not covered" >    ldv.setUint32(0, 0x04034b50, true);</span>
+<span class="cstat-no" title="statement not covered" >    ldv.setUint16(4, 20, true);</span>
+<span class="cstat-no" title="statement not covered" >    ldv.setUint16(8, 0, true); </span>  // compression: store
+<span class="cstat-no" title="statement not covered" >    ldv.setUint16(10, time, true);</span>
+<span class="cstat-no" title="statement not covered" >    ldv.setUint16(12, date, true);</span>
+<span class="cstat-no" title="statement not covered" >    ldv.setUint32(14, crc, true);</span>
+<span class="cstat-no" title="statement not covered" >    ldv.setUint32(18, dataBytes.length, true);</span>
+<span class="cstat-no" title="statement not covered" >    ldv.setUint32(22, dataBytes.length, true);</span>
+<span class="cstat-no" title="statement not covered" >    ldv.setUint16(26, nameBytes.length, true);</span>
+<span class="cstat-no" title="statement not covered" >    ldv.setUint16(28, 0, true); </span> // extra field length
+<span class="cstat-no" title="statement not covered" >    lh.set(nameBytes, 30);</span>
+&nbsp;
+    // Central directory entry
+    const cd = <span class="cstat-no" title="statement not covered" >new Uint8Array(46 + nameBytes.length);</span>
+    const cdv = <span class="cstat-no" title="statement not covered" >new DataView(cd.buffer);</span>
+<span class="cstat-no" title="statement not covered" >    cdv.setUint32(0, 0x02014b50, true);</span>
+<span class="cstat-no" title="statement not covered" >    cdv.setUint16(4, 20, true);</span>
+<span class="cstat-no" title="statement not covered" >    cdv.setUint16(6, 20, true);</span>
+<span class="cstat-no" title="statement not covered" >    cdv.setUint16(12, time, true);</span>
+<span class="cstat-no" title="statement not covered" >    cdv.setUint16(14, date, true);</span>
+<span class="cstat-no" title="statement not covered" >    cdv.setUint32(16, crc, true);</span>
+<span class="cstat-no" title="statement not covered" >    cdv.setUint32(20, dataBytes.length, true);</span>
+<span class="cstat-no" title="statement not covered" >    cdv.setUint32(24, dataBytes.length, true);</span>
+<span class="cstat-no" title="statement not covered" >    cdv.setUint16(28, nameBytes.length, true);</span>
+<span class="cstat-no" title="statement not covered" >    cdv.setUint32(42, offset, true); </span>// relative offset of local header
+<span class="cstat-no" title="statement not covered" >    cd.set(nameBytes, 46);</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    localHeaders.push(lh);</span>
+<span class="cstat-no" title="statement not covered" >    fileDataParts.push(dataBytes);</span>
+<span class="cstat-no" title="statement not covered" >    centralDirs.push(cd);</span>
+<span class="cstat-no" title="statement not covered" >    offset += lh.length + dataBytes.length;</span>
+  }
+&nbsp;
+  const centralDirOffset = <span class="cstat-no" title="statement not covered" >offset;</span>
+  const centralDirSize = <span class="cstat-no" title="statement not covered" >centralDirs.reduce(<span class="fstat-no" title="function not covered" >(s</span>, cd) =&gt; <span class="cstat-no" title="statement not covered" >s + cd.length,</span> 0);</span>
+&nbsp;
+  // End of central directory
+  const endRecord = <span class="cstat-no" title="statement not covered" >new Uint8Array(22);</span>
+  const ev = <span class="cstat-no" title="statement not covered" >new DataView(endRecord.buffer);</span>
+<span class="cstat-no" title="statement not covered" >  ev.setUint32(0, 0x06054b50, true);</span>
+<span class="cstat-no" title="statement not covered" >  ev.setUint16(8, entries.length, true);</span>
+<span class="cstat-no" title="statement not covered" >  ev.setUint16(10, entries.length, true);</span>
+<span class="cstat-no" title="statement not covered" >  ev.setUint32(12, centralDirSize, true);</span>
+<span class="cstat-no" title="statement not covered" >  ev.setUint32(16, centralDirOffset, true);</span>
+&nbsp;
+  // Assemble
+  const totalSize = <span class="cstat-no" title="statement not covered" >centralDirOffset + centralDirSize + endRecord.length;</span>
+  const zip = <span class="cstat-no" title="statement not covered" >new Uint8Array(totalSize);</span>
+  let pos = <span class="cstat-no" title="statement not covered" >0;</span>
+<span class="cstat-no" title="statement not covered" >  for (let i = <span class="cstat-no" title="statement not covered" >0;</span> i &lt; entries.length; i++) {</span>
+<span class="cstat-no" title="statement not covered" >    zip.set(localHeaders[i], pos); <span class="cstat-no" title="statement not covered" ></span>pos += localHeaders[i].length;</span>
+<span class="cstat-no" title="statement not covered" >    zip.set(fileDataParts[i], pos); <span class="cstat-no" title="statement not covered" ></span>pos += fileDataParts[i].length;</span>
+  }
+<span class="cstat-no" title="statement not covered" >  for (const cd of centralDirs) {</span>
+<span class="cstat-no" title="statement not covered" >    zip.set(cd, pos); <span class="cstat-no" title="statement not covered" ></span>pos += cd.length;</span>
+  }
+<span class="cstat-no" title="statement not covered" >  zip.set(endRecord, pos);</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  return new Blob([zip], { type: "application/zip" });</span>
+}
+&nbsp;
+export function <span class="fstat-no" title="function not covered" >makeThemeJson(</span>site) {
+  const c = <span class="cstat-no" title="statement not covered" >COLORS.find(<span class="fstat-no" title="function not covered" >x </span>=&gt; <span class="cstat-no" title="statement not covered" >x.id === site.colorId)</span> || COLORS[0];</span>
+  const f = <span class="cstat-no" title="statement not covered" >FONTS.find(<span class="fstat-no" title="function not covered" >x </span>=&gt; <span class="cstat-no" title="statement not covered" >x.id === site.fontId)</span> || FONTS[0];</span>
+  const r = <span class="cstat-no" title="statement not covered" >RADIUS.find(<span class="fstat-no" title="function not covered" >x </span>=&gt; <span class="cstat-no" title="statement not covered" >x.id === site.radius)</span> || RADIUS[2];</span>
+<span class="cstat-no" title="statement not covered" >  return {</span>
+    variantId: site.id, domain: site.domain,
+    colors: {
+      primary: `${c.p[0]} ${c.p[1]}% ${c.p[2]}% `, secondary: `${c.s[0]} ${c.s[1]}% ${c.s[2]}% `,
+      accent: `${c.a[0]} ${c.a[1]}% ${c.a[2]}% `, background: `${c.bg[0]} ${c.bg[1]}% ${c.bg[2]}% `,
+      foreground: `${c.fg[0]} ${c.fg[1]}% ${c.fg[2]}% `,
+      card: "0 0% 100%", "card-foreground": `${c.fg[0]} ${c.fg[1]}% ${c.fg[2]}% `,
+      muted: `${c.bg[0]} ${c.bg[1]}% ${Math.max(c.bg[2] - 2, 90)}% `,
+      "muted-foreground": "215 16% 47%", border: "214 32% 91%",
+      input: "214 32% 91%", ring: `${c.p[0]} ${c.p[1]}% ${c.p[2]}% `,
+      "primary-foreground": "0 0% 100%", "secondary-foreground": "0 0% 100%",
+      "accent-foreground": "0 0% 100%",
+    },
+    radius: r.v,
+    font: { id: f.id, family: f.family, googleImport: f.import },
+    layout: { hero: site.layout === "hero-left" ? "form-right" : site.layout === "hero-center" ? "form-below" : "form-overlap" },
+    copy: {
+      brand: site.brand, tagline: site.tagline || "", h1: site.h1 || "",
+      h1span: "", badge: site.badge || "", cta: site.cta || "",
+      sub: site.sub || "", complianceEmail: site.email || "",
+    },
+    loanProduct: { type: site.loanType, amountMin: site.amountMin, amountMax: site.amountMax, aprMin: site.aprMin, aprMax: site.aprMax },
+    tracking: { conversionId: site.conversionId, formStartLabel: site.formStartLabel, formSubmitLabel: site.formSubmitLabel, aid: site.aid, network: site.network, redirectUrl: site.redirectUrl, voluumId: site.voluumId, voluumDomain: site.voluumDomain },
+  };
+}
+&nbsp;</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-02-18T00:24:36.068Z
+            </div>
+        <script src="../../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../../sorter.js"></script>
+        <script src="../../block-navigation.js"></script>
+    </body>
+</html>
+    
