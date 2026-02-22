@@ -1,6 +1,6 @@
 import { generateLP, generateAstrodeckLoanPreview, generateApplyPage, generatePDLLoansV1Preview, generateLanderCorePreview } from "./lp-generator.js";
 import { generateAstroProject } from "./astro-generator.jsx";
-import { getTemplateGenerator, resolveTemplateId as resolveId } from "./template-registry.js";
+import { getTemplateGenerator, resolveTemplateId as resolveId, clearCustomTemplatesCache } from "./template-registry.js";
 
 // Ensure templates are registered (side-effect import)
 import "#lp-template-generator/templates";
@@ -182,10 +182,11 @@ export function generateHtmlByTemplate(site) {
   }
 }
 
-// Export a function to refresh custom templates cache
+// Export a function to refresh custom templates cache (both router and registry)
 export function refreshCustomTemplates() {
   customTemplatesCache = null;
   customTemplatesLoading = false;
+  clearCustomTemplatesCache();
   loadCustomTemplates();
 }
 

@@ -116,10 +116,7 @@ export function StepDesign({ c, u, notify }) {
                             return (
                                 <div key={t.id} style={{ position: "relative" }}>
                                     <button
-                                        onClick={() => {
-                                            u("templateId", t.id);
-                                            clearCustomTemplatesCache();
-                                        }}
+                                        onClick={() => u("templateId", t.id)}
                                         style={{
                                             width: "100%",
                                             padding: 12,

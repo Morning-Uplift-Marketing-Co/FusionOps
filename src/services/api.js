@@ -5,7 +5,7 @@ function resolveApiBase() {
     const isLocalDev = typeof window !== "undefined" && /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname);
 
     // Default production API base - should be overridden by VITE_API_BASE
-    const PROD_API_BASE = import.meta.env?.VITE_API_BASE || "https://lp-factory-api.songsawat-w.workers.dev/api";
+    const PROD_API_BASE = import.meta.env?.VITE_API_BASE || "https://lp-factory-api.misty-feather-556e.workers.dev/api";
     const fallback = isLocalDev ? "/api" : PROD_API_BASE;
     return String(fromWindow || fromEnv || fallback).replace(/\/+$/, "");
 }

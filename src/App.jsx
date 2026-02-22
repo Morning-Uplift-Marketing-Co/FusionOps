@@ -600,7 +600,7 @@ export default function App() {
               notify(`Error saving template: ${response.error}`, 'error');
             } else {
               notify(`Template "${templateData.templateName}" saved successfully!`, 'success');
-              // Refresh templates cache so it appears in the selector
+              // Refresh both caches so new template appears in selector
               refreshCustomTemplates();
               // Dispatch event for any listening components
               window.dispatchEvent(new CustomEvent(TEMPLATE_REFRESH_EVENT, { detail: templateData.newFolderId }));

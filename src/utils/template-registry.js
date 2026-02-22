@@ -60,38 +60,15 @@ const LEGACY_TEMPLATES = [
 
 // Module templates (fallback when module not loaded)
 const MODULE_TEMPLATES_FALLBACK = [
-  {
-    id: 'classic',
-    name: 'Classic LP',
-    badge: 'Stable',
-    description: 'Current production LP flow (HTML + Astro generator)',
-    category: 'general',
-    source: 'module',
-  },
-  {
-    id: 'pdl-loans-v1',
-    name: 'PDL Loans V1',
-    badge: 'Popular',
-    description: 'Payday/PDL loan template with hero form, trust badges, calculator, FAQ',
-    category: 'pdl',
-    source: 'module',
-  },
-  {
-    id: 'pdl-loans-v3',
-    name: 'PDL Loans V3',
-    badge: 'New',
-    description: 'Enhanced PDL template with modern design, dark mode, and improved UX',
-    category: 'pdl',
-    source: 'module',
-  },
-  {
-    id: 'simple-lp',
-    name: 'Simple LP',
-    badge: 'Simple',
-    description: 'Minimal landing page with full tracking support',
-    category: 'general',
-    source: 'module',
-  },
+  { id: 'classic', name: 'Classic LP', badge: 'Stable', description: 'Current production LP flow (HTML + Astro generator)', category: 'general', source: 'module' },
+  { id: 'pdl-loans-v1', name: 'PDL Loans V1', badge: 'Popular', description: 'Payday/PDL loan template with hero form, trust badges, calculator, FAQ', category: 'pdl', source: 'module' },
+  { id: 'pdl-loans-v3', name: 'PDL Loans V3', badge: 'New', description: 'Enhanced PDL template with modern design, dark mode, and improved UX', category: 'pdl', source: 'module' },
+  { id: 'simple-lp', name: 'Simple LP', badge: 'Simple', description: 'Minimal landing page with full tracking support', category: 'general', source: 'module' },
+  { id: 'pet-care-loans', name: 'Pet Care Loans', badge: 'New', description: 'Pet care financing landing page based on PDL V3 architecture', category: 'general', source: 'module' },
+  { id: 'elastic-credits-v3', name: 'Elastic Credits V3', badge: 'New', description: 'Custom credit template with tracking integration and modern design', category: 'pdl', source: 'module' },
+  { id: 'scratchpay-bridge', name: 'Scratchpay Bridge', badge: 'New', description: 'Pet care financing bridge page with claymorphism design', category: 'general', source: 'module' },
+  { id: 'pet-loans-v1', name: 'Pet Loans V1', badge: 'New', description: 'Pet care financing LP with hero form, calculator, FAQ', category: 'pet-care', source: 'module' },
+  { id: 'installment-loans-v1', name: 'Installment Loans V1', badge: 'New', description: 'Standard installment loan LP with payment calculator', category: 'installment', source: 'module' },
 ];
 
 // Template ID aliases for backward compatibility
@@ -178,11 +155,28 @@ export function getAllTemplates() {
 
 /**
  * Get template by ID (resolves aliases)
+ * Includes custom templates from API when cache is populated
  */
 export function getTemplateById(id) {
+  if (!id) return null;
   const resolvedId = TEMPLATE_ALIASES[id] || id;
 
-  // Check legacy templates first (more reliable)
+  // Check custom templates from API (when cache is populated)
+  if (customTemplatesCache) {
+    const custom = customTemplatesCache.find(t => t.id === resolvedId);
+    if (custom) {
+      return {
+        id: custom.id,
+        name: custom.name,
+        description: custom.description,
+        badge: custom.badge || 'Custom',
+        category: custom.category,
+        source: 'api',
+      };
+    }
+  }
+
+  // Check legacy templates
   const legacy = LEGACY_TEMPLATES.find(t => t.id === resolvedId);
   if (legacy) return legacy;
 
@@ -213,7 +207,9 @@ export function getTemplateById(id) {
  * Check if template exists
  */
 export function hasTemplate(id) {
+  if (!id) return false;
   const resolvedId = TEMPLATE_ALIASES[id] || id;
+  if (customTemplatesCache?.some(t => t.id === resolvedId)) return true;
   return !!MODULE_TEMPLATES_FALLBACK.find(t => t.id === resolvedId) || LEGACY_TEMPLATES.some(t => t.id === resolvedId);
 }
 
@@ -222,6 +218,11 @@ export function hasTemplate(id) {
  */
 export function getTemplateGenerator(id, type = 'astro') {
   const resolvedId = TEMPLATE_ALIASES[id] || id;
+
+  // Custom API templates — template-router handles via customTemplatesCache
+  if (customTemplatesCache?.some(t => t.id === resolvedId)) {
+    return { type: 'api', id: resolvedId };
+  }
 
   // Check if it's a known module template
   if (MODULE_TEMPLATES_FALLBACK.find(t => t.id === resolvedId)) {

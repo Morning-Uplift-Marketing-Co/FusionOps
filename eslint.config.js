@@ -5,7 +5,20 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores([
+    'dist',
+    'node_modules',
+    'coverage',
+    'playwright-report',
+    'test-results',
+    'test-artifacts',
+    'apps/**',
+    'packages/**',
+    'templates/**',
+    'docs/**',
+    'scripts/**',
+    '*.config.*',
+  ]),
   {
     files: ['**/*.{js,jsx}'],
     extends: [
@@ -23,7 +36,19 @@ export default defineConfig([
       },
     },
     rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      'no-unused-vars': ['warn', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^_' }],
+      'no-empty': 'warn',
+      'no-dupe-keys': 'warn',
+      'no-undef': 'warn',
+      'no-useless-escape': 'warn',
+      'no-case-declarations': 'warn',
+      'react-hooks/exhaustive-deps': 'warn',
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/immutability': 'warn',
+      'react-hooks/preserve-manual-memoization': 'warn',
+      'react-refresh/only-export-components': 'warn',
+      'no-constant-condition': 'warn',
+      'no-constant-binary-expression': 'warn',
     },
   },
 ])

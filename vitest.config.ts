@@ -28,6 +28,7 @@ export default defineConfig({
     alias: {
       '@': resolve(__dirname, './src'),
       '@constants': resolve(__dirname, './src/constants'),
+      '#lp-template-generator': resolve(__dirname, './packages/lp-template-generator/src'),
     },
   },
 });

@@ -51,12 +51,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: |
-          if [ "${{ matrix.project }}" = "root" ]; then
-            npm ci
-          else
-            cd apps/${{ matrix.project }} && npm ci
-          fi
+        run: npm ci
 
       - name: Run TypeScript check
         run: npx tsc --noEmit
