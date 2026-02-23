@@ -108,29 +108,26 @@ export default function App() {
             ]);
 
             if (neonSettings && Object.keys(neonSettings).length > 0) {
-              // Merge: Neon is the source of truth, localStorage is fallback
-              const merged = { ...localSettings, ...neonSettings };
-              setSettings(merged);
-              LS.set("settings", merged);
+              // Neon is the absolute source of truth
+              setSettings(neonSettings);
+              LS.set("settings", neonSettings); // Optional cache for offline load
             }
 
             // Sites from Neon
             if (neonSites && neonSites.length > 0) {
-              // Migrate: add templateId to old sites that don't have it
               const migratedSites = neonSites.map(s => ({
                 ...s,
                 templateId: s.templateId || "classic"
               }));
               setSites(migratedSites);
             } else {
-              // First time: sync localStorage sites to Neon
+              // Only sync if Neon is totally empty
               const localSites = LS.get("sites") || [];
               if (localSites.length > 0) {
                 setSites(localSites);
                 db.syncFromLocal(localSettings, localSites, []);
               }
             }
-
             // Deploys from Neon
             if (neonDeploys && neonDeploys.length > 0) {
               setDeploys(neonDeploys);

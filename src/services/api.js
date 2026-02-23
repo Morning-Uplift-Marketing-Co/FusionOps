@@ -2,7 +2,12 @@
 function resolveApiBase() {
     const fromWindow = typeof window !== "undefined" ? window.__LP_API__ : "";
     const fromEnv = typeof import.meta !== "undefined" && import.meta.env ? import.meta.env.VITE_API_BASE : "";
-    const isLocalDev = typeof window !== "undefined" && /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname);
+    const isLocalDev = typeof window !== "undefined" && (
+        /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname) ||
+        /^192\.168\./.test(window.location.hostname) ||
+        /^10\./.test(window.location.hostname) ||
+        /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(window.location.hostname)
+    );
 
     // Default production API base - should be overridden by VITE_API_BASE
     const PROD_API_BASE = import.meta.env?.VITE_API_BASE || "https://lp-factory-api.misty-feather-556e.workers.dev/api";

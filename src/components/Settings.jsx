@@ -338,11 +338,11 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-x-10 gap-y-2 items-start">
-                {/* Column 1: Core Config & External Services */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-x-8 gap-y-2 items-start">
+                {/* Column 1: Infrastructure & API Providers */}
                 <div className="space-y-2">
                     <section>
-                        <SectionHeader>🗄️ Database</SectionHeader>
+                        <SectionHeader>🗄️ Infrastructure</SectionHeader>
                         <Card className="mb-4">
                             <CardHeader><CardTitle>Neon Postgres</CardTitle></CardHeader>
                             <CardContent className="flex flex-col gap-2">
@@ -363,8 +363,6 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                                 {d1Result && (
                                     <div className={`text-[11px] ${d1Result.success ? "text-[hsl(var(--success))]" : "text-[hsl(var(--destructive))]"}`}>
                                         <div>{d1Result.success ? `✓ Connected${d1Result.database ? ` to "${d1Result.database.name}"` : d1Result.count !== undefined ? ` (${d1Result.count} databases)` : ""}` : `✗ ${d1Result.error}`}</div>
-                                        {!d1Result.success && d1Result.url && <div className="mt-1 text-[10px] text-[hsl(var(--muted-foreground))] font-mono break-all">URL: {d1Result.url}</div>}
-                                        {!d1Result.success && d1Result.detail && <div className="mt-0.5 text-[10px] text-[hsl(var(--muted-foreground))] font-mono break-all">Detail: {d1Result.detail}</div>}
                                     </div>
                                 )}
                                 <div className="flex gap-1.5">
@@ -391,7 +389,6 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                             <CardContent className="flex flex-col gap-2">
                                 <p className="text-[11px] text-[hsl(var(--muted-foreground))] -mt-2 mb-1">Backup provider — Currently Gemini is used for primary generation.</p>
                                 <Inp type="password" value={apiKey} onChange={setApiKey} placeholder="sk-ant-..." />
-                                {settings.apiKey && <div className="text-[11px] text-[hsl(var(--success))]">✓ Configured</div>}
                                 <div className="flex gap-1.5">
                                     <Button variant="ghost" onClick={testApi} disabled={!apiKey || testing === "api"} className="text-xs">{testing === "api" ? "..." : "🔑 Test"}</Button>
                                     <Button onClick={() => save({ apiKey })} disabled={saving} className="text-xs">{saving ? "Saving..." : "💾 Save"}</Button>
@@ -399,62 +396,9 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                             </CardContent>
                         </Card>
                     </section>
-
-                    <section>
-                        <SectionHeader>🔗 External Services</SectionHeader>
-                        <Card className="mb-4">
-                            <CardHeader><CardTitle>Voluum Tracker</CardTitle></CardHeader>
-                            <CardContent className="flex flex-col gap-2">
-                                <p className="text-[11px] text-[hsl(var(--muted-foreground))] -mt-2 mb-1">For fetching campaign spend and ROI metrics</p>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <Lbl>Access Key ID</Lbl>
-                                        <Inp type="password" value={voluumAccessKeyId} onChange={setVoluumAccessKeyId} placeholder="xxxx-xxxx-xxxx-xxxx" />
-                                    </div>
-                                    <div>
-                                        <Lbl>Access Key</Lbl>
-                                        <Inp type="password" value={voluumAccessKey} onChange={setVoluumAccessKey} placeholder="xxxx-xxxx-xxxx-xxxx" />
-                                    </div>
-                                </div>
-                                {testResult.voluum && <div className={`text-[11px] ${testResult.voluum === "ok" ? "text-[hsl(var(--success))]" : "text-[hsl(var(--destructive))]"}`}>{testResult.voluum === "ok" ? "✓ Connected" : "✗ Failed"}</div>}
-                                <div className="flex gap-1.5">
-                                    <Button variant="ghost" onClick={testVoluum} disabled={!voluumAccessKeyId || !voluumAccessKey || testing === "voluum"} className="text-xs">{testing === "voluum" ? "..." : "🔑 Test"}</Button>
-                                    <Button onClick={() => save({ voluumAccessKeyId, voluumAccessKey })} disabled={saving} className="text-xs">{saving ? "Saving..." : "💾 Save"}</Button>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="mb-4">
-                            <CardHeader><CardTitle>LeadingCards API</CardTitle></CardHeader>
-                            <CardContent className="flex flex-col gap-2">
-                                <p className="text-[11px] text-[hsl(var(--muted-foreground))] -mt-2 mb-1">For automated card management</p>
-                                <div><Lbl>Token</Lbl><Inp type="password" value={lcToken} onChange={setLcToken} placeholder="b2f..." /></div>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div><Lbl>Team UUID</Lbl><Inp value={lcTeamUuid} onChange={setLcTeamUuid} placeholder="Optional" /></div>
-                                    <div><Lbl>BIN UUID</Lbl><Inp value={defaultBinUuid} onChange={setDefaultBinUuid} placeholder="Issuance BIN" /></div>
-                                </div>
-                                {testResult.lc && <div className={`text-[11px] ${testResult.lc === "ok" ? "text-[hsl(var(--success))]" : "text-[hsl(var(--destructive))]"}`}>{testResult.lc === "ok" ? "✓ Connected" : "✗ Failed"}</div>}
-                                <div className="flex gap-1.5">
-                                    <Button variant="ghost" onClick={testLc} disabled={!lcToken || testing === "lc"} className="text-xs">{testing === "lc" ? "..." : "🔑 Test"}</Button>
-                                    <Button onClick={() => save({ lcToken, lcTeamUuid, defaultBinUuid, defaultBillingUuid })} disabled={saving} className="text-xs">{saving ? "Saving..." : "💾 Save"}</Button>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="mb-4">
-                            <CardHeader><CardTitle>📊 Build Stats</CardTitle></CardHeader>
-                            <CardContent>
-                                <div className="grid grid-cols-3 gap-3 text-center">
-                                    <div><div className="text-[22px] font-bold">{stats.builds}</div><div className="text-[10px] text-[hsl(var(--muted-foreground))]">Builds</div></div>
-                                    <div><div className="text-[22px] font-bold text-[hsl(var(--accent))]">${stats.spend.toFixed(3)}</div><div className="text-[10px] text-[hsl(var(--muted-foreground))]">Spend</div></div>
-                                    <div><div className="text-[22px] font-bold text-[hsl(var(--success))]">90+</div><div className="text-[10px] text-[hsl(var(--muted-foreground))]">PageSpeed</div></div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </section>
                 </div>
 
-                {/* Column 2: Deploy Targets & Pipeline */}
+                {/* Column 2: Deploy Targets */}
                 <div className="space-y-2">
                     <section>
                         <SectionHeader>🚀 Deploy Targets</SectionHeader>
@@ -463,24 +407,23 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                             <CardContent className="flex flex-col gap-2">
                                 <p className="text-[11px] text-[hsl(var(--muted-foreground))] -mt-2 mb-1">Primary Edge platform (Pages & Workers)</p>
                                 <div><Lbl>API Token</Lbl><Inp type="password" value={cfApiToken} onChange={setCfApiToken} placeholder="Bearer token..." /></div>
-                                <div><Lbl>Account ID {cfAccountId && (/^[0-9a-f]{32}$/i.test(cfAccountId.trim()) ? <span className="text-[hsl(var(--success))] text-[10px]">✓ {cfAccountId.trim().length} chars</span> : <span className="text-[hsl(var(--destructive))] text-[10px]">✗ {cfAccountId.trim().length}/32 chars</span>)}</Lbl><Inp value={cfAccountId} onChange={setCfAccountId} placeholder="32-char hex ID" /></div>
-                                {testResult.cf && (<div className={`text-[11px] ${testResult.cf === "ok" ? "text-[hsl(var(--success))]" : testResult.cf === "partial" ? "text-[hsl(var(--warning))]" : "text-[hsl(var(--destructive))]"}`}>{testResult.cf === "ok" ? "✓ Pages + Workers OK" : testResult.cf === "partial" ? "⚠ Partial — " : "✗ Failed — "}{testResult.cfDetail && <span className="font-mono text-[10px]">{testResult.cfDetail}</span>}</div>)}
+                                <div><Lbl>Account ID {cfAccountId && (/^[0-9a-f]{32}$/i.test(cfAccountId.trim()) ? <span className="text-[hsl(var(--success))] text-[10px]">✓ 32 chars</span> : <span className="text-[hsl(var(--destructive))] text-[10px]">✗ {cfAccountId.trim().length}/32 chars</span>)}</Lbl><Inp value={cfAccountId} onChange={setCfAccountId} placeholder="32-char hex ID" /></div>
+                                {testResult.cf && (<div className={`text-[11px] ${testResult.cf === "ok" ? "text-[hsl(var(--success))]" : "text-[hsl(var(--destructive))]"}`}>{testResult.cf === "ok" ? "✓ Pages + Workers OK" : "✗ Failed"}</div>)}
                                 <div className="flex gap-1.5">
-                                    <Button variant="ghost" onClick={testCf} disabled={!cfApiToken || !cfAccountId || testing === "cf"} className="text-xs">{testing === "cf" ? "..." : "🔑 Test"}</Button>
-                                    <Button onClick={() => { const cleanId = cfAccountId.trim(); if (cleanId && !/^[0-9a-f]{32}$/i.test(cleanId)) { setTestResult(p => ({ ...p, cf: "fail", cfDetail: `Account ID must be exactly 32 hex characters (got ${cleanId.length})` })); return; } save({ cfApiToken, cfAccountId: cleanId }); }} disabled={saving} className="text-xs">{saving ? "Saving..." : "💾 Save"}</Button>
+                                    <Button variant="ghost" onClick={testCf} disabled={!cfApiToken || !cfAccountId || testing === "cf"} className="text-xs">🔑 Test</Button>
+                                    <Button onClick={() => { const cleanId = cfAccountId.trim(); if (cleanId && !/^[0-9a-f]{32}$/i.test(cleanId)) return; save({ cfApiToken, cfAccountId: cleanId }); }} disabled={saving} className="text-xs">💾 Save</Button>
                                 </div>
                             </CardContent>
                         </Card>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-4">
                             <Card className="mb-4">
                                 <CardHeader><CardTitle>🔺 Netlify</CardTitle></CardHeader>
                                 <CardContent className="flex flex-col gap-2">
                                     <Inp type="password" value={netlifyToken} onChange={setNetlifyToken} placeholder="nfp_..." />
-                                    {settings.netlifyToken && <div className="text-[11px] text-[hsl(var(--success))]">✓ Configured</div>}
                                     <div className="flex gap-1.5 mt-2">
                                         <Button variant="ghost" onClick={testNetlify} disabled={!netlifyToken || testing === "netlify"} className="px-2 h-7 text-[10px]">Test</Button>
-                                        <Button onClick={() => save({ netlifyToken, netlifyTeamSlug })} disabled={saving} className="px-2 h-7 text-[10px]">{saving ? "..." : "Save"}</Button>
+                                        <Button onClick={() => save({ netlifyToken })} disabled={saving} className="px-2 h-7 text-[10px]">Save</Button>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -489,8 +432,7 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                                 <CardHeader><CardTitle>▲ Vercel</CardTitle></CardHeader>
                                 <CardContent className="flex flex-col gap-2">
                                     <Inp type="password" value={vercelToken} onChange={setVercelToken} placeholder="vercel_..." />
-                                    {settings.vercelToken && <div className="text-[11px] text-[hsl(var(--success))]">✓ Configured</div>}
-                                    <Button onClick={() => save({ vercelToken })} disabled={saving} className="px-2 h-7 text-[10px] mt-2 self-start">{saving ? "..." : "Save"}</Button>
+                                    <Button onClick={() => save({ vercelToken })} disabled={saving} className="px-2 h-7 text-[10px] mt-2 self-start">Save</Button>
                                 </CardContent>
                             </Card>
                         </div>
@@ -500,71 +442,96 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                             <CardContent className="flex flex-col gap-2">
                                 <div className="grid grid-cols-2 gap-2">
                                     <div><Lbl>Access Key ID</Lbl><Inp type="password" value={awsAccessKey} onChange={setAwsAccessKey} placeholder="AKIA..." /></div>
-                                    <div><Lbl>Secret Key</Lbl><Inp type="password" value={awsSecretKey} onChange={setAwsSecretKey} placeholder="••••" /></div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div><Lbl>Region</Lbl><Inp value={awsRegion} onChange={setAwsRegion} placeholder="us-east-1" /></div>
                                     <div><Lbl>Bucket</Lbl><Inp value={s3Bucket} onChange={setS3Bucket} placeholder="my-lp-bucket" /></div>
                                 </div>
-                                {testResult.aws && <div className={`text-[11px] ${testResult.aws === "fail" ? "text-[hsl(var(--destructive))]" : "text-[hsl(var(--success))]"}`}>{testResult.aws === "ok" ? "✓ Accessible" : testResult.aws === "cors" ? "⚠ CORS limited" : "✗ Failed"}</div>}
                                 <div className="flex gap-1.5">
                                     <Button variant="ghost" onClick={testAws} disabled={!s3Bucket || testing === "aws"} className="text-xs">🔑 Test</Button>
-                                    <Button onClick={() => save({ awsAccessKey, awsSecretKey, awsRegion, s3Bucket, cloudfrontDistId })} disabled={saving} className="text-xs">{saving ? "Saving..." : "💾 Save"}</Button>
+                                    <Button onClick={() => save({ awsAccessKey, awsSecretKey, awsRegion, s3Bucket })} disabled={saving} className="text-xs">💾 Save</Button>
                                 </div>
                             </CardContent>
                         </Card>
 
                         <Card className="mb-4">
-                            <CardHeader><CardTitle>🖥️ VPS (SSH/rsync)</CardTitle></CardHeader>
+                            <CardHeader><CardTitle>🖥️ VPS (SSH)</CardTitle></CardHeader>
                             <CardContent className="flex flex-col gap-2">
-                                <div className="grid gap-2" style={{ gridTemplateColumns: "2fr 1fr" }}>
-                                    <div><Lbl>Host</Lbl><Inp value={vpsHost} onChange={setVpsHost} placeholder="123.45.67.89" /></div>
-                                    <div><Lbl>Port</Lbl><Inp value={vpsPort} onChange={setVpsPort} placeholder="22" /></div>
-                                </div>
                                 <div className="grid grid-cols-2 gap-2">
-                                    <div><Lbl>Username</Lbl><Inp value={vpsUser} onChange={setVpsUser} placeholder="deploy" /></div>
-                                    <div><Lbl>Path</Lbl><Inp value={vpsPath} onChange={setVpsPath} placeholder="/var/www/html/" /></div>
+                                    <div><Lbl>Host</Lbl><Inp value={vpsHost} onChange={setVpsHost} placeholder="IP Address" /></div>
+                                    <div><Lbl>User</Lbl><Inp value={vpsUser} onChange={setVpsUser} placeholder="deploy" /></div>
                                 </div>
-                                <Button onClick={() => save({ vpsHost, vpsPort, vpsUser, vpsPath, vpsAuthMethod, vpsKey, vpsWorkerUrl })} disabled={saving} className="text-xs self-start">{saving ? "Saving..." : "💾 Save VPS Config"}</Button>
+                                <Button onClick={() => save({ vpsHost, vpsUser })} disabled={saving} className="text-xs self-start">💾 Save</Button>
                             </CardContent>
                         </Card>
 
                         <Card className="mb-4">
                             <CardHeader><CardTitle>🧬 Git Push Pipeline</CardTitle></CardHeader>
                             <CardContent className="flex flex-col gap-2">
-                                <p className="text-[11px] text-[hsl(var(--muted-foreground))] -mt-2 mb-1">Commit artifacts to GitHub for CI/CD</p>
-                                <Inp type="password" value={githubToken} onChange={setGithubToken} placeholder="GitHub Token (ghp_...)" />
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div><Lbl>Repo Owner</Lbl><Inp value={githubRepoOwner} onChange={setGithubRepoOwner} placeholder="user" /></div>
-                                    <div><Lbl>Repo Name</Lbl><Inp value={githubRepoName} onChange={setGithubRepoName} placeholder="repo" /></div>
-                                </div>
-                                {testResult.github && (<div className={`text-[11px] ${testResult.github === "ok" ? "text-[hsl(var(--success))]" : "text-[hsl(var(--destructive))]"}`}>{testResult.github === "ok" ? "✓ Repo accessible" : "✗ Check failed"}</div>)}
+                                <Inp type="password" value={githubToken} onChange={setGithubToken} placeholder="GitHub Token" />
                                 <div className="flex gap-1.5">
                                     <Button variant="ghost" onClick={testGitHub} disabled={!githubToken || testing === "github"} className="text-xs">🔑 Test</Button>
-                                    <Button onClick={() => save({ githubToken, githubRepoOwner, githubRepoName, githubRepoBranch, githubDeployWorkflow, netlifyTarget, cfPagesTarget })} disabled={saving} className="text-xs">💾 Save</Button>
+                                    <Button onClick={() => save({ githubToken, githubRepoOwner, githubRepoName })} disabled={saving} className="text-xs">💾 Save</Button>
                                 </div>
                             </CardContent>
                         </Card>
                     </section>
+                </div>
 
+                {/* Column 3: Automation & Services (Visible only on very wide screens or stacked) */}
+                <div className="space-y-2">
                     <section>
-                        <SectionHeader>🤖 Multilogin X</SectionHeader>
+                        <SectionHeader>🤖 Automation</SectionHeader>
                         <Card className="mb-4">
-                            <CardHeader><CardTitle>Automation</CardTitle></CardHeader>
+                            <CardHeader><CardTitle>Multilogin X</CardTitle></CardHeader>
                             <CardContent className="flex flex-col gap-2">
                                 <Inp type="password" value={mlToken} onChange={setMlToken} placeholder="Automation Token" />
                                 <div className="grid grid-cols-2 gap-2">
                                     <div><Lbl>Email</Lbl><Inp value={mlEmail} onChange={setMlEmail} placeholder="user@ml.com" /></div>
                                     <div><Lbl>Password</Lbl><Inp type="password" value={mlPassword} onChange={setMlPassword} placeholder="••••" /></div>
                                 </div>
-                                <div className="flex gap-1.5 items-center">
-                                    <div className="flex-1"><Lbl>Folder ID</Lbl><Inp value={mlFolderId} onChange={setMlFolderId} placeholder="ID..." /></div>
-                                    <Button variant="ghost" onClick={async () => { setLoadingFolders(true); try { if (mlToken) multiloginApi.setToken(mlToken); const res = await multiloginApi.getFolders(); const fdata = res.data?.folders || res.data || []; setFolders(Array.isArray(fdata) ? fdata : []); } catch (e) { setFolders([]); } setLoadingFolders(false); }} disabled={loadingFolders || !mlToken} className="h-9 self-end px-2 text-[10px]">📂 Browse</Button>
-                                </div>
-                                {testResult.ml && <div className={`text-[11px] ${["fail", "expired"].includes(testResult.ml) ? "text-[hsl(var(--destructive))]" : "text-[hsl(var(--success))]"}`}>{testResult.ml === "ok" ? "✓ Token acquired" : testResult.ml === "active" ? "✓ Token Valid" : "✗ Error"}</div>}
-                                <div className="flex gap-1.5 flex-wrap mt-1">
+                                <div className="flex gap-1.5 mt-1">
                                     <Button variant="ghost" onClick={testMl} disabled={testing === "ml"} className="px-2 h-7 text-[10px]">Test</Button>
-                                    <Button onClick={() => save({ mlToken, mlEmail, mlPassword, mlFolderId, defaultProxyProvider })} disabled={saving} className="px-2 h-7 text-[10px]">Save</Button>
+                                    <Button onClick={() => save({ mlToken, mlEmail, mlPassword })} disabled={saving} className="px-2 h-7 text-[10px]">Save</Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </section>
+
+                    <section>
+                        <SectionHeader>🔗 External Tracking</SectionHeader>
+                        <Card className="mb-4">
+                            <CardHeader><CardTitle>Voluum Tracker</CardTitle></CardHeader>
+                            <CardContent className="flex flex-col gap-2">
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div><Lbl>ID</Lbl><Inp type="password" value={voluumAccessKeyId} onChange={setVoluumAccessKeyId} /></div>
+                                    <div><Lbl>Key</Lbl><Inp type="password" value={voluumAccessKey} onChange={setVoluumAccessKey} /></div>
+                                </div>
+                                <div className="flex gap-1.5 mt-1">
+                                    <Button variant="ghost" onClick={testVoluum} disabled={testing === "voluum"} className="px-2 h-7 text-[10px]">Test</Button>
+                                    <Button onClick={() => save({ voluumAccessKeyId, voluumAccessKey })} disabled={saving} className="px-2 h-7 text-[10px]">Save</Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="mb-4">
+                            <CardHeader><CardTitle>LeadingCards</CardTitle></CardHeader>
+                            <CardContent className="flex flex-col gap-2">
+                                <Lbl>API Token</Lbl><Inp type="password" value={lcToken} onChange={setLcToken} placeholder="b2f..." />
+                                <div className="flex gap-1.5 mt-1">
+                                    <Button variant="ghost" onClick={testLc} disabled={testing === "lc"} className="px-2 h-7 text-[10px]">Test</Button>
+                                    <Button onClick={() => save({ lcToken })} disabled={saving} className="px-2 h-7 text-[10px]">Save</Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </section>
+
+                    <section>
+                        <SectionHeader>📊 Performance Stats</SectionHeader>
+                        <Card className="mb-4">
+                            <CardHeader><CardTitle>Project Overview</CardTitle></CardHeader>
+                            <CardContent>
+                                <div className="grid grid-cols-3 gap-3 text-center">
+                                    <div><div className="text-[20px] font-bold">{stats.builds}</div><div className="text-[9px] text-[hsl(var(--muted-foreground))] uppercase">Builds</div></div>
+                                    <div><div className="text-[20px] font-bold text-[hsl(var(--accent))]">${stats.spend.toFixed(2)}</div><div className="text-[9px] text-[hsl(var(--muted-foreground))] uppercase">Spend</div></div>
+                                    <div><div className="text-[20px] font-bold text-[hsl(var(--success))]">90+</div><div className="text-[9px] text-[hsl(var(--muted-foreground))] uppercase">Score</div></div>
                                 </div>
                             </CardContent>
                         </Card>
