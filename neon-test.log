@@ -1,0 +1,29 @@
+=== Creating V2 accounting tables via tagged templates ===
+
+1. Creating opex...
+   opex OK
+2. Creating monthly_pnl...
+   monthly_pnl OK
+3. Creating reconcile_records...
+   reconcile_records OK
+
+=== Verifying ===
+Public tables: [ 'monthly_pnl', 'opex', 'reconcile_records' ]
+
+=== Smoke test: insert into opex ===
+Opex rows: [
+  {
+    id: 1,
+    category: 'proxy',
+    item_name: 'NodeMaven',
+    monthly_cost: '49.00',
+    billing_cycle: 'monthly',
+    start_date: null,
+    end_date: null,
+    is_active: 1,
+    notes: '',
+    created_at: 2026-02-22T23:00:18.115Z
+  }
+]
+
+All done!

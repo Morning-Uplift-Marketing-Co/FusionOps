@@ -93,6 +93,61 @@ CREATE TABLE IF NOT EXISTS lendingcard_transactions (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- ============================================================
+-- Accounting & Spend Dashboard V2 Schema
+-- ============================================================
+
+-- Opex (operating expenses)
+CREATE TABLE IF NOT EXISTS opex (
+    id SERIAL PRIMARY KEY,
+    category TEXT NOT NULL,       -- proxy, anti_detect, tracking, hosting, domain, payment, other
+    item_name TEXT NOT NULL,      -- NodeMaven, Multilogin, etc.
+    monthly_cost NUMERIC(10, 2) DEFAULT 0,
+    billing_cycle TEXT DEFAULT 'monthly',  -- monthly, annual, one_time
+    start_date DATE,
+    end_date DATE,
+    is_active INTEGER DEFAULT 1,
+    notes TEXT DEFAULT '',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Monthly P&L snapshots
+CREATE TABLE IF NOT EXISTS monthly_pnl (
+    id SERIAL PRIMARY KEY,
+    month TEXT NOT NULL,           -- '2026-02'
+    gross_revenue NUMERIC(10, 2) DEFAULT 0,
+    google_spend NUMERIC(10, 2) DEFAULT 0,
+    vat_amount NUMERIC(10, 2) DEFAULT 0,
+    lendingcard_fees NUMERIC(10, 2) DEFAULT 0,
+    total_cost_of_revenue NUMERIC(10, 2) DEFAULT 0,
+    gross_profit NUMERIC(10, 2) DEFAULT 0,
+    total_opex NUMERIC(10, 2) DEFAULT 0,
+    net_profit NUMERIC(10, 2) DEFAULT 0,
+    net_margin NUMERIC(5, 2) DEFAULT 0,
+    leads_submitted INTEGER DEFAULT 0,
+    leads_sold INTEGER DEFAULT 0,
+    leads_rejected INTEGER DEFAULT 0,
+    active_accounts INTEGER DEFAULT 0,
+    active_domains INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Reconciliation records
+CREATE TABLE IF NOT EXISTS reconcile_records (
+    id SERIAL PRIMARY KEY,
+    month TEXT NOT NULL,
+    card_last4 TEXT NOT NULL,
+    lc_date DATE,
+    lc_description TEXT DEFAULT '',
+    lc_amount NUMERIC(10, 2) DEFAULT 0,
+    our_amount NUMERIC(10, 2) DEFAULT 0,
+    diff NUMERIC(10, 2) DEFAULT 0,
+    status TEXT DEFAULT 'pending',  -- matched, diff, missing
+    notes TEXT DEFAULT '',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_deploy_history_site_id ON deploy_history(site_id);
 CREATE INDEX IF NOT EXISTS idx_deploy_history_created_at ON deploy_history(created_at DESC);
@@ -156,11 +211,16 @@ async function runMigrations(connectionString) {
     throw err;
   }
 
-  // Split schema into individual statements
-  const statements = SCHEMA
+  // Remove purely comment lines, then split by semicolon
+  const cleanSchema = SCHEMA
+    .split('\n')
+    .filter(line => !line.trim().startsWith('--'))
+    .join('\n');
+
+  const statements = cleanSchema
     .split(';')
     .map(s => s.trim())
-    .filter(s => s.length > 0 && !s.startsWith('--'));
+    .filter(s => s.length > 0);
 
   log.info(`Executing ${statements.length} SQL statements...`);
 
@@ -169,6 +229,8 @@ async function runMigrations(connectionString) {
 
   for (const statement of statements) {
     try {
+      const snippet = statement.slice(0, 50).replace(/\n/g, ' ');
+      log.info(`Executing: ${snippet}...`);
       await sql.unsafe(statement);
       successCount++;
     } catch (err) {
@@ -189,17 +251,22 @@ async function runMigrations(connectionString) {
     log.warning(`${successCount} succeeded, ${errorCount} failed`);
   }
 
+  // Verify context
+  const ctx = await sql`SELECT current_database(), current_user, current_schema()`;
+  log.info(`Context: DB=${ctx[0].current_database}, User=${ctx[0].current_user}, Schema=${ctx[0].current_schema}`);
+
   // Verify tables
   log.info('Verifying tables...');
   const tables = await sql`
-    SELECT table_name
+    SELECT table_name, table_schema
     FROM information_schema.tables
-    WHERE table_schema = 'public'
+    WHERE table_name IN ('settings', 'sites', 'daily_spend', 'opex', 'monthly_pnl')
+    OR table_schema = 'public'
     ORDER BY table_name
   `;
 
-  log.success('Created tables:');
-  tables.forEach(t => console.log(`  ✓ ${t.table_name}`));
+  log.success(`Found ${tables.length} tables:`);
+  tables.forEach(t => console.log(`  ✓ ${t.table_schema}.${t.table_name}`));
 
   // Check indexes
   const indexes = await sql`
