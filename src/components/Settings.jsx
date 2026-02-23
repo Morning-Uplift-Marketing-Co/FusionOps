@@ -420,18 +420,20 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                             <Card className="mb-4">
                                 <CardHeader><CardTitle>🔺 Netlify</CardTitle></CardHeader>
                                 <CardContent className="flex flex-col gap-2">
-                                    <Inp type="password" value={netlifyToken} onChange={setNetlifyToken} placeholder="nfp_..." />
+                                    <p className="text-[10px] text-[hsl(var(--muted-foreground))] -mt-2">Personal Access Token + Team Slug</p>
+                                    <div><Lbl>Access Token</Lbl><Inp type="password" value={netlifyToken} onChange={setNetlifyToken} placeholder="nfp_..." /></div>
+                                    <div><Lbl>Team Slug (Optional)</Lbl><Inp value={netlifyTeamSlug} onChange={setNetlifyTeamSlug} placeholder="my-team-123" /></div>
                                     <div className="flex gap-1.5 mt-2">
                                         <Button variant="ghost" onClick={testNetlify} disabled={!netlifyToken || testing === "netlify"} className="px-2 h-7 text-[10px]">Test</Button>
-                                        <Button onClick={() => save({ netlifyToken })} disabled={saving} className="px-2 h-7 text-[10px]">Save</Button>
+                                        <Button onClick={() => save({ netlifyToken, netlifyTeamSlug })} disabled={saving} className="px-2 h-7 text-[10px]">Save</Button>
                                     </div>
                                 </CardContent>
                             </Card>
-
                             <Card className="mb-4">
                                 <CardHeader><CardTitle>▲ Vercel</CardTitle></CardHeader>
                                 <CardContent className="flex flex-col gap-2">
-                                    <Inp type="password" value={vercelToken} onChange={setVercelToken} placeholder="vercel_..." />
+                                    <p className="text-[10px] text-[hsl(var(--muted-foreground))] -mt-2">Deploy directly to Vercel via API</p>
+                                    <div><Lbl>API Token</Lbl><Inp type="password" value={vercelToken} onChange={setVercelToken} placeholder="vercel_..." /></div>
                                     <Button onClick={() => save({ vercelToken })} disabled={saving} className="px-2 h-7 text-[10px] mt-2 self-start">Save</Button>
                                 </CardContent>
                             </Card>
@@ -442,11 +444,16 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                             <CardContent className="flex flex-col gap-2">
                                 <div className="grid grid-cols-2 gap-2">
                                     <div><Lbl>Access Key ID</Lbl><Inp type="password" value={awsAccessKey} onChange={setAwsAccessKey} placeholder="AKIA..." /></div>
-                                    <div><Lbl>Bucket</Lbl><Inp value={s3Bucket} onChange={setS3Bucket} placeholder="my-lp-bucket" /></div>
+                                    <div><Lbl>Secret Key</Lbl><Inp type="password" value={awsSecretKey} onChange={setAwsSecretKey} placeholder="wJalr..." /></div>
                                 </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div><Lbl>Region</Lbl><Inp value={awsRegion} onChange={setAwsRegion} placeholder="us-east-1" /></div>
+                                    <div><Lbl>S3 Bucket</Lbl><Inp value={s3Bucket} onChange={setS3Bucket} placeholder="my-lp-bucket" /></div>
+                                </div>
+                                <div><Lbl>CloudFront Dist ID (Optional)</Lbl><Inp value={cloudfrontDistId} onChange={setCloudfrontDistId} placeholder="E1ABC... (for cache invalidation)" /></div>
                                 <div className="flex gap-1.5">
                                     <Button variant="ghost" onClick={testAws} disabled={!s3Bucket || testing === "aws"} className="text-xs">🔑 Test</Button>
-                                    <Button onClick={() => save({ awsAccessKey, awsSecretKey, awsRegion, s3Bucket })} disabled={saving} className="text-xs">💾 Save</Button>
+                                    <Button onClick={() => save({ awsAccessKey, awsSecretKey, awsRegion, s3Bucket, cloudfrontDistId })} disabled={saving} className="text-xs">💾 Save</Button>
                                 </div>
                             </CardContent>
                         </Card>
@@ -456,19 +463,37 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                             <CardContent className="flex flex-col gap-2">
                                 <div className="grid grid-cols-2 gap-2">
                                     <div><Lbl>Host</Lbl><Inp value={vpsHost} onChange={setVpsHost} placeholder="IP Address" /></div>
-                                    <div><Lbl>User</Lbl><Inp value={vpsUser} onChange={setVpsUser} placeholder="deploy" /></div>
+                                    <div><Lbl>Port</Lbl><Inp value={vpsPort} onChange={setVpsPort} placeholder="22" /></div>
                                 </div>
-                                <Button onClick={() => save({ vpsHost, vpsUser })} disabled={saving} className="text-xs self-start">💾 Save</Button>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div><Lbl>User</Lbl><Inp value={vpsUser} onChange={setVpsUser} placeholder="deploy" /></div>
+                                    <div><Lbl>Path</Lbl><Inp value={vpsPath} onChange={setVpsPath} placeholder="/var/www/site" /></div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <Sel label="Auth Method" value={vpsAuthMethod} onChange={setVpsAuthMethod} options={[{ value: "key", label: "SSH Key" }, { value: "password", label: "Password" }]} />
+                                    <div><Lbl>{vpsAuthMethod === "key" ? "SSH Private Key" : "SSH Password"}</Lbl><Inp type="password" value={vpsKey} onChange={setVpsKey} placeholder="..." /></div>
+                                </div>
+                                <div><Lbl>D1 Mirror Worker URL (Optional)</Lbl><Inp value={vpsWorkerUrl} onChange={setVpsWorkerUrl} placeholder="https://d1-mirror.abc.workers.dev" /></div>
+                                <Button onClick={() => save({ vpsHost, vpsPort, vpsUser, vpsPath, vpsAuthMethod, vpsKey, vpsWorkerUrl })} disabled={saving} className="text-xs self-start">💾 Save</Button>
                             </CardContent>
                         </Card>
 
                         <Card className="mb-4">
                             <CardHeader><CardTitle>🧬 Git Push Pipeline</CardTitle></CardHeader>
                             <CardContent className="flex flex-col gap-2">
+                                <p className="text-[10px] text-[hsl(var(--muted-foreground))] -mt-2">Deploy via GitHub Actions Pipeline</p>
                                 <Inp type="password" value={githubToken} onChange={setGithubToken} placeholder="GitHub Token" />
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div><Lbl>Repo Owner</Lbl><Inp value={githubRepoOwner} onChange={setGithubRepoOwner} placeholder="my-user" /></div>
+                                    <div><Lbl>Repo Name</Lbl><Inp value={githubRepoName} onChange={setGithubRepoName} placeholder="my-sites-repo" /></div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div><Lbl>Branch</Lbl><Inp value={githubRepoBranch} onChange={setGithubRepoBranch} placeholder="main" /></div>
+                                    <div><Lbl>Workflow File</Lbl><Inp value={githubDeployWorkflow} onChange={setGithubDeployWorkflow} placeholder="deploy-sites.yml" /></div>
+                                </div>
                                 <div className="flex gap-1.5">
                                     <Button variant="ghost" onClick={testGitHub} disabled={!githubToken || testing === "github"} className="text-xs">🔑 Test</Button>
-                                    <Button onClick={() => save({ githubToken, githubRepoOwner, githubRepoName })} disabled={saving} className="text-xs">💾 Save</Button>
+                                    <Button onClick={() => save({ githubToken, githubRepoOwner, githubRepoName, githubRepoBranch, githubDeployWorkflow })} disabled={saving} className="text-xs">💾 Save</Button>
                                 </div>
                             </CardContent>
                         </Card>
@@ -482,14 +507,16 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                         <Card className="mb-4">
                             <CardHeader><CardTitle>Multilogin X</CardTitle></CardHeader>
                             <CardContent className="flex flex-col gap-2">
+                                <p className="text-[10px] text-[hsl(var(--muted-foreground))] -mt-2">Browser automation & profile management</p>
                                 <Inp type="password" value={mlToken} onChange={setMlToken} placeholder="Automation Token" />
                                 <div className="grid grid-cols-2 gap-2">
                                     <div><Lbl>Email</Lbl><Inp value={mlEmail} onChange={setMlEmail} placeholder="user@ml.com" /></div>
                                     <div><Lbl>Password</Lbl><Inp type="password" value={mlPassword} onChange={setMlPassword} placeholder="••••" /></div>
                                 </div>
+                                <div><Lbl>Default Folder ID</Lbl><Inp value={mlFolderId} onChange={setMlFolderId} placeholder="f12345..." /></div>
                                 <div className="flex gap-1.5 mt-1">
                                     <Button variant="ghost" onClick={testMl} disabled={testing === "ml"} className="px-2 h-7 text-[10px]">Test</Button>
-                                    <Button onClick={() => save({ mlToken, mlEmail, mlPassword })} disabled={saving} className="px-2 h-7 text-[10px]">Save</Button>
+                                    <Button onClick={() => save({ mlToken, mlEmail, mlPassword, mlFolderId })} disabled={saving} className="px-2 h-7 text-[10px]">Save</Button>
                                 </div>
                             </CardContent>
                         </Card>

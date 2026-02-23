@@ -538,17 +538,11 @@ export default function App() {
         if (pong) {
           notify("Neon connected!");
           db.syncFromLocal(fresh, sites, deploys);
-          return;
         }
       } else {
         // Try connection recovery if initial init fails
-        const recovered = await recoverNeonConnection();
-        if (recovered) {
-          return;
-        }
+        await recoverNeonConnection();
       }
-      notify("Neon connection failed", "danger");
-      return;
     }
 
     // Save to Neon AND D1 (dual-write) — Worker reads from D1, so always sync both
