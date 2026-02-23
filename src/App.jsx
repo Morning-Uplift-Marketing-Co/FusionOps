@@ -100,6 +100,10 @@ export default function App() {
             neonReady = true;
             setNeonOk(true);
 
+            // *** CRITICAL: Push neonUrl to D1 so other devices can recover it via /api/init ***
+            // This runs in the background and doesn't block the rest of boot.
+            api.post("/settings", { neonUrl: neonConnStr }).catch(() => { });
+
             // Load from Neon
             const [neonSettings, neonSites, neonDeploys] = await Promise.all([
               db.loadSettings(),
@@ -108,9 +112,12 @@ export default function App() {
             ]);
 
             if (neonSettings && Object.keys(neonSettings).length > 0) {
-              // Neon is the absolute source of truth
-              setSettings(neonSettings);
-              LS.set("settings", neonSettings); // Optional cache for offline load
+              // Neon is the absolute source of truth, but we merge to preserve local defaults/env
+              setSettings(prev => {
+                const merged = { ...prev, ...neonSettings };
+                LS.set("settings", merged);
+                return merged;
+              });
             }
 
             // Sites from Neon
@@ -521,8 +528,8 @@ export default function App() {
     // Use functional update to avoid stale closure
     let next;
     setSettings(prev => {
-      next = { ...prev, ...s };
-      return next;
+      const merged = { ...(prev || {}), ...s };
+      return merged;
     });
     // Always persist to localStorage immediately
     // Read fresh from state in case other saves happened

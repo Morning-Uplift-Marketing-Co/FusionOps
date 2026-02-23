@@ -48,7 +48,7 @@ export function Dashboard({ sites, stats, ops, setPage, startCreate, settings = 
     const configWarnings = [];
     if (!neonOk) configWarnings.push("Neon Database disconnected.");
     if (!settings.cfApiToken || !settings.cfAccountId) configWarnings.push("Cloudflare settings incomplete.");
-    if (!settings.voluumApiKey || !settings.voluumAccessKeyId) configWarnings.push("Voluum API keys missing.");
+    if (!settings.voluumAccessKey || !settings.voluumAccessKeyId) configWarnings.push("Voluum API keys missing.");
 
     const activeSites = sites.filter(s => s.status === "completed").length;
     const activeCards = ops.payments?.filter(p => p.status === "active" || p.cardStatus === "active").length || 0;

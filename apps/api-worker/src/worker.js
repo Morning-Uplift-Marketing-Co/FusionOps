@@ -1332,6 +1332,47 @@ export default {
         return json(results);
       }
 
+      // ═══ INIT — Bootstrap Endpoint ═══
+      // Returns settings + sites + deploys + ops for the app to hydrate on load.
+      // IMPORTANT: Returns neonUrl in plain text so the frontend can auto-connect Neon
+      // on new devices/browsers where localStorage is empty.
+      if (path === '/api/init' && method === 'GET') {
+        const [settingsRows, sitesRows, deploysRows] = await Promise.all([
+          db.prepare('SELECT key, value FROM settings').all(),
+          db.prepare('SELECT * FROM sites ORDER BY updated_at DESC').all(),
+          db.prepare('SELECT * FROM deploy_history ORDER BY deploy_time DESC LIMIT 100').all(),
+        ]);
+
+        const settings = {};
+        settingsRows.results.forEach(r => { settings[r.key] = r.value; });
+
+        // Ops data
+        const [domains, accounts, profiles, payments, logs] = await Promise.all([
+          db.prepare('SELECT * FROM ops_domains ORDER BY created_at DESC').all(),
+          db.prepare('SELECT * FROM ops_accounts ORDER BY created_at DESC').all(),
+          db.prepare('SELECT * FROM ops_profiles ORDER BY created_at DESC').all(),
+          db.prepare('SELECT * FROM ops_payments ORDER BY created_at DESC').all(),
+          db.prepare('SELECT * FROM ops_logs ORDER BY created_at DESC LIMIT 50').all(),
+        ]);
+
+        return json({
+          settings,
+          sites: sitesRows.results || [],
+          deploys: deploysRows.results || [],
+          stats: {
+            builds: sitesRows.results?.length || 0,
+            spend: (sitesRows.results || []).reduce((a, s) => a + (Number(s.cost) || 0), 0),
+          },
+          ops: {
+            domains: domains.results || [],
+            accounts: accounts.results || [],
+            profiles: profiles.results || [],
+            payments: payments.results || [],
+            logs: logs.results || [],
+          },
+        });
+      }
+
       // ═══ SETTINGS ═══
       if (path === '/api/settings' && method === 'GET') {
         const { results } = await db.prepare('SELECT * FROM settings').all();

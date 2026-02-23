@@ -178,8 +178,8 @@ export async function saveSettings(obj) {
     for (const [key, value] of Object.entries(obj)) {
       await sql`
         INSERT INTO settings (key, value, updated_at)
-        VALUES (${key}, ${JSON.stringify(value)}, now())
-        ON CONFLICT (key) DO UPDATE SET value = ${JSON.stringify(value)}, updated_at = now()
+        VALUES (${key}, ${value}, now())
+        ON CONFLICT (key) DO UPDATE SET value = ${value}, updated_at = now()
       `;
     }
     return true;

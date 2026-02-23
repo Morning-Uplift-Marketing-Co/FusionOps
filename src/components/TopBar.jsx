@@ -4,7 +4,10 @@ import { Dot } from "./ui/dot";
 import { ThemeToggle } from "./ui/theme-toggle";
 
 export function TopBar({ stats, settings, deploys, apiOk, neonOk, onReconnectNeon }) {
-    const voluumOk = !!(import.meta.env.PUBLIC_VOLUUM_API_KEY || (import.meta.env.PUBLIC_VOLUUM_ACCESS_KEY_ID && import.meta.env.PUBLIC_VOLUUM_ACCESS_KEY));
+    const voluumOk = !!(
+        (settings?.voluumAccessKeyId && settings?.voluumAccessKey) ||
+        (import.meta.env.PUBLIC_VOLUUM_ACCESS_KEY_ID && import.meta.env.PUBLIC_VOLUUM_ACCESS_KEY)
+    );
 
     return (
         <div className="h-12 border-b border-[hsl(var(--border))] flex items-center justify-between px-7 bg-[hsl(var(--card))]/85 backdrop-blur-md sticky top-0 z-50">
