@@ -17,8 +17,82 @@ let maxReconnectAttempts = 3;
 let reconnectDelay = 1000; // 1 second
 
 /**
+ * Ensure all required tables exist in the database.
+ */
+export async function ensureTables() {
+  if (!sql) return false;
+  try {
+    // Settings table
+    await sql`
+      CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value JSONB,
+        updated_at TIMESTAMPTZ DEFAULT now()
+      )
+    `;
+    // Sites table
+    await sql`
+      CREATE TABLE IF NOT EXISTS sites (
+        id TEXT PRIMARY KEY,
+        data JSONB,
+        created_at TIMESTAMPTZ DEFAULT now(),
+        updated_at TIMESTAMPTZ DEFAULT now()
+      )
+    `;
+    // Deploy History table
+    await sql`
+      CREATE TABLE IF NOT EXISTS deploy_history (
+        id TEXT PRIMARY KEY,
+        site_id TEXT,
+        target TEXT,
+        url TEXT,
+        status TEXT,
+        brand TEXT,
+        created_at TIMESTAMPTZ DEFAULT now()
+      )
+    `;
+    // DAILY SPEND & ROI table
+    await sql`
+      CREATE TABLE IF NOT EXISTS daily_spend (
+        id TEXT PRIMARY KEY,
+        date DATE,
+        account_id TEXT,
+        campaign_id TEXT,
+        google_spend DECIMAL(12,4),
+        vat DECIMAL(12,4),
+        lendingcard_fee DECIMAL(12,4),
+        true_cost DECIMAL(12,4),
+        revenue DECIMAL(12,4),
+        conversions INTEGER,
+        clicks INTEGER,
+        true_roi DECIMAL(12,4),
+        created_at TIMESTAMPTZ DEFAULT now(),
+        updated_at TIMESTAMPTZ DEFAULT now()
+      )
+    `;
+    // LENDINGCARD TRANSACTIONS table
+    await sql`
+      CREATE TABLE IF NOT EXISTS lendingcard_transactions (
+        id TEXT PRIMARY KEY,
+        date DATE,
+        amount DECIMAL(12,4),
+        deposit_fee DECIMAL(12,4),
+        net_amount DECIMAL(12,4),
+        card_id TEXT,
+        card_last4 TEXT,
+        merchant TEXT,
+        created_at TIMESTAMPTZ DEFAULT now()
+      )
+    `;
+    return true;
+  } catch (e) {
+    console.error("[neon] ensureTables failed:", e.message);
+    return false;
+  }
+}
+
+/**
  * Initialize the Neon connection. Call once on app start.
- * @param {string} connStr - Neon connection string (supports both pooler and serverless)
  */
 export function initNeon(connStr) {
   if (!connStr) return false;
@@ -26,6 +100,8 @@ export function initNeon(connStr) {
   try {
     sql = neon(connStr);
     reconnectAttempts = 0;
+    // Attempt table initialization in the background
+    ensureTables().catch(() => { });
     return true;
   } catch (e) {
     console.warn("[neon] Init failed:", e.message);
