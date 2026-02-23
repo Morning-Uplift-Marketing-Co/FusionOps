@@ -1,9 +1,9 @@
 openapi: 3.0.3
 info:
-  title: LP Factory Automation API
+  title: FusionOps Automation API
   version: 2.1.0
   description: |
-    Automation endpoints for LP Factory V2. Use these endpoints to integrate with
+    Automation endpoints for FusionOps V2. Use these endpoints to integrate with
     external automation tools like n8n, Make, Zapier, or custom scripts.
 
     **Base URL**: `https://lp-factory-api.misty-feather-556e.workers.dev`
@@ -11,7 +11,7 @@ info:
     **Authentication**: Optional Bearer token via `Authorization: Bearer <API_SECRET>` header.
     Set `API_SECRET` environment variable in Worker to enable authentication.
   contact:
-    name: LP Factory
+    name: FusionOps
     url: https://lp-factory.songsawat-w.workers.dev
   license:
     name: MIT

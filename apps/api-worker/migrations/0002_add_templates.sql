@@ -1,6 +1,6 @@
 -- ============================================================
 -- D1 Migration: 0002_add_templates.sql
--- LP Factory V2 — Custom Templates Storage
+-- FusionOps V2 — Custom Templates Storage
 -- ============================================================
 
 -- Templates: Custom template definitions

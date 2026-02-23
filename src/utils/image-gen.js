@@ -1,5 +1,5 @@
 /**
- * AI-style Image Generation for LP Factory
+ * AI-style Image Generation for FusionOps
  * Generates favicon (SVG) and OG image (Canvas) from brand config
  */
 

@@ -1,5 +1,5 @@
 # ============================================================
-# Wrangler Configuration — LP Factory Callback Worker
+# Wrangler Configuration — FusionOps Callback Worker
 # ============================================================
 # Supports multi-account via route parameters.
 # Each account has its own callback token stored in D1.

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-LP Factory API - LeadingCards Examples
+FusionOps API - LeadingCards Examples
 
 Usage:
     python cards.py create <limit> <currency>
@@ -18,7 +18,7 @@ API_BASE = "https://lp-factory-api.misty-feather-556e.workers.dev"
 # API_SECRET = "your-secret-here"
 
 def api_request(endpoint, method="GET", body=None):
-    """Make an API request to LP Factory."""
+    """Make an API request to FusionOps."""
     headers = {"Content-Type": "application/json"}
     # if API_SECRET:
     #     headers["Authorization"] = f"Bearer {API_SECRET}"
@@ -82,7 +82,7 @@ def change_limit(card_uuid: str, new_limit: int):
 
 def main():
     if len(sys.argv) < 2:
-        print("LP Factory LeadingCards API Examples\n")
+        print("FusionOps LeadingCards API Examples\n")
         print("Usage: python cards.py [command] [args]\n")
         print("Commands:")
         print("  create <limit> <currency>    Create a new virtual card")

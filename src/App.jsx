@@ -76,6 +76,13 @@ export default function App() {
     };
   }, []);
 
+  // Proactively connect to Neon if URL is provided/discovered later
+  useEffect(() => {
+    if (!neonOk && settings.neonUrl && settings.neonUrl.includes("@")) {
+      recoverNeonConnection();
+    }
+  }, [settings.neonUrl, neonOk]);
+
   async function bootApp() {
     const localSettings = LS.get("settings") || {};
 
@@ -84,7 +91,7 @@ export default function App() {
     let neonReady = false;
 
     // Only attempt Neon if the URL looks like a real connection string
-    if (neonConnStr && neonConnStr.includes("@") && !neonConnStr.includes("ep-xxx")) {
+    if (neonConnStr && neonConnStr.includes("@")) {
       try {
         const initialized = db.initNeon(neonConnStr);
         if (initialized) {
@@ -155,11 +162,34 @@ export default function App() {
           });
         }
 
-        // When Neon is not ready, use API as full fallback for app data
+        // When Neon is not ready, check if API has a Neon URL we can use
+        if (!neonReady) {
+          const apiNeonUrl = data.settings?.neonUrl;
+          if (apiNeonUrl && apiNeonUrl.includes("@")) {
+            console.log("[boot] Re-trying Neon with URL from API...");
+            const initialized = db.initNeon(apiNeonUrl);
+            if (initialized && await db.ping()) {
+              console.log("[boot] Neon connected via API settings!");
+              setNeonOk(true);
+              neonReady = true;
+
+              // Load full data from Neon now that it's connected
+              const [ns, nsi, nde] = await Promise.all([db.loadSettings(), db.loadSites(), db.loadDeploys()]);
+              if (ns) {
+                const m = { ...localSettings, ...data.settings, ...ns };
+                setSettings(m);
+                LS.set("settings", m);
+              }
+              if (nsi?.length) setSites(nsi);
+              if (nde?.length) setDeploys(nde);
+            }
+          }
+        }
+
+        // Final fallback/merge if Neon still not ready
         if (!neonReady) {
           if (data.sites) setSites(data.sites);
           if (data.settings) {
-            // API wins — user's central saves are most recent
             const merged = { ...localSettings, ...data.settings };
             setSettings(merged);
             LS.set("settings", merged);
@@ -172,7 +202,6 @@ export default function App() {
         setApiOk(true);
       }
     } catch (e) {
-      // API unreachable — keep Neon/localStorage state
       console.warn("[App] API unreachable, using local state:", e?.message || e);
     }
 
@@ -183,7 +212,7 @@ export default function App() {
     const localSettings = LS.get("settings") || {};
     const neonConnStr = NEON_URL || localSettings.neonUrl || "";
 
-    if (neonConnStr && neonConnStr.includes("@") && !neonConnStr.includes("ep-xxx")) {
+    if (neonConnStr && neonConnStr.includes("@")) {
       const reconnected = db.forceReconnect();
       if (reconnected) {
         const pong = await db.ping();
@@ -515,23 +544,21 @@ export default function App() {
       return;
     }
 
-    // Save to Neon (primary) or API (fallback)
-    if (neonOk) {
-      const ok = await db.saveSettings(s);
-      if (ok) { notify("Saved!"); }
-      else { notify("Saved locally — Neon sync failed", "warning"); }
-    } else if (apiOk) {
-      try {
-        const res = await api.post("/settings", s);
-        if (res && !res.error) { notify("Saved!"); }
-        else { notify("Saved locally — API sync failed", "warning"); }
-      } catch (e) {
-        console.warn("[App] Settings save failed:", e?.message || e);
-        notify("Saved locally — API unreachable", "warning");
-      }
-    } else {
-      // No backend connected — still show success since localStorage save worked
+    // Save to Neon AND D1 (dual-write) — Worker reads from D1, so always sync both
+    const neonSave = neonOk ? db.saveSettings(s) : Promise.resolve(false);
+    const apiSave = apiOk
+      ? api.post("/settings", s).catch((e) => { console.warn("[App] D1 settings sync failed:", e?.message || e); return { error: true }; })
+      : Promise.resolve(null);
+
+    const [neonResult, apiResult] = await Promise.all([neonSave, apiSave]);
+
+    if (neonResult || (apiResult && !apiResult.error)) {
+      notify("Saved!");
+    } else if (!neonOk && !apiOk) {
+      // No backend — localStorage only
       notify("Saved locally ✓", "success");
+    } else {
+      notify("Saved locally — sync warning", "warning");
     }
   };
 
@@ -539,7 +566,7 @@ export default function App() {
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", fontFamily: "'Inter','DM Sans',system-ui,sans-serif" }}>
       <div style={{ textAlign: "center" }}>
         <div style={{ fontSize: 48, marginBottom: 12, animation: "pulse 1.5s infinite" }}>⚡</div>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>LP Factory V2</div>
+        <div style={{ fontSize: 18, fontWeight: 700 }}>FusionOps V2</div>
         <div style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>Loading...</div>
 
         {/* Safety bypass if boot hangs */}

@@ -8,12 +8,12 @@ import { multiloginApi } from "../services/multilogin";
 import { getCfApiBase } from "../utils/api-proxy";
 
 export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
-    const [neonUrl, setNeonUrl] = useState(settings.neonUrl || "");
+    const [neonUrl, setNeonUrl] = useState(settings.neonUrl || import.meta.env.VITE_NEON_URL || "");
     const [apiKey, setApiKey] = useState(settings.apiKey || "");
     const [geminiKey, setGeminiKey] = useState(settings.geminiKey || "");
     const [netlifyToken, setNetlifyToken] = useState(settings.netlifyToken || "");
     const [netlifyTeamSlug, setNetlifyTeamSlug] = useState(settings.netlifyTeamSlug || "");
-    const [lcToken, setLcToken] = useState(settings.lcToken || "");
+    const [lcToken, setLcToken] = useState(settings.lcToken || import.meta.env.VITE_LENDINGCARD_TOKEN || import.meta.env.PUBLIC_LENDINGCARD_API_TOKEN || "");
     const [lcTeamUuid, setLcTeamUuid] = useState(settings.lcTeamUuid || "");
     const [defaultBinUuid, setDefaultBinUuid] = useState(settings.defaultBinUuid || "");
     const [defaultBillingUuid, setDefaultBillingUuid] = useState(settings.defaultBillingUuid || "");
@@ -24,12 +24,12 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
     const [defaultProxyProvider, setDefaultProxyProvider] = useState(settings.defaultProxyProvider || "multilogin");
 
     // Voluum API
-    const [voluumAccessKeyId, setVoluumAccessKeyId] = useState(settings.voluumAccessKeyId || import.meta.env.PUBLIC_VOLUUM_ACCESS_KEY_ID || "");
-    const [voluumAccessKey, setVoluumAccessKey] = useState(settings.voluumAccessKey || import.meta.env.PUBLIC_VOLUUM_ACCESS_KEY || "");
+    const [voluumAccessKeyId, setVoluumAccessKeyId] = useState(settings.voluumAccessKeyId || import.meta.env.VITE_VOLUUM_ACCESS_KEY_ID || import.meta.env.PUBLIC_VOLUUM_ACCESS_KEY_ID || "");
+    const [voluumAccessKey, setVoluumAccessKey] = useState(settings.voluumAccessKey || import.meta.env.VITE_VOLUUM_ACCESS_KEY || import.meta.env.PUBLIC_VOLUUM_ACCESS_KEY || "");
 
     // Deploy credentials
-    const [cfApiToken, setCfApiToken] = useState(settings.cfApiToken || "");
-    const [cfAccountId, setCfAccountId] = useState(settings.cfAccountId || "");
+    const [cfApiToken, setCfApiToken] = useState(settings.cfApiToken || import.meta.env.VITE_CF_API_TOKEN || "");
+    const [cfAccountId, setCfAccountId] = useState(settings.cfAccountId || import.meta.env.VITE_CF_ACCOUNT_ID || "");
     const [awsAccessKey, setAwsAccessKey] = useState(settings.awsAccessKey || "");
     const [awsSecretKey, setAwsSecretKey] = useState(settings.awsSecretKey || "");
     const [awsRegion, setAwsRegion] = useState(settings.awsRegion || "us-east-1");
@@ -371,7 +371,7 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
             <Card className="mb-4">
                 <CardHeader><CardTitle>Anthropic API Key</CardTitle></CardHeader>
                 <CardContent className="flex flex-col gap-2">
-                    <p className="text-[11px] text-[hsl(var(--muted-foreground))] -mt-2 mb-1">For AI copy generation</p>
+                    <p className="text-[11px] text-[hsl(var(--muted-foreground))] -mt-2 mb-1">สำรองไว้ — ตอนนี้ AI ใช้ Gemini (ดูด้านล่าง)</p>
                     <Inp type="password" value={apiKey} onChange={setApiKey} placeholder="sk-ant-..." />
                     {settings.apiKey && <div className="text-[11px] text-[hsl(var(--success))]">✓ Configured</div>}
                     <div className="flex gap-1.5">
@@ -382,9 +382,9 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
             </Card>
 
             <Card className="mb-4">
-                <CardHeader><CardTitle>Gemini API Key</CardTitle></CardHeader>
+                <CardHeader><CardTitle>Gemini API Key <span className="text-[hsl(var(--success))] text-[11px] font-normal">⭐ ใช้สำหรับ AI Generate Copy</span></CardTitle></CardHeader>
                 <CardContent className="flex flex-col gap-2">
-                    <p className="text-[11px] text-[hsl(var(--muted-foreground))] -mt-2 mb-1">For advanced text and image prompting</p>
+                    <p className="text-[11px] text-[hsl(var(--muted-foreground))] -mt-2 mb-1">🔑 กรอก key นี้เพื่อให้ AI Generate Copy ทำงานได้ — รับ key ฟรีที่ <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" className="text-[hsl(var(--accent))] underline">aistudio.google.com</a></p>
                     <Inp type="password" value={geminiKey} onChange={setGeminiKey} placeholder="AIza..." />
                     <Button onClick={() => save({ geminiKey })} disabled={saving} className="text-xs self-start">{saving ? "Saving..." : "💾 Save"}</Button>
                 </CardContent>

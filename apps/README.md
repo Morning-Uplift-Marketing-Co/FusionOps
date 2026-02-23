@@ -1,4 +1,4 @@
-# LP Factory — Production Infrastructure
+# FusionOps — Production Infrastructure
 
 Mobile-first, compliance-safe, revenue-truth loan landing page factory.
 

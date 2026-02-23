@@ -1,12 +1,12 @@
 # LP Template Generator
 
-Standalone module for generating Astro landing page templates. Designed for use with LP Factory or as an independent CLI tool.
+Standalone module for generating Astro landing page templates. Designed for use with FusionOps or as an independent CLI tool.
 
 ## Features
 
 - **Multiple Templates**: Classic LP, PDL Loans V1, and more
 - **Zero-JS Architecture**: Pure Astro components with minimal inline scripts
-- **Standalone CLI**: Generate templates without the full LP Factory
+- **Standalone CLI**: Generate templates without the full FusionOps
 - **Programmatic API**: Use as a library in your own projects
 
 ## Installation

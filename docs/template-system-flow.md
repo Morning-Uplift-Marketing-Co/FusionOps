@@ -1,4 +1,4 @@
-# คู่มือระบบ Template — LP Factory V2
+# คู่มือระบบ Template — FusionOps V2
 
 > อธิบาย Flow ทั้งหมดของระบบ Template ตั้งแต่การสร้าง → บันทึก → โหลด → Preview → ใช้งาน
 
@@ -6,7 +6,7 @@
 
 ## ภาพรวม
 
-ระบบ Template ใน LP Factory V2 ช่วยให้สร้าง Landing Page template ได้ 4 วิธี แล้วบันทึกลง Database เพื่อให้ LP Wizard ดึงมาใช้ได้ทันที
+ระบบ Template ใน FusionOps V2 ช่วยให้สร้าง Landing Page template ได้ 4 วิธี แล้วบันทึกลง Database เพื่อให้ LP Wizard ดึงมาใช้ได้ทันที
 
 ```
 สร้าง Template (4 วิธี)

@@ -1,6 +1,6 @@
 # Module 2 — Tracking & Conversion Implementation Guide
 
-> For AI IDE (Claude Code / Cursor) — Complete technical spec for implementing the tracking layer in LP Factory V2 landing pages.
+> For AI IDE (Claude Code / Cursor) — Complete technical spec for implementing the tracking layer in FusionOps V2 landing pages.
 
 ---
 
@@ -412,7 +412,7 @@ This is handled automatically by the Ops Center Domain Auto Wizard (Module 3). W
 
 ---
 
-## File Locations in LP Factory V2
+## File Locations in FusionOps V2
 
 | File | Purpose |
 |---|---|

@@ -1,5 +1,5 @@
 #!/bin/bash
-# LP Factory API - Cloudflare DNS Examples
+# FusionOps API - Cloudflare DNS Examples
 # Usage: ./dns.sh [create-zone|list-dns|create-dns|update-dns|delete-dns] [args]
 
 API_BASE="https://lp-factory-api.misty-feather-556e.workers.dev"
@@ -102,7 +102,7 @@ case "${1:-}" in
         delete_dns "$2" "$3"
         ;;
     *)
-        echo "LP Factory Cloudflare DNS API Examples"
+        echo "FusionOps Cloudflare DNS API Examples"
         echo ""
         echo "Usage: $0 [command] [args]"
         echo ""

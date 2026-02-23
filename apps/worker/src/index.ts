@@ -1,5 +1,5 @@
 // ============================================================
-// Cloudflare Worker — LP Factory Callback Engine
+// Cloudflare Worker — FusionOps Callback Engine
 // ============================================================
 // Routes:
 //   POST /callback/:account_id/leadsgate  — LeadsGate callback

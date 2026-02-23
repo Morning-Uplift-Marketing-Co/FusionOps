@@ -1,11 +1,11 @@
 ---
-import '../styles/globals.css';
+import "../styles/globals.css";
 
 interface Props {
   title?: string;
 }
 
-const { title = 'LP Factory V2' } = Astro.props;
+const { title = "FusionOps V2" } = Astro.props;
 ---
 
 <!doctype html>
@@ -17,7 +17,10 @@ const { title = 'LP Factory V2' } = Astro.props;
     <title>{title}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
   </head>
   <body>
     <slot />

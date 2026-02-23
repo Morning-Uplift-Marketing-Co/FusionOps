@@ -9,7 +9,7 @@
  *   /api/proxy/mlx/*  → api.multilogin.com/*
  */
 
-const DEFAULT_API_BASE = "https://lp-factory-api.misty-feather-556e.workers.devapi";
+const DEFAULT_API_BASE = "https://lp-factory-api.misty-feather-556e.workers.dev/api";
 
 function getApiBase() {
   const fromWindow = typeof window !== "undefined" ? window.__LP_API__ : "";

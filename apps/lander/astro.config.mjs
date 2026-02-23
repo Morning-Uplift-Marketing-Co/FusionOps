@@ -1,5 +1,5 @@
 // ============================================================
-// Astro Configuration — LP Factory Lander
+// Astro Configuration — FusionOps Lander
 // ============================================================
 // Static output only. No SSR. No hydration.
 // ============================================================

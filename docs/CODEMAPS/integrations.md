@@ -4,7 +4,7 @@
 
 ## Overview
 
-LP Factory V2 integrates with multiple external services for deployment, DNS, payment cards, browser profiles, and domain management.
+FusionOps V2 integrates with multiple external services for deployment, DNS, payment cards, browser profiles, and domain management.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐

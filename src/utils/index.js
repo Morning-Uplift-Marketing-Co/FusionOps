@@ -39,7 +39,7 @@ export const LS = {
             return false;
         }
     },
-    // Clear all LP Factory data (useful for logout)
+    // Clear all FusionOps data (useful for logout)
     clear() {
         try {
             const keys = Object.keys(localStorage);

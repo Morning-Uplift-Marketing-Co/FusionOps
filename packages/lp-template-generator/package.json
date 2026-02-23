@@ -1,7 +1,7 @@
 {
   "name": "@lp-factory/template-generator",
   "version": "1.0.0",
-  "description": "Astro landing page template generator for LP Factory",
+  "description": "Astro landing page template generator for FusionOps",
   "type": "module",
   "main": "src/index.js",
   "bin": {
@@ -23,7 +23,7 @@
     "landing-page",
     "generator"
   ],
-  "author": "LP Factory",
+  "author": "FusionOps",
   "license": "MIT",
   "dependencies": {},
   "devDependencies": {},

@@ -1,5 +1,5 @@
 # ============================================================
-# Wrangler Configuration — LP Factory Pixel Worker
+# Wrangler Configuration — FusionOps Pixel Worker
 # ============================================================
 # Receives sendBeacon events from LP pages at t.{domain}/e
 # Stores all events in D1 for first-party analytics.

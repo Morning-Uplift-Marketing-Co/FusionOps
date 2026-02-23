@@ -1,5 +1,5 @@
 #!/bin/bash
-# LP Factory API - Registrar Examples
+# FusionOps API - Registrar Examples
 # Usage: ./registrar.sh [check|register|nameservers|import|ping] [domain]
 
 API_BASE="https://lp-factory-api.misty-feather-556e.workers.dev"
@@ -84,7 +84,7 @@ case "${1:-}" in
         ping_registrar
         ;;
     *)
-        echo "LP Factory Registrar API Examples"
+        echo "FusionOps Registrar API Examples"
         echo ""
         echo "Usage: $0 [command] [args]"
         echo ""

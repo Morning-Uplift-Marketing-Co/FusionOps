@@ -1,5 +1,5 @@
 /**
- * LP Factory API - Deploy Adapter Examples (Node.js)
+ * FusionOps API - Deploy Adapter Examples (Node.js)
  *
  * Usage:
  *   node deploy.js vercel <projectName> <accessToken>
@@ -121,7 +121,7 @@ async function main() {
     }
 
     default:
-      console.log('LP Factory Deploy Adapter API Examples\n');
+      console.log('FusionOps Deploy Adapter API Examples\n');
       console.log('Usage: node deploy.js [platform] [args]\n');
       console.log('Platforms:');
       console.log('  vercel <projectName> <accessToken> [teamId]');

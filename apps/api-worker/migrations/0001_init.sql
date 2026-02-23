@@ -1,6 +1,6 @@
 -- ============================================================
 -- D1 Migration: 0001_init.sql
--- LP Factory V2 — Core Schema
+-- FusionOps V2 — Core Schema
 -- ============================================================
 
 -- Sites: Landing page configurations

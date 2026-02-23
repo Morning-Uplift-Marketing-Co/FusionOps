@@ -1,5 +1,5 @@
 // ============================================================
-// Cloudflare Worker — LP Factory First-Party Pixel
+// Cloudflare Worker — FusionOps First-Party Pixel
 // ============================================================
 // Endpoint: POST /e
 // Receives sendBeacon payloads from LP tracking-pixel.js

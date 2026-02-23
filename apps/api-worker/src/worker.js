@@ -1,4 +1,4 @@
-// LP Factory V2 — Cloudflare Workers API
+// FusionOps V2 — Cloudflare Workers API
 // Binds to D1 database "ppc-gen-claude"
 // Origin: https://github.com/songsawat-w/ppc-gen-cfca
 
@@ -381,9 +381,9 @@ export default {
       const spec = {
         openapi: '3.0.3',
         info: {
-          title: 'LP Factory Automation API',
+          title: 'FusionOps Automation API',
           version: '2.1.0',
-          description: 'Automation endpoints for LP Factory V2',
+          description: 'Automation endpoints for FusionOps V2',
         },
         servers: [{ url: 'https://lp-factory-api.misty-feather-556e.workers.dev', description: 'Production' }],
         tags: [

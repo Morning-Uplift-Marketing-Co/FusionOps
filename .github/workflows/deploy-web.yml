@@ -1,4 +1,4 @@
-name: Deploy LP Factory (Cloudflare Only)
+name: Deploy FusionOps (Cloudflare Only)
 
 on:
   push:

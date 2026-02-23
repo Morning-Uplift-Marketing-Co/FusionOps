@@ -32,7 +32,7 @@ const CHANGELOG = [
         version: "2.0.0",
         date: "2026-02-15",
         changes: [
-            "🚀 Launched LP Factory V2 — all-in-one PPC landing page platform",
+            "🚀 Launched FusionOps V2 — all-in-one PPC landing page platform",
             "🏢 Ops Center: manage domains, DNS, registrars, deployers",
             "🎨 Variant Studio: A/B test color, font, layout combos",
             "☁️ Multi-deployer: CF Workers, CF Pages, Vercel, Netlify",
@@ -85,7 +85,7 @@ export function Sidebar({ page, setPage, siteCount, startCreate, startTemplateGe
                     >⚡</div>
                     {!collapsed && (
                         <div>
-                            <div className="text-[15px] font-bold whitespace-nowrap">LP Factory</div>
+                            <div className="text-[15px] font-bold whitespace-nowrap">FusionOps</div>
                             <div
                                 className="text-[10px] text-[hsl(var(--muted-foreground))] cursor-pointer"
                                 onClick={() => setShowLog(true)}
@@ -155,7 +155,7 @@ export function Sidebar({ page, setPage, siteCount, startCreate, startTemplateGe
                         <div className="flex items-center justify-between px-5 py-4 border-b border-[hsl(var(--border))]">
                             <div>
                                 <div className="text-base font-bold">📋 Changelog</div>
-                                <div className="text-[11px] text-[hsl(var(--muted-foreground))] mt-0.5">LP Factory v{APP_VERSION}</div>
+                                <div className="text-[11px] text-[hsl(var(--muted-foreground))] mt-0.5">FusionOps v{APP_VERSION}</div>
                             </div>
                             <button
                                 onClick={() => setShowLog(false)}

@@ -1,13 +1,13 @@
-# 🧙 AI Prompt: Generate LP Template for LP Factory
+# 🧙 AI Prompt: Generate LP Template for FusionOps
 
-Use this prompt with any AI (Claude, GPT, etc.) to generate a new landing page template compatible with the LP Factory Template Generator system.
+Use this prompt with any AI (Claude, GPT, etc.) to generate a new landing page template compatible with the FusionOps Template Generator system.
 
 ---
 
 ## Prompt
 
 ```
-You are a landing page template generator for the "LP Factory" system — an Astro-based affiliate marketing LP builder.
+You are a landing page template generator for the "FusionOps" system — an Astro-based affiliate marketing LP builder.
 
 Your job is to produce a SINGLE JavaScript file (index.js) that exports a `generate(site)` function. This function receives a `site` config object from the LP Wizard and returns a `files` object where each key is a file path and each value is the file content as a string.
 
@@ -66,7 +66,7 @@ export function generate(site) {
 4. `README.md` — Template docs with features, config, tracking events, deploy instructions
 
 ### Tracking Architecture (MANDATORY)
-LP Factory uses a zero-GTM, zero-GA4 architecture:
+FusionOps uses a zero-GTM, zero-GA4 architecture:
 - Layer 1: window.dataLayer push only (NO gtag.js inline) — events: form_start, form_submit, page_view
 - Layer 2: Custom first-party pixel via sendBeacon (optional, template doesn't need to implement)
 - Layer 3: Voluum script (conditional, only if site.voluumId is set)

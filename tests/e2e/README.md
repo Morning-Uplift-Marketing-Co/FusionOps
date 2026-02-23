@@ -1,6 +1,6 @@
-# E2E Tests for LP Factory
+# E2E Tests for FusionOps
 
-End-to-end tests for the LP Factory web application using Playwright.
+End-to-end tests for the FusionOps web application using Playwright.
 
 ## Test Structure
 

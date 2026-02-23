@@ -1,4 +1,4 @@
-# LP Factory V2 - Codebase Documentation Index
+# FusionOps V2 - Codebase Documentation Index
 
 **Last Updated:** 2026-02-16
 **Project Version:** v2.1.0
@@ -6,11 +6,11 @@
 
 ## Architecture Overview
 
-LP Factory V2 is a landing page generator for PPC/affiliate loan offers. It combines an Astro frontend with a Cloudflare Workers backend, supporting multiple deployment targets.
+FusionOps V2 is a landing page generator for PPC/affiliate loan offers. It combines an Astro frontend with a Cloudflare Workers backend, supporting multiple deployment targets.
 
 ```
                     ┌─────────────────────────────────────────┐
-                    │           LP Factory V2                  │
+                    │           FusionOps V2                  │
                     └─────────────────────────────────────────┘
                                      │
          ┌───────────────────────────┼───────────────────────────┐

@@ -1,6 +1,6 @@
 # Codebase Diff Report
 # Generated: 2026-02-16
-# Project: LP Factory V2 (ppc-claude-web)
+# Project: FusionOps V2 (ppc-claude-web)
 
 ## Summary
 - Total files analyzed: 43 source files

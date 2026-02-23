@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# Deployment Script — LP Factory
+# Deployment Script — FusionOps
 # ============================================================
 # Usage:
 #   ./scripts/deploy.sh [environment] [component]
