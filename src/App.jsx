@@ -151,13 +151,23 @@ export default function App() {
       const data = await api.get("/init");
       if (!data.error) {
         // Always hydrate Ops center from API when reachable
-        if (data.ops) {
-          setOps({
-            ...data.ops,
-            cfAccounts: data.cfAccounts || [],
-            registrarAccounts: data.registrarAccounts || [],
-          });
-        }
+        // Some deployments may omit or partially populate `ops`, so merge defensively.
+        setOps((prev) => {
+          const nextOps = (data && typeof data.ops === "object" && data.ops) ? data.ops : {};
+          return {
+            ...prev,
+            ...nextOps,
+            domains: nextOps.domains || prev.domains || [],
+            accounts: nextOps.accounts || prev.accounts || [],
+            profiles: nextOps.profiles || prev.profiles || [],
+            payments: nextOps.payments || prev.payments || [],
+            logs: nextOps.logs || prev.logs || [],
+            risks: nextOps.risks || prev.risks || [],
+            deployments: nextOps.deployments || prev.deployments || [],
+            cfAccounts: data.cfAccounts || prev.cfAccounts || [],
+            registrarAccounts: data.registrarAccounts || prev.registrarAccounts || [],
+          };
+        });
 
         // When Neon is not ready, check if API has a Neon URL we can use
         if (!neonReady) {
