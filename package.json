@@ -20,6 +20,7 @@
     "deploy:org": "node scripts/deploy-org.js"
   },
   "dependencies": {
+    "@astrojs/check": "^0.9.6",
     "@astrojs/react": "^4.2.0",
     "@neondatabase/serverless": "^1.0.2",
     "@radix-ui/react-slot": "^1.2.4",
@@ -52,7 +53,7 @@
     "happy-dom": "^20.6.2",
     "jsdom": "^28.1.0",
     "tailwindcss": "^4.2.0",
-    "typescript": "^5.7.0",
+    "typescript": "^5.9.3",
     "vitest": "^4.0.18",
     "wrangler": "^4.67.0"
   }

@@ -1,0 +1,10 @@
+{
+  "permission": {
+    "read": {
+      "F:/AI_Workspace/beta-project/ppc-claude-web-V1/.opencode/get-shit-done/*": "allow"
+    },
+    "external_directory": {
+      "F:/AI_Workspace/beta-project/ppc-claude-web-V1/.opencode/get-shit-done/*": "allow"
+    }
+  }
+}

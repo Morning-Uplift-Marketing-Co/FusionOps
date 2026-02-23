@@ -45,6 +45,11 @@ function StatusMsg({ msg, type }) {
     );
 }
 
+function toArray(v) {
+    if (Array.isArray(v)) return v;
+    return [];
+}
+
 function D1DatabaseTab() {
     const [sqlQuery, setSqlQuery] = useState("SELECT * FROM sqlite_master WHERE type='table' ORDER BY name");
     const [queryResult, setQueryResult] = useState(null);
@@ -322,6 +327,7 @@ export function OpsCenter({ data, add, del, upd, settings }) {
     const [lcCards, setLcCards] = useState([]);
     const [lcBins, setLcBins] = useState([]);
     const [lcAddresses, setLcAddresses] = useState([]);
+    const [lcTags, setLcTags] = useState([]);
     const [mlProfiles, setMlProfiles] = useState([]);
     const [lcLoading, setLcLoading] = useState(false);
     const [mlLoading, setMlLoading] = useState(false);
@@ -439,19 +445,33 @@ export function OpsCenter({ data, add, del, upd, settings }) {
             Promise.all([
                 leadingCardsApi.getCards(),
                 leadingCardsApi.getBins(),
-                leadingCardsApi.getBillingAddresses()
-            ]).then(([cardsRes, binsRes, addrRes]) => {
+                leadingCardsApi.getBillingAddresses(),
+                leadingCardsApi.getTags(),
+            ]).then(([cardsRes, binsRes, addrRes, tagsRes]) => {
                 if (cancelled) return;
                 setLcCards(cardsRes.results || []);
-                setLcBins(binsRes || []);
+                const bins = Array.isArray(binsRes.results) ? binsRes.results : Array.isArray(binsRes) ? binsRes : [];
+                setLcBins(bins);
                 setLcAddresses(addrRes.results || []);
-            }).catch(() => { })
-                .finally(() => { if (!cancelled) setLcLoading(false); });
+                setLcTags(tagsRes.results || tagsRes || []);
+            }).catch(e => {
+                console.error(e);
+            }).finally(() => { if (!cancelled) setLcLoading(false); });
         }
         if (tab === "profiles" || tab === "overview") {
             setMlLoading(true);
             multiloginApi.getProfiles()
-                .then(res => { if (!cancelled) setMlProfiles(res.data?.profiles || res || []); })
+                .then(res => {
+                    if (cancelled) return;
+                    const list = Array.isArray(res?.data?.profiles)
+                        ? res.data.profiles
+                        : Array.isArray(res)
+                            ? res
+                            : Array.isArray(res?.data)
+                                ? res.data
+                                : [];
+                    setMlProfiles(list);
+                })
                 .catch(() => { })
                 .finally(() => { if (!cancelled) setMlLoading(false); });
         }
@@ -467,7 +487,7 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                     const activeList = Array.isArray(res) ? res : (res?.data || []);
                     const activeIds = activeList.map(p => p.mlProfileId || p.uuid || p.id);
                     // Update mlProfiles status based on active list
-                    setMlProfiles(prev => prev.map(p => {
+                    setMlProfiles(prev => toArray(prev).map(p => {
                         const pid = p.uuid || p.id;
                         const isActive = activeIds.includes(pid);
                         return { ...p, status: isActive ? "running" : (p.status === "running" ? "stopped" : p.status) };
@@ -542,7 +562,16 @@ export function OpsCenter({ data, add, del, upd, settings }) {
 
     /* ─── Refresh helpers ────────────────────────────────────────────── */
     const refreshCards = () => leadingCardsApi.getCards().then(res => setLcCards(res.results || []));
-    const refreshProfiles = () => multiloginApi.getProfiles().then(res => setMlProfiles(res.data?.profiles || res || []));
+    const refreshProfiles = () => multiloginApi.getProfiles().then(res => {
+        const list = Array.isArray(res?.data?.profiles)
+            ? res.data.profiles
+            : Array.isArray(res)
+                ? res
+                : Array.isArray(res?.data)
+                    ? res.data
+                    : [];
+        setMlProfiles(list);
+    });
 
     /* ─── Risk detection via engine ──────────────────────────────────── */
     const risks = useMemo(() => {
@@ -1410,6 +1439,7 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                         : data.accounts.map(acct => {
                             const linkedCard = lcCards.find(c => c.uuid === acct.cardUuid);
                             const linkedProfile = data.profiles.find(p => p.id === acct.profileId);
+                            const linkedMlxProfile = toArray(mlProfiles).find(p => (p.uuid || p.id) === acct.profileId);
                             const isSuspending = suspending === acct.id;
                             return (
                                 <div key={acct.id} style={{ ...S.row, padding: "10px 14px" }}>
@@ -1437,7 +1467,11 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                                     </div>
                                     {/* Linked profile */}
                                     <div style={{ flex: 1.5, fontSize: 11, color: T.muted }}>
-                                        {linkedProfile ? linkedProfile.name : acct.profileId ? acct.profileId : "\u2014"}
+                                        {linkedProfile
+                                            ? linkedProfile.name
+                                            : linkedMlxProfile
+                                                ? (linkedMlxProfile.name || (linkedMlxProfile.uuid || linkedMlxProfile.id))
+                                                : acct.profileId ? acct.profileId : "\u2014"}
                                     </div>
                                     {/* Monthly spend */}
                                     <div style={{ flex: 1, fontSize: 11, color: T.muted }}>
@@ -1474,8 +1508,123 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                                 </div>
                             );
                         })}
-                </div>
+                    </div>
 
+                    {/* ─── Add Account Modal (Task 9) ─────────────────────── */}
+                    {modal === "account" && (() => {
+                        const cardOptions = lcCards.map(c => ({
+                            id: c.uuid,
+                            value: c.uuid,
+                            displayLabel: `**** ${c.card_last_4} (${c.brand || "VCC"})`,
+                        }));
+                        const profileOptions = toArray(mlProfiles).map(p => {
+                            const pid = p.uuid || p.id;
+                            return ({
+                                id: pid,
+                                value: pid,
+                                displayLabel: p.name || pid,
+                            });
+                        });
+                        return <AddModal title="Add Ads Account" coll="accounts" fields={[
+                            { key: "label", label: "Account Name", ph: "Google Ads #1" },
+                            { key: "email", label: "Email", ph: "account@domain.com" },
+                            { key: "cardUuid", label: "Linked Card", options: cardOptions },
+                            { key: "profileId", label: "Linked Profile", options: profileOptions },
+                            { key: "budget", label: "Daily Budget ($)", type: "number", ph: "50" },
+                        ]} onSubmit={(form) => {
+                            const selectedCard = lcCards.find(c => c.uuid === form.cardUuid);
+                            add("accounts", {
+                                id: uid(),
+                                ...form,
+                                cardLast4: selectedCard?.card_last_4 || "",
+                                cardStatus: selectedCard?.status || "",
+                                status: "active",
+                                createdAt: now(),
+                            });
+                        }} />;
+                    })()}
+
+                    {/* ─── Edit Account Modal (Task 9) ────────────────────── */}
+                    {modal && modal.type === "edit-account" && (() => {
+                        const acct = modal.account;
+                        const EditAccountModal = () => {
+                            const [form, setForm] = useState({
+                                label: acct.label || "",
+                                email: acct.email || "",
+                                cardUuid: acct.cardUuid || "",
+                                profileId: acct.profileId || "",
+                                budget: acct.budget || "",
+                                status: acct.status || "active",
+                            });
+                            const cardOptions = lcCards.map(c => ({
+                                value: c.uuid,
+                                displayLabel: `**** ${c.card_last_4} (${c.brand || "VCC"})`,
+                            }));
+                            const profileOptions = toArray(mlProfiles).map(p => {
+                                const pid = p.uuid || p.id;
+                                return ({
+                                    value: pid,
+                                    displayLabel: p.name || pid,
+                                });
+                            });
+                            return (
+                                <div style={S.overlay}>
+                                    <Card style={{ width: 440, padding: 24, animation: "fadeIn .2s" }}>
+                                        <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>Edit Account: {acct.label}</h3>
+                                        <div style={S.fieldWrap}>
+                                            <label style={S.label}>Account Name</label>
+                                            <Inp value={form.label} onChange={v => setForm({ ...form, label: v })} />
+                                        </div>
+                                        <div style={S.fieldWrap}>
+                                            <label style={S.label}>Email</label>
+                                            <Inp value={form.email} onChange={v => setForm({ ...form, email: v })} />
+                                        </div>
+                                        <div style={S.fieldWrap}>
+                                            <label style={S.label}>Linked Card</label>
+                                            <select value={form.cardUuid} onChange={e => setForm({ ...form, cardUuid: e.target.value })} style={S.select}>
+                                                <option value="">None</option>
+                                                {cardOptions.map(o => <option key={o.value} value={o.value}>{o.displayLabel}</option>)}
+                                            </select>
+                                        </div>
+                                        <div style={S.fieldWrap}>
+                                            <label style={S.label}>Linked Profile</label>
+                                            <select value={form.profileId} onChange={e => setForm({ ...form, profileId: e.target.value })} style={S.select}>
+                                                <option value="">None</option>
+                                                {profileOptions.map(o => <option key={o.value} value={o.value}>{o.displayLabel}</option>)}
+                                            </select>
+                                        </div>
+                                        <div style={S.fieldWrap}>
+                                            <label style={S.label}>Daily Budget ($)</label>
+                                            <Inp value={form.budget} onChange={v => setForm({ ...form, budget: v })} type="number" />
+                                        </div>
+                                        <div style={S.fieldWrap}>
+                                            <label style={S.label}>Status</label>
+                                            <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })} style={S.select}>
+                                                <option value="active">Active</option>
+                                                <option value="paused">Paused</option>
+                                                <option value="suspended">Suspended</option>
+                                            </select>
+                                        </div>
+                                        <div style={S.btnRow}>
+                                            <Button variant="ghost"  onClick={() => setModal(null)}>Cancel</Button>
+                                            <Button onClick={() => {
+                                                const selectedCard = lcCards.find(c => c.uuid === form.cardUuid);
+                                                const updates = {
+                                                    ...form,
+                                                    cardLast4: selectedCard?.card_last_4 || "",
+                                                    cardStatus: selectedCard?.status || "",
+                                                };
+                                                upd("accounts", acct.id, updates);
+                                                setModal(null);
+                                                flash("Account updated");
+                                            }}>Save Changes</Button>
+                                        </div>
+                                    </Card>
+                                </div>
+                            );
+                        };
+                        return <EditAccountModal />;
+                    })()}
                 {/* ─── Add Account Modal (Task 9) ─────────────────────── */}
                 {modal === "account" && (() => {
                     const cardOptions = lcCards.map(c => ({
@@ -1483,11 +1632,14 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                         value: c.uuid,
                         displayLabel: `**** ${c.card_last_4} (${c.brand || "VCC"})`,
                     }));
-                    const profileOptions = data.profiles.map(p => ({
-                        id: p.id,
-                        value: p.id,
-                        displayLabel: p.name || p.id,
-                    }));
+                    const profileOptions = toArray(mlProfiles).map(p => {
+                        const pid = p.uuid || p.id;
+                        return ({
+                            id: pid,
+                            value: pid,
+                            displayLabel: p.name || pid,
+                        });
+                    });
                     return <AddModal title="Add Ads Account" coll="accounts" fields={[
                         { key: "label", label: "Account Name", ph: "Google Ads #1" },
                         { key: "email", label: "Email", ph: "account@domain.com" },
@@ -1523,10 +1675,13 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                             value: c.uuid,
                             displayLabel: `**** ${c.card_last_4} (${c.brand || "VCC"})`,
                         }));
-                        const profileOptions = data.profiles.map(p => ({
-                            value: p.id,
-                            displayLabel: p.name || p.id,
-                        }));
+                        const profileOptions = toArray(mlProfiles).map(p => {
+                            const pid = p.uuid || p.id;
+                            return ({
+                                value: pid,
+                                displayLabel: p.name || pid,
+                            });
+                        });
                         return (
                             <div style={S.overlay}>
                                 <Card style={{ width: 440, padding: 24, animation: "fadeIn .2s" }}>
@@ -1643,7 +1798,7 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                     }} style={{ fontSize: 11 }}>↻ Refresh</Button>
                     <Button variant="destructive"  onClick={async () => {
                         if (!confirm("Stop all running profiles?")) return;
-                        const running = mlProfiles.filter(p => p.status === "running" || p.status === "started");
+                        const running = toArray(mlProfiles).filter(p => p.status === "running" || p.status === "started");
                         for (const p of running) {
                             const pid = p.uuid || p.id;
                             await multiloginApi.stopProfile(pid).catch(() => { });
@@ -1667,9 +1822,9 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                             <div style={{ flex: 1.5, textAlign: "right" }}>Actions</div>
                         </div>
 
-                        {mlProfiles.length === 0
+                        {toArray(mlProfiles).length === 0
                             ? <div style={S.emptyState}>No profiles found. Click "Sync from MLX" or create a new profile.</div>
-                            : mlProfiles.map(p => {
+                            : toArray(mlProfiles).map(p => {
                                 const pid = p.uuid || p.id;
                                 const isRunning = p.status === "running" || p.status === "started";
                                 const proxyObj = p.parameters?.proxy || (typeof p.proxy === "object" ? p.proxy : null);
@@ -1739,9 +1894,9 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                 )}
 
                 {/* D1 profiles (unlinked) */}
-                {data.profiles.filter(p => !mlProfiles.some(mp => (mp.uuid || mp.id) === p.mlProfileId)).length > 0 && <>
+                {data.profiles.filter(p => !toArray(mlProfiles).some(mp => (mp.uuid || mp.id) === p.mlProfileId)).length > 0 && <>
                     <div style={{ ...S.sectionTitle, marginTop: 24, fontSize: 11, color: T.dim }}>Local Only (not linked to MLX)</div>
-                    <ListTable items={data.profiles.filter(p => !mlProfiles.some(mp => (mp.uuid || mp.id) === p.mlProfileId))} coll="profiles" cols={[
+                    <ListTable items={data.profiles.filter(p => !toArray(mlProfiles).some(mp => (mp.uuid || mp.id) === p.mlProfileId))} coll="profiles" cols={[
                         { key: "name", flex: 2 },
                         { key: "proxyIp", render: i => i.proxyIp || i.proxyHost || "\u2014" },
                         { key: "browserType" },
@@ -1927,12 +2082,101 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                     <div style={{ marginTop: 8 }}>
                         {filteredCards.length === 0
                             ? <div style={S.emptyState}>{lcFilter ? `No ${lcFilter} cards` : "No cards yet"}</div>
-                            : filteredCards.map(card => (
-                                <div key={card.uuid} style={S.row}>
-                                    {/* Card info */}
-                                    <div style={{ flex: 2, fontWeight: 600, fontSize: 12 }}>
-                                        💳 **** {card.card_last_4} <span style={{ fontWeight: 400, color: T.muted }}>({card.brand || "VCC"})</span>
-                                    </div>
+                            : filteredCards.map(card => {
+                                const cardUuid = card.card_uuid || card.cardUuid || card.uuid || "";
+
+                                const rawTagIds = Array.isArray(card.tag_uuids)
+                                    ? card.tag_uuids
+                                    : Array.isArray(card.tagUuids)
+                                        ? card.tagUuids
+                                        : card.tag_uuid
+                                            ? [card.tag_uuid]
+                                            : card.tagUuid
+                                                ? [card.tagUuid]
+                                                : Array.isArray(card.tag_ids)
+                                                    ? card.tag_ids
+                                                    : Array.isArray(card.tagIds)
+                                                        ? card.tagIds
+                                                        : [];
+
+                                const resolvedTagNames = rawTagIds
+                                    .map((tid) => {
+                                        const t = toArray(lcTags).find((x) => (x.uuid || x.id) === tid);
+                                        return t?.name || t?.label || null;
+                                    })
+                                    .filter(Boolean);
+
+                                const rawTx = toArray(lcTransactions);
+                                const txForCard = rawTx.filter((tx) => {
+                                    const txCardUuid = tx.card_uuid || tx.cardUuid || tx.card_id || tx.cardId || "";
+                                    if (cardUuid && txCardUuid) return String(txCardUuid) === String(cardUuid);
+
+                                    const last4 = card.card_last_4 || card.last4 || "";
+                                    const txLast4 = tx.card_last_4 || tx.cardLast4 || "";
+                                    return last4 && txLast4 ? String(last4) === String(txLast4) : false;
+                                });
+
+                                const sortedTx = txForCard
+                                    .slice()
+                                    .sort((a, b) => {
+                                        const ta = a.created_at ? Date.parse(a.created_at) : 0;
+                                        const tb = b.created_at ? Date.parse(b.created_at) : 0;
+                                        return tb - ta;
+                                    });
+                                const latestTx = sortedTx[0] || null;
+
+                                const tagsFromCard = Array.isArray(card.tags)
+                                    ? card.tags
+                                    : Array.isArray(card.tag)
+                                        ? card.tag
+                                        : [];
+                                const tagNamesFromCard = tagsFromCard
+                                    .map((t) => (typeof t === "string" ? t : (t?.name || t?.label || null)))
+                                    .filter(Boolean);
+
+                                const tagNames = resolvedTagNames.length > 0
+                                    ? resolvedTagNames
+                                    : tagNamesFromCard;
+
+                                return (
+                                    <div key={card.uuid || cardUuid} style={S.row}>
+                                        {/* Card info */}
+                                        <div style={{ flex: 2, fontWeight: 600, fontSize: 12 }}>
+                                            💳 **** {card.card_last_4} <span style={{ fontWeight: 400, color: T.muted }}>({card.brand || "VCC"})</span>
+                                            <div style={{ marginTop: 3, display: "grid", gap: 2 }}>
+                                                <div style={{ fontSize: 10, fontFamily: "monospace", color: T.muted }}>
+                                                    id: <span style={{ color: T.text }}>{card.uuid || "—"}</span>
+                                                </div>
+                                                <div style={{ fontSize: 10, fontFamily: "monospace", color: T.muted }}>
+                                                    card_uuid: <span style={{ color: T.text }}>{cardUuid || "—"}</span>
+                                                </div>
+                                                <div style={{ fontSize: 10, fontFamily: "monospace", color: T.muted }}>
+                                                    payment_id: <span style={{ color: T.text }}>{card.payment_id || card.paymentId || "—"}</span>
+                                                </div>
+                                                <div style={{ fontSize: 10, color: T.muted }}>
+                                                    tags:{" "}
+                                                    {tagNames.length > 0
+                                                        ? tagNames.slice(0, 4).map((name) => (
+                                                            <span key={name} style={{ marginLeft: 6, fontSize: 10, color: T.text, background: T.card2, padding: "2px 6px", borderRadius: 999 }}>
+                                                                {name}
+                                                            </span>
+                                                        ))
+                                                        : <span style={{ color: T.dim, marginLeft: 6 }}>—</span>}
+                                                    {tagNames.length > 4 && (
+                                                        <span style={{ color: T.dim, marginLeft: 6 }}>+{tagNames.length - 4}</span>
+                                                    )}
+                                                </div>
+                                                <div style={{ fontSize: 10, color: T.muted }}>
+                                                    transactions:{" "}
+                                                    <span style={{ color: T.text }}>{txForCard.length}</span>
+                                                    {latestTx && (
+                                                        <span style={{ marginLeft: 8, color: T.dim }}>
+                                                            latest: {latestTx.merchant_name || latestTx.description || "—"} {latestTx.amount ? `($${latestTx.amount})` : ""}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
                                     {/* Limit */}
                                     <div style={{ flex: 1.2, fontSize: 11 }}>
                                         {changingLimit && changingLimit.uuid === card.uuid ? (
@@ -1984,7 +2228,8 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                                         }} style={{ ...S.miniBtn, color: T.muted }}>↻</Button>
                                     </div>
                                 </div>
-                            ))}
+                                );
+                            })}
                     </div>
                 )}
 
@@ -1996,8 +2241,9 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                             const fromDate = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
                             leadingCardsApi.getTransactions(fromDate)
                                 .then(res => {
-                                    setLcTransactions(res.results || res || []);
-                                    flash(`Loaded ${(res.results || res || []).length} transactions`);
+                                    const list = res.results || res || [];
+                                    setLcTransactions(Array.isArray(list) ? list : []);
+                                    flash(`Loaded ${Array.isArray(list) ? list.length : 0} transactions`);
                                 })
                                 .catch(e => flash(`Failed: ${e.message}`, "error"));
                         }} style={{ fontSize: 11 }}>Load Transactions</Button>
