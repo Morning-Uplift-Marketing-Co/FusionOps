@@ -1,6 +1,6 @@
 import { generateLP, generateAstrodeckLoanPreview, generateApplyPage, generatePDLLoansV1Preview, generateLanderCorePreview } from "./lp-generator.js";
 import { generateAstroProject } from "./astro-generator.jsx";
-import { getTemplateGenerator, resolveTemplateId as resolveId, clearCustomTemplatesCache } from "./template-registry.js";
+import { getTemplateGenerator, resolveTemplateId as resolveId, clearCustomTemplatesCache, fetchCustomTemplates, getCustomTemplatesCache } from "./template-registry.js";
 
 // Ensure templates are registered (side-effect import)
 import "#lp-template-generator/templates";
@@ -14,36 +14,6 @@ import { api } from "../services/api";
 
 export const DEFAULT_TEMPLATE_ID = "classic";
 
-// Cache for custom templates from API
-let customTemplatesCache = null;
-let customTemplatesLoading = false;
-
-// Start loading custom templates immediately
-function loadCustomTemplates() {
-  if (customTemplatesLoading || customTemplatesCache) return;
-  customTemplatesLoading = true;
-  api.get('/templates').then(response => {
-    if (response && Array.isArray(response)) {
-      customTemplatesCache = response.map(t => ({
-        id: t.template_id,
-        name: t.name,
-        description: t.description,
-        badge: t.badge || 'Custom',
-        category: t.category || 'custom',
-        source: 'api',
-        files: t.files ? JSON.parse(t.files) : {},
-      }));
-    }
-  }).catch(e => {
-    console.warn('Failed to load custom templates:', e);
-  }).finally(() => {
-    customTemplatesLoading = false;
-  });
-}
-
-// Start loading on module import
-loadCustomTemplates();
-
 function resolveTemplateId(site) {
   const rawId = site?.templateId || DEFAULT_TEMPLATE_ID;
   return resolveId(rawId);
@@ -55,7 +25,7 @@ const MODULE_TEMPLATE_IDS = ['classic', 'pdl-loans-v1', 'pdl-loans-v3', 'simple-
 // Check if a template ID is a module template
 function isModuleTemplate(templateId) {
   return MODULE_TEMPLATE_IDS.includes(templateId) ||
-         templateId === 'pdl-loansv1'; // alias
+    templateId === 'pdl-loansv1'; // alias
 }
 
 // Get color object for template substitution
@@ -65,9 +35,17 @@ function getColorObj(colorId) {
 
 // Convert Astro files to HTML preview with actual site data
 function astroToHtmlPreview(files, site) {
-  const indexContent = files['src/pages/index.astro'];
+  let indexContent = files['src/pages/index.astro'];
+
   if (!indexContent) {
-    return '<div style="padding:20px;text-align:center;">No index.astro file found</div>';
+    // Robust discovery: look for any file ending with index.astro if standard path missing
+    const key = Object.keys(files).find(k => k.endsWith('/src/pages/index.astro') || k.endsWith('src/pages/index.astro') || k.endsWith('index.astro'));
+    if (key) indexContent = files[key];
+  }
+
+  if (!indexContent) {
+    console.warn("[Router] No index.astro found in files keys:", Object.keys(files));
+    return '<div style="padding:20px;text-align:center;color:#ef4444;background:#ef444410;border-radius:12px;border:1px solid #ef444430;"><b>Preview Error:</b> No index.astro found in template project</div>';
   }
 
   // If the file is plain HTML (no Astro frontmatter), return it directly
@@ -87,8 +65,43 @@ function astroToHtmlPreview(files, site) {
   // Basic Astro to HTML conversion for preview
   let html = indexContent;
 
-  // Remove frontmatter if present (code between ---)
-  html = html.replace(/---[\s\S]*?---/g, '');
+  // Remove frontmatter if present from index content
+  html = html.replace(/^---[\s\S]*?---/m, '');
+
+  const resolveComponents = (content, filesMap) => {
+    let resolved = content;
+    const compFiles = Object.keys(filesMap).filter(k => k.endsWith('.astro') && !k.endsWith('index.astro'));
+
+    // Sort so longer component names are matched first to prevent substring matching issues 
+    const comps = compFiles.map(cf => ({
+      name: cf.split('/').pop().replace('.astro', ''),
+      content: filesMap[cf]
+    })).sort((a, b) => b.name.length - a.name.length);
+
+    for (const comp of comps) {
+      if (!comp.name || !comp.content) continue;
+
+      let compBody = comp.content.replace(/^---[\s\S]*?---/m, '').trim();
+
+      // Handling <Comp>children</Comp> first
+      const wrapRegex = new RegExp(`<${comp.name}[^>]*>([\\s\\S]*?)<\\/${comp.name}>`, 'g');
+      resolved = resolved.replace(wrapRegex, (match, children) => {
+        const slotRegex = new RegExp('<slot\\s*\\/?>|<slot>[\\s\\S]*?<\\/slot>', 'g');
+        return compBody.replace(slotRegex, () => children);
+      });
+
+      // Handling <Comp /> or <Comp>
+      const selfClosingRegex = new RegExp(`<${comp.name}\\s*\\/?>`, 'g');
+      resolved = resolved.replace(selfClosingRegex, () => compBody);
+    }
+    return resolved;
+  };
+
+  for (let i = 0; i < 5; i++) {
+    const prev = html;
+    html = resolveComponents(html, files);
+    if (prev === html) break;
+  }
 
   // Replace template literals with actual site data for preview
   html = html.replace(/\$\{[^}]+\}/g, (match) => {
@@ -124,18 +137,76 @@ function astroToHtmlPreview(files, site) {
   html = html.replace(/\s+is:inline/g, '');
   // Strip define:vars={{ ... }} — handles single and multi-variable, single/multi-line
   html = html.replace(/\s+define:vars=\{\{[^}]*(?:\}[^}][^}]*)*\}\}/g, '');
-  html = html.replace(/<style[^>]*>/gi, '<style>');
+  html = html.replace(/<style[^>]*>/gi, '<style type="text/tailwindcss">');
   html = html.replace(/<\/style>/gi, '</style>');
 
   // Inject fallback variable definitions before </head> to prevent ReferenceErrors
   const fallbackVars = `<script>var conversionId='';var formStartLabel='';var formSubmitLabel='';var voluumDomain='';var id='preview';var defaultValue=0;var leadsGateFormId='';</script>`;
+
+  // Inject Tailwind CDN for custom templates that rely on Tailwind
+  // which won't be compiled by our simple previewer.
+  const tailwindCdn = `<script src="https://cdn.tailwindcss.com"></script>\n<script>tailwind.config = {theme: {extend: {colors: {primary: '${colorObj.p ? `hsl(${colorObj.p[0]} ${colorObj.p[1]}% ${colorObj.p[2]}%)` : '#2563EB'}', accent: '${colorObj.a ? `hsl(${colorObj.a[0]} ${colorObj.a[1]}% ${colorObj.a[2]}%)` : '#F97316'}', secondary: '${colorObj.s ? `hsl(${colorObj.s[0]} ${colorObj.s[1]}% ${colorObj.s[2]}%)` : '#10B981'}' } } } }</script>`;
+
+  const headInjections = fallbackVars + '\n' + tailwindCdn;
+
   if (html.includes('</head>')) {
-    html = html.replace('</head>', fallbackVars + '\n</head>');
+    html = html.replace('</head>', headInjections + '\n</head>');
   } else {
-    html = fallbackVars + html;
+    html = headInjections + '\n' + html;
   }
 
   return html;
+}
+
+export function renderTemplateToAssets(template, site) {
+  const assets = {};
+  const files = template.files || {};
+
+  // 1. Compile index.html
+  const html = astroToHtmlPreview(files, site);
+  assets["/index.html"] = html;
+  assets["/"] = html;
+
+  // 2. Map all other files into assets
+  Object.keys(files).forEach(path => {
+    // If it's the index, we already handled it
+    if (path.endsWith('index.astro') || path === 'package.json') return;
+
+    // Normalize path for CF Workers/Pages mapping
+    let deployPath = path;
+    if (deployPath.startsWith('public/')) {
+      deployPath = '/' + deployPath.slice(7);
+    } else if (deployPath.startsWith('src/')) {
+      // Typically src/ files shouldn't be served, but some custom templates
+      // might link directly to them like src/styles/global.css
+      deployPath = '/' + deployPath;
+    } else {
+      // Just prepend slash if needed
+      deployPath = deployPath.startsWith('/') ? deployPath : '/' + deployPath;
+    }
+
+    // Add only if not already there (prefer root/public files if conflict)
+    if (!assets[deployPath]) {
+      assets[deployPath] = files[path];
+    }
+  });
+
+  // Inject CSS directly into HTML if a global.css is found and it doesn't already have it linked 
+  // (to help uncompiled Astro templates)
+  const cssPaths = Object.keys(files).filter(k => k.endsWith('.css'));
+  if (cssPaths.length > 0) {
+    let combinedCss = '';
+    for (const cp of cssPaths) {
+      combinedCss += files[cp] + '\n';
+    }
+    if (combinedCss) {
+      const styleInjection = `<style type="text/tailwindcss">\n/* Injected from custom template CSS */\n${combinedCss}</style>\n</head>`;
+      assets["/index.html"] = assets["/index.html"].replace('</head>', styleInjection);
+      assets["/"] = assets["/index.html"];
+    }
+  }
+
+  return assets;
 }
 
 export function generateHtmlByTemplate(site) {
@@ -159,10 +230,11 @@ export function generateHtmlByTemplate(site) {
         console.warn('Classic module template failed, using legacy:', e.message);
         return generateLP(site);
       }
-    default:
-      // Check if it's a custom API template (synchronously from cache)
+    default: {
+      // Check if it's a custom API template (synchronously from primary registry cache)
+      const customTemplatesCache = getCustomTemplatesCache();
       if (customTemplatesCache) {
-        const customTemplate = customTemplatesCache.find(t => t.id === templateId || t.template_id === templateId);
+        const customTemplate = customTemplatesCache.find(t => t.id === templateId || t.dbId === templateId);
         if (customTemplate && customTemplate.files) {
           return astroToHtmlPreview(customTemplate.files, site);
         }
@@ -179,23 +251,23 @@ export function generateHtmlByTemplate(site) {
       }
       // Fallback to classic LP
       return generateLP(site);
+    }
   }
 }
 
 // Export a function to refresh custom templates cache (both router and registry)
 export function refreshCustomTemplates() {
-  customTemplatesCache = null;
-  customTemplatesLoading = false;
   clearCustomTemplatesCache();
-  loadCustomTemplates();
+  fetchCustomTemplates(true);
 }
 
 export function generateAstroProjectByTemplate(site) {
   const templateId = resolveTemplateId(site);
 
   // Check custom API templates first — return raw Astro source files
+  const customTemplatesCache = getCustomTemplatesCache();
   if (customTemplatesCache) {
-    const customTemplate = customTemplatesCache.find(t => t.id === templateId || t.template_id === templateId);
+    const customTemplate = customTemplatesCache.find(t => t.id === templateId || t.dbId === templateId);
     if (customTemplate && customTemplate.files && Object.keys(customTemplate.files).length > 0) {
       return customTemplate.files;
     }
@@ -220,4 +292,36 @@ export function generateAstroProjectByTemplate(site) {
 
 export function generateApplyPageByTemplate(site) {
   return generateApplyPage(site);
+}
+
+// Generates the full asset map needed by Edge deployment targets 
+// (Cloudflare Workers, Pages) instead of just single-file HTML preview.
+export function generateDeployAssetsByTemplate(site) {
+  const templateId = resolveTemplateId(site);
+
+  // Custom Templates: Return the full asset map (HTML + CSS + logic)
+  const customTemplatesCache = getCustomTemplatesCache();
+  if (customTemplatesCache) {
+    const customTemplate = customTemplatesCache.find(t => t.id === templateId || t.dbId === templateId);
+    if (customTemplate && customTemplate.files) {
+      return renderTemplateToAssets(customTemplate, site);
+    }
+  }
+
+  // Module Templates (which might be multi-file soon, but for now we preview them to single html)
+  if (isModuleTemplate(templateId) || templateId === 'classic') {
+    try {
+      const mappedId = templateId === 'classic' ? 'classic' : templateId;
+      const files = generateFromModule(mappedId, site);
+
+      // We pass the files object wrapped in a dummy template object 
+      // so it compiles the full asset map with global.css and other assets.
+      return renderTemplateToAssets({ files }, site);
+    } catch (e) {
+      console.warn('Module asset generation failed', e);
+    }
+  }
+
+  // Legacy fallback: return the raw HTML string
+  return generateHtmlByTemplate(site);
 }
