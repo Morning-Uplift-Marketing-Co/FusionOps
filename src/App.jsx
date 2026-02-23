@@ -25,7 +25,7 @@ import { ErrorLog, logError } from "./components/ErrorLog";
 import { SpendDashboard } from "./components/SpendDashboard";
 
 // Neon connection string — stored in settings or hardcoded for now
-const NEON_URL = import.meta.env.PUBLIC_NEON_URL || "";
+const NEON_URL = import.meta.env.VITE_NEON_URL || "";
 
 export default function App() {
   const [page, setPage] = useState("dashboard");
