@@ -477,22 +477,45 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
 
             {/* Deploy Button */}
             {(() => {
+                const canShow = selectedDomainId && selectedTarget && !isDeploying;
                 console.log('[DeploySection] Button render check:');
                 console.log('  selectedDomainId:', selectedDomainId);
                 console.log('  selectedTarget:', selectedTarget);
                 console.log('  isDeploying:', isDeploying);
-                console.log('  Should show:', !!(selectedDomainId && selectedTarget && !isDeploying));
+                console.log('  Can show button:', canShow);
 
-                return selectedDomainId && selectedTarget && !isDeploying && (
-                    <Button
-                        variant="primary"
-                        size="lg"
-                        onClick={handleDeploy}
-                        disabled={isDeploying}
-                        style={{ width: "100%", padding: 16 }}
-                    >
-                        Deploy to {DEPLOY_TARGETS.find(t => t.id === selectedTarget)?.label}
-                    </Button>
+                return (
+                    <>
+                        {/* Debug Info - Remove after fixing */}
+                        <div style={{
+                            padding: 12,
+                            marginBottom: 16,
+                            background: '#f0f0f0',
+                            border: '1px solid #ccc',
+                            borderRadius: 6,
+                            fontSize: 11,
+                            fontFamily: 'monospace'
+                        }}>
+                            <div style={{ fontWeight: 700, marginBottom: 4 }}>DEBUG - Button State:</div>
+                            <div>selectedDomainId: {selectedDomainId || '(empty)'}</div>
+                            <div>selectedTarget: {selectedTarget || '(empty)'}</div>
+                            <div>isDeploying: {isDeploying.toString()}</div>
+                            <div>canShow: {canShow.toString()}</div>
+                            <div>domains.length: {domains?.length || 0}</div>
+                        </div>
+
+                        {canShow && (
+                            <Button
+                                variant="primary"
+                                size="lg"
+                                onClick={handleDeploy}
+                                disabled={isDeploying}
+                                style={{ width: "100%", padding: 16 }}
+                            >
+                                Deploy to {DEPLOY_TARGETS.find(t => t.id === selectedTarget)?.label}
+                            </Button>
+                        )}
+                    </>
                 );
             })()}
         </div>

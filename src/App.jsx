@@ -132,6 +132,40 @@ export default function App() {
     }
   }, [sites]);
 
+  // CRITICAL: Sync Cloudflare account from settings to ops.cfAccounts
+  // This ensures DeploySection can see configured Cloudflare accounts
+  useEffect(() => {
+    if (settings?.cfAccountId && settings?.cfApiToken) {
+      setOps(prev => {
+        // Check if this account is already in the list
+        const existingAccount = prev.cfAccounts?.find(a =>
+          a.accountId === settings.cfAccountId ||
+          a.account_id === settings.cfAccountId ||
+          a.id === settings.cfAccountId
+        );
+
+        // Add account if not exists
+        if (!existingAccount) {
+          const newAccount = {
+            id: settings.cfAccountId,
+            accountId: settings.cfAccountId,
+            account_id: settings.cfAccountId,
+            apiKey: settings.cfApiToken,
+            api_key: settings.cfApiToken,
+            name: settings.cfAccountId?.slice(0, 8) + '...',
+          };
+
+          const updatedAccounts = [...(prev.cfAccounts || []), newAccount];
+          console.log('[App] Adding Cloudflare account to ops.cfAccounts:', newAccount);
+
+          return { ...prev, cfAccounts: updatedAccounts };
+        }
+
+        return prev;
+      });
+    }
+  }, [settings?.cfAccountId, settings?.cfApiToken]);
+
   async function bootApp() {
     const localSettings = LS.get("settings") || {};
 
