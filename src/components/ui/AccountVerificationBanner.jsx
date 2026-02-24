@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
-import { validateSettingsAccount, diagnoseLocalStorage, clearStaleAccountData, LOCKED_CF_ACCOUNT_ID } from "../../services/account-lock";
+import { validateSettingsAccount, diagnoseLocalStorage, clearStaleAccountData, LOCKED_CF_ACCOUNT_ID, LEGACY_CF_ACCOUNT_ID } from "../../services/account-lock";
 import { api } from "../../services/api";
 
 const S = {

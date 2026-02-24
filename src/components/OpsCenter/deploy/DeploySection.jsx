@@ -11,6 +11,7 @@ import { Button } from "../../ui/button";
 import { deployTo, getAvailableTargets, saveDeployConfig, getDeployConfig } from "../../../utils/deployers";
 import cloudflareDns from "../../../services/cloudflare-dns";
 import { generateHtmlByTemplate, generateApplyPageByTemplate, generateDeployAssetsByTemplate } from "../../../utils/template-router";
+import { validateAccountId } from "../../../services/account-lock";
 
 const S = {
     section: { marginBottom: 24 },

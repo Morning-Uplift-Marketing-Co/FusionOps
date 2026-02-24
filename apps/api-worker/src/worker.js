@@ -2842,7 +2842,7 @@ export default {
         const res = await fetch('https://api.multilogin.com/profile/create', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ml.mlToken}` },
-          body: JSON.stringifcodexy(body),
+          body: JSON.stringify(body),
         });
         const data = await res.json();
         return json({

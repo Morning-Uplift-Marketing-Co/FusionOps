@@ -4,7 +4,7 @@ import * as db from "./services/neon";
 import { THEME as T, WIZARD_DEFAULTS } from "./constants";
 import { uid, now, LS } from "./utils";
 import { refreshCustomTemplates } from "./utils/template-router";
-import { sanitizeSettings, validateSettingsAccount, autoRecoverSettings, detectIncompleteSettings, LOCKED_CF_ACCOUNT_ID, LOCKED_CF_API_TOKEN } from "./services/account-lock";
+import { sanitizeSettings, validateSettingsAccount, autoRecoverSettings, detectIncompleteSettings } from "./services/account-lock";
 
 // Custom event for template refresh
 const TEMPLATE_REFRESH_EVENT = 'lp-template-refresh';

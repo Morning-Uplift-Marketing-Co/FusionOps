@@ -5,9 +5,9 @@
  * enforces strict account ID validation at runtime
  */
 
-// The ONE TRUE source of truth for Cloudflare account
-export const LOCKED_CF_ACCOUNT_ID = 'ef771cfd6197dedb36bb3cea22ecf4fc';
-export const LOCKED_CF_API_TOKEN = '8dTwYeTJF93WbhAyi2FzhUe8PV3rIEta5b8Pq5MQ';
+// The ONE TRUE source of truth for Cloudflare account — read from environment
+export const LOCKED_CF_ACCOUNT_ID = import.meta.env.VITE_CF_ACCOUNT_ID || '';
+export const LOCKED_CF_API_TOKEN = import.meta.env.VITE_CF_API_TOKEN || '';
 
 // Old account that should NEVER be used
 export const LEGACY_CF_ACCOUNT_ID = '9fa4d356e0c6fa0612b3da1e03c7e707';
@@ -106,23 +106,17 @@ export function sanitizeSettings(settings) {
 
   // CRITICAL: ALWAYS enforce Neon URL (from environment)
   // This prevents losing Neon connection when dashboard disconnects
-  if (typeof window !== 'undefined' && window.IMPORT_META_ENV) {
-    const envNeonUrl = window.IMPORT_META_ENV.VITE_NEON_URL ||
-                       window.IMPORT_META_ENV.NEON_DATABASE_URL;
-    if (envNeonUrl && envNeonUrl.includes('@')) {
-      sanitized.neonUrl = envNeonUrl;
-      console.log('[AccountLock] Enforced Neon URL from environment');
-    }
+  const envNeonUrl = import.meta.env.VITE_NEON_URL;
+  if (envNeonUrl && envNeonUrl.includes('@')) {
+    sanitized.neonUrl = envNeonUrl;
   }
 
   // CRITICAL: ALWAYS enforce Voluum credentials (prevent losing tracking)
-  if (typeof window !== 'undefined' && window.IMPORT_META_ENV) {
-    if (window.IMPORT_META_ENV.VITE_VOLUUM_ACCESS_KEY_ID) {
-      sanitized.voluumKeyId = window.IMPORT_META_ENV.VITE_VOLUUM_ACCESS_KEY_ID;
-    }
-    if (window.IMPORT_META_ENV.VITE_VOLUUM_ACCESS_KEY) {
-      sanitized.voluumKey = window.IMPORT_META_ENV.VITE_VOLUUM_ACCESS_KEY;
-    }
+  if (import.meta.env.VITE_VOLUUM_ACCESS_KEY_ID) {
+    sanitized.voluumKeyId = import.meta.env.VITE_VOLUUM_ACCESS_KEY_ID;
+  }
+  if (import.meta.env.VITE_VOLUUM_ACCESS_KEY) {
+    sanitized.voluumKey = import.meta.env.VITE_VOLUUM_ACCESS_KEY;
   }
 
   // Remove any legacy account references
