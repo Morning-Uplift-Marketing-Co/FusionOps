@@ -58,6 +58,13 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
     const [updateDns, setUpdateDns] = useState(true);
     const [deployLog, setDeployLog] = useState([]);
 
+    // DEBUG: Log domains prop
+    useEffect(() => {
+        console.log('[DeploySection] Domains prop:', domains);
+        console.log('[DeploySection] Domains length:', domains?.length || 0);
+        console.log('[DeploySection] Domains items:', domains?.map(d => ({ id: d.id, brand: d.brand })));
+    }, [domains]);
+
     // Load available targets
     useEffect(() => {
         setAvailableTargets(getAvailableTargets(settings));
@@ -469,17 +476,25 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
             )}
 
             {/* Deploy Button */}
-            {selectedDomainId && selectedTarget && !isDeploying && (
-                <Button
-                    variant="primary"
-                    size="lg"
-                    onClick={handleDeploy}
-                    disabled={isDeploying}
-                    style={{ width: "100%", padding: 16 }}
-                >
-                    Deploy to {DEPLOY_TARGETS.find(t => t.id === selectedTarget)?.label}
-                </Button>
-            )}
+            {(() => {
+                console.log('[DeploySection] Button render check:');
+                console.log('  selectedDomainId:', selectedDomainId);
+                console.log('  selectedTarget:', selectedTarget);
+                console.log('  isDeploying:', isDeploying);
+                console.log('  Should show:', !!(selectedDomainId && selectedTarget && !isDeploying));
+
+                return selectedDomainId && selectedTarget && !isDeploying && (
+                    <Button
+                        variant="primary"
+                        size="lg"
+                        onClick={handleDeploy}
+                        disabled={isDeploying}
+                        style={{ width: "100%", padding: 16 }}
+                    >
+                        Deploy to {DEPLOY_TARGETS.find(t => t.id === selectedTarget)?.label}
+                    </Button>
+                );
+            })()}
         </div>
     );
 }
