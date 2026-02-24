@@ -14,7 +14,7 @@ import { Card } from "../../ui/card";
 import { Button } from "../../ui/button";
 import { deployTo, getAvailableTargets, saveDeployConfig, getDeployConfig } from "../../../utils/deployers";
 import cloudflareDns from "../../../services/cloudflare-dns";
-import { generateHtmlByTemplate, generateApplyPageByTemplate } from "../../../utils/template-router";
+import { generateHtmlByTemplate, generateApplyPageByTemplate, generateDeployAssetsByTemplate } from "../../../utils/template-router";
 
 const S = {
     section: { marginBottom: 24 },
@@ -209,9 +209,23 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
 
     const buildHtmlForDomain = async (domain) => {
         try {
-            return generateHtmlByTemplate(domain);
+            const assets = await generateDeployAssetsByTemplate(domain);
+
+            // Validate assets contain index.html
+            if (typeof assets === 'object') {
+                if (!assets['/'] && !assets['/index.html']) {
+                    throw new Error('Generated assets missing index.html');
+                }
+                const indexContent = assets['/'] || assets['/index.html'];
+                if (!indexContent || indexContent.length < 100) {
+                    throw new Error('Generated index.html is empty or too short');
+                }
+                console.log('[Deploy] Validation passed - assets contain index.html:', indexContent.length, 'bytes');
+            }
+
+            return assets;
         } catch (e) {
-            console.error("Failed to generate LP:", e);
+            console.error("Failed to generate assets:", e);
             throw new Error(`Generator failed: ${e.message}`);
         }
     };

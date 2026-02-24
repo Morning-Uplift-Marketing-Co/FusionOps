@@ -62,6 +62,31 @@ function astroToHtmlPreview(files, site) {
   // Get color object for this site
   const colorObj = getColorObj(site.colorId);
 
+  // Build normalized site object with all expected properties
+  // Map wizard fields to template variable names
+  const normalizedSite = {
+    brand: site.brand || '',
+    title: site.h1 || site.brand || 'Your Title',
+    description: site.sub || site.tagline || 'Your description',
+    domain: site.domain || 'example.com',
+    h1: site.h1 || site.brand || 'Your Headline',
+    h1span: site.h1span || 'Get Started',
+    sub: site.sub || 'Your subheadline here',
+    cta: site.cta || 'Get Started',
+    badge: site.badge || 'Featured',
+    email: site.email || `support@${site.domain || 'example.com'}`,
+    conversionId: site.conversionId || '',
+    formStartLabel: site.formStartLabel || '',
+    formSubmitLabel: site.formSubmitLabel || '',
+    aid: site.aid || '',
+    voluumDomain: site.voluumDomain || '',
+    amountMin: site.amountMin || 100,
+    amountMax: site.amountMax || 5000,
+    aprMin: site.aprMin || 5.99,
+    aprMax: site.aprMax || 35.99,
+    loanLabel: site.loanType || 'Personal Loans'
+  };
+
   // Basic Astro to HTML conversion for preview
   let html = indexContent;
 
@@ -104,15 +129,62 @@ function astroToHtmlPreview(files, site) {
   }
 
   // Replace template literals with actual site data for preview
-  html = html.replace(/\$\{[^}]+\}/g, (match) => {
+  // Use a more robust regex that handles nested braces and complex expressions
+  const templateLiteralRegex = /\$\{([^{}]+|\{[^{}]*\})*\}/g;
+
+  html = html.replace(templateLiteralRegex, (match) => {
+    // Extract the expression inside ${}
     const expr = match.slice(2, -1).trim();
 
+    // Helper: evaluate simple expressions like site.xxx || "default"
+    const evaluateSiteProp = (prop, defaultValue = '') => {
+      // Direct access: site.brand
+      if (expr === `site.${prop}` || expr === prop) {
+        return normalizedSite[prop] || defaultValue;
+      }
+      // With fallback: site.brand || "Default"
+      if (expr.startsWith(`site.${prop} ||`)) {
+        const fallback = expr.slice(expr.indexOf('||') + 2).trim().replace(/^["']|["']$/g, '');
+        return normalizedSite[prop] || fallback;
+      }
+      // With fallback using parens: (site.brand || "Default")
+      if (expr.startsWith(`(site.${prop}`) && expr.includes('||')) {
+        const fallback = expr.slice(expr.indexOf('||') + 2).trim().replace(/^["']|["']\)?$/g, '');
+        return normalizedSite[prop] || fallback;
+      }
+      return null;
+    };
+
     // Brand and text content
-    if (expr === 'brand' || expr === 'site.brand') return site.brand || 'Your Brand';
-    if (expr === 'h1' || expr === 'site.h1') return site.h1 || 'Your Headline';
-    if (expr === 'sub' || expr === 'site.sub') return site.sub || 'Your subheadline here';
-    if (expr === 'cta' || expr === 'site.cta') return site.cta || 'Get Started';
-    if (expr === 'badge' || expr === 'site.badge') return site.badge || 'Featured';
+    const brand = evaluateSiteProp('brand', 'Your Brand');
+    if (brand !== null) return brand;
+
+    const title = evaluateSiteProp('title', 'Your Title');
+    if (title !== null) return title;
+
+    const description = evaluateSiteProp('description', 'Your description');
+    if (description !== null) return description;
+
+    const h1 = evaluateSiteProp('h1', 'Your Headline');
+    if (h1 !== null) return h1;
+
+    const h1span = evaluateSiteProp('h1span', 'Get Started');
+    if (h1span !== null) return h1span;
+
+    const sub = evaluateSiteProp('sub', 'Your subheadline here');
+    if (sub !== null) return sub;
+
+    const cta = evaluateSiteProp('cta', 'Get Started');
+    if (cta !== null) return cta;
+
+    const badge = evaluateSiteProp('badge', 'Featured');
+    if (badge !== null) return badge;
+
+    const domain = evaluateSiteProp('domain', 'example.com');
+    if (domain !== null) return domain;
+
+    const email = evaluateSiteProp('email', 'support@example.com');
+    if (email !== null) return email;
 
     // Color variables - c.primary, c.bg, etc.
     if (expr.includes('c.primary') || expr === 'c?.primary') return colorObj.p ? `hsl(${colorObj.p[0]} ${colorObj.p[1]}% ${colorObj.p[2]}%)` : '#3b82f6';
@@ -124,8 +196,17 @@ function astroToHtmlPreview(files, site) {
     // Fallback for other c. references
     if (expr.startsWith('c.') || expr.startsWith('c?.')) return '#3b82f6';
 
-    // Domain
-    if (expr === 'domain' || expr === 'site.domain') return site.domain || 'example.com';
+    // For any other expression, try to extract site.xxx pattern
+    const sitePropMatch = expr.match(/site\.(\w+)/);
+    if (sitePropMatch) {
+      const propName = sitePropMatch[1];
+      return normalizedSite[propName] || '';
+    }
+
+    // Log unmatched expressions for debugging
+    if (!expr.startsWith('site.') && !expr.startsWith('c.')) {
+      console.debug('[Router] Unmatched template literal:', expr);
+    }
 
     // Keep original if no match
     return match;
@@ -162,8 +243,29 @@ export function renderTemplateToAssets(template, site) {
   const assets = {};
   const files = template.files || {};
 
+  console.log('[Router] renderTemplateToAssets - files keys:', Object.keys(files));
+  console.log('[Router] renderTemplateToAssets - looking for index.astro');
+
   // 1. Compile index.html
   const html = astroToHtmlPreview(files, site);
+
+  // Validate HTML was generated
+  if (!html || html.length < 100) {
+    console.error('[Router] Generated HTML is too short or empty!');
+    console.error('[Router] HTML preview:', html?.substring(0, 500));
+    throw new Error('Failed to generate valid HTML from template');
+  }
+
+  // Check for error indicators
+  if (html.includes('Preview Error') || html.includes('No index.astro found')) {
+    console.error('[Router] Template rendering produced error message');
+    console.error('[Router] HTML content:', html.substring(0, 500));
+    throw new Error('Template missing required index.astro file');
+  }
+
+  // Debug: check if HTML was generated
+  console.log('[Router] astroToHtmlPreview result length:', html?.length);
+
   assets["/index.html"] = html;
   assets["/"] = html;
 

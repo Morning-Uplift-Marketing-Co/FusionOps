@@ -3,6 +3,7 @@ import { THEME as T } from "../../../constants";
 import { Field } from "../../ui/field";
 import { InputField as Inp } from "../../ui/input-field";
 import { Button } from "../../ui/button";
+import JSZip from 'jszip';
 
 export function StepTemplateFromZip({ c, u, onGenerate }) {
     const [dragging, setDragging] = useState(false);
@@ -10,6 +11,24 @@ export function StepTemplateFromZip({ c, u, onGenerate }) {
     const [parseError, setParseError] = useState(null);
     const [parsedFiles, setParsedFiles] = useState(null);
     const fileInputRef = useRef(null);
+
+    const [idManuallyEdited, setIdManuallyEdited] = useState(false);
+
+    const handleNameChange = (val) => {
+        u("templateName", val);
+        if (!idManuallyEdited && val) {
+            const slug = val.toLowerCase()
+                .replace(/[^a-z0-9]/g, '-')
+                .replace(/-+/g, '-')
+                .replace(/^-|-$/g, '');
+            u("newFolderId", slug);
+        }
+    };
+
+    const handleIdChange = (val) => {
+        setIdManuallyEdited(true);
+        u("newFolderId", val.toLowerCase().replace(/[^a-z0-9-]/g, "-"));
+    };
 
     const handleFile = async (file) => {
         if (!file || !file.name.endsWith('.zip')) {
@@ -21,7 +40,6 @@ export function StepTemplateFromZip({ c, u, onGenerate }) {
         setParsedFiles(null);
 
         try {
-            const { default: JSZip } = await import('jszip');
             const zip = await JSZip.loadAsync(file);
             const files = {};
 
@@ -33,31 +51,70 @@ export function StepTemplateFromZip({ c, u, onGenerate }) {
                 if (zipEntry.dir) continue;
 
                 // Skip unwanted directories
+                // Normalize path — determine if we should strip a root folder
                 const parts = path.split('/');
                 if (parts.some(p => SKIP_DIRS.includes(p))) continue;
 
-                // Normalize path — strip leading folder name if zip has a root folder
-                const normalizedPath = parts.length > 1 && !path.includes('src/') && !path.includes('public/')
-                    ? parts.slice(1).join('/')
-                    : path;
+                let normalizedPath = path;
 
-                if (!normalizedPath) continue;
+                // Simple heuristic: if the first part is clearly a folder and there's a second part,
+                // and it's NOT a standard directory like src/ or public/ at the root, 
+                // we'll check if we should strip it later or just handle it here.
+                // Better approach: collect all files first, then find common prefix.
 
-                const ext = '.' + normalizedPath.split('.').pop();
+                const ext = '.' + path.split('.').pop();
                 if (!ALLOWED_EXTS.includes(ext)) continue;
 
                 const content = await zipEntry.async('string');
-                files[normalizedPath] = content;
+                files[path] = content;
             }
 
-            if (!files['src/pages/index.astro'] && !Object.keys(files).some(f => f.endsWith('index.astro'))) {
-                setParseError('ZIP must contain src/pages/index.astro');
+            // --- SMART PATH NORMALIZATION ---
+            // If all files share a common root directory, strip it.
+            const filePaths = Object.keys(files);
+            if (filePaths.length > 0) {
+                const firstPathParts = filePaths[0].split('/');
+                if (firstPathParts.length > 1) {
+                    const rootCandidate = firstPathParts[0];
+                    const allShareRoot = filePaths.every(p => p.startsWith(rootCandidate + '/'));
+
+                    if (allShareRoot) {
+                        const newFiles = {};
+                        for (const [p, content] of Object.entries(files)) {
+                            const newPath = p.substring(rootCandidate.length + 1);
+                            if (newPath) newFiles[newPath] = content;
+                        }
+                        // Replace original files with normalized ones
+                        Object.keys(files).forEach(key => delete files[key]);
+                        Object.assign(files, newFiles);
+                    }
+                }
+            }
+            // ---------------------------------
+
+            // Check for index.astro file (robust discovery)
+            let hasIndexAstro = false;
+            let indexPath = null;
+
+            for (const path of Object.keys(files)) {
+                if (path.endsWith('index.astro') || path.endsWith('/index.astro')) {
+                    hasIndexAstro = true;
+                    indexPath = path;
+                    break;
+                }
+            }
+
+            if (!hasIndexAstro) {
+                const foundFiles = Object.keys(files).slice(0, 5).join(', ');
+                setParseError(`ZIP must contain an index.astro file. Found: ${foundFiles}${Object.keys(files).length > 5 ? '...' : ''}`);
                 setParsing(false);
                 return;
             }
 
+            console.log('[ZIP Upload] Found index.astro at:', indexPath);
+
             setParsedFiles(files);
-            const sourceCode = `// Uploaded from ZIP: ${file.name}\n// Files: ${Object.keys(files).length}\n// Generated: ${new Date().toISOString()}`;
+            const sourceCode = `// Uploaded from ZIP: ${file.name}\n// Files: ${Object.keys(files).length}\n// Normalized: ${Object.keys(files).some(k => !k.includes('/')) ? 'Yes' : 'No'}\n// Date: ${new Date().toISOString()}`;
             onGenerate({ sourceCode, files });
         } catch (err) {
             setParseError(`Failed to parse ZIP: ${err.message}. Make sure jszip is installed.`);
@@ -77,7 +134,6 @@ export function StepTemplateFromZip({ c, u, onGenerate }) {
         const file = e.target.files[0];
         if (file) handleFile(file);
     };
-
     return (
         <>
             <div style={{ textAlign: "center", marginBottom: 24 }}>
@@ -89,19 +145,19 @@ export function StepTemplateFromZip({ c, u, onGenerate }) {
             </div>
 
             {/* Template Info */}
-            <Field label="New Template ID" req help="e.g. my-custom-lp (lowercase, hyphens only)">
-                <Inp
-                    value={c.newFolderId}
-                    onChange={(v) => u("newFolderId", v.toLowerCase().replace(/[^a-z0-9-]/g, "-"))}
-                    placeholder="my-custom-lp"
-                />
-            </Field>
-
             <Field label="Display Name" req>
                 <Inp
                     value={c.templateName}
-                    onChange={(v) => u("templateName", v)}
+                    onChange={handleNameChange}
                     placeholder="My Custom LP"
+                />
+            </Field>
+
+            <Field label="New Template ID" req help="Unique identifier, hyphens only (e.g. pro-lp-v1)">
+                <Inp
+                    value={c.newFolderId}
+                    onChange={handleIdChange}
+                    placeholder="my-custom-lp"
                 />
             </Field>
 

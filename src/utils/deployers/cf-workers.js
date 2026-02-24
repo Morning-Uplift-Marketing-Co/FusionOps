@@ -25,12 +25,23 @@ function buildWorkerScript(assets) {
     for (const [key, value] of Object.entries(assets)) {
       const normalizedKey = key.startsWith("/") ? key : `/${key}`;
       assetMap[normalizedKey] = value;
-      // Add alias for index.html as root
-      if (normalizedKey === "/index.html") {
-        assetMap["/"] = value;
-      }
+    }
+
+    // EXPLICITLY ensure / and /index.html both exist
+    // Prefer /index.html if it exists
+    if (assetMap["/index.html"]) {
+      assetMap["/"] = assetMap["/index.html"];
+    } else if (assetMap["/"]) {
+      // If only / exists, copy to /index.html
+      assetMap["/index.html"] = assetMap["/"];
+    } else {
+      console.error("[CF Workers] No index.html content found in assets!");
+      console.error("[CF Workers] Available keys:", Object.keys(assetMap));
     }
   }
+
+  // DEBUG: Log the asset map keys
+  console.log('[CF Workers] Building worker with assets keys:', Object.keys(assetMap));
 
   // Create JS object string for embedding
   const assetString = JSON.stringify(assetMap);
@@ -42,16 +53,30 @@ const ASSETS = ${assetString};
 export default {
   async fetch(request) {
     const url = new URL(request.url);
-    const path = url.pathname;
+    let path = url.pathname;
 
     // Health check
     if (path === "/__health") {
       return new Response("ok", { status: 200 });
     }
 
+    // DEBUG: Log the requested path
+    console.log('[CF Workers] Requested path:', path, 'Available keys:', Object.keys(ASSETS));
+
+    // Normalize root path to index.html
+    if (path === "/" || path === "") {
+      path = "/index.html";
+    }
+
     // Lookup asset
     let content = ASSETS[path];
-    
+
+    // Fallback: try without .html extension
+    if (!content && path.endsWith(".html")) {
+      const basePath = path.slice(0, -5);
+      content = ASSETS[basePath] || ASSETS[basePath + "/index.html"];
+    }
+
     // Fallback: if path is directory-like, try appending index.html
     if (!content && path.endsWith("/")) {
       content = ASSETS[path + "index.html"];
@@ -59,6 +84,7 @@ export default {
 
     // Fallback: 404
     if (!content) {
+      console.error('[CF Workers] Asset not found for path:', path);
       return new Response("Not Found", { status: 404 });
     }
 
@@ -112,7 +138,19 @@ export async function deploy(assets, site, settings) {
   const cfBase = getCfApiBase();
 
   try {
-    const workerScript = buildWorkerScript(assets);
+    let finalAssets = {};
+    if (typeof assets === "string") {
+      finalAssets["/"] = assets;
+      finalAssets["/index.html"] = assets;
+    } else {
+      finalAssets = { ...assets };
+    }
+
+    if (site?._extraFiles) {
+      Object.assign(finalAssets, site._extraFiles);
+    }
+
+    const workerScript = buildWorkerScript(finalAssets);
 
     // ── Upload Worker script (multipart/form-data) ───────────────
     //
