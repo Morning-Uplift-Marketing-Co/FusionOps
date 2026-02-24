@@ -264,12 +264,14 @@ export default function App() {
       if (!data.error) {
         // Always hydrate Ops center from API when reachable
         // Some deployments may omit or partially populate `ops`, so merge defensively.
+        // CRITICAL: Don't overwrite domains that were already synced from sites
         setOps((prev) => {
           const nextOps = (data && typeof data.ops === "object" && data.ops) ? data.ops : {};
           return {
             ...prev,
             ...nextOps,
-            domains: nextOps.domains || prev.domains || [],
+            // CRITICAL: Prefer already-synced domains over empty API data
+            domains: (nextOps.domains && nextOps.domains.length > 0) ? nextOps.domains : prev.domains || [],
             accounts: nextOps.accounts || prev.accounts || [],
             profiles: nextOps.profiles || prev.profiles || [],
             payments: nextOps.payments || prev.payments || [],
