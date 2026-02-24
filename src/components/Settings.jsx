@@ -6,6 +6,7 @@ import { Button } from "./ui/button";
 import { api } from "../services/api";
 import { multiloginApi } from "../services/multilogin";
 import { getCfApiBase } from "../utils/api-proxy";
+import { detectIncompleteSettings } from "../services/account-lock";
 
 export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
     const [neonUrl, setNeonUrl] = useState(settings.neonUrl || import.meta.env.VITE_NEON_URL || "");
@@ -318,6 +319,38 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                 <h1 className="text-[24px] font-bold m-0 mb-1">Settings</h1>
                 <p className="text-[hsl(var(--muted-foreground))] text-sm">API keys, database connections, and deployment pipeline configuration</p>
             </header>
+
+            {/* Incomplete Settings Alert */}
+            {(() => {
+                const completenessCheck = detectIncompleteSettings(settings);
+                if (completenessCheck.isIncomplete) {
+                    return (
+                        <div className="mb-6 p-4 rounded-lg border-2 bg-[rgba(239,68,68,0.05)] border-[rgba(239,68,68,0.2)]">
+                            <div className="flex items-start gap-3">
+                                <span className="text-2xl">⚠️</span>
+                                <div className="flex-1">
+                                    <h3 className="text-sm font-bold text-[hsl(var(--destructive))] mb-1">Settings Incomplete</h3>
+                                    <p className="text-xs text-[hsl(var(--muted-foreground))] mb-2">
+                                        Some critical settings are missing. This may happen when Neon connection is lost.
+                                    </p>
+                                    <div className="text-xs bg-[rgba(0,0,0,0.05)] p-2 rounded">
+                                        <div className="font-semibold mb-1">Missing:</div>
+                                        <ul className="list-disc list-inside text-[hsl(var(--destructive))]">
+                                            {completenessCheck.missingCritical.map(key => (
+                                                <li key={key}>{key}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <div className="mt-2 text-xs text-[hsl(var(--muted-foreground))]">
+                                        💡 <strong>Fix:</strong> Reconnect to Neon to automatically restore all settings
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                }
+                return null;
+            })()}
 
             <div className="flex flex-wrap gap-3 mb-6">
                 <div className={`flex items-center gap-2 text-[11px] px-3 py-2 rounded-lg border shadow-sm ${neonOk ? "bg-[rgba(16,185,129,0.1)] text-[hsl(var(--success))] border-[rgba(16,185,129,0.2)]" : "bg-[rgba(239,68,68,0.1)] text-[hsl(var(--destructive))] border-[rgba(239,68,68,0.2)]"}`}>

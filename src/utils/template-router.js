@@ -9,7 +9,7 @@ import "#lp-template-generator/templates";
 import { generateTemplate as generateFromModule } from "#lp-template-generator/core/generator.js";
 
 // Import colors for template variable substitution
-import { COLORS as ALL_COLORS } from "../constants";
+import { COLORS as ALL_COLORS } from "../constants/index.js";
 import { api } from "../services/api";
 
 export const DEFAULT_TEMPLATE_ID = "classic";

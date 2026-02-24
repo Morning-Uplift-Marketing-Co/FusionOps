@@ -3,7 +3,7 @@
  * Generates favicon (SVG) and OG image (Canvas) from brand config
  */
 
-import { COLORS } from "../constants";
+import { COLORS } from "../constants/index.js";
 
 /**
  * Generate SVG favicon from brand config

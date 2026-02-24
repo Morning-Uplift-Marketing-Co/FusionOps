@@ -4,7 +4,7 @@ import * as db from "./services/neon";
 import { THEME as T, WIZARD_DEFAULTS } from "./constants";
 import { uid, now, LS } from "./utils";
 import { refreshCustomTemplates } from "./utils/template-router";
-import { sanitizeSettings, validateSettingsAccount, LOCKED_CF_ACCOUNT_ID, LOCKED_CF_API_TOKEN } from "./services/account-lock";
+import { sanitizeSettings, validateSettingsAccount, autoRecoverSettings, detectIncompleteSettings, LOCKED_CF_ACCOUNT_ID, LOCKED_CF_API_TOKEN } from "./services/account-lock";
 
 // Custom event for template refresh
 const TEMPLATE_REFRESH_EVENT = 'lp-template-refresh';
@@ -147,25 +147,21 @@ export default function App() {
             ]);
 
             if (neonSettings && Object.keys(neonSettings).length > 0) {
-              // CRITICAL: Validate and sanitize Neon settings before applying
-              const validation = validateSettingsAccount(neonSettings);
-              if (!validation.valid) {
-                console.error('[CRITICAL] Neon database contains invalid Cloudflare account:', validation);
-                // Force sanitize to prevent account drift
-                const sanitized = sanitizeSettings(neonSettings);
-                setSettings(prev => {
-                  const merged = { ...prev, ...sanitized };
-                  LS.set("settings", merged);
-                  return merged;
-                });
-              } else {
-                // Neon is the absolute source of truth, but we merge to preserve local defaults/env
-                setSettings(prev => {
-                  const merged = { ...prev, ...neonSettings };
-                  LS.set("settings", merged);
-                  return merged;
-                });
-              }
+              // CRITICAL: Auto-recover ALL settings from Neon
+              console.log('[boot] 🔄 Neon connected! Auto-recovering settings...');
+
+              // Use auto-recovery to merge and sanitize
+              const recovered = autoRecoverSettings(neonSettings, localSettings);
+
+              // Apply recovered settings
+              setSettings(prev => {
+                const merged = { ...prev, ...recovered };
+                LS.set("settings", merged);
+                console.log('[boot] ✅ Settings recovered from Neon:', Object.keys(merged).filter(k =>
+                  k !== 'cfApiToken' // Don't log token
+                ));
+                return merged;
+              });
             }
 
             // Sites from Neon
@@ -287,9 +283,19 @@ export default function App() {
           ]);
 
           if (neonSettings) {
-            const merged = { ...localSettings, ...neonSettings };
-            setSettings(merged);
-            LS.set("settings", merged);
+            // Auto-recover ALL settings from Neon
+            console.log('[Neon Recovery] 🔄 Auto-recovering settings...');
+            const recovered = autoRecoverSettings(neonSettings, localSettings);
+
+            // Check for incomplete settings
+            const completenessCheck = detectIncompleteSettings(recovered);
+            if (completenessCheck.isIncomplete) {
+              console.warn('[Neon Recovery] ⚠️ Settings may be incomplete:', completenessCheck.missingCritical);
+            }
+
+            setSettings(recovered);
+            LS.set("settings", recovered);
+            console.log('[Neon Recovery] ✅ Settings recovered');
           }
 
           if (neonSites?.length > 0) {

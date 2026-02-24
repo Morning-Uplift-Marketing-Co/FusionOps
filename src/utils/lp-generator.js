@@ -1,4 +1,4 @@
-import { COLORS, FONTS, RADIUS, LOAN_TYPES } from "../constants";
+import { COLORS, FONTS, RADIUS, LOAN_TYPES } from "../constants/index.js";
 
 function esc(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');

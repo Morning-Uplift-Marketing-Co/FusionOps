@@ -92,24 +92,45 @@ export function validateSettingsAccount(settings) {
 }
 
 /**
- * Sanitize settings by forcing locked account values
+ * Sanitize settings by forcing locked critical values
+ * This prevents configuration drift when Neon disconnects or localStorage gets corrupted
  * @param {object} settings - Settings object to sanitize
- * @returns {object} Sanitized settings with locked account enforced
+ * @returns {object} Sanitized settings with locked values enforced
  */
 export function sanitizeSettings(settings) {
   const sanitized = { ...settings };
 
-  // ALWAYS enforce the locked account ID
+  // CRITICAL: ALWAYS enforce the locked Cloudflare account
   sanitized.cfAccountId = LOCKED_CF_ACCOUNT_ID;
-
-  // ALWAYS enforce the locked API token
   sanitized.cfApiToken = LOCKED_CF_API_TOKEN;
+
+  // CRITICAL: ALWAYS enforce Neon URL (from environment)
+  // This prevents losing Neon connection when dashboard disconnects
+  if (typeof window !== 'undefined' && window.IMPORT_META_ENV) {
+    const envNeonUrl = window.IMPORT_META_ENV.VITE_NEON_URL ||
+                       window.IMPORT_META_ENV.NEON_DATABASE_URL;
+    if (envNeonUrl && envNeonUrl.includes('@')) {
+      sanitized.neonUrl = envNeonUrl;
+      console.log('[AccountLock] Enforced Neon URL from environment');
+    }
+  }
+
+  // CRITICAL: ALWAYS enforce Voluum credentials (prevent losing tracking)
+  if (typeof window !== 'undefined' && window.IMPORT_META_ENV) {
+    if (window.IMPORT_META_ENV.VITE_VOLUUM_ACCESS_KEY_ID) {
+      sanitized.voluumKeyId = window.IMPORT_META_ENV.VITE_VOLUUM_ACCESS_KEY_ID;
+    }
+    if (window.IMPORT_META_ENV.VITE_VOLUUM_ACCESS_KEY) {
+      sanitized.voluumKey = window.IMPORT_META_ENV.VITE_VOLUUM_ACCESS_KEY;
+    }
+  }
 
   // Remove any legacy account references
   if (sanitized.d1AccountId === LEGACY_CF_ACCOUNT_ID) {
     delete sanitized.d1AccountId;
   }
 
+  console.log('[AccountLock] Settings sanitized - critical values locked');
   return sanitized;
 }
 
@@ -253,4 +274,121 @@ export function clearStaleAccountData() {
     console.error('[AccountLock] Failed to clear stale data:', error);
     return false;
   }
+}
+
+/**
+ * Auto-recover settings from Neon when connection is restored
+ * This ensures that when Neon reconnects, ALL settings are pulled back
+ * and any missing values from localStorage are restored
+ *
+ * @param {object} neonSettings - Settings from Neon database
+ * @param {object} localStorageSettings - Current localStorage settings
+ * @returns {object} Merged and sanitized settings
+ */
+export function autoRecoverSettings(neonSettings, localStorageSettings = {}) {
+  if (!neonSettings || typeof neonSettings !== 'object') {
+    console.warn('[AccountLock] No Neon settings to recover from');
+    return sanitizeSettings(localStorageSettings);
+  }
+
+  console.log('[AccountLock] 🔧 Auto-recovering settings from Neon...');
+  console.log('[AccountLock] Neon keys:', Object.keys(neonSettings));
+  console.log('[AccountLock] LocalStorage keys:', Object.keys(localStorageSettings));
+
+  // Priority: Neon > Environment > LocalStorage > Default
+  // But ALWAYS enforce locked account values
+  const recovered = {
+    // Start with all Neon settings
+    ...neonSettings,
+
+    // Fill in missing values from localStorage
+    ...Object.fromEntries(
+      Object.entries(localStorageSettings).filter(([key]) => !(key in neonSettings))
+    ),
+  };
+
+  // CRITICAL: Always enforce locked values
+  const sanitized = sanitizeSettings(recovered);
+
+  console.log('[AccountLock] ✅ Settings recovered and sanitized');
+  console.log('[AccountLock] Final keys:', Object.keys(sanitized).filter(k =>
+    k !== 'cfApiToken' // Don't log token
+  ));
+
+  return sanitized;
+}
+
+/**
+ * Check if settings are incomplete (missing critical values)
+ * This helps identify when a Neon disconnect caused data loss
+ *
+ * @param {object} settings - Settings to check
+ * @returns {object} { isIncomplete, missingKeys, recommendations }
+ */
+export function detectIncompleteSettings(settings) {
+  if (!settings || typeof settings !== 'object') {
+    return {
+      isIncomplete: true,
+      missingKeys: ['all'],
+      recommendations: ['Reconnect to Neon to restore settings']
+    };
+  }
+
+  // Critical settings that should always be present
+  const criticalKeys = [
+    'cfAccountId',
+    'cfApiToken',
+    'neonUrl',
+  ];
+
+  // Important but optional settings
+  const optionalKeys = [
+    'voluumKeyId',
+    'voluumKey',
+    'vpsHost',
+    'vpsPath',
+    'vpsUser',
+  ];
+
+  const missingCritical = [];
+  const missingOptional = [];
+
+  criticalKeys.forEach(key => {
+    if (!settings[key]) {
+      missingCritical.push(key);
+    }
+  });
+
+  optionalKeys.forEach(key => {
+    // Only check if it was previously set (has localStorage record)
+    const localValue = localStorage.getItem('settings');
+    if (localValue) {
+      try {
+        const parsed = JSON.parse(localValue);
+        if (parsed[key] && !settings[key]) {
+          missingOptional.push(key);
+        }
+      } catch (e) {
+        // Ignore parse errors
+      }
+    }
+  });
+
+  const isIncomplete = missingCritical.length > 0;
+
+  const recommendations = [];
+  if (missingCritical.length > 0) {
+    recommendations.push(`Critical settings missing: ${missingCritical.join(', ')}`);
+    recommendations.push('Reconnect to Neon to restore settings');
+  }
+  if (missingOptional.length > 0) {
+    recommendations.push(`Optional settings missing: ${missingOptional.join(', ')}`);
+  }
+
+  return {
+    isIncomplete,
+    missingCritical,
+    missingOptional,
+    recommendations,
+  };
 }
