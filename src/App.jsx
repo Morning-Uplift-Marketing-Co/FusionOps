@@ -118,6 +118,20 @@ export default function App() {
     }
   }, [settings]);
 
+  // CRITICAL: Sync sites to ops.domains whenever sites change
+  // This ensures DeploySection always has access to current sites
+  useEffect(() => {
+    if (sites && sites.length > 0) {
+      setOps(prev => {
+        // Only update if domains actually changed
+        if (JSON.stringify(prev.domains) !== JSON.stringify(sites)) {
+          return { ...prev, domains: sites };
+        }
+        return prev;
+      });
+    }
+  }, [sites]);
+
   async function bootApp() {
     const localSettings = LS.get("settings") || {};
 
@@ -171,11 +185,24 @@ export default function App() {
                 templateId: s.templateId || "classic"
               }));
               setSites(migratedSites);
+
+              // CRITICAL: Sync sites to ops.domains for DeploySection
+              setOps(prev => ({
+                ...prev,
+                domains: migratedSites
+              }));
             } else {
               // Only sync if Neon is totally empty
               const localSites = LS.get("sites") || [];
               if (localSites.length > 0) {
                 setSites(localSites);
+
+                // CRITICAL: Sync sites to ops.domains for DeploySection
+                setOps(prev => ({
+                  ...prev,
+                  domains: localSites
+                }));
+
                 db.syncFromLocal(localSettings, localSites, []);
               }
             }
