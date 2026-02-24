@@ -152,19 +152,27 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
                 addLog(`Cloudflare account: ${maskedCf}`);
             }
 
-            // Build the HTML
+            // Build the HTML - Returns assets object with both / and /apply.html
             addLog("Building landing page...");
-            const html = await buildHtmlForDomain(domain);
+            const assets = await buildHtmlForDomain(domain);
             addLog("HTML built successfully ✓");
 
-            // Generate apply page and attach as extra file
+            // Add apply page to assets (if not already included)
             const applyHtml = generateApplyPageByTemplate(domain);
-            const domainWithFiles = { ...domain, _extraFiles: { "/apply.html": applyHtml } };
+            if (!assets["/apply.html"]) {
+                assets["/apply.html"] = applyHtml;
+            }
             addLog(`Built apply.html (${applyHtml.length} bytes) ✓`);
+            addLog(`Total files to deploy: ${Object.keys(assets).length}`);
 
-            // Deploy
+            // Log all files for debugging
+            Object.keys(assets).forEach(key => {
+                addLog(`  - ${key} (${assets[key].length} bytes)`);
+            });
+
+            // Deploy - pass assets directly (deployTo will handle it)
             addLog(`Deploying to ${targetInfo.label}...`);
-            const result = await deployTo(selectedTarget, html, domainWithFiles, effectiveSettings);
+            const result = await deployTo(selectedTarget, assets, domain, effectiveSettings);
 
             clearInterval(progressInterval);
             setDeployProgress(100);
