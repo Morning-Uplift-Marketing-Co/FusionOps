@@ -72,6 +72,27 @@ export function TemplateRegistry({ selectedId, onSelect, readonly = false }) {
                         template={tpl}
                         selected={selectedId === tpl.id}
                         onClick={() => !readonly && onSelect?.(tpl.id)}
+                        onDelete={!readonly && tpl.source === 'api' ? async (e) => {
+                            e.stopPropagation();
+                            const confirmName = window.prompt(`Are you sure you want to delete this template?\nType "${tpl.name}" to confirm:`);
+                            if (confirmName !== tpl.name) {
+                                if (confirmName !== null) alert("Template name did not match. Deletion cancelled.");
+                                return;
+                            }
+                            try {
+                                const { api } = await import('../services/api.js');
+                                const { clearCustomTemplatesCache, getAllTemplatesAsync } = await import('../utils/template-registry.js');
+                                const res = await api.del(`/templates/${tpl.dbId || tpl.id}`);
+                                if (res.error) {
+                                    alert(res.error);
+                                } else {
+                                    clearCustomTemplatesCache();
+                                    getAllTemplatesAsync().then(setTemplates);
+                                }
+                            } catch (err) {
+                                alert("Failed to delete template: " + err.message);
+                            }
+                        } : undefined}
                     />
                 ))}
             </div>
@@ -109,7 +130,7 @@ export function TemplateRegistry({ selectedId, onSelect, readonly = false }) {
     );
 }
 
-function TemplateCard({ template, selected, onClick }) {
+function TemplateCard({ template, selected, onClick, onDelete }) {
     const category = TEMPLATE_CATEGORIES[template.source];
     const hasClick = !!onClick;
 
@@ -148,7 +169,7 @@ function TemplateCard({ template, selected, onClick }) {
                             fontSize: 9,
                             fontWeight: 700,
                             padding: "3px 6px",
-                            background: selected ? T.primary : T.card3,
+                            background: selected ? T.primary : T.card2,
                             color: selected ? "#fff" : T.muted,
                             border: `1px solid ${selected ? T.primary : T.border}`,
                             borderRadius: 4,
@@ -160,13 +181,41 @@ function TemplateCard({ template, selected, onClick }) {
                         fontSize: 9,
                         fontWeight: 600,
                         padding: "3px 6px",
-                        background: `${category?.color}15`,
-                        color: category?.color,
+                        background: `${category?.color || T.primary}15`,
+                        color: category?.color || T.primary,
                         borderRadius: 4,
                         textTransform: "uppercase",
                     }}>
                         {template.source}
                     </span>
+                    {onDelete && (
+                        <button
+                            onClick={onDelete}
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                width: 22,
+                                height: 22,
+                                padding: 0,
+                                margin: 0,
+                                marginLeft: 4,
+                                background: "rgba(239, 68, 68, 0.1)",
+                                color: "#ef4444",
+                                border: "1px solid rgba(239, 68, 68, 0.2)",
+                                borderRadius: 4,
+                                cursor: "pointer",
+                                transition: "all 0.15s",
+                            }}
+                            title="Delete Template"
+                        >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M3 6h18"></path>
+                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                            </svg>
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -237,7 +286,7 @@ export function TemplateSelector({ value, onChange, size = "md" }) {
                                 <span style={{
                                     fontSize: 9,
                                     padding: "2px 5px",
-                                    background: value === tpl.id ? T.primary : T.card3,
+                                    background: value === tpl.id ? T.primary : T.card2,
                                     color: value === tpl.id ? "#fff" : T.muted,
                                     borderRadius: 3,
                                     whiteSpace: "nowrap",

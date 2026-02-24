@@ -66,37 +66,66 @@ const TEMPLATE_ALIASES = {
 let customTemplatesCache = null;
 let customTemplatesLoading = false;
 
+let customTemplatesPromise = null;
+
 /**
  * Fetch custom templates from API
  * @param {boolean} force - Force refetch even if cache exists
  */
 export async function fetchCustomTemplates(force = false) {
   if (customTemplatesCache && !force) return customTemplatesCache;
-  if (customTemplatesLoading) return [];
+  if (customTemplatesPromise && !force) return customTemplatesPromise;
 
-  customTemplatesLoading = true;
-  try {
-    const response = await api.get('/templates');
-    if (response && Array.isArray(response)) {
-      customTemplatesCache = response.map(t => ({
-        id: t.template_id,
-        dbId: t.id,
-        name: t.name,
-        description: t.description,
-        badge: t.badge || 'Custom',
-        category: t.category || 'custom',
-        source: 'api',
-        sourceCode: t.source_code,
-        files: t.files ? JSON.parse(t.files) : {},
-      }));
-      return customTemplatesCache;
+  customTemplatesPromise = (async () => {
+    customTemplatesLoading = true;
+    try {
+      const response = await api.get('/templates');
+      console.log("[Registry] Custom Templates fetch complete:", response);
+      if (response && Array.isArray(response)) {
+        customTemplatesCache = response.map(t => ({
+          id: t.template_id || t.id,
+          dbId: t.id,
+          name: t.name,
+          description: t.description,
+          badge: t.badge || 'Custom',
+          category: t.category || 'custom',
+          source: 'api',
+          sourceCode: t.source_code,
+          files: t.files ? (typeof t.files === 'string' ? JSON.parse(t.files) : t.files) : {},
+          createdAt: t.created_at,
+        }));
+        return customTemplatesCache;
+      }
+      return [];
+    } catch (e) {
+      console.warn('Failed to fetch custom templates:', e.message);
+      return [];
+    } finally {
+      customTemplatesLoading = false;
+      customTemplatesPromise = null;
     }
+  })();
+
+  return customTemplatesPromise;
+}
+
+/**
+ * Delete a template from the database
+ * @param {string} dbId - The UUID of the template in the database
+ */
+export async function deleteTemplate(dbId) {
+  try {
+    const res = await api.del(`/templates/${dbId}`);
+    if (res && res.success) {
+      clearCustomTemplatesCache();
+      await fetchCustomTemplates(true);
+      return true;
+    }
+    return false;
   } catch (e) {
-    console.warn('Failed to fetch custom templates:', e.message);
-  } finally {
-    customTemplatesLoading = false;
+    console.error('Delete template error:', e);
+    throw e;
   }
-  return [];
 }
 
 /**
@@ -105,6 +134,13 @@ export async function fetchCustomTemplates(force = false) {
 export function clearCustomTemplatesCache() {
   customTemplatesCache = null;
   customTemplatesLoading = false;
+}
+
+/**
+ * Get the current custom templates cache
+ */
+export function getCustomTemplatesCache() {
+  return customTemplatesCache;
 }
 
 /**
@@ -149,15 +185,17 @@ export function getTemplateById(id) {
 
   // Check custom templates from API (when cache is populated)
   if (customTemplatesCache) {
-    const custom = customTemplatesCache.find(t => t.id === resolvedId);
+    const custom = customTemplatesCache.find(t => t.id === resolvedId || t.dbId === resolvedId);
     if (custom) {
       return {
         id: custom.id,
+        dbId: custom.dbId,
         name: custom.name,
         description: custom.description,
         badge: custom.badge || 'Custom',
         category: custom.category,
         source: 'api',
+        files: custom.files,
       };
     }
   }

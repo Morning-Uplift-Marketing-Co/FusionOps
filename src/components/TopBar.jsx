@@ -1,12 +1,17 @@
 import React from "react";
 import { THEME as T } from "../constants";
 import { Dot } from "./ui/dot";
-import { ThemeToggle } from "./ui/theme-toggle";
+import { ChangelogViewer } from "./ChangelogViewer";
 
 export function TopBar({ stats, settings, deploys, apiOk, neonOk, onReconnectNeon }) {
     const voluumOk = !!(
         (settings?.voluumAccessKeyId && settings?.voluumAccessKey) ||
         (import.meta.env.PUBLIC_VOLUUM_ACCESS_KEY_ID && import.meta.env.PUBLIC_VOLUUM_ACCESS_KEY)
+    );
+    const lcOk = !!(
+        settings?.lcToken ||
+        import.meta.env.PUBLIC_LENDINGCARD_API_TOKEN ||
+        import.meta.env.VITE_LENDINGCARD_TOKEN
     );
 
     return (
@@ -19,7 +24,7 @@ export function TopBar({ stats, settings, deploys, apiOk, neonOk, onReconnectNeo
                 Deployed: <b className="text-[hsl(var(--foreground))]">{deploys?.length || 0}</b>
             </div>
             <div className="flex items-center gap-3">
-                <ThemeToggle />
+                <ChangelogViewer />
                 <Dot c={neonOk ? T.success : T.warning} label={neonOk ? "Neon ✓" : apiOk ? "API ✓" : "Local"} />
                 {!neonOk && settings.neonUrl && (
                     <button
@@ -33,7 +38,7 @@ export function TopBar({ stats, settings, deploys, apiOk, neonOk, onReconnectNeo
                 {settings.netlifyToken && <Dot c={T.success} label="Netlify" />}
                 <Dot c={settings.apiKey ? T.success : T.danger} label={settings.apiKey ? "AI OK" : "No AI"} />
                 <Dot c={voluumOk ? T.success : T.dim} label={voluumOk ? "Voluum ✓" : "Voluum"} />
-                <Dot c={import.meta.env.PUBLIC_LENDINGCARD_API_TOKEN ? T.success : T.dim} label={import.meta.env.PUBLIC_LENDINGCARD_API_TOKEN ? "LC ✓" : "LC"} />
+                <Dot c={lcOk ? T.success : T.dim} label={lcOk ? "LC ✓" : "LC"} />
                 <Dot c={settings.mlToken ? T.success : T.dim} label={settings.mlToken ? "ML ✓" : "ML"} />
             </div>
         </div>

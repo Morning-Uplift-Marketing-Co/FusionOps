@@ -92,9 +92,30 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
             return;
         }
 
+        // CRITICAL: Account validation guard - Block deployment if using wrong account
+        const domainCfAccountId = domain.cfAccountId || domain.cf_account_id;
+
+        // Validate both global settings and domain-specific account IDs
+        const globalValidation = validateAccountId(settings.cfAccountId);
+        const domainValidation = domainCfAccountId ? validateAccountId(domainCfAccountId) : { valid: true };
+
+        if (!globalValidation.valid || !domainValidation.valid) {
+            const errors = [];
+            if (!globalValidation.valid) errors.push(`Global: ${globalValidation.error}`);
+            if (!domainValidation.valid) errors.push(`Domain: ${domainValidation.error}`);
+
+            onStatusMessage?.(`🚨 DEPLOYMENT BLOCKED - Account mismatch`, "error");
+            addLog(`❌ Account validation failed:`);
+            errors.forEach(e => addLog(`   • ${e}`));
+
+            if (globalValidation.critical || domainValidation.critical) {
+                addLog(`🚨 CRITICAL: Legacy account detected`);
+            }
+            return;
+        }
+
         // Resolve Cloudflare credentials for this specific domain first,
         // then fall back to global Settings values.
-        const domainCfAccountId = domain.cfAccountId || domain.cf_account_id;
         const linkedCfAccount = cfAccounts.find(a =>
             a.id === domainCfAccountId ||
             a.accountId === domainCfAccountId ||

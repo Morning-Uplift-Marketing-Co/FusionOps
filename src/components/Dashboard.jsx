@@ -1,13 +1,13 @@
-import React, { useMemo, useState } from "react";
-import { THEME as T, COLORS, APP_VERSION } from "../constants";
+import { useMemo, useState } from "react";
+import { THEME as T, COLORS } from "../constants";
 import { hsl } from "../utils";
 import { detectRisks } from "../utils/risk-engine";
-import { Dot } from "./ui/dot";
+
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
+
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
-import { BarChart, Bar, LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
+import { BarChart, Bar, LineChart, Line, ResponsiveContainer } from "recharts";
 
 /* ── mock data for charts ── */
 const SUB_DATA = [

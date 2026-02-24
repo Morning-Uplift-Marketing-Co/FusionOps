@@ -1,4 +1,3 @@
-import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 
@@ -31,7 +30,6 @@ export function DailyLogTab({ dailyData }) {
                         <TableRow>
                             <TableHead>Date</TableHead>
                             <TableHead>Account</TableHead>
-                            <TableHead>Domain</TableHead>
                             <TableHead className="text-right">Spend</TableHead>
                             <TableHead className="text-right">VAT 7%</TableHead>
                             <TableHead className="text-right">LC Fee</TableHead>
@@ -41,15 +39,17 @@ export function DailyLogTab({ dailyData }) {
                     </TableHeader>
                     <TableBody>
                         {rows.map((r, i) => {
-                            const pl = r.revenue - r.spend - r.vat - r.lcFee;
+                            const spend = r.spend || 0;
+                            const vat = r.vat || (spend * 0.07);
+                            const lcFee = r.lcFee || (spend * 0.035);
+                            const pl = r.revenue - spend - vat - lcFee;
                             return (
                                 <TableRow key={i}>
                                     <TableCell className="font-medium">{r.date}</TableCell>
-                                    <TableCell>{r.account}</TableCell>
-                                    <TableCell className="text-[hsl(var(--muted-foreground))]">{r.domain}</TableCell>
-                                    <TableCell className="text-right font-mono">{fmt(r.spend)}</TableCell>
-                                    <TableCell className="text-right font-mono text-[hsl(var(--muted-foreground))]">{fmt(r.vat)}</TableCell>
-                                    <TableCell className="text-right font-mono text-[hsl(var(--muted-foreground))]">{fmt(r.lcFee)}</TableCell>
+                                    <TableCell>{r.account || "—"}</TableCell>
+                                    <TableCell className="text-right font-mono">{fmt(spend)}</TableCell>
+                                    <TableCell className="text-right font-mono text-[hsl(var(--muted-foreground))]">{fmt(vat)}</TableCell>
+                                    <TableCell className="text-right font-mono text-[hsl(var(--muted-foreground))]">{fmt(lcFee)}</TableCell>
                                     <TableCell className="text-right font-mono text-emerald-600 dark:text-emerald-400">{fmt(r.revenue)}</TableCell>
                                     <TableCell className={`text-right font-mono font-semibold ${pl >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                                         {pl >= 0 ? '+' : ''}{fmt(pl)}

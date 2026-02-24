@@ -1120,8 +1120,18 @@ export default {
 
       // ═══ TEMPLATES ═══
       if (path === '/api/templates' && method === 'GET') {
-        const { results } = await db.prepare('SELECT * FROM templates ORDER BY created_at DESC').all();
-        return json(results);
+        try {
+          const { results } = await db.prepare('SELECT * FROM templates WHERE is_deleted = 0 ORDER BY created_at DESC').all();
+          return json(results);
+        } catch (e) {
+          if (e.message?.includes("no such column")) {
+            await db.prepare('ALTER TABLE templates ADD COLUMN is_deleted INTEGER DEFAULT 0').run();
+            const { results } = await db.prepare('SELECT * FROM templates WHERE is_deleted = 0 ORDER BY created_at DESC').all();
+            return json(results);
+          }
+          const { results } = await db.prepare('SELECT * FROM templates ORDER BY created_at DESC').all();
+          return json(results);
+        }
       }
 
       if (path === '/api/templates' && method === 'POST') {
@@ -1135,20 +1145,28 @@ export default {
           return json({ error: 'Template ID already exists' }, 400);
         }
 
-        await db.prepare(`
-          INSERT INTO templates (id, template_id, name, description, category, badge, source_code, files, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).bind(
-          id,
-          body.templateId || '',
-          body.name || '',
-          body.description || '',
-          body.category || 'general',
-          body.badge || 'New',
-          body.sourceCode || '',
-          body.files ? JSON.stringify(body.files) : '{}',
-          now
-        ).run();
+        try {
+          await db.prepare(`
+            INSERT INTO templates (id, template_id, name, description, category, badge, source_code, files, created_at, is_deleted)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+            `).bind(
+            id, body.templateId || '', body.name || '', body.description || '', body.category || 'general',
+            body.badge || 'New', body.sourceCode || '', body.files ? JSON.stringify(body.files) : '{}', now
+          ).run();
+        } catch (e) {
+          if (e.message?.includes("no such column")) {
+            await db.prepare('ALTER TABLE templates ADD COLUMN is_deleted INTEGER DEFAULT 0').run();
+            await db.prepare(`
+                INSERT INTO templates (id, template_id, name, description, category, badge, source_code, files, created_at, is_deleted)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+               `).bind(
+              id, body.templateId || '', body.name || '', body.description || '', body.category || 'general',
+              body.badge || 'New', body.sourceCode || '', body.files ? JSON.stringify(body.files) : '{}', now
+            ).run();
+          } else {
+            throw e;
+          }
+        }
         return json({ id, success: true }, 201);
       }
 
@@ -1161,12 +1179,33 @@ export default {
 
       if (path.match(/^\/api\/templates\/[\w-]+$/) && method === 'DELETE') {
         const id = path.split('/').pop();
-        await db.prepare('DELETE FROM templates WHERE id = ?').bind(id).run();
+
+        // Dependency Check - check the sites table to see if any site uses this ID
+        // The frontend saves templateId into 'template' or 'config' but we'll try matching 'template' = id
+        try {
+          const sites = await db.prepare('SELECT count(*) as c FROM sites WHERE template = ? OR template_id = ?').bind(id, id).first();
+          if (sites && sites.c > 0) {
+            return json({ error: `Cannot delete template. It is in use by ${sites.c} active site(s).` }, 400);
+          }
+        } catch (e) {
+          // Ignore if sites table doesn't have template_id etc.
+        }
+
+        try {
+          await db.prepare('UPDATE templates SET is_deleted = 1 WHERE id = ?').bind(id).run();
+        } catch (e) {
+          if (e.message?.includes("no such column")) {
+            await db.prepare('ALTER TABLE templates ADD COLUMN is_deleted INTEGER DEFAULT 0').run();
+            await db.prepare('UPDATE templates SET is_deleted = 1 WHERE id = ?').bind(id).run();
+          } else {
+            throw e;
+          }
+        }
         return json({ success: true });
       }
 
       // ═══ OPS: DOMAINS ═══
-      if (path === '/api/ops/domains' && method === 'GET') {
+      if (path == '/api/ops/domains' && method === 'GET') {
         const { results } = await db.prepare('SELECT * FROM ops_domains ORDER BY created_at DESC').all();
         return json(results);
       }
@@ -1982,6 +2021,18 @@ export default {
         return json(data, res.status);
       }
 
+      if (path.match(/^\/api\/lc\/cards\/[\w-]+$/) && method === 'GET') {
+        const lc = await getLcSettings(db);
+        if (!lc.lcToken) return json({ error: 'LeadingCards token not configured' }, 400);
+        const parts = path.split('/');
+        const uuid = parts.pop();
+        const res = await fetch(`https://app.leadingcards.media/v1/cards/${uuid}/`, {
+          headers: { 'Authorization': `Token ${lc.lcToken}`, 'Content-Type': 'application/json' },
+        });
+        const data = await res.json();
+        return json(data, res.status);
+      }
+
       if (path === '/api/lc/cards' && method === 'POST') {
         const lc = await getLcSettings(db);
         if (!lc.lcToken) return json({ error: 'LeadingCards token not configured' }, 400);
@@ -2791,7 +2842,7 @@ export default {
         const res = await fetch('https://api.multilogin.com/profile/create', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ml.mlToken}` },
-          body: JSON.stringify(body),
+          body: JSON.stringifcodexy(body),
         });
         const data = await res.json();
         return json({

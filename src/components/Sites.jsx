@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { THEME as T, COLORS } from "../constants";
 import { LS, uid, now, hsl } from "../utils";
 import { makeThemeJson, htmlToZip, astroProjectToZip } from "../utils/lp-generator";
-import { generateHtmlByTemplate, generateAstroProjectByTemplate, generateApplyPageByTemplate } from "../utils/template-router";
+import { generateHtmlByTemplate, generateAstroProjectByTemplate, generateApplyPageByTemplate, generateDeployAssetsByTemplate } from "../utils/template-router";
 
 import { deployTo, DEPLOY_TARGETS, getAvailableTargets, checkDeployStatus, deleteProject } from "../utils/deployers";
 import { InputField as Inp } from "./ui/input-field";
@@ -159,6 +159,12 @@ export function Sites({ sites, del, notify, startCreate, settings, addDeploy, op
         notify(`Deleted ${site.brand}`);
     };
 
+    const handlePolicyChange = (site, status) => {
+        updateSite({ ...site, policyStatus: status });
+        setEditingPolicySite(null);
+        notify(`Updated policy for ${site.brand} to ${status}`);
+    };
+
     const handleDeploy = async (site, target) => {
         setOpenDeploy(null);
         setDeploying({ siteId: site.id, target });
@@ -184,18 +190,21 @@ export function Sites({ sites, del, notify, startCreate, settings, addDeploy, op
                 content = { ...astroFiles, "apply.html": applyHtml };
                 console.log("[Sites] Generated astro files count:", Object.keys(content).length);
             } else {
-                // Single-file HTML deploy for other targets
-                console.log("[Sites] Using non-git-push target, calling generateHtmlByTemplate");
-                const mainHtml = generateHtmlByTemplate(site);
+                // Deploy edge compatible asset maps
+                console.log("[Sites] Using non-git-push target, calling generateDeployAssetsByTemplate");
+                const assets = generateDeployAssetsByTemplate(site);
                 const applyHtml = generateApplyPageByTemplate(site);
-                // Create multi-file content with both index.html and apply.html
-                content = {
-                    "index.html": mainHtml,
-                    "apply.html": applyHtml
-                };
+
+                // If assets is a string (legacy behavior from single-file html router)
+                if (typeof assets === "string") {
+                    content = {
+                        "index.html": assets,
+                        "apply.html": applyHtml
+                    };
+                } else {
+                    content = { ...assets, "apply.html": applyHtml };
+                }
                 console.log("[Sites] Generated content keys:", Object.keys(content));
-                console.log("[Sites] Main HTML length:", mainHtml?.length || 0);
-                console.log("[Sites] Apply HTML length:", applyHtml?.length || 0);
             }
 
             console.log("[Sites] Calling deployTo with target:", target);

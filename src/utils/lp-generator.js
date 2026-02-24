@@ -269,7 +269,7 @@ export function generatePDLLoansV1Preview(site) {
     <div style="display:inline-block;font-size:12px;font-weight:800;padding:4px 10px;border-radius:999px;background:#F3F4F6;color:#6B7280;margin-bottom:6px">❓ FAQ</div>
     <h2 style="margin:6px 0 4px;font-weight:900">Frequently Asked Questions</h2>
     <p style="color:#6B7280;margin:0 0 8px">Everything you need to know about installment loans</p>
-    ${["How fast can I be approved?","What documents do I need to apply?","Can I qualify if I have fair credit?","Will checking my options affect my credit score?","Are there fees or prepayment penalties?"].map(q=>`<details><summary>${q}<span>▼</span></summary><div style=\"color:#6B7280;margin-top:6px\">Answer coming soon. Placeholder content.</div></details>`).join('')}
+    ${["How fast can I be approved?", "What documents do I need to apply?", "Can I qualify if I have fair credit?", "Will checking my options affect my credit score?", "Are there fees or prepayment penalties?"].map(q => `<details><summary>${q}<span>▼</span></summary><div style=\"color:#6B7280;margin-top:6px\">Answer coming soon. Placeholder content.</div></details>`).join('')}
   </div></section>
 
   <section class="sec gray"><div class="container" style="text-align:center">
@@ -397,7 +397,18 @@ h1 span{color:hsl(var(--secondary))}
 </html>`;
 }
 
-export function generateLP(site) {
+import { getTemplateById } from "./template-registry.js";
+import { renderTemplateToAssets } from "./template-router.js";
+
+export async function generateLP(site) {
+  // Check if it's a custom template first
+  const customT = getTemplateById(site.template);
+  if (customT && customT.source === 'api') {
+    console.log("[Generator] Using custom API template:", customT.id);
+    const assets = renderTemplateToAssets(customT, site);
+    return assets;
+  }
+
   const c = COLORS.find(x => x.id === site.colorId) || COLORS[0];
   const f = FONTS.find(x => x.id === site.fontId) || FONTS[0];
   const r = RADIUS.find(x => x.id === site.radius) || RADIUS[2];

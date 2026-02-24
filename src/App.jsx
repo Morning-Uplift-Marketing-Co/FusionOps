@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { api } from "./services/api";
 import * as db from "./services/neon";
 import { THEME as T, WIZARD_DEFAULTS } from "./constants";
 import { uid, now, LS } from "./utils";
 import { refreshCustomTemplates } from "./utils/template-router";
+import { sanitizeSettings, validateSettingsAccount, LOCKED_CF_ACCOUNT_ID, LOCKED_CF_API_TOKEN } from "./services/account-lock";
 
 // Custom event for template refresh
 const TEMPLATE_REFRESH_EVENT = 'lp-template-refresh';
@@ -23,6 +24,8 @@ import { TemplateEditor } from "./components/TemplateEditor";
 import { TemplateGeneratorModal } from "./components/TemplateGenerator";
 import { ErrorLog, logError } from "./components/ErrorLog";
 import { SpendDashboard } from "./components/SpendDashboard";
+import { AccountMap } from "./components/AccountMap";
+import { AccountVerificationBanner } from "./components/ui/AccountVerificationBanner";
 
 // Neon connection string — stored in settings or hardcoded for now
 const NEON_URL = import.meta.env.VITE_NEON_URL || "";
@@ -31,7 +34,15 @@ export default function App() {
   const [page, setPage] = useState("dashboard");
   const [sites, setSites] = useState([]);
   const [ops, setOps] = useState({ domains: [], accounts: [], cfAccounts: [], registrarAccounts: [], profiles: [], payments: [], logs: [], risks: [] });
-  const [settings, setSettings] = useState(() => LS.get("settings") || {});
+  const [settings, setSettings] = useState(() => {
+    // CRITICAL: Enforce locked account on initialization to prevent fallback
+    const localSettings = LS.get("settings") || {};
+    const sanitized = sanitizeSettings(localSettings);
+    LS.set("settings", sanitized);
+    return sanitized;
+  });
+  const [accountMismatch, setAccountMismatch] = useState(null);
+  const [showAccountBanner, setShowAccountBanner] = useState(false);
   const [stats, setStats] = useState({ builds: 0, spend: 0 });
   const [toast, setToast] = useState(null);
   const [wizData, setWizData] = useState(null);
@@ -83,6 +94,30 @@ export default function App() {
     }
   }, [settings.neonUrl, neonOk]);
 
+  // CRITICAL: Account Validation Effect - Runs on every settings change
+  useEffect(() => {
+    if (settings?.cfAccountId) {
+      const validation = validateSettingsAccount(settings);
+      if (!validation.valid) {
+        console.error('[CRITICAL] Account validation failed:', validation);
+        setAccountMismatch(validation);
+        setShowAccountBanner(true);
+
+        // If critical legacy account detected, auto-fix immediately
+        if (validation.errors.some(e => e.critical)) {
+          console.warn('[CRITICAL] Auto-fixing critical account mismatch...');
+          const sanitized = sanitizeSettings(settings);
+          setSettings(sanitized);
+          LS.set("settings", sanitized);
+          setShowAccountBanner(false);
+        }
+      } else {
+        setAccountMismatch(null);
+        setShowAccountBanner(false);
+      }
+    }
+  }, [settings]);
+
   async function bootApp() {
     const localSettings = LS.get("settings") || {};
 
@@ -112,12 +147,25 @@ export default function App() {
             ]);
 
             if (neonSettings && Object.keys(neonSettings).length > 0) {
-              // Neon is the absolute source of truth, but we merge to preserve local defaults/env
-              setSettings(prev => {
-                const merged = { ...prev, ...neonSettings };
-                LS.set("settings", merged);
-                return merged;
-              });
+              // CRITICAL: Validate and sanitize Neon settings before applying
+              const validation = validateSettingsAccount(neonSettings);
+              if (!validation.valid) {
+                console.error('[CRITICAL] Neon database contains invalid Cloudflare account:', validation);
+                // Force sanitize to prevent account drift
+                const sanitized = sanitizeSettings(neonSettings);
+                setSettings(prev => {
+                  const merged = { ...prev, ...sanitized };
+                  LS.set("settings", merged);
+                  return merged;
+                });
+              } else {
+                // Neon is the absolute source of truth, but we merge to preserve local defaults/env
+                setSettings(prev => {
+                  const merged = { ...prev, ...neonSettings };
+                  LS.set("settings", merged);
+                  return merged;
+                });
+              }
             }
 
             // Sites from Neon
@@ -317,85 +365,6 @@ export default function App() {
     else if (apiOk) await api.put(`/sites/${site.id}`, updatedSite).catch(() => { });
   };
 
-  // Quick fix function to update templateId
-  const updateSiteTemplate = async (siteId, newTemplateId) => {
-    const site = sites.find(s => s.id === siteId);
-    if (!site) return false;
-
-    const updatedSite = { ...site, templateId: newTemplateId, updatedAt: now() };
-    setSites(p => p.map(s => s.id === siteId ? updatedSite : s));
-
-    if (neonOk) {
-      const success = await db.saveSite(updatedSite);
-      if (success) {
-        // Force refresh from database to ensure UI sync
-        const freshSites = await db.loadSites();
-        if (freshSites) {
-          setSites(freshSites);
-        }
-        notify(`Template updated to ${newTemplateId}!`);
-        return true;
-      }
-    }
-    return false;
-  };
-
-  // Force refresh sites from database
-  const refreshSitesFromDB = async () => {
-    if (neonOk) {
-      const freshSites = await db.loadSites();
-      if (freshSites) {
-        setSites(freshSites);
-        console.log("[App] Sites refreshed from database");
-        // Debug: show templateId for PlainGreenLoans2026
-        const targetSite = freshSites.find(s => s.id === "d28533");
-        if (targetSite) {
-          console.log("[App] PlainGreenLoans2026 templateId in DB:", targetSite.templateId);
-        }
-        return true;
-      }
-    }
-    return false;
-  };
-
-  // Force update templateId with debug
-  const forceUpdateTemplate = async (siteId, newTemplateId) => {
-    console.log(`[App] Force updating ${siteId} to ${newTemplateId}`);
-
-    if (neonOk) {
-      // Get current site data
-      const currentSites = await db.loadSites();
-      const currentSite = currentSites?.find(s => s.id === siteId);
-
-      if (currentSite) {
-        console.log("[App] Current site data:", {
-          id: currentSite.id,
-          templateId: currentSite.templateId,
-          brand: currentSite.brand
-        });
-
-        // Update with new templateId
-        const updatedSite = { ...currentSite, templateId: newTemplateId, updatedAt: now() };
-        const success = await db.saveSite(updatedSite);
-
-        if (success) {
-          console.log(`[App] ✅ Template updated to ${newTemplateId}`);
-
-          // Verify the update
-          const verifySites = await db.loadSites();
-          const verifySite = verifySites?.find(s => s.id === siteId);
-          console.log("[App] Verification - templateId now:", verifySite?.templateId);
-
-          // Refresh UI
-          setSites(verifySites || []);
-          notify(`Template force updated to ${newTemplateId}!`);
-          return true;
-        }
-      }
-    }
-    return false;
-  };
-
   const delSite = (id) => {
     // Find the site before deleting (to match domain in ops)
     const site = sites.find(s => s.id === id);
@@ -416,25 +385,6 @@ export default function App() {
     }
 
     notify("Deleted", "danger");
-  };
-
-  const updSite = async (id, updates) => {
-    let updatedSite = null;
-    setSites(prev => prev.map(site => {
-      if (site.id !== id) return site;
-      updatedSite = { ...site, ...updates };
-      return updatedSite;
-    }));
-
-    if (!updatedSite) return;
-
-    if (neonOk) {
-      await db.saveSite(updatedSite).catch(() => { });
-    } else if (apiOk) {
-      await api.put(`/sites/${id}`, updates).catch(() => { });
-    }
-
-    notify("Site updated");
   };
 
   const addDeploy = (d) => {
@@ -526,7 +476,6 @@ export default function App() {
 
   const handleSaveSettings = async (s) => {
     // Use functional update to avoid stale closure
-    let next;
     setSettings(prev => {
       const merged = { ...(prev || {}), ...s };
       return merged;
@@ -596,6 +545,16 @@ export default function App() {
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'Inter','DM Sans',system-ui,sans-serif" }}>
       {toast && <Toast msg={toast.msg} type={toast.type} />}
 
+      {/* CRITICAL: Account Verification Banner - Shows on account mismatch */}
+      <AccountVerificationBanner
+        settings={settings}
+        onSettingsFixed={() => {
+          setPage("settings");
+          setShowAccountBanner(false);
+        }}
+        onDismiss={() => setShowAccountBanner(false)}
+      />
+
       <Sidebar page={page} setPage={setPage} siteCount={sites.length} startCreate={startCreate} startTemplateGen={() => setTemplateGenOpen(true)}
         collapsed={sideCollapsed} toggle={() => setSideCollapsed(p => !p)} />
 
@@ -604,6 +563,7 @@ export default function App() {
         <div style={{ padding: "24px 28px" }}>
           {page === "dashboard" && <Dashboard sites={sites} stats={stats} ops={ops} setPage={setPage} startCreate={startCreate} settings={settings} apiOk={apiOk} neonOk={neonOk} />}
           {page === "spend" && <SpendDashboard apiOk={apiOk} neonOk={neonOk} />}
+          {page === "account-map" && <AccountMap apiOk={apiOk} neonOk={neonOk} ops={ops} />}
           {page === "sites" && <Sites sites={sites} del={delSite} notify={notify} startCreate={startCreate} settings={settings} addDeploy={addDeploy} ops={ops} updateSite={updateSite} />}
           {page === "template-editor" && <TemplateEditor notify={notify} />}
           {page === "create" && wizData && <Wizard config={wizData} setConfig={setWizData} addSite={addSite} setPage={setPage} settings={settings} notify={notify} />}
@@ -633,7 +593,8 @@ export default function App() {
             });
 
             if (response.error) {
-              notify(`Error saving template: ${response.error}`, 'error');
+              const detail = response.detail ? (typeof response.detail === 'string' ? response.detail : JSON.stringify(response.detail)) : '';
+              notify(`Error saving template: ${response.error}${detail ? ' - ' + detail : ''}`, 'error');
             } else {
               notify(`Template "${templateData.templateName}" saved successfully!`, 'success');
               // Refresh both caches so new template appears in selector
@@ -650,6 +611,7 @@ export default function App() {
         templates={[]} // Pass available templates if needed
       />
 
+      {/* CRITICAL: Account Validation Effect - Runs on every settings change */}
       <style>{`
         @keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
         @keyframes fadeIn{from{opacity:0}to{opacity:1}}

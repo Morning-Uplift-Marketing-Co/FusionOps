@@ -5,6 +5,9 @@ export const leadingCardsApi = {
         const query = new URLSearchParams(params).toString();
         return api.get(`/lc/cards${query ? '?' + query : ''}`);
     },
+    async getCardDetail(uuid) {
+        return api.get(`/lc/cards/${uuid}`);
+    },
     async createCard(cardData) {
         return api.post('/lc/cards', cardData);
     },
@@ -29,8 +32,12 @@ export const leadingCardsApi = {
     async getTags() {
         return api.get('/lc/tags');
     },
-    async getTransactions(fromDate) {
-        return api.get(`/lc/transactions${fromDate ? '?from_date=' + fromDate : ''}`);
+    async getTransactions(fromDate, toDate) {
+        const params = new URLSearchParams();
+        if (fromDate) params.set('from_date', fromDate);
+        if (toDate) params.set('to_date', toDate);
+        const qs = params.toString();
+        return api.get(`/lc/transactions${qs ? '?' + qs : ''}`);
     },
     async getTeams() {
         return api.get('/lc/teams');

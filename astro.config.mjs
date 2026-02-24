@@ -15,7 +15,7 @@ export default defineConfig({
         '/api': {
           target: API_BASE.replace(/\/api$/, ''),
           changeOrigin: true,
-          secure: true,
+          secure: false,
         },
       },
       headers: {
@@ -26,7 +26,7 @@ export default defineConfig({
           "style-src 'self' 'unsafe-inline'",
           "img-src 'self' data: https:",
           "font-src 'self' data:",
-          "connect-src 'self' https:",
+          "connect-src 'self' https: http: ws: wss:",
           "frame-ancestors 'none'",
         ].join('; '),
         'X-Content-Type-Options': 'nosniff',

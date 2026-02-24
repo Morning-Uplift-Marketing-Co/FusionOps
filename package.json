@@ -17,7 +17,9 @@
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:ui": "playwright test --ui",
     "test:report": "playwright show-report",
-    "deploy:org": "node scripts/deploy-org.js"
+    "deploy:org": "node scripts/deploy-org.js",
+    "pack-template": "node scripts/pack-template.mjs",
+    "convert-template": "node scripts/convert-template.mjs"
   },
   "dependencies": {
     "@astrojs/react": "^4.2.0",
@@ -27,8 +29,11 @@
     "astro": "^5.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dotenv": "^17.3.1",
+    "install": "^0.13.0",
     "jszip": "^3.10.1",
     "lucide-react": "^0.575.0",
+    "node-fetch": "^3.3.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "recharts": "^3.7.0",

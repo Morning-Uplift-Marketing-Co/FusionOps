@@ -6,7 +6,6 @@ import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { InputField as Inp } from "./ui/input-field";
-import { cn } from "../lib/utils";
 import { leadingCardsApi } from "../services/leadingCards";
 import { multiloginApi } from "../services/multilogin";
 import { detectRisks, RISK_ICONS, RISK_COLORS } from "../utils/risk-engine";
@@ -14,7 +13,7 @@ import registrarApi from "../services/registrar";
 import cloudflareDns from "../services/cloudflare-dns";
 import { DeployTab } from "../components/OpsCenter/deploy/DeployTab.jsx";
 import { api } from "../services/api";
-import { query, execute, testConnection, getTables } from "../services/d1";
+import { query, testConnection, getTables } from "../services/d1";
 import { getDeploymentHistory } from "../utils/deployers";
 
 /* ─── Shared inline styles ───────────────────────────────────────────── */
@@ -175,7 +174,7 @@ function D1DatabaseTab() {
                     </thead>
                     <tbody>
                         {data.map((row, i) => (
-                            <tr key={i} style={{ borderBottom: `1px solid ${T.border22}` }}>
+                            <tr key={i} style={{ borderBottom: `1px solid ${T.border}22` }}>
                                 {columns.map(col => (
                                     <td key={col} style={{
                                         padding: "6px 12px",
@@ -322,9 +321,13 @@ export function OpsCenter({ data, add, del, upd, settings }) {
     const [lcCards, setLcCards] = useState([]);
     const [lcBins, setLcBins] = useState([]);
     const [lcAddresses, setLcAddresses] = useState([]);
+    const [lcTags, setLcTags] = useState([]);
     const [mlProfiles, setMlProfiles] = useState([]);
     const [lcLoading, setLcLoading] = useState(false);
     const [mlLoading, setMlLoading] = useState(false);
+    const [txDateFrom, setTxDateFrom] = useState(() => new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10));
+    const [txDateTo, setTxDateTo] = useState(() => new Date().toISOString().slice(0, 10));
+    const [txLoading, setTxLoading] = useState(false);
 
     /* ─── New state (Tasks 7-12) ─────────────────────────────────────── */
     const [lcFilter, setLcFilter] = useState("");
@@ -342,6 +345,8 @@ export function OpsCenter({ data, add, del, upd, settings }) {
     const [domainDeployMap, setDomainDeployMap] = useState({});
     const [domainCfFilter, setDomainCfFilter] = useState("all");
     const [compactDomainView, setCompactDomainView] = useState(false);
+    const [expandedCard, setExpandedCard] = useState(null); // card uuid
+    const [linkingProfile, setLinkingProfile] = useState({}); // { cardUuid: profileId }
 
     /* ─── Flash a status message for 3s ──────────────────────────────── */
     const flash = (msg, type = "success") => {
@@ -439,12 +444,14 @@ export function OpsCenter({ data, add, del, upd, settings }) {
             Promise.all([
                 leadingCardsApi.getCards(),
                 leadingCardsApi.getBins(),
-                leadingCardsApi.getBillingAddresses()
-            ]).then(([cardsRes, binsRes, addrRes]) => {
+                leadingCardsApi.getBillingAddresses(),
+                leadingCardsApi.getTags()
+            ]).then(([cardsRes, binsRes, addrRes, tagsRes]) => {
                 if (cancelled) return;
                 setLcCards(cardsRes.results || []);
                 setLcBins(binsRes || []);
                 setLcAddresses(addrRes.results || []);
+                setLcTags(Array.isArray(tagsRes) ? tagsRes : (tagsRes.tags || tagsRes.results || []));
             }).catch(() => { })
                 .finally(() => { if (!cancelled) setLcLoading(false); });
         }
@@ -544,6 +551,26 @@ export function OpsCenter({ data, add, del, upd, settings }) {
     const refreshCards = () => leadingCardsApi.getCards().then(res => setLcCards(res.results || []));
     const refreshProfiles = () => multiloginApi.getProfiles().then(res => setMlProfiles(res.data?.profiles || res || []));
 
+    const handleMapProfile = async (cardUuid, profileId) => {
+        const existing = (data.accounts || []).find(acc => acc.cardUuid === cardUuid);
+        const profile = mlProfiles.find(p => (p.uuid || p.id) === profileId);
+
+        if (existing) {
+            await upd("accounts", existing.id, { ...existing, profileId, profileName: profile?.name || profile?.label });
+        } else {
+            const card = lcCards.find(c => c.uuid === cardUuid);
+            await add("accounts", {
+                id: Date.now().toString(),
+                cardUuid,
+                profileId,
+                accountName: card?.comment || `Account ${card?.card_last_4}`,
+                profileName: profile?.name || profile?.label,
+                status: 'ACTIVE'
+            });
+        }
+        flash("Card-Profile mapping saved!");
+    };
+
     /* ─── Risk detection via engine ──────────────────────────────────── */
     const risks = useMemo(() => {
         // Build proper payments array from lcCards for risk engine
@@ -621,7 +648,7 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                         </div>
                     ))}
                     <div style={S.btnRow}>
-                        <Button variant="ghost"  onClick={() => setModal(null)}>Cancel</Button>
+                        <Button variant="ghost" onClick={() => setModal(null)}>Cancel</Button>
                         <Button onClick={() => {
                             if (onSubmit) { onSubmit(form); }
                             else { add(coll, { id: uid(), ...form, status: "active", createdAt: now() }); }
@@ -753,8 +780,8 @@ export function OpsCenter({ data, add, del, upd, settings }) {
             {tab === "domains" && <>
                 <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
                     <Button onClick={() => setModal("domain-check")}>🔍 Check & Register</Button>
-                    <Button variant="ghost"  onClick={() => setModal("domain-import")}>📥 Import from Registrar</Button>
-                    <Button variant="ghost"  onClick={() => setModal("domain-add-existing")}>+ Add Existing Domain</Button>
+                    <Button variant="ghost" onClick={() => setModal("domain-import")}>📥 Import from Registrar</Button>
+                    <Button variant="ghost" onClick={() => setModal("domain-add-existing")}>+ Add Existing Domain</Button>
                 </div>
 
                 <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
@@ -866,8 +893,6 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                     const [registering, setRegistering] = useState(false);
                     const [selectedRegistrar, setSelectedRegistrar] = useState("internetbs");
                     const [selectedCfAccount, setSelectedCfAccount] = useState("");
-                    const [zoneId, setZoneId] = useState(null);
-                    const [nameservers, setNameservers] = useState([]);
                     const [error, setError] = useState(null);
 
                     const handleCheck = async () => {
@@ -918,9 +943,6 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                                     if (zoneResult.success) {
                                         finalZoneId = zoneResult.zoneId;
                                         finalNameservers = zoneResult.nameservers || [];
-                                        setZoneId(finalZoneId);
-                                        setNameservers(finalNameservers);
-
                                         // Update nameservers at registrar
                                         await registrarApi.updateNameservers(domain, finalNameservers, selectedRegistrar);
                                     } else {
@@ -972,7 +994,7 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                                         </div>
                                     )}
                                     <div style={S.btnRow}>
-                                        <Button variant="ghost"  onClick={() => setModal(null)}>Cancel</Button>
+                                        <Button variant="ghost" onClick={() => setModal(null)}>Cancel</Button>
                                         {available === true ? (
                                             <Button onClick={() => setStep(2)}>Next →</Button>
                                         ) : (
@@ -1024,7 +1046,7 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                                     </div>
 
                                     <div style={S.btnRow}>
-                                        <Button variant="ghost"  onClick={() => setStep(1)}>← Back</Button>
+                                        <Button variant="ghost" onClick={() => setStep(1)}>← Back</Button>
                                         <Button onClick={handleRegister} disabled={registering || !selectedCfAccount || !selectedRegistrar}>
                                             {registering ? "Registering..." : "Register & Setup"}
                                         </Button>
@@ -1109,7 +1131,7 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                                 )}
 
                                 <div style={S.btnRow}>
-                                    <Button variant="ghost"  onClick={() => setModal(null)}>Close</Button>
+                                    <Button variant="ghost" onClick={() => setModal(null)}>Close</Button>
                                     <Button onClick={handleImport} disabled={importing || !selectedRegistrarAccount}>{importing ? "Importing..." : "Import"}</Button>
                                 </div>
                             </Card>
@@ -1380,7 +1402,7 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                                     ) : (
                                         <div style={{ fontSize: 11, color: T.dim }}>Not set</div>
                                     )}
-                                    <Button variant="ghost"  onClick={handleUpdateNameservers} disabled={updatingNs} style={{ marginTop: 8, fontSize: 11 }}>
+                                    <Button variant="ghost" onClick={handleUpdateNameservers} disabled={updatingNs} style={{ marginTop: 8, fontSize: 11 }}>
                                         {updatingNs ? "Updating..." : "Update Nameservers"}
                                     </Button>
                                 </div>
@@ -1422,16 +1444,16 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                                         {acct.cardUuid ? (
                                             <span>
                                                 💳 ****{acct.cardLast4 || linkedCard?.card_last_4 || "?"}{" "}
-                                                <Badge style={{ background: `${
-                                                    (acct.cardStatus || linkedCard?.status) === "ACTIVE" ? T.success
+                                                <Badge style={{
+                                                    background: `${(acct.cardStatus || linkedCard?.status) === "ACTIVE" ? T.success
                                                         : (acct.cardStatus || linkedCard?.status) === "BLOCKED" ? T.danger : T.warning
-                                                }18`, color: 
-                                                    (acct.cardStatus || linkedCard?.status) === "ACTIVE" ? T.success
+                                                        }18`, color:
+                                                        (acct.cardStatus || linkedCard?.status) === "ACTIVE" ? T.success
+                                                            : (acct.cardStatus || linkedCard?.status) === "BLOCKED" ? T.danger : T.warning
+                                                    , border: `1px solid ${(acct.cardStatus || linkedCard?.status) === "ACTIVE" ? T.success
                                                         : (acct.cardStatus || linkedCard?.status) === "BLOCKED" ? T.danger : T.warning
-                                                , border: `1px solid ${
-                                                    (acct.cardStatus || linkedCard?.status) === "ACTIVE" ? T.success
-                                                        : (acct.cardStatus || linkedCard?.status) === "BLOCKED" ? T.danger : T.warning
-                                                }44` }}>{acct.cardStatus || linkedCard?.status || "?"}</Badge>
+                                                        }44`
+                                                }}>{acct.cardStatus || linkedCard?.status || "?"}</Badge>
                                             </span>
                                         ) : <span style={{ color: T.dim }}>No card</span>}
                                     </div>
@@ -1566,7 +1588,7 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                                         </select>
                                     </div>
                                     <div style={S.btnRow}>
-                                        <Button variant="ghost"  onClick={() => setModal(null)}>Cancel</Button>
+                                        <Button variant="ghost" onClick={() => setModal(null)}>Cancel</Button>
                                         <Button onClick={() => {
                                             const selectedCard = lcCards.find(c => c.uuid === form.cardUuid);
                                             const updates = {
@@ -1627,7 +1649,7 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                 {/* Action buttons */}
                 <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
                     <Button onClick={() => setModal("mlx-create")}>+ Create Profile</Button>
-                    <Button variant="ghost"  onClick={async () => {
+                    <Button variant="ghost" onClick={async () => {
                         setSyncing(true);
                         try {
                             const res = await multiloginApi.syncProfiles();
@@ -1637,11 +1659,11 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                         } catch (e) { flash(`Sync failed: ${e.message}`, "error"); }
                         finally { setSyncing(false); }
                     }}>{syncing ? "Syncing..." : "\uD83D\uDD04 Sync from MLX"}</Button>
-                    <Button variant="ghost"  onClick={() => {
+                    <Button variant="ghost" onClick={() => {
                         setMlLoading(true);
                         refreshProfiles().finally(() => setMlLoading(false));
                     }} style={{ fontSize: 11 }}>↻ Refresh</Button>
-                    <Button variant="destructive"  onClick={async () => {
+                    <Button variant="destructive" onClick={async () => {
                         if (!confirm("Stop all running profiles?")) return;
                         const running = mlProfiles.filter(p => p.status === "running" || p.status === "started");
                         for (const p of running) {
@@ -1701,7 +1723,7 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                                         </div>
                                         <div style={{ flex: 1.5, display: "flex", gap: 3, justifyContent: "flex-end" }}>
                                             {isRunning ? (
-                                                <Button variant="destructive"  onClick={() => {
+                                                <Button variant="destructive" onClick={() => {
                                                     multiloginApi.stopProfile(pid).then(() => {
                                                         refreshProfiles();
                                                         flash("Profile stopped");
@@ -1717,13 +1739,13 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                                                     }).catch(e => flash(`Start failed: ${e.message}`, "error"));
                                                 }} style={S.miniBtn}>Start</Button>
                                             )}
-                                            <Button variant="ghost"  onClick={() => {
+                                            <Button variant="ghost" onClick={() => {
                                                 multiloginApi.cloneProfile(pid).then(() => {
                                                     refreshProfiles();
                                                     flash("Profile cloned");
                                                 }).catch(e => flash(`Clone failed: ${e.message}`, "error"));
                                             }} style={S.miniBtn}>Clone</Button>
-                                            <Button variant="ghost"  onClick={() => {
+                                            <Button variant="ghost" onClick={() => {
                                                 if (!confirm(`Delete profile "${p.name || pid}"?`)) return;
                                                 const folderId = p.folder_id || settings.mlFolderId || "";
                                                 multiloginApi.deleteProfiles([pid], folderId).then(() => {
@@ -1837,7 +1859,7 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                                     </div>
 
                                     <div style={S.btnRow}>
-                                        <Button variant="ghost"  onClick={() => setModal(null)}>Cancel</Button>
+                                        <Button variant="ghost" onClick={() => setModal(null)}>Cancel</Button>
                                         <Button disabled={creating} onClick={async () => {
                                             setCreating(true);
                                             try {
@@ -1901,7 +1923,7 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                     <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                         <Button onClick={() => setModal("lc-card")}>+ Create Card</Button>
-                        <Button variant="ghost"  onClick={() => {
+                        <Button variant="ghost" onClick={() => {
                             setLcLoading(true);
                             refreshCards().finally(() => setLcLoading(false));
                         }} style={{ fontSize: 11 }}>🔄 Refresh</Button>
@@ -1909,7 +1931,6 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                     <div style={{ fontSize: 13, fontWeight: 600 }}>LeadingCards Management</div>
                 </div>
 
-                {/* Filter bar (Task 7) */}
                 <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
                     {[
                         { label: "All", value: "" },
@@ -1922,114 +1943,187 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                     ))}
                 </div>
 
-                {/* Card list */}
                 {lcLoading ? <div style={S.emptyState}>Loading cards...</div> : (
                     <div style={{ marginTop: 8 }}>
                         {filteredCards.length === 0
                             ? <div style={S.emptyState}>{lcFilter ? `No ${lcFilter} cards` : "No cards yet"}</div>
-                            : filteredCards.map(card => (
-                                <div key={card.uuid} style={S.row}>
-                                    {/* Card info */}
-                                    <div style={{ flex: 2, fontWeight: 600, fontSize: 12 }}>
-                                        💳 **** {card.card_last_4} <span style={{ fontWeight: 400, color: T.muted }}>({card.brand || "VCC"})</span>
-                                    </div>
-                                    {/* Limit */}
-                                    <div style={{ flex: 1.2, fontSize: 11 }}>
-                                        {changingLimit && changingLimit.uuid === card.uuid ? (
-                                            <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-                                                <Inp value={changingLimit.value} onChange={v => setChangingLimit({ ...changingLimit, value: v })} type="number"
-                                                    style={{ width: 70, padding: "3px 6px", fontSize: 11 }} />
-                                                <button onClick={async () => {
-                                                    try {
-                                                        await leadingCardsApi.changeLimit(card.uuid, parseFloat(changingLimit.value));
-                                                        await refreshCards();
-                                                        flash("Limit updated");
-                                                    } catch (e) { flash(`Failed: ${e.message}`, "error"); }
-                                                    setChangingLimit(null);
-                                                }} style={{ background: T.success, border: "none", color: "#fff", borderRadius: 4, padding: "2px 6px", fontSize: 10, cursor: "pointer" }}>OK</button>
-                                                <button onClick={() => setChangingLimit(null)} style={{ background: "transparent", border: "none", color: T.dim, cursor: "pointer", fontSize: 10 }}>X</button>
+                            : filteredCards.map(card => {
+                                const cardTags = [];
+                                if (card.tags) {
+                                    const tagsArr = Array.isArray(card.tags) ? card.tags : [card.tags];
+                                    tagsArr.forEach(t => {
+                                        if (t && t.name) cardTags.push(t.name);
+                                        else if (typeof t === 'string') {
+                                            const found = lcTags.find(lt => lt.uuid === t);
+                                            if (found) cardTags.push(found.name);
+                                        }
+                                    });
+                                }
+                                return (
+                                    <React.Fragment key={card.uuid}>
+                                        <div
+                                            style={{ ...S.row, flexWrap: "wrap", cursor: "pointer", borderLeft: expandedCard === card.uuid ? `3px solid ${T.primary}` : "3px solid transparent" }}
+                                            onClick={(e) => {
+                                                if (e.target.closest('button') || e.target.closest('input')) return;
+                                                setExpandedCard(expandedCard === card.uuid ? null : card.uuid);
+                                            }}
+                                        >
+                                            <div style={{ flex: 2, fontWeight: 600, fontSize: 12 }}>
+                                                <span style={{ marginRight: 8 }}>{expandedCard === card.uuid ? "▼" : "▶"}</span>
+                                                💳 **** {card.card_last_4} <span style={{ fontWeight: 400, color: T.muted }}>({card.brand || "VCC"})</span>
+                                                {card.comment && <div style={{ fontWeight: 400, fontSize: 10, color: T.accent, marginTop: 2 }}>{card.comment}</div>}
                                             </div>
-                                        ) : (
-                                            <span style={{ cursor: "pointer" }} onClick={() => setChangingLimit({ uuid: card.uuid, value: card.limit || "" })}>
-                                                ${card.limit} {card.currency}
-                                            </span>
+                                            <div style={{ flex: 1.5, display: "flex", gap: 3, flexWrap: "wrap", alignItems: "center" }}>
+                                                {cardTags.length > 0 ? cardTags.map(tag => (
+                                                    <span key={tag} style={{ fontSize: 9, padding: "1px 6px", borderRadius: 4, background: `${T.primary}18`, color: T.primaryH, border: `1px solid ${T.primary}33` }}>{tag}</span>
+                                                )) : <span style={{ fontSize: 9, color: T.dim }}>No tags</span>}
+                                            </div>
+                                            <div style={{ flex: 1.2, fontSize: 11 }}>
+                                                {changingLimit && changingLimit.uuid === card.uuid ? (
+                                                    <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                                                        <Inp value={changingLimit.value} onChange={v => setChangingLimit({ ...changingLimit, value: v })} type="number"
+                                                            style={{ width: 70, padding: "3px 6px", fontSize: 11 }} />
+                                                        <button onClick={async () => {
+                                                            try {
+                                                                await leadingCardsApi.changeLimit(card.uuid, parseFloat(changingLimit.value));
+                                                                await refreshCards();
+                                                                flash("Limit updated");
+                                                            } catch (e) { flash(`Failed: ${e.message}`, "error"); }
+                                                            setChangingLimit(null);
+                                                        }} style={{ background: T.success, border: "none", color: "#fff", borderRadius: 4, padding: "2px 6px", fontSize: 10, cursor: "pointer" }}>OK</button>
+                                                        <button onClick={() => setChangingLimit(null)} style={{ background: "transparent", border: "none", color: T.dim, cursor: "pointer", fontSize: 10 }}>X</button>
+                                                    </div>
+                                                ) : (
+                                                    <span style={{ cursor: "pointer" }} onClick={() => setChangingLimit({ uuid: card.uuid, value: card.limit || "" })}>
+                                                        ${card.limit} {card.currency}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div style={{ flex: 0.8 }}>
+                                                <Badge style={{ background: `${card.status === "ACTIVE" ? T.success : card.status === "BLOCKED" ? T.danger : T.warning}18`, color: card.status === "ACTIVE" ? T.success : card.status === "BLOCKED" ? T.danger : T.warning, border: `1px solid ${card.status === "ACTIVE" ? T.success : card.status === "BLOCKED" ? T.danger : T.warning}44` }}>{card.status}</Badge>
+                                            </div>
+                                            <div style={{ display: "flex", gap: 4 }}>
+                                                {card.status === "ACTIVE" ? (
+                                                    <Button variant="ghost" onClick={() => {
+                                                        if (confirm("Block this card?")) {
+                                                            leadingCardsApi.blockCard(card.uuid)
+                                                                .then(() => { refreshCards(); flash("Card blocked"); })
+                                                                .catch(e => flash(`Block failed: ${e.message}`, "error"));
+                                                        }
+                                                    }} style={{ ...S.miniBtn, color: T.danger }}>Block</Button>
+                                                ) : (
+                                                    <Button variant="ghost" onClick={() => {
+                                                        leadingCardsApi.activateCard(card.uuid)
+                                                            .then(() => { refreshCards(); flash("Card activated"); })
+                                                            .catch(e => flash(`Activate failed: ${e.message}`, "error"));
+                                                    }} style={{ ...S.miniBtn, color: T.success }}>Activate</Button>
+                                                )}
+                                                <Button variant="ghost" onClick={() => setChangingLimit({ uuid: card.uuid, value: card.limit || "" })}
+                                                    style={{ ...S.miniBtn, color: T.primary }}>Limit</Button>
+                                            </div>
+                                        </div>
+
+                                        {expandedCard === card.uuid && (
+                                            <div style={{ width: "100%", background: T.card2, padding: 20, borderLeft: `3px solid ${T.primary}`, marginBottom: 8 }}>
+                                                <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+                                                    <div style={{ flex: 1, minWidth: 240 }}>
+                                                        <div style={{ fontSize: 10, fontWeight: 700, marginBottom: 8, color: T.muted }}>Linked MLX Profile</div>
+                                                        {(() => {
+                                                            const accounts = data?.accounts || [];
+                                                            const linked = accounts.find(acc => acc.cardUuid === card.uuid);
+                                                            const currentProfileId = linkingProfile[card.uuid] || linked?.profileId || "";
+                                                            const profiles = Array.isArray(mlProfiles) ? mlProfiles : [];
+                                                            return (
+                                                                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                                                    <select value={currentProfileId} onChange={(e) => setLinkingProfile({ ...linkingProfile, [card.uuid]: e.target.value })} style={S.select}>
+                                                                        <option value="">-- No Profile Linked --</option>
+                                                                        {profiles.map(p => <option key={p.uuid || p.id} value={p.uuid || p.id}>{p.name || p.label || p.uuid}</option>)}
+                                                                    </select>
+                                                                    <div style={{ display: "flex", gap: 6 }}>
+                                                                        <Button size="sm" disabled={!currentProfileId} onClick={() => handleMapProfile(card.uuid, currentProfileId)} style={{ flex: 1 }}>{linked ? "Update Link" : "Link to MLX"}</Button>
+                                                                        {linked && <Button size="sm" variant="ghost" onClick={() => { if (confirm("Remove mapping?")) del("accounts", linked.id); }} style={{ color: T.danger }}>🗑️</Button>}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })()}
+                                                    </div>
+                                                    <div style={{ flex: 1.2 }}>
+                                                        <div style={{ fontSize: 10, fontWeight: 700, marginBottom: 8, color: T.muted }}>Card Info</div>
+                                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                                                            <div style={{ padding: 10, background: `${T.primary}05`, borderRadius: 6, border: `1px solid ${T.border}` }}><div style={{ fontSize: 8, color: T.dim }}>CURRENCY</div><div style={{ fontSize: 11, fontWeight: 600 }}>{card.currency || card.card_bin?.currency || "USD"}</div></div>
+                                                            <div style={{ padding: 10, background: `${T.primary}05`, borderRadius: 6, border: `1px solid ${T.border}` }}><div style={{ fontSize: 8, color: T.dim }}>BIN</div><div style={{ fontSize: 11, fontWeight: 600 }}>{typeof card.card_bin === 'object' ? card.card_bin?.bin : card.card_bin}</div></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         )}
-                                    </div>
-                                    {/* Status */}
-                                    <div style={{ flex: 0.8 }}>
-                                        <Badge style={{ background: `${card.status === "ACTIVE" ? T.success : card.status === "BLOCKED" ? T.danger : T.warning}18`, color: card.status === "ACTIVE" ? T.success : card.status === "BLOCKED" ? T.danger : T.warning, border: `1px solid ${card.status === "ACTIVE" ? T.success : card.status === "BLOCKED" ? T.danger : T.warning}44` }}>{card.status}</Badge>
-                                    </div>
-                                    {/* Actions */}
-                                    <div style={{ display: "flex", gap: 4 }}>
-                                        {card.status === "ACTIVE" ? (
-                                            <Button variant="ghost"  onClick={() => {
-                                                if (confirm("Block this card?")) {
-                                                    leadingCardsApi.blockCard(card.uuid)
-                                                        .then(() => { refreshCards(); flash("Card blocked"); })
-                                                        .catch(e => flash(`Block failed: ${e.message}`, "error"));
-                                                }
-                                            }} style={{ ...S.miniBtn, color: T.danger }}>Block</Button>
-                                        ) : (
-                                            <Button variant="ghost"  onClick={() => {
-                                                leadingCardsApi.activateCard(card.uuid)
-                                                    .then(() => { refreshCards(); flash("Card activated"); })
-                                                    .catch(e => flash(`Activate failed: ${e.message}`, "error"));
-                                            }} style={{ ...S.miniBtn, color: T.success }}>Activate</Button>
-                                        )}
-                                        <Button variant="ghost"  onClick={() => setChangingLimit({ uuid: card.uuid, value: card.limit || "" })}
-                                            style={{ ...S.miniBtn, color: T.primary }}>Limit</Button>
-                                        <Button variant="ghost"  onClick={() => {
-                                            setLcLoading(true);
-                                            refreshCards().finally(() => setLcLoading(false));
-                                        }} style={{ ...S.miniBtn, color: T.muted }}>↻</Button>
-                                    </div>
-                                </div>
-                            ))}
+                                    </React.Fragment>
+                                );
+                            })}
                     </div>
                 )}
 
-                {/* Transactions sub-section (Task 7) */}
                 <div style={{ marginTop: 24 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                        <div style={S.sectionTitle}>Recent Transactions</div>
-                        <Button variant="ghost"  onClick={() => {
-                            const fromDate = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
-                            leadingCardsApi.getTransactions(fromDate)
-                                .then(res => {
-                                    setLcTransactions(res.results || res || []);
-                                    flash(`Loaded ${(res.results || res || []).length} transactions`);
-                                })
-                                .catch(e => flash(`Failed: ${e.message}`, "error"));
-                        }} style={{ fontSize: 11 }}>Load Transactions</Button>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
+                        <div style={S.sectionTitle}>Transactions</div>
+                        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                            <label style={{ fontSize: 10, color: T.muted }}>From</label>
+                            <input type="date" value={txDateFrom} onChange={e => setTxDateFrom(e.target.value)}
+                                style={{ padding: "4px 8px", borderRadius: 6, border: `1px solid ${T.border}`, background: T.input, color: T.text, fontSize: 11 }} />
+                            <label style={{ fontSize: 10, color: T.muted }}>To</label>
+                            <input type="date" value={txDateTo} onChange={e => setTxDateTo(e.target.value)}
+                                style={{ padding: "4px 8px", borderRadius: 6, border: `1px solid ${T.border}`, background: T.input, color: T.text, fontSize: 11 }} />
+                            <Button variant="ghost" disabled={txLoading} onClick={() => {
+                                setTxLoading(true);
+                                leadingCardsApi.getTransactions(txDateFrom, txDateTo)
+                                    .then(res => {
+                                        const txs = res.results || res || [];
+                                        setLcTransactions(txs);
+                                        flash(`Loaded ${txs.length} transactions`);
+                                    })
+                                    .catch(e => flash(`Failed: ${e.message}`, "error"))
+                                    .finally(() => setTxLoading(false));
+                            }} style={{ fontSize: 11 }}>{txLoading ? "Loading..." : "🔍 Load"}</Button>
+                        </div>
                     </div>
                     {lcTransactions.length === 0
-                        ? <div style={{ ...S.emptyState, fontSize: 11 }}>Click "Load Transactions" to fetch recent activity</div>
+                        ? <div style={{ ...S.emptyState, fontSize: 11 }}>Select a date range and click "Load" to fetch transactions</div>
                         : (
                             <div>
-                                {lcTransactions.slice(0, 50).map((tx, i) => (
+                                <div style={{ ...S.row, fontWeight: 700, fontSize: 10, color: T.muted, background: T.card, borderBottom: `1px solid ${T.border}` }}>
+                                    <div style={{ flex: 1.2 }}>Card</div>
+                                    <div style={{ flex: 2 }}>Merchant</div>
+                                    <div style={{ flex: 1 }}>Amount</div>
+                                    <div style={{ flex: 0.7 }}>Currency</div>
+                                    <div style={{ flex: 0.8 }}>Type</div>
+                                    <div style={{ flex: 1.5 }}>Date</div>
+                                </div>
+                                {lcTransactions.slice(0, 100).map((tx, i) => (
                                     <div key={tx.uuid || i} style={{ ...S.row, fontSize: 11 }}>
-                                        <div style={{ flex: 1.5, fontWeight: 600 }}>****{tx.card_last_4 || "\u2014"}</div>
+                                        <div style={{ flex: 1.2, fontWeight: 600 }}>****{tx.card_last_4 || "\u2014"}</div>
                                         <div style={{ flex: 2, color: T.muted }}>{tx.merchant_name || tx.description || "\u2014"}</div>
                                         <div style={{ flex: 1, color: tx.type === "decline" ? T.danger : T.success, fontWeight: 600 }}>
                                             {tx.type === "decline" ? "DECLINED" : `$${tx.amount || 0}`}
                                         </div>
-                                        <div style={{ flex: 1, color: T.dim }}>{tx.currency || ""}</div>
-                                        <div style={{ flex: 1.5, color: T.dim }}>{tx.created_at ? new Date(tx.created_at).toLocaleDateString() : "\u2014"}</div>
+                                        <div style={{ flex: 0.7, color: T.dim }}>{tx.currency || ""}</div>
+                                        <div style={{ flex: 0.8 }}>
+                                            <Badge style={{ fontSize: 9, background: `${tx.type === "decline" ? T.danger : tx.type === "refund" ? T.warning : T.success}18`, color: tx.type === "decline" ? T.danger : tx.type === "refund" ? T.warning : T.success }}>{tx.type || "auth"}</Badge>
+                                        </div>
+                                        <div style={{ flex: 1.5, color: T.dim }}>{tx.created_at ? new Date(tx.created_at).toLocaleString() : "\u2014"}</div>
                                     </div>
                                 ))}
-                                {lcTransactions.length > 50 && <div style={{ textAlign: "center", fontSize: 11, color: T.dim, padding: 8 }}>Showing 50 of {lcTransactions.length}</div>}
+                                {lcTransactions.length > 100 && <div style={{ textAlign: "center", fontSize: 11, color: T.dim, padding: 8 }}>Showing 100 of {lcTransactions.length}</div>}
                             </div>
                         )}
                 </div>
 
-                {/* Create Card modal (Task 7 — cleaned up, no settings params) */}
                 {modal === "lc-card" && (() => {
                     const CreateCardModal = () => {
                         const [form, setForm] = useState({ bin_uuid: "", limit: "10", billing_address_uuid: "", comment: "" });
                         const [creating, setCreating] = useState(false);
                         return (
                             <div style={S.overlay}>
-                                <Card style={{ width: 450, padding: 24, animation: "fadeIn .2s" }}>
+                                <Card style={{ width: 450, padding: 24 }}>
                                     <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>Create New Card</h3>
                                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
                                         <div>
@@ -2056,7 +2150,7 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                                         <Inp value={form.comment} onChange={v => setForm({ ...form, comment: v })} placeholder="google-ads-account-X" />
                                     </div>
                                     <div style={S.btnRow}>
-                                        <Button variant="ghost"  onClick={() => setModal(null)}>Cancel</Button>
+                                        <Button variant="ghost" onClick={() => setModal(null)}>Cancel</Button>
                                         <Button disabled={creating} onClick={async () => {
                                             setCreating(true);
                                             try {
@@ -2088,131 +2182,137 @@ export function OpsCenter({ data, add, del, upd, settings }) {
             {/* ═══════════════════════════════════════════════════════════
                 TAB: RISKS
                 ═══════════════════════════════════════════════════════════ */}
-            {tab === "risks" && (
-                risks.length === 0
-                    ? <Card style={{ textAlign: "center", padding: 40 }}>
-                        <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
-                        <div style={{ fontSize: 14, fontWeight: 600 }}>No risks detected</div>
-                    </Card>
-                    : risks.map((r, i) => (
-                        <Card key={i} style={{ padding: "12px 16px", marginBottom: 6, borderColor: RISK_COLORS[r.level] ? `${RISK_COLORS[r.level]}44` : T.border }}>
-                            <span style={{ marginRight: 6 }}>{RISK_ICONS[r.category] || "⚠️"}</span>
-                            <Badge style={{ background: `${RISK_COLORS[r.level] || T.warning}18`, color: RISK_COLORS[r.level] || T.warning, border: `1px solid ${RISK_COLORS[r.level] || T.warning}44` }}>{r.level}</Badge>
-                            <span style={{ marginLeft: 10, fontSize: 13 }}>{r.msg}</span>
-                            {r.affectedIds && <span style={{ marginLeft: 8, fontSize: 10, color: T.dim }}>({r.affectedIds.length} affected)</span>}
+            {
+                tab === "risks" && (
+                    risks.length === 0
+                        ? <Card style={{ textAlign: "center", padding: 40 }}>
+                            <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
+                            <div style={{ fontSize: 14, fontWeight: 600 }}>No risks detected</div>
                         </Card>
-                    ))
-            )}
+                        : risks.map((r, i) => (
+                            <Card key={i} style={{ padding: "12px 16px", marginBottom: 6, borderColor: RISK_COLORS[r.level] ? `${RISK_COLORS[r.level]}44` : T.border }}>
+                                <span style={{ marginRight: 6 }}>{RISK_ICONS[r.category] || "⚠️"}</span>
+                                <Badge style={{ background: `${RISK_COLORS[r.level] || T.warning}18`, color: RISK_COLORS[r.level] || T.warning, border: `1px solid ${RISK_COLORS[r.level] || T.warning}44` }}>{r.level}</Badge>
+                                <span style={{ marginLeft: 10, fontSize: 13 }}>{r.msg}</span>
+                                {r.affectedIds && <span style={{ marginLeft: 8, fontSize: 10, color: T.dim }}>({r.affectedIds.length} affected)</span>}
+                            </Card>
+                        ))
+                )
+            }
 
             {/* ═══════════════════════════════════════════════════════════
                 TAB: API ACCOUNTS (Cloudflare + Registrar)
                 ═══════════════════════════════════════════════════════════ */}
-            {tab === "api-accounts" && (
-                <div>
-                    {/* Cloudflare Accounts Section */}
-                    <div style={{ marginBottom: 32 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                            <div style={S.sectionTitle}>☁️ Cloudflare Accounts</div>
-                            <Button onClick={() => setModal("cf-account")}>+ Add CF Account</Button>
-                        </div>
-                        {(!data.cfAccounts || data.cfAccounts.length === 0)
-                            ? <div style={{ ...S.emptyState, marginBottom: 16 }}>No Cloudflare accounts yet</div>
-                            : data.cfAccounts.map(cf => (
-                                <div key={cf.id} style={S.row}>
-                                    <div style={{ flex: 2, fontWeight: 600, fontSize: 12 }}>{cf.label || "\u2014"}</div>
-                                    <div style={{ flex: 2, fontSize: 11 }}>{cf.email || "\u2014"}</div>
-                                    <div style={{ flex: 3, fontSize: 11, fontFamily: "monospace" }}>
-                                        {cf.api_key ? `•••${cf.api_key.slice(-4)}` : "\u2014"}
-                                    </div>
-                                    <div style={{ display: "flex", gap: 4 }}>
-                                        <button
-                                            onClick={() => handleTestCfAccount(cf)}
-                                            disabled={testingCfId === cf.id}
-                                            style={{ ...S.miniBtn, background: `${T.success}22`, color: T.success }}
-                                        >
-                                            {testingCfId === cf.id ? "Testing..." : "Test"}
-                                        </button>
-                                        <button onClick={() => setModal({ type: "cf-account-edit", account: cf })}
-                                            style={{ ...S.miniBtn, background: `${T.primary}22`, color: T.primary }}>Edit</button>
-                                        <button onClick={() => {
-                                            if (confirm(`Delete CF account "${cf.label}"?`)) {
-                                                del("cf-accounts", cf.id);
-                                                flash("CF account deleted");
-                                            }
-                                        }} style={{ background: `${T.danger}22`, border: "none", borderRadius: 5, padding: "4px 8px", color: T.danger, cursor: "pointer", fontSize: 10 }}>✕</button>
-                                    </div>
-                                </div>
-                            ))}
-                    </div>
-
-                    {/* Registrar Accounts Section */}
+            {
+                tab === "api-accounts" && (
                     <div>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                            <div style={S.sectionTitle}>🌐 Registrar Accounts</div>
-                            <div style={{ display: "flex", gap: 8 }}>
-                                <Button variant="ghost"  disabled={requestingIp} onClick={handleRequestIp}>
-                                    {requestingIp ? "..." : "Request IP"}
-                                </Button>
-                                <Button onClick={() => { setEditingReg(null); setModal("registrar-account"); }}>+ Add Registrar</Button>
+                        {/* Cloudflare Accounts Section */}
+                        <div style={{ marginBottom: 32 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                                <div style={S.sectionTitle}>☁️ Cloudflare Accounts</div>
+                                <Button onClick={() => setModal("cf-account")}>+ Add CF Account</Button>
                             </div>
+                            {(!data.cfAccounts || data.cfAccounts.length === 0)
+                                ? <div style={{ ...S.emptyState, marginBottom: 16 }}>No Cloudflare accounts yet</div>
+                                : data.cfAccounts.map(cf => (
+                                    <div key={cf.id} style={S.row}>
+                                        <div style={{ flex: 2, fontWeight: 600, fontSize: 12 }}>{cf.label || "\u2014"}</div>
+                                        <div style={{ flex: 2, fontSize: 11 }}>{cf.email || "\u2014"}</div>
+                                        <div style={{ flex: 3, fontSize: 11, fontFamily: "monospace" }}>
+                                            {cf.api_key ? `•••${cf.api_key.slice(-4)}` : "\u2014"}
+                                        </div>
+                                        <div style={{ display: "flex", gap: 4 }}>
+                                            <button
+                                                onClick={() => handleTestCfAccount(cf)}
+                                                disabled={testingCfId === cf.id}
+                                                style={{ ...S.miniBtn, background: `${T.success}22`, color: T.success }}
+                                            >
+                                                {testingCfId === cf.id ? "Testing..." : "Test"}
+                                            </button>
+                                            <button onClick={() => setModal({ type: "cf-account-edit", account: cf })}
+                                                style={{ ...S.miniBtn, background: `${T.primary}22`, color: T.primary }}>Edit</button>
+                                            <button onClick={() => {
+                                                if (confirm(`Delete CF account "${cf.label}"?`)) {
+                                                    del("cf-accounts", cf.id);
+                                                    flash("CF account deleted");
+                                                }
+                                            }} style={{ background: `${T.danger}22`, border: "none", borderRadius: 5, padding: "4px 8px", color: T.danger, cursor: "pointer", fontSize: 10 }}>✕</button>
+                                        </div>
+                                    </div>
+                                ))}
                         </div>
-                        {(!data.registrarAccounts || data.registrarAccounts.length === 0)
-                            ? <div style={S.emptyState}>No registrar accounts yet. Add one to register domains.</div>
-                            : data.registrarAccounts.map(reg => (
-                                <div key={reg.id} style={S.row}>
-                                    <div style={{ flex: 1, fontWeight: 600, fontSize: 12 }}>{reg.label || reg.provider || "\u2014"}</div>
-                                    <div style={{ flex: 1, fontSize: 11 }}>
-                                        <Badge style={{ background: `${T.primary}18`, color: T.primary, border: `1px solid ${T.primary}44` }}>{reg.provider || "internetbs"}</Badge>
-                                    </div>
-                                    <div style={{ flex: 2, fontSize: 11, fontFamily: "monospace" }}>
-                                        {reg.api_key ? `•••${reg.api_key.slice(-4)}` : "\u2014"}
-                                    </div>
-                                    <div style={{ flex: 1, fontSize: 11 }}>
-                                        {reg.status === "active" ? <Badge style={{ background: `${T.success}18`, color: T.success, border: `1px solid ${T.success}44` }}>Active</Badge> : <Badge style={{ background: `${T.dim}18`, color: T.dim, border: `1px solid ${T.dim}44` }}>{reg.status || "\u2014"}</Badge>}
-                                    </div>
-                                    <div style={{ display: "flex", gap: 4 }}>
-                                        <button
-                                            onClick={() => handleTestRegistrarAccount(reg)}
-                                            disabled={testingRegId === reg.id}
-                                            style={{ ...S.miniBtn, background: `${T.success}22`, color: T.success }}
-                                        >
-                                            {testingRegId === reg.id ? "Testing..." : "Test"}
-                                        </button>
-                                        <button
-                                            onClick={() => { setEditingReg(reg); setModal("registrar-account"); }}
-                                            style={{ ...S.miniBtn, background: `${T.primary}22`, color: T.primary, border: "none", borderRadius: 5, cursor: "pointer" }}
-                                        >
-                                            Edit
-                                        </button>
-                                        <button onClick={() => {
-                                            if (confirm(`Delete "${reg.label}"?`)) {
-                                                // Remove via API
-                                                api.del(`/registrar-accounts/${reg.id}`).catch(() => { });
-                                                // Update local state via parent del function
-                                                del("registrar-accounts", reg.id);
-                                                flash("Registrar account deleted");
-                                            }
-                                        }} style={{ background: `${T.danger}22`, border: "none", borderRadius: 5, padding: "4px 8px", color: T.danger, cursor: "pointer", fontSize: 10 }}>{"\u2715"}</button>
-                                    </div>
+
+                        {/* Registrar Accounts Section */}
+                        <div>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                                <div style={S.sectionTitle}>🌐 Registrar Accounts</div>
+                                <div style={{ display: "flex", gap: 8 }}>
+                                    <Button variant="ghost" disabled={requestingIp} onClick={handleRequestIp}>
+                                        {requestingIp ? "..." : "Request IP"}
+                                    </Button>
+                                    <Button onClick={() => { setEditingReg(null); setModal("registrar-account"); }}>+ Add Registrar</Button>
                                 </div>
-                            ))}
+                            </div>
+                            {(!data.registrarAccounts || data.registrarAccounts.length === 0)
+                                ? <div style={S.emptyState}>No registrar accounts yet. Add one to register domains.</div>
+                                : data.registrarAccounts.map(reg => (
+                                    <div key={reg.id} style={S.row}>
+                                        <div style={{ flex: 1, fontWeight: 600, fontSize: 12 }}>{reg.label || reg.provider || "\u2014"}</div>
+                                        <div style={{ flex: 1, fontSize: 11 }}>
+                                            <Badge style={{ background: `${T.primary}18`, color: T.primary, border: `1px solid ${T.primary}44` }}>{reg.provider || "internetbs"}</Badge>
+                                        </div>
+                                        <div style={{ flex: 2, fontSize: 11, fontFamily: "monospace" }}>
+                                            {reg.api_key ? `•••${reg.api_key.slice(-4)}` : "\u2014"}
+                                        </div>
+                                        <div style={{ flex: 1, fontSize: 11 }}>
+                                            {reg.status === "active" ? <Badge style={{ background: `${T.success}18`, color: T.success, border: `1px solid ${T.success}44` }}>Active</Badge> : <Badge style={{ background: `${T.dim}18`, color: T.dim, border: `1px solid ${T.dim}44` }}>{reg.status || "\u2014"}</Badge>}
+                                        </div>
+                                        <div style={{ display: "flex", gap: 4 }}>
+                                            <button
+                                                onClick={() => handleTestRegistrarAccount(reg)}
+                                                disabled={testingRegId === reg.id}
+                                                style={{ ...S.miniBtn, background: `${T.success}22`, color: T.success }}
+                                            >
+                                                {testingRegId === reg.id ? "Testing..." : "Test"}
+                                            </button>
+                                            <button
+                                                onClick={() => { setEditingReg(reg); setModal("registrar-account"); }}
+                                                style={{ ...S.miniBtn, background: `${T.primary}22`, color: T.primary, border: "none", borderRadius: 5, cursor: "pointer" }}
+                                            >
+                                                Edit
+                                            </button>
+                                            <button onClick={() => {
+                                                if (confirm(`Delete "${reg.label}"?`)) {
+                                                    // Remove via API
+                                                    api.del(`/registrar-accounts/${reg.id}`).catch(() => { });
+                                                    // Update local state via parent del function
+                                                    del("registrar-accounts", reg.id);
+                                                    flash("Registrar account deleted");
+                                                }
+                                            }} style={{ background: `${T.danger}22`, border: "none", borderRadius: 5, padding: "4px 8px", color: T.danger, cursor: "pointer", fontSize: 10 }}>{"\u2715"}</button>
+                                        </div>
+                                    </div>
+                                ))}
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* ═══════════════════════════════════════════════════════════
                 TAB: DEPLOY
                 ═══════════════════════════════════════════════════════════ */}
-            {tab === "deploy" && (
-                <DeployTab
-                    data={data}
-                    settings={settings}
-                    add={add}
-                    del={del}
-                    upd={upd}
-                    notify={(msg, type) => flash(msg, type)}
-                />
-            )}
+            {
+                tab === "deploy" && (
+                    <DeployTab
+                        data={data}
+                        settings={settings}
+                        add={add}
+                        del={del}
+                        upd={upd}
+                        notify={(msg, type) => flash(msg, type)}
+                    />
+                )
+            }
 
             {/* ═══════════════════════════════════════════════════════════
                 TAB: D1 DATABASE
@@ -2222,490 +2322,498 @@ export function OpsCenter({ data, add, del, upd, settings }) {
             {/* ═══════════════════════════════════════════════════════════
                 TAB: LOGS
                 ═══════════════════════════════════════════════════════════ */}
-            {tab === "logs" && (
-                data.logs.length === 0
-                    ? <Card style={{ textAlign: "center", padding: 40, color: T.dim }}>No activity yet</Card>
-                    : <Card style={{ padding: 12 }}>
-                        {data.logs.slice(0, 50).map(log => (
-                            <div key={log.id} style={{ padding: "5px 8px", borderBottom: `1px solid ${T.border}`, fontSize: 12, display: "flex", justifyContent: "space-between" }}>
-                                <span style={{ color: T.muted }}>{log.msg}</span>
-                                <span style={{ color: T.dim, fontSize: 10 }}>{new Date(log.ts).toLocaleString()}</span>
-                            </div>
-                        ))}
-                    </Card>
-            )}
+            {
+                tab === "logs" && (
+                    data.logs.length === 0
+                        ? <Card style={{ textAlign: "center", padding: 40, color: T.dim }}>No activity yet</Card>
+                        : <Card style={{ padding: 12 }}>
+                            {data.logs.slice(0, 50).map(log => (
+                                <div key={log.id} style={{ padding: "5px 8px", borderBottom: `1px solid ${T.border}`, fontSize: 12, display: "flex", justifyContent: "space-between" }}>
+                                    <span style={{ color: T.muted }}>{log.msg}</span>
+                                    <span style={{ color: T.dim, fontSize: 10 }}>{new Date(log.ts).toLocaleString()}</span>
+                                </div>
+                            ))}
+                        </Card>
+                )
+            }
 
             {/* ═══════════════════════════════════════════════════════════
                 MODAL: ACCOUNT CREATION WIZARD (Task 11)
                 ═══════════════════════════════════════════════════════════ */}
-            {modal === "wizard" && (() => {
-                const WizardModal = () => {
-                    const [step, setStep] = useState(wizardStep);
-                    const [wd, setWd] = useState(wizardData);
-                    const [busy, setBusy] = useState(false);
-                    const [wizError, setWizError] = useState(null);
-                    const [wizSuccess, setWizSuccess] = useState(false);
+            {
+                modal === "wizard" && (() => {
+                    const WizardModal = () => {
+                        const [step, setStep] = useState(wizardStep);
+                        const [wd, setWd] = useState(wizardData);
+                        const [busy, setBusy] = useState(false);
+                        const [wizError, setWizError] = useState(null);
+                        const [wizSuccess, setWizSuccess] = useState(false);
 
-                    const steps = [
-                        { label: "1. Create Card", icon: "💳" },
-                        { label: "2. Create Profile", icon: "👤" },
-                        { label: "3. Account Details", icon: "💰" },
-                        { label: "4. Review & Create", icon: "🚀" },
-                    ];
+                        const steps = [
+                            { label: "1. Create Card", icon: "💳" },
+                            { label: "2. Create Profile", icon: "👤" },
+                            { label: "3. Account Details", icon: "💰" },
+                            { label: "4. Review & Create", icon: "🚀" },
+                        ];
 
-                    const handleFinish = async () => {
-                        setBusy(true);
-                        setWizError(null);
-                        try {
-                            // Step 1: Create card
-                            let cardRes = null;
-                            if (wd.bin_uuid) {
-                                cardRes = await leadingCardsApi.createCard({
-                                    bin_uuid: wd.bin_uuid,
-                                    limit: parseFloat(wd.card_limit) || 10,
-                                    comment: wd.card_comment || "",
-                                    billing_address_uuid: wd.billing_address_uuid || "",
-                                    amount: 1,
-                                });
-                            }
+                        const handleFinish = async () => {
+                            setBusy(true);
+                            setWizError(null);
+                            try {
+                                // Step 1: Create card
+                                let cardRes = null;
+                                if (wd.bin_uuid) {
+                                    cardRes = await leadingCardsApi.createCard({
+                                        bin_uuid: wd.bin_uuid,
+                                        limit: parseFloat(wd.card_limit) || 10,
+                                        comment: wd.card_comment || "",
+                                        billing_address_uuid: wd.billing_address_uuid || "",
+                                        amount: 1,
+                                    });
+                                }
 
-                            // Step 2: Create profile
-                            let profileRes = null;
-                            if (wd.profile_browser) {
-                                const profileData = {
-                                    browser_type: wd.profile_browser,
-                                    os_type: wd.profile_os || "windows",
-                                    parameters: {
-                                        proxy: wd.proxy_host ? {
-                                            host: wd.proxy_host,
-                                            port: parseInt(wd.proxy_port) || 8080,
-                                            username: wd.proxy_user || "",
-                                            password: wd.proxy_pass || "",
-                                            type: "http",
-                                        } : undefined,
-                                    },
-                                };
-                                profileRes = await multiloginApi.createProfile(profileData);
-                            }
+                                // Step 2: Create profile
+                                let profileRes = null;
+                                if (wd.profile_browser) {
+                                    const profileData = {
+                                        browser_type: wd.profile_browser,
+                                        os_type: wd.profile_os || "windows",
+                                        parameters: {
+                                            proxy: wd.proxy_host ? {
+                                                host: wd.proxy_host,
+                                                port: parseInt(wd.proxy_port) || 8080,
+                                                username: wd.proxy_user || "",
+                                                password: wd.proxy_pass || "",
+                                                type: "http",
+                                            } : undefined,
+                                        },
+                                    };
+                                    profileRes = await multiloginApi.createProfile(profileData);
+                                }
 
-                            // Step 3: Save account to D1
-                            const newCardUuid = cardRes?.uuid || cardRes?.results?.[0]?.uuid || "";
-                            const newProfileId = profileRes?.uuid || profileRes?.id || "";
-                            const refreshedCards = await leadingCardsApi.getCards();
-                            setLcCards(refreshedCards.results || []);
-                            const newCard = (refreshedCards.results || []).find(c => c.uuid === newCardUuid);
+                                // Step 3: Save account to D1
+                                const newCardUuid = cardRes?.uuid || cardRes?.results?.[0]?.uuid || "";
+                                const newProfileId = profileRes?.uuid || profileRes?.id || "";
+                                const refreshedCards = await leadingCardsApi.getCards();
+                                setLcCards(refreshedCards.results || []);
+                                const newCard = (refreshedCards.results || []).find(c => c.uuid === newCardUuid);
 
-                            const localProfileId = uid();
-                            // Save local profile entry
-                            if (newProfileId) {
-                                add("profiles", {
-                                    id: localProfileId,
-                                    name: wd.acct_label ? `Profile - ${wd.acct_label}` : `Profile ${localProfileId}`,
-                                    proxyIp: wd.proxy_host || "",
-                                    browserType: wd.profile_browser || "mimic",
-                                    mlProfileId: newProfileId,
+                                const localProfileId = uid();
+                                // Save local profile entry
+                                if (newProfileId) {
+                                    add("profiles", {
+                                        id: localProfileId,
+                                        name: wd.acct_label ? `Profile - ${wd.acct_label}` : `Profile ${localProfileId}`,
+                                        proxyIp: wd.proxy_host || "",
+                                        browserType: wd.profile_browser || "mimic",
+                                        mlProfileId: newProfileId,
+                                        status: "active",
+                                        createdAt: now(),
+                                    });
+                                }
+
+                                // Save account entry
+                                add("accounts", {
+                                    id: uid(),
+                                    label: wd.acct_label || "New Account",
+                                    email: wd.acct_email || "",
+                                    budget: wd.acct_budget || "",
+                                    cardUuid: newCardUuid,
+                                    cardLast4: newCard?.card_last_4 || "",
+                                    cardStatus: newCard?.status || "",
+                                    profileId: newProfileId ? localProfileId : "",
                                     status: "active",
                                     createdAt: now(),
                                 });
+
+                                await refreshProfiles();
+                                setWizSuccess(true);
+                                flash("Account stack created end-to-end!");
+                            } catch (e) {
+                                setWizError(e.message || "Unknown error");
+                            } finally {
+                                setBusy(false);
                             }
+                        };
 
-                            // Save account entry
-                            add("accounts", {
-                                id: uid(),
-                                label: wd.acct_label || "New Account",
-                                email: wd.acct_email || "",
-                                budget: wd.acct_budget || "",
-                                cardUuid: newCardUuid,
-                                cardLast4: newCard?.card_last_4 || "",
-                                cardStatus: newCard?.status || "",
-                                profileId: newProfileId ? localProfileId : "",
-                                status: "active",
-                                createdAt: now(),
-                            });
-
-                            await refreshProfiles();
-                            setWizSuccess(true);
-                            flash("Account stack created end-to-end!");
-                        } catch (e) {
-                            setWizError(e.message || "Unknown error");
-                        } finally {
-                            setBusy(false);
+                        if (wizSuccess) {
+                            return (
+                                <div style={S.overlay}>
+                                    <Card style={{ width: 460, padding: 32, textAlign: "center", animation: "fadeIn .2s" }}>
+                                        <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
+                                        <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Account Stack Created!</h3>
+                                        <p style={{ fontSize: 13, color: T.muted, marginBottom: 20 }}>Card, profile, and account have been created and linked.</p>
+                                        <Button onClick={() => { setModal(null); setWizardStep(0); setWizardData({}); }}>Close</Button>
+                                    </Card>
+                                </div>
+                            );
                         }
-                    };
 
-                    if (wizSuccess) {
                         return (
                             <div style={S.overlay}>
-                                <Card style={{ width: 460, padding: 32, textAlign: "center", animation: "fadeIn .2s" }}>
-                                    <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
-                                    <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Account Stack Created!</h3>
-                                    <p style={{ fontSize: 13, color: T.muted, marginBottom: 20 }}>Card, profile, and account have been created and linked.</p>
-                                    <Button onClick={() => { setModal(null); setWizardStep(0); setWizardData({}); }}>Close</Button>
+                                <Card style={{ width: 560, padding: 24, animation: "fadeIn .2s" }}>
+                                    {/* Stepper */}
+                                    <div style={{ display: "flex", gap: 4, marginBottom: 20 }}>
+                                        {steps.map((s, i) => (
+                                            <div key={i} style={{
+                                                flex: 1, textAlign: "center", padding: "8px 4px", borderRadius: 6, fontSize: 11, fontWeight: 600,
+                                                background: i === step ? `${T.primary}22` : "transparent",
+                                                color: i === step ? T.text : i < step ? T.success : T.dim,
+                                                border: `1px solid ${i === step ? T.primary : "transparent"}`,
+                                            }}>
+                                                <span style={{ marginRight: 4 }}>{s.icon}</span>{s.label}
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {wizError && <div style={{ padding: 8, marginBottom: 12, borderRadius: 6, background: `${T.danger}12`, border: `1px solid ${T.danger}44`, color: T.danger, fontSize: 12 }}>{wizError}</div>}
+
+                                    {/* Step 0: Create Card */}
+                                    {step === 0 && <>
+                                        <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>Step 1: Create Card</h3>
+                                        <div style={S.fieldWrap}>
+                                            <label style={S.label}>Select BIN</label>
+                                            <select value={wd.bin_uuid || ""} onChange={e => setWd({ ...wd, bin_uuid: e.target.value })} style={S.select}>
+                                                <option value="">Select BIN...</option>
+                                                {lcBins.map(b => <option key={b.uuid} value={b.uuid}>{b.brand} - {b.card_type} ({b.country})</option>)}
+                                            </select>
+                                        </div>
+                                        <div style={S.fieldWrap}>
+                                            <label style={S.label}>Billing Address</label>
+                                            <select value={wd.billing_address_uuid || ""} onChange={e => setWd({ ...wd, billing_address_uuid: e.target.value })} style={S.select}>
+                                                <option value="">Select Address...</option>
+                                                {lcAddresses.map(a => <option key={a.uuid} value={a.uuid}>{a.first_name} {a.last_name} - {a.address}, {a.city}</option>)}
+                                            </select>
+                                        </div>
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                                            <div style={S.fieldWrap}>
+                                                <label style={S.label}>Card Limit ($)</label>
+                                                <Inp value={wd.card_limit || ""} onChange={v => setWd({ ...wd, card_limit: v })} type="number" placeholder="10" />
+                                            </div>
+                                            <div style={S.fieldWrap}>
+                                                <label style={S.label}>Comment</label>
+                                                <Inp value={wd.card_comment || ""} onChange={v => setWd({ ...wd, card_comment: v })} placeholder="auto-tag" />
+                                            </div>
+                                        </div>
+                                    </>}
+
+                                    {/* Step 1: Create Profile */}
+                                    {step === 1 && <>
+                                        <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>Step 2: Create Profile</h3>
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                                            <div style={S.fieldWrap}>
+                                                <label style={S.label}>Browser Type</label>
+                                                <select value={wd.profile_browser || "mimic"} onChange={e => setWd({ ...wd, profile_browser: e.target.value })} style={S.select}>
+                                                    <option value="mimic">Mimic</option>
+                                                    <option value="stealthfox">Stealthfox</option>
+                                                </select>
+                                            </div>
+                                            <div style={S.fieldWrap}>
+                                                <label style={S.label}>OS Type</label>
+                                                <select value={wd.profile_os || "windows"} onChange={e => setWd({ ...wd, profile_os: e.target.value })} style={S.select}>
+                                                    <option value="windows">Windows</option>
+                                                    <option value="macos">macOS</option>
+                                                    <option value="linux">Linux</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div style={{ ...S.sectionTitle, marginTop: 8, fontSize: 11 }}>Proxy</div>
+                                        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12 }}>
+                                            <div style={S.fieldWrap}>
+                                                <label style={S.label}>Host</label>
+                                                <Inp value={wd.proxy_host || ""} onChange={v => setWd({ ...wd, proxy_host: v })} placeholder="proxy.example.com" />
+                                            </div>
+                                            <div style={S.fieldWrap}>
+                                                <label style={S.label}>Port</label>
+                                                <Inp value={wd.proxy_port || ""} onChange={v => setWd({ ...wd, proxy_port: v })} placeholder="8080" />
+                                            </div>
+                                        </div>
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                                            <div style={S.fieldWrap}>
+                                                <label style={S.label}>Username</label>
+                                                <Inp value={wd.proxy_user || ""} onChange={v => setWd({ ...wd, proxy_user: v })} />
+                                            </div>
+                                            <div style={S.fieldWrap}>
+                                                <label style={S.label}>Password</label>
+                                                <Inp value={wd.proxy_pass || ""} onChange={v => setWd({ ...wd, proxy_pass: v })} type="password" />
+                                            </div>
+                                        </div>
+                                    </>}
+
+                                    {/* Step 2: Account Details */}
+                                    {step === 2 && <>
+                                        <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>Step 3: Account Details</h3>
+                                        <div style={S.fieldWrap}>
+                                            <label style={S.label}>Account Label</label>
+                                            <Inp value={wd.acct_label || ""} onChange={v => setWd({ ...wd, acct_label: v })} placeholder="Google Ads - US Market 1" />
+                                        </div>
+                                        <div style={S.fieldWrap}>
+                                            <label style={S.label}>Email</label>
+                                            <Inp value={wd.acct_email || ""} onChange={v => setWd({ ...wd, acct_email: v })} placeholder="account@domain.com" />
+                                        </div>
+                                        <div style={S.fieldWrap}>
+                                            <label style={S.label}>Daily Budget ($)</label>
+                                            <Inp value={wd.acct_budget || ""} onChange={v => setWd({ ...wd, acct_budget: v })} type="number" placeholder="50" />
+                                        </div>
+                                    </>}
+
+                                    {/* Step 3: Review & Create */}
+                                    {step === 3 && <>
+                                        <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>Step 4: Review & Create</h3>
+                                        <Card style={{ padding: 14, marginBottom: 12, background: T.card2 }}>
+                                            <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Summary</div>
+                                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 12 }}>
+                                                <div>
+                                                    <div style={{ color: T.dim, fontSize: 10 }}>Card</div>
+                                                    <div>{wd.bin_uuid ? `BIN: ${lcBins.find(b => b.uuid === wd.bin_uuid)?.brand || wd.bin_uuid.slice(0, 8)}, Limit: $${wd.card_limit || 10}` : "No card"}</div>
+                                                </div>
+                                                <div>
+                                                    <div style={{ color: T.dim, fontSize: 10 }}>Profile</div>
+                                                    <div>{wd.profile_browser || "mimic"} / {wd.profile_os || "windows"}{wd.proxy_host ? ` via ${wd.proxy_host}` : ""}</div>
+                                                </div>
+                                                <div>
+                                                    <div style={{ color: T.dim, fontSize: 10 }}>Account</div>
+                                                    <div>{wd.acct_label || "Unnamed"}</div>
+                                                </div>
+                                                <div>
+                                                    <div style={{ color: T.dim, fontSize: 10 }}>Budget</div>
+                                                    <div>${wd.acct_budget || "0"}/day</div>
+                                                </div>
+                                            </div>
+                                        </Card>
+                                        <div style={{ fontSize: 11, color: T.muted, marginBottom: 12 }}>
+                                            This will create a new LeadingCards card, a new Multilogin profile, and save the linked account to the database.
+                                        </div>
+                                    </>}
+
+                                    {/* Navigation */}
+                                    <div style={{ ...S.btnRow, marginTop: 20 }}>
+                                        <Button variant="ghost" onClick={() => { setModal(null); setWizardStep(0); setWizardData({}); }}>Cancel</Button>
+                                        {step > 0 && <Button variant="ghost" onClick={() => setStep(step - 1)}>Back</Button>}
+                                        {step < 3 ? (
+                                            <Button onClick={() => { setWd({ ...wd }); setStep(step + 1); }}>Next</Button>
+                                        ) : (
+                                            <Button disabled={busy} onClick={handleFinish}>
+                                                {busy ? "Creating..." : "Create Everything"}
+                                            </Button>
+                                        )}
+                                    </div>
                                 </Card>
                             </div>
                         );
-                    }
-
-                    return (
-                        <div style={S.overlay}>
-                            <Card style={{ width: 560, padding: 24, animation: "fadeIn .2s" }}>
-                                {/* Stepper */}
-                                <div style={{ display: "flex", gap: 4, marginBottom: 20 }}>
-                                    {steps.map((s, i) => (
-                                        <div key={i} style={{
-                                            flex: 1, textAlign: "center", padding: "8px 4px", borderRadius: 6, fontSize: 11, fontWeight: 600,
-                                            background: i === step ? `${T.primary}22` : "transparent",
-                                            color: i === step ? T.text : i < step ? T.success : T.dim,
-                                            border: `1px solid ${i === step ? T.primary : "transparent"}`,
-                                        }}>
-                                            <span style={{ marginRight: 4 }}>{s.icon}</span>{s.label}
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {wizError && <div style={{ padding: 8, marginBottom: 12, borderRadius: 6, background: `${T.danger}12`, border: `1px solid ${T.danger}44`, color: T.danger, fontSize: 12 }}>{wizError}</div>}
-
-                                {/* Step 0: Create Card */}
-                                {step === 0 && <>
-                                    <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>Step 1: Create Card</h3>
-                                    <div style={S.fieldWrap}>
-                                        <label style={S.label}>Select BIN</label>
-                                        <select value={wd.bin_uuid || ""} onChange={e => setWd({ ...wd, bin_uuid: e.target.value })} style={S.select}>
-                                            <option value="">Select BIN...</option>
-                                            {lcBins.map(b => <option key={b.uuid} value={b.uuid}>{b.brand} - {b.card_type} ({b.country})</option>)}
-                                        </select>
-                                    </div>
-                                    <div style={S.fieldWrap}>
-                                        <label style={S.label}>Billing Address</label>
-                                        <select value={wd.billing_address_uuid || ""} onChange={e => setWd({ ...wd, billing_address_uuid: e.target.value })} style={S.select}>
-                                            <option value="">Select Address...</option>
-                                            {lcAddresses.map(a => <option key={a.uuid} value={a.uuid}>{a.first_name} {a.last_name} - {a.address}, {a.city}</option>)}
-                                        </select>
-                                    </div>
-                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                                        <div style={S.fieldWrap}>
-                                            <label style={S.label}>Card Limit ($)</label>
-                                            <Inp value={wd.card_limit || ""} onChange={v => setWd({ ...wd, card_limit: v })} type="number" placeholder="10" />
-                                        </div>
-                                        <div style={S.fieldWrap}>
-                                            <label style={S.label}>Comment</label>
-                                            <Inp value={wd.card_comment || ""} onChange={v => setWd({ ...wd, card_comment: v })} placeholder="auto-tag" />
-                                        </div>
-                                    </div>
-                                </>}
-
-                                {/* Step 1: Create Profile */}
-                                {step === 1 && <>
-                                    <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>Step 2: Create Profile</h3>
-                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                                        <div style={S.fieldWrap}>
-                                            <label style={S.label}>Browser Type</label>
-                                            <select value={wd.profile_browser || "mimic"} onChange={e => setWd({ ...wd, profile_browser: e.target.value })} style={S.select}>
-                                                <option value="mimic">Mimic</option>
-                                                <option value="stealthfox">Stealthfox</option>
-                                            </select>
-                                        </div>
-                                        <div style={S.fieldWrap}>
-                                            <label style={S.label}>OS Type</label>
-                                            <select value={wd.profile_os || "windows"} onChange={e => setWd({ ...wd, profile_os: e.target.value })} style={S.select}>
-                                                <option value="windows">Windows</option>
-                                                <option value="macos">macOS</option>
-                                                <option value="linux">Linux</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div style={{ ...S.sectionTitle, marginTop: 8, fontSize: 11 }}>Proxy</div>
-                                    <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12 }}>
-                                        <div style={S.fieldWrap}>
-                                            <label style={S.label}>Host</label>
-                                            <Inp value={wd.proxy_host || ""} onChange={v => setWd({ ...wd, proxy_host: v })} placeholder="proxy.example.com" />
-                                        </div>
-                                        <div style={S.fieldWrap}>
-                                            <label style={S.label}>Port</label>
-                                            <Inp value={wd.proxy_port || ""} onChange={v => setWd({ ...wd, proxy_port: v })} placeholder="8080" />
-                                        </div>
-                                    </div>
-                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                                        <div style={S.fieldWrap}>
-                                            <label style={S.label}>Username</label>
-                                            <Inp value={wd.proxy_user || ""} onChange={v => setWd({ ...wd, proxy_user: v })} />
-                                        </div>
-                                        <div style={S.fieldWrap}>
-                                            <label style={S.label}>Password</label>
-                                            <Inp value={wd.proxy_pass || ""} onChange={v => setWd({ ...wd, proxy_pass: v })} type="password" />
-                                        </div>
-                                    </div>
-                                </>}
-
-                                {/* Step 2: Account Details */}
-                                {step === 2 && <>
-                                    <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>Step 3: Account Details</h3>
-                                    <div style={S.fieldWrap}>
-                                        <label style={S.label}>Account Label</label>
-                                        <Inp value={wd.acct_label || ""} onChange={v => setWd({ ...wd, acct_label: v })} placeholder="Google Ads - US Market 1" />
-                                    </div>
-                                    <div style={S.fieldWrap}>
-                                        <label style={S.label}>Email</label>
-                                        <Inp value={wd.acct_email || ""} onChange={v => setWd({ ...wd, acct_email: v })} placeholder="account@domain.com" />
-                                    </div>
-                                    <div style={S.fieldWrap}>
-                                        <label style={S.label}>Daily Budget ($)</label>
-                                        <Inp value={wd.acct_budget || ""} onChange={v => setWd({ ...wd, acct_budget: v })} type="number" placeholder="50" />
-                                    </div>
-                                </>}
-
-                                {/* Step 3: Review & Create */}
-                                {step === 3 && <>
-                                    <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>Step 4: Review & Create</h3>
-                                    <Card style={{ padding: 14, marginBottom: 12, background: T.card2 }}>
-                                        <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Summary</div>
-                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 12 }}>
-                                            <div>
-                                                <div style={{ color: T.dim, fontSize: 10 }}>Card</div>
-                                                <div>{wd.bin_uuid ? `BIN: ${lcBins.find(b => b.uuid === wd.bin_uuid)?.brand || wd.bin_uuid.slice(0, 8)}, Limit: $${wd.card_limit || 10}` : "No card"}</div>
-                                            </div>
-                                            <div>
-                                                <div style={{ color: T.dim, fontSize: 10 }}>Profile</div>
-                                                <div>{wd.profile_browser || "mimic"} / {wd.profile_os || "windows"}{wd.proxy_host ? ` via ${wd.proxy_host}` : ""}</div>
-                                            </div>
-                                            <div>
-                                                <div style={{ color: T.dim, fontSize: 10 }}>Account</div>
-                                                <div>{wd.acct_label || "Unnamed"}</div>
-                                            </div>
-                                            <div>
-                                                <div style={{ color: T.dim, fontSize: 10 }}>Budget</div>
-                                                <div>${wd.acct_budget || "0"}/day</div>
-                                            </div>
-                                        </div>
-                                    </Card>
-                                    <div style={{ fontSize: 11, color: T.muted, marginBottom: 12 }}>
-                                        This will create a new LeadingCards card, a new Multilogin profile, and save the linked account to the database.
-                                    </div>
-                                </>}
-
-                                {/* Navigation */}
-                                <div style={{ ...S.btnRow, marginTop: 20 }}>
-                                    <Button variant="ghost"  onClick={() => { setModal(null); setWizardStep(0); setWizardData({}); }}>Cancel</Button>
-                                    {step > 0 && <Button variant="ghost"  onClick={() => setStep(step - 1)}>Back</Button>}
-                                    {step < 3 ? (
-                                        <Button onClick={() => { setWd({ ...wd }); setStep(step + 1); }}>Next</Button>
-                                    ) : (
-                                        <Button disabled={busy} onClick={handleFinish}>
-                                            {busy ? "Creating..." : "Create Everything"}
-                                        </Button>
-                                    )}
-                                </div>
-                            </Card>
-                        </div>
-                    );
-                };
-                return <WizardModal />;
-            })()}
+                    };
+                    return <WizardModal />;
+                })()
+            }
 
             {/* ═══════════════════════════════════════════════════════════
                 MODAL: ADD CLOUDFLARE ACCOUNT
                 ═══════════════════════════════════════════════════════════ */}
-            {modal === "cf-account" && (() => {
-                const CfAccountModal = () => {
-                    const [form, setForm] = useState({ label: "", email: "", account_id: "", api_key: "" });
-                    const [saving, setSaving] = useState(false);
+            {
+                modal === "cf-account" && (() => {
+                    const CfAccountModal = () => {
+                        const [form, setForm] = useState({ label: "", email: "", account_id: "", api_key: "" });
+                        const [saving, setSaving] = useState(false);
 
-                    const handleSave = async () => {
-                        if (!form.label || !form.account_id || !form.api_key) {
-                            flash("Label, Account ID, and API Token are required", "error");
-                            return;
-                        }
-                        setSaving(true);
-                        try {
-                            // Validate API key via our proxy (avoids CORS)
-                            const testRes = await api.post("/api/automation/cf-validate", {
-                                accountId: form.account_id,
-                                apiToken: form.api_key,
-                            });
-                            if (!testRes.success) {
-                                flash(testRes.error || "Invalid Cloudflare API Token or Account ID", "error");
-                                setSaving(false);
+                        const handleSave = async () => {
+                            if (!form.label || !form.account_id || !form.api_key) {
+                                flash("Label, Account ID, and API Token are required", "error");
                                 return;
                             }
+                            setSaving(true);
+                            try {
+                                // Validate API key via our proxy (avoids CORS)
+                                const testRes = await api.post("/api/automation/cf-validate", {
+                                    accountId: form.account_id,
+                                    apiToken: form.api_key,
+                                });
+                                if (!testRes.success) {
+                                    flash(testRes.error || "Invalid Cloudflare API Token or Account ID", "error");
+                                    setSaving(false);
+                                    return;
+                                }
 
-                            // Save to API first and require success before updating UI state
-                            const payload = {
-                                id: uid(),
-                                ...form,
-                                apiKey: form.api_key || "",
-                                accountId: form.account_id || "",
-                                apiToken: form.api_token || "",
-                            };
-                            const saveRes = await api.post("/cf-accounts", payload);
-                            if (saveRes?.error) {
-                                flash(saveRes.detail || saveRes.error || "Failed to save Cloudflare account", "error");
+                                // Save to API first and require success before updating UI state
+                                const payload = {
+                                    id: uid(),
+                                    ...form,
+                                    apiKey: form.api_key || "",
+                                    accountId: form.account_id || "",
+                                    apiToken: form.api_token || "",
+                                };
+                                const saveRes = await api.post("/cf-accounts", payload);
+                                if (saveRes?.error) {
+                                    flash(saveRes.detail || saveRes.error || "Failed to save Cloudflare account", "error");
+                                    setSaving(false);
+                                    return;
+                                }
+
+                                // Update local state only (API already saved above)
+                                add("cf-accounts", { ...payload }, { persist: false });
+                                flash("Cloudflare account added");
+                                setModal(null);
+                            } catch (e) {
+                                flash(`Failed: ${e.message}`, "error");
+                            } finally {
                                 setSaving(false);
-                                return;
                             }
+                        };
 
-                            // Update local state only (API already saved above)
-                            add("cf-accounts", { ...payload }, { persist: false });
-                            flash("Cloudflare account added");
-                            setModal(null);
-                        } catch (e) {
-                            flash(`Failed: ${e.message}`, "error");
-                        } finally {
-                            setSaving(false);
-                        }
+                        return (
+                            <div style={S.overlay}>
+                                <Card style={{ width: 480, padding: 24, animation: "fadeIn .2s" }}>
+                                    <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>Add Cloudflare Account</h3>
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>Label</label>
+                                        <Inp value={form.label} onChange={v => setForm({ ...form, label: v })} placeholder="Main CF Account" />
+                                    </div>
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>Account ID <span style={{ color: T.danger }}>*</span></label>
+                                        <Inp value={form.account_id} onChange={v => setForm({ ...form, account_id: v })} placeholder="32-character hex ID" />
+                                        <div style={{ fontSize: 10, color: T.muted, marginTop: 4 }}>
+                                            Found in Cloudflare dashboard → URL: /accounts/<strong style={{ color: T.primary }}>YourAccountID</strong>
+                                        </div>
+                                    </div>
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>Email (optional)</label>
+                                        <Inp value={form.email} onChange={v => setForm({ ...form, email: v })} placeholder="cf@example.com" />
+                                    </div>
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>API Token (Global Key) <span style={{ color: T.danger }}>*</span></label>
+                                        <Inp value={form.api_key} onChange={v => setForm({ ...form, api_key: v })} placeholder="••••" type="password" />
+                                        <div style={{ fontSize: 10, color: T.muted, marginTop: 4 }}>
+                                            Needs Zone:Zone, DNS:Edit, Zone:Read permissions
+                                        </div>
+                                    </div>
+                                    <div style={S.btnRow}>
+                                        <Button variant="ghost" onClick={() => setModal(null)}>Cancel</Button>
+                                        <Button disabled={saving} onClick={handleSave}>{saving ? "Saving..." : "Save"}</Button>
+                                    </div>
+                                </Card>
+                            </div>
+                        );
                     };
-
-                    return (
-                        <div style={S.overlay}>
-                            <Card style={{ width: 480, padding: 24, animation: "fadeIn .2s" }}>
-                                <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>Add Cloudflare Account</h3>
-                                <div style={S.fieldWrap}>
-                                    <label style={S.label}>Label</label>
-                                    <Inp value={form.label} onChange={v => setForm({ ...form, label: v })} placeholder="Main CF Account" />
-                                </div>
-                                <div style={S.fieldWrap}>
-                                    <label style={S.label}>Account ID <span style={{ color: T.danger }}>*</span></label>
-                                    <Inp value={form.account_id} onChange={v => setForm({ ...form, account_id: v })} placeholder="32-character hex ID" />
-                                    <div style={{ fontSize: 10, color: T.muted, marginTop: 4 }}>
-                                        Found in Cloudflare dashboard → URL: /accounts/<strong style={{ color: T.primary }}>YourAccountID</strong>
-                                    </div>
-                                </div>
-                                <div style={S.fieldWrap}>
-                                    <label style={S.label}>Email (optional)</label>
-                                    <Inp value={form.email} onChange={v => setForm({ ...form, email: v })} placeholder="cf@example.com" />
-                                </div>
-                                <div style={S.fieldWrap}>
-                                    <label style={S.label}>API Token (Global Key) <span style={{ color: T.danger }}>*</span></label>
-                                    <Inp value={form.api_key} onChange={v => setForm({ ...form, api_key: v })} placeholder="••••" type="password" />
-                                    <div style={{ fontSize: 10, color: T.muted, marginTop: 4 }}>
-                                        Needs Zone:Zone, DNS:Edit, Zone:Read permissions
-                                    </div>
-                                </div>
-                                <div style={S.btnRow}>
-                                    <Button variant="ghost"  onClick={() => setModal(null)}>Cancel</Button>
-                                    <Button disabled={saving} onClick={handleSave}>{saving ? "Saving..." : "Save"}</Button>
-                                </div>
-                            </Card>
-                        </div>
-                    );
-                };
-                return <CfAccountModal />;
-            })()}
+                    return <CfAccountModal />;
+                })()
+            }
 
             {/* ═══════════════════════════════════════════════════════════
                 MODAL: ADD REGISTRAR ACCOUNT
                 ═══════════════════════════════════════════════════════════ */}
-            {modal === "registrar-account" && (() => {
-                const RegistrarAccountModal = () => {
-                    const [form, setForm] = useState(editingReg
-                        ? { provider: editingReg.provider, label: editingReg.label, api_key: editingReg.api_key, secret_key: editingReg.secret_key }
-                        : { provider: "internetbs", label: "", api_key: "", secret_key: "" }
-                    );
-                    const [saving, setSaving] = useState(false);
-                    const [testing, setTesting] = useState(false);
-                    const [testResult, setTestResult] = useState(null);
+            {
+                modal === "registrar-account" && (() => {
+                    const RegistrarAccountModal = () => {
+                        const [form, setForm] = useState(editingReg
+                            ? { provider: editingReg.provider, label: editingReg.label, api_key: editingReg.api_key, secret_key: editingReg.secret_key }
+                            : { provider: "internetbs", label: "", api_key: "", secret_key: "" }
+                        );
+                        const [saving, setSaving] = useState(false);
+                        const [testing, setTesting] = useState(false);
+                        const [testResult, setTestResult] = useState(null);
 
-                    const handleTest = async () => {
-                        if (!form.api_key || !form.secret_key) {
-                            flash("API Key and Secret Key are required", "error");
-                            return;
-                        }
-                        setTesting(true);
-                        setTestResult(null);
-                        try {
-                            // Route through Worker proxy (avoids browser CORS/network issues)
-                            const data = await api.post("/api/automation/registrar/ping", {
-                                provider: form.provider || "internetbs",
-                                apiKey: form.api_key,
-                                secretKey: form.secret_key,
-                            });
-
-                            if (data?.success) {
-                                setTestResult({
-                                    success: true,
-                                    balance: formatBalance(data.balance, data.currency),
-                                    message: data.message,
+                        const handleTest = async () => {
+                            if (!form.api_key || !form.secret_key) {
+                                flash("API Key and Secret Key are required", "error");
+                                return;
+                            }
+                            setTesting(true);
+                            setTestResult(null);
+                            try {
+                                // Route through Worker proxy (avoids browser CORS/network issues)
+                                const data = await api.post("/api/automation/registrar/ping", {
+                                    provider: form.provider || "internetbs",
+                                    apiKey: form.api_key,
+                                    secretKey: form.secret_key,
                                 });
-                            } else {
-                                setTestResult({ success: false, error: data?.error || data?.message || "Connection failed" });
+
+                                if (data?.success) {
+                                    setTestResult({
+                                        success: true,
+                                        balance: formatBalance(data.balance, data.currency),
+                                        message: data.message,
+                                    });
+                                } else {
+                                    setTestResult({ success: false, error: data?.error || data?.message || "Connection failed" });
+                                }
+                            } catch (e) {
+                                setTestResult({ success: false, error: e.message });
+                            } finally {
+                                setTesting(false);
                             }
-                        } catch (e) {
-                            setTestResult({ success: false, error: e.message });
-                        } finally {
-                            setTesting(false);
-                        }
-                    };
+                        };
 
-                    const handleSave = async () => {
-                        if (!form.label || !form.api_key || !form.secret_key) {
-                            flash("Label, API Key and Secret Key are required", "error");
-                            return;
-                        }
-                        setSaving(true);
-                        try {
-                            if (editingReg) {
-                                upd("registrar-accounts", editingReg.id, { ...form });
-                                flash("Registrar account updated");
-                            } else {
-                                const newAccount = { id: uid(), ...form };
-                                add("registrar-accounts", newAccount);
-                                flash("Registrar account added");
+                        const handleSave = async () => {
+                            if (!form.label || !form.api_key || !form.secret_key) {
+                                flash("Label, API Key and Secret Key are required", "error");
+                                return;
                             }
-                            setModal(null);
-                        } catch (e) {
-                            flash(`Failed: ${e.message}`, "error");
-                        } finally {
-                            setSaving(false);
-                        }
-                    };
+                            setSaving(true);
+                            try {
+                                if (editingReg) {
+                                    upd("registrar-accounts", editingReg.id, { ...form });
+                                    flash("Registrar account updated");
+                                } else {
+                                    const newAccount = { id: uid(), ...form };
+                                    add("registrar-accounts", newAccount);
+                                    flash("Registrar account added");
+                                }
+                                setModal(null);
+                            } catch (e) {
+                                flash(`Failed: ${e.message}`, "error");
+                            } finally {
+                                setSaving(false);
+                            }
+                        };
 
-                    return (
-                        <div style={S.overlay}>
-                            <Card style={{ width: 460, padding: 24, animation: "fadeIn .2s" }}>
-                                <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>
-                                    {editingReg ? "Edit Registrar Account" : "Add Registrar Account"}
-                                </h3>
-                                <div style={S.fieldWrap}>
-                                    <label style={S.label}>Provider</label>
-                                    <select value={form.provider} onChange={e => setForm({ ...form, provider: e.target.value })} style={S.select}>
-                                        <option value="internetbs">Internet.bs</option>
-                                    </select>
-                                </div>
-                                <div style={S.fieldWrap}>
-                                    <label style={S.label}>Label</label>
-                                    <Inp value={form.label} onChange={v => setForm({ ...form, label: v })} placeholder="Main Registrar" />
-                                </div>
-                                <div style={S.fieldWrap}>
-                                    <label style={S.label}>API Key</label>
-                                    <Inp value={form.api_key} onChange={v => setForm({ ...form, api_key: v })} placeholder="•••" type="password" />
-                                </div>
-                                <div style={S.fieldWrap}>
-                                    <label style={S.label}>Secret Key / Password</label>
-                                    <Inp value={form.secret_key} onChange={v => setForm({ ...form, secret_key: v })} placeholder="•••" type="password" />
-                                </div>
-
-                                {/* Test result */}
-                                {testResult && (
-                                    <div style={{ padding: 10, borderRadius: 6, marginBottom: 12, background: testResult.success ? `${T.success}12` : `${T.danger}12`, fontSize: 12 }}>
-                                        {testResult.success
-                                            ? `✓ Connected! Balance: ${testResult.balance || "N/A"}`
-                                            : `✗ Failed: ${testResult.error}`}
+                        return (
+                            <div style={S.overlay}>
+                                <Card style={{ width: 460, padding: 24, animation: "fadeIn .2s" }}>
+                                    <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>
+                                        {editingReg ? "Edit Registrar Account" : "Add Registrar Account"}
+                                    </h3>
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>Provider</label>
+                                        <select value={form.provider} onChange={e => setForm({ ...form, provider: e.target.value })} style={S.select}>
+                                            <option value="internetbs">Internet.bs</option>
+                                        </select>
                                     </div>
-                                )}
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>Label</label>
+                                        <Inp value={form.label} onChange={v => setForm({ ...form, label: v })} placeholder="Main Registrar" />
+                                    </div>
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>API Key</label>
+                                        <Inp value={form.api_key} onChange={v => setForm({ ...form, api_key: v })} placeholder="•••" type="password" />
+                                    </div>
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>Secret Key / Password</label>
+                                        <Inp value={form.secret_key} onChange={v => setForm({ ...form, secret_key: v })} placeholder="•••" type="password" />
+                                    </div>
 
-                                <div style={S.btnRow}>
-                                    <Button variant="ghost"  onClick={() => setModal(null)}>Cancel</Button>
-                                    <Button variant="ghost"  disabled={testing} onClick={handleTest}>
-                                        {testing ? "Testing..." : "Test Connection"}
-                                    </Button>
-                                    <Button disabled={saving} onClick={handleSave}>{saving ? "Saving..." : "Save"}</Button>
-                                </div>
-                            </Card>
-                        </div>
-                    );
-                };
-                return <RegistrarAccountModal />;
-            })()}
-        </div>
+                                    {/* Test result */}
+                                    {testResult && (
+                                        <div style={{ padding: 10, borderRadius: 6, marginBottom: 12, background: testResult.success ? `${T.success}12` : `${T.danger}12`, fontSize: 12 }}>
+                                            {testResult.success
+                                                ? `✓ Connected! Balance: ${testResult.balance || "N/A"}`
+                                                : `✗ Failed: ${testResult.error}`}
+                                        </div>
+                                    )}
+
+                                    <div style={S.btnRow}>
+                                        <Button variant="ghost" onClick={() => setModal(null)}>Cancel</Button>
+                                        <Button variant="ghost" disabled={testing} onClick={handleTest}>
+                                            {testing ? "Testing..." : "Test Connection"}
+                                        </Button>
+                                        <Button disabled={saving} onClick={handleSave}>{saving ? "Saving..." : "Save"}</Button>
+                                    </div>
+                                </Card>
+                            </div>
+                        );
+                    };
+                    return <RegistrarAccountModal />;
+                })()
+            }
+        </div >
     );
 }
 

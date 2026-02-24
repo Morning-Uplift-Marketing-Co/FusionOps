@@ -39,8 +39,9 @@ export function SpendDashboard({ apiOk, neonOk }) {
         setLoading(true);
         try {
             const settings = await loadSettings() || {};
-            const lcToken = settings.lendingCardApiToken
+            const lcToken = settings.lcToken
                 || import.meta.env.PUBLIC_LENDINGCARD_API_TOKEN
+                || import.meta.env.VITE_LENDINGCARD_TOKEN
                 || localStorage.getItem("LC_API_TOKEN");
 
             if (lcToken) {
@@ -50,8 +51,12 @@ export function SpendDashboard({ apiOk, neonOk }) {
                 } catch (e) { console.warn("[SpendDashboard] LC fetch failed:", e); }
             }
 
-            const vKeyId = settings.voluumAccessKeyId || import.meta.env.PUBLIC_VOLUUM_ACCESS_KEY_ID;
-            const vKey = settings.voluumAccessKey || import.meta.env.PUBLIC_VOLUUM_ACCESS_KEY;
+            const vKeyId = settings.voluumAccessKeyId
+                || import.meta.env.VITE_VOLUUM_ACCESS_KEY_ID
+                || import.meta.env.PUBLIC_VOLUUM_ACCESS_KEY_ID;
+            const vKey = settings.voluumAccessKey
+                || import.meta.env.VITE_VOLUUM_ACCESS_KEY
+                || import.meta.env.PUBLIC_VOLUUM_ACCESS_KEY;
             let realStats = { ...stats };
             let dailyTrend = [];
 
@@ -76,8 +81,18 @@ export function SpendDashboard({ apiOk, neonOk }) {
                         dailyTrend = trendReport.rows.map(row => {
                             const ds = row.day || row.id || "";
                             const dSpend = row.cost || 0, dRev = row.revenue || 0;
-                            const dTC = dSpend + (dSpend * 0.07) + (dSpend * 0.035);
-                            return { date: ds.slice(5, 10).replace("-", "/"), spend: +dSpend.toFixed(2), trueCost: +dTC.toFixed(2), revenue: +dRev.toFixed(2), roi: +(dTC > 0 ? ((dRev - dTC) / dTC * 100) : 0).toFixed(1) };
+                            const dVat = dSpend * 0.07;
+                            const dLcFee = dSpend * 0.035;
+                            const dTC = dSpend + dVat + dLcFee;
+                            return {
+                                date: ds.slice(5, 10).replace("-", "/"),
+                                spend: +dSpend.toFixed(2),
+                                vat: +dVat.toFixed(2),
+                                lcFee: +dLcFee.toFixed(2),
+                                trueCost: +dTC.toFixed(2),
+                                revenue: +dRev.toFixed(2),
+                                roi: +(dTC > 0 ? ((dRev - dTC) / dTC * 100) : 0).toFixed(1)
+                            };
                         }).reverse();
                     }
                 } catch (err) { console.error("[SpendDashboard] Voluum error:", err); }
@@ -114,7 +129,7 @@ export function SpendDashboard({ apiOk, neonOk }) {
                 </TabsList>
 
                 <TabsContent value="overview"><OverviewTab stats={stats} trendData={trendData} /></TabsContent>
-                <TabsContent value="daily"><DailyLogTab /></TabsContent>
+                <TabsContent value="daily"><DailyLogTab dailyData={trendData} /></TabsContent>
                 <TabsContent value="account"><PerAccountTab /></TabsContent>
                 <TabsContent value="card"><PerCardTab /></TabsContent>
                 <TabsContent value="domain"><PerDomainTab /></TabsContent>

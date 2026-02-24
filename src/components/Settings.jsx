@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { THEME as T } from "../constants";
+import { useState, useEffect } from "react";
+
 import { InputField as Inp, SelectField as Sel } from "./ui/input-field";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
@@ -14,14 +14,10 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
     const [netlifyToken, setNetlifyToken] = useState(settings.netlifyToken || "");
     const [netlifyTeamSlug, setNetlifyTeamSlug] = useState(settings.netlifyTeamSlug || "");
     const [lcToken, setLcToken] = useState(settings.lcToken || import.meta.env.VITE_LENDINGCARD_TOKEN || import.meta.env.PUBLIC_LENDINGCARD_API_TOKEN || "");
-    const [lcTeamUuid, setLcTeamUuid] = useState(settings.lcTeamUuid || "");
-    const [defaultBinUuid, setDefaultBinUuid] = useState(settings.defaultBinUuid || "");
-    const [defaultBillingUuid, setDefaultBillingUuid] = useState(settings.defaultBillingUuid || "");
     const [mlToken, setMlToken] = useState(settings.mlToken || "");
     const [mlEmail, setMlEmail] = useState(settings.mlEmail || "");
     const [mlPassword, setMlPassword] = useState(settings.mlPassword || "");
     const [mlFolderId, setMlFolderId] = useState(settings.mlFolderId || "");
-    const [defaultProxyProvider, setDefaultProxyProvider] = useState(settings.defaultProxyProvider || "multilogin");
 
     // Voluum API
     const [voluumAccessKeyId, setVoluumAccessKeyId] = useState(settings.voluumAccessKeyId || import.meta.env.VITE_VOLUUM_ACCESS_KEY_ID || import.meta.env.PUBLIC_VOLUUM_ACCESS_KEY_ID || "");
@@ -50,20 +46,16 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
     const [githubRepoName, setGithubRepoName] = useState(settings.githubRepoName || "");
     const [githubRepoBranch, setGithubRepoBranch] = useState(settings.githubRepoBranch || "main");
     const [githubDeployWorkflow, setGithubDeployWorkflow] = useState(settings.githubDeployWorkflow || "deploy-sites.yml");
-    const [netlifyTarget, setNetlifyTarget] = useState(settings.netlifyTarget || "");
-    const [cfPagesTarget, setCfPagesTarget] = useState(settings.cfPagesTarget || "");
+
     // D1 Database credentials
     const [d1AccountId, setD1AccountId] = useState(settings.d1AccountId || "");
     const [d1DatabaseId, setD1DatabaseId] = useState(settings.d1DatabaseId || "");
     const [d1ApiToken, setD1ApiToken] = useState(settings.d1ApiToken || "");
     const [d1Result, setD1Result] = useState(null);
 
-    const [generatingToken, setGeneratingToken] = useState(false);
+
     const [testing, setTesting] = useState(null);
     const [testResult, setTestResult] = useState({});
-    const [folders, setFolders] = useState(null);
-    const [launcherOk, setLauncherOk] = useState(null);
-    const [loadingFolders, setLoadingFolders] = useState(false);
     const [saving, setSaving] = useState(false);
 
     // Sync saved token into service on mount
