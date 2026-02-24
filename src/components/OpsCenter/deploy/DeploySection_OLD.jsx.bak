@@ -1,7 +1,11 @@
 /**
- * Deploy Section - Fixed Version
+ * Deploy Section
  *
- * With better visual cues for target selection
+ * Deployment management section
+ * - Select domain and deploy target
+ * - Configure deployment settings
+ * - Execute deployments
+ * - View deployment results
  */
 
 import { useState, useEffect } from "react";
@@ -323,14 +327,7 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
             {selectedDomainId && (
                 <>
                     <div style={{ marginBottom: 12 }}>
-                        <label style={S.label}>
-                            Deploy Target
-                            {!selectedTarget && (
-                                <span style={{ color: T.danger, marginLeft: 8, fontSize: 10 }}>
-                                    ⚠️ Please select a target below
-                                </span>
-                            )}
-                        </label>
+                        <label style={S.label}>Deploy Target</label>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12, marginBottom: 16 }}>
                         {availableTargets.map(t => (
@@ -341,18 +338,6 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
                                     ...S.targetCardSelected(selectedTarget === t.id)
                                 }}
                                 onClick={() => !isDeploying && setSelectedTarget(t.id)}
-                                onMouseEnter={(e) => {
-                                    if (!isDeploying) {
-                                        e.currentTarget.style.transform = "scale(1.05)";
-                                        e.currentTarget.style.boxShadow = `0 4px 12px ${T.primary}30`;
-                                    }
-                                }}
-                                onMouseLeave={(e) => {
-                                    if (selectedTarget !== t.id) {
-                                        e.currentTarget.style.transform = "scale(1)";
-                                        e.currentTarget.style.boxShadow = "none";
-                                    }
-                                }}
                             >
                                 <div style={{ fontSize: 20 }}>{t.icon}</div>
                                 <div style={{ fontSize: 12, fontWeight: 600, marginTop: 4 }}>{t.label}</div>
@@ -362,28 +347,9 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
                                         ⚠️ Not configured
                                     </div>
                                 )}
-                                {selectedTarget === t.id && (
-                                    <div style={{ fontSize: 10, color: T.primary, marginTop: 4, fontWeight: 700 }}>
-                                        ✓ Selected
-                                    </div>
-                                )}
                             </div>
                         ))}
                     </div>
-                    {!selectedTarget && (
-                        <div style={{
-                            padding: 12,
-                            marginBottom: 16,
-                            background: `${T.warning}15`,
-                            border: `1px solid ${T.warning}40`,
-                            borderRadius: 6,
-                            fontSize: 11,
-                            color: T.warning,
-                            textAlign: "center"
-                        }}>
-                            👆 Click on a deploy target above to continue
-                        </div>
-                    )}
                 </>
             )}
 
@@ -558,3 +524,5 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
         </div>
     );
 }
+
+
