@@ -1,0 +1,99 @@
+---
+// ============================================================
+// AmountSlider — Native range input for loan amount
+// ============================================================
+// - Uses native <input type="range">
+// - No JS library
+// - Stores value to sessionStorage
+// - Displays formatted dollar amount
+// ============================================================
+
+interface Props {
+  label?: string;
+  min?: number;
+  max?: number;
+  step?: number;
+  defaultValue?: number;
+  id?: string;
+}
+
+const {
+  label = 'How much do you need?',
+  min = 500,
+  max = 35000,
+  step = 500,
+  defaultValue = 5000,
+  id = 'amount-slider',
+} = Astro.props;
+---
+
+<div class="w-full max-w-md mx-auto">
+  {label && (
+    <label for={id} class="block text-sm font-semibold text-gray-700 mb-2">
+      {label}
+    </label>
+  )}
+
+  <div class="text-center mb-4">
+    <span
+      id={`${id}-display`}
+      class="text-3xl font-bold text-[var(--color-primary)]"
+      aria-live="polite"
+    >
+      ${defaultValue.toLocaleString()}
+    </span>
+  </div>
+
+  <input
+    type="range"
+    id={id}
+    name="amount"
+    min={min}
+    max={max}
+    step={step}
+    value={defaultValue}
+    class="w-full h-2 rounded-lg cursor-pointer"
+    aria-label={`Loan amount from $${min.toLocaleString()} to $${max.toLocaleString()}`}
+    aria-valuemin={min}
+    aria-valuemax={max}
+    aria-valuenow={defaultValue}
+    aria-valuetext={`$${defaultValue.toLocaleString()}`}
+  />
+
+  <div class="flex justify-between text-xs text-gray-500 mt-1">
+    <span>${min.toLocaleString()}</span>
+    <span>${max.toLocaleString()}</span>
+  </div>
+</div>
+
+<script define:vars={{ id, defaultValue }}>
+  (function() {
+    const slider = document.getElementById(id);
+    const display = document.getElementById(id + '-display');
+    if (!slider || !display) return;
+
+    function formatAmount(val) {
+      return '$' + Number(val).toLocaleString();
+    }
+
+    function update(val) {
+      display.textContent = formatAmount(val);
+      slider.setAttribute('aria-valuenow', val);
+      slider.setAttribute('aria-valuetext', formatAmount(val));
+      sessionStorage.setItem('amount', val.toString());
+    }
+
+    slider.addEventListener('input', function(e) {
+      update(e.target.value);
+    });
+
+    // Restore from sessionStorage or use default
+    const stored = sessionStorage.getItem('amount');
+    if (stored) {
+      slider.value = stored;
+      update(stored);
+    } else {
+      update(defaultValue);
+    }
+  })();
+</script>

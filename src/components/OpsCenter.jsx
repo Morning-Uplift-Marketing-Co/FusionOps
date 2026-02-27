@@ -1,0 +1,2987 @@
+import React, { useState, useMemo, useEffect } from "react";
+import { THEME as T, REGISTRARS } from "../constants";
+import { uid, now } from "../utils";
+import { Dot } from "./ui/dot";
+import { Card } from "./ui/card";
+import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
+import { InputField as Inp } from "./ui/input-field";
+import { leadingCardsApi } from "../services/leadingCards";
+import { multiloginApi } from "../services/multilogin";
+import { detectRisks, RISK_ICONS, RISK_COLORS } from "../utils/risk-engine";
+import registrarApi from "../services/registrar";
+import cloudflareDns from "../services/cloudflare-dns";
+import { DeployTab } from "../components/OpsCenter/deploy/DeployTab.jsx";
+import { ProxyHealthTab } from "./ProxyHealthTab.jsx";
+import { ProxyListTab } from "./ProxyListTab.jsx";
+import { api } from "../services/api";
+import { getCfApiBase } from "../utils/api-proxy";
+import { query, testConnection, getTables } from "../services/d1";
+import { getDeploymentHistory } from "../utils/deployers";
+
+/* ─── Shared inline styles ───────────────────────────────────────────── */
+const S = {
+    overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,.8)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" },
+    label: { fontSize: 11, fontWeight: 600, display: "block", marginBottom: 4, color: T.text },
+    select: { width: "100%", padding: 9, borderRadius: 7, background: T.input, border: `1px solid ${T.border}`, color: T.text, fontSize: 12, boxSizing: "border-box" },
+    fieldWrap: { marginBottom: 12 },
+    row: { display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: T.card2, borderRadius: 7, marginBottom: 4, fontSize: 12 },
+    btnRow: { display: "flex", gap: 8, justifyContent: "flex-end" },
+    miniBtn: { fontSize: 10, padding: "2px 8px" },
+    sectionTitle: { fontSize: 13, fontWeight: 700, marginBottom: 10, color: T.text },
+    emptyState: { textAlign: "center", padding: 32, color: T.dim },
+    filterBtn: (active) => ({
+        padding: "4px 12px", borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: "pointer", border: `1px solid ${active ? T.primary : T.border}`,
+        background: active ? `${T.primary}18` : "transparent", color: active ? T.text : T.muted,
+    }),
+};
+
+/* ─── Helper: toast-like inline status ───────────────────────────────── */
+function StatusMsg({ msg, type }) {
+    if (!msg) return null;
+    const c = type === "success" ? T.success : type === "error" ? T.danger : T.primary;
+    return (
+        <div style={{ padding: "8px 14px", borderRadius: 7, marginBottom: 10, background: `${c}12`, border: `1px solid ${c}44`, color: c, fontSize: 12, fontWeight: 600, animation: "fadeIn .2s" }}>
+            {msg}
+        </div>
+    );
+}
+
+/* ─── CF Accounts Tab (Enhanced with zone explorer) ──────────────── */
+function CfAccountsTab({ cfAccounts, testingCfId, onTest, onEdit, onDelete, onAdd, flash }) {
+    const [expandedId, setExpandedId] = useState(null);
+    const [zonesMap, setZonesMap] = useState({}); // { accountId: { loading, zones: [], error } }
+    const [recordsMap, setRecordsMap] = useState({}); // { zoneId: { loading, records: [], error } }
+
+    const fetchZones = async (cf) => {
+        const accountId = cf.accountId || cf.account_id;
+        const apiToken = cf.apiKey || cf.api_key;
+        if (!accountId || !apiToken) return;
+
+        setZonesMap(p => ({ ...p, [cf.id]: { loading: true, zones: [], error: null } }));
+        try {
+            const cfBase = getCfApiBase();
+            const r = await fetch(`${cfBase}/zones?account.id=${accountId}&per_page=50&order=name`, {
+                headers: { Authorization: `Bearer ${apiToken}` },
+            });
+            const d = await r.json();
+            if (d.success) {
+                setZonesMap(p => ({ ...p, [cf.id]: { loading: false, zones: d.result || [], error: null } }));
+            } else {
+                setZonesMap(p => ({ ...p, [cf.id]: { loading: false, zones: [], error: d.errors?.[0]?.message || "Failed" } }));
+            }
+        } catch (e) {
+            setZonesMap(p => ({ ...p, [cf.id]: { loading: false, zones: [], error: e.message } }));
+        }
+    };
+
+    const fetchRecords = async (cf, zoneId) => {
+        const apiToken = cf.apiKey || cf.api_key;
+        setRecordsMap(p => ({ ...p, [zoneId]: { loading: true, records: [], error: null } }));
+        try {
+            const cfBase = getCfApiBase();
+            const r = await fetch(`${cfBase}/zones/${zoneId}/dns_records?per_page=100`, {
+                headers: { Authorization: `Bearer ${apiToken}` },
+            });
+            const d = await r.json();
+            if (d.success) {
+                setRecordsMap(p => ({ ...p, [zoneId]: { loading: false, records: d.result || [], error: null } }));
+            } else {
+                setRecordsMap(p => ({ ...p, [zoneId]: { loading: false, records: [], error: d.errors?.[0]?.message || "Failed" } }));
+            }
+        } catch (e) {
+            setRecordsMap(p => ({ ...p, [zoneId]: { loading: false, records: [], error: e.message } }));
+        }
+    };
+
+    const toggleExpand = (cf) => {
+        if (expandedId === cf.id) {
+            setExpandedId(null);
+        } else {
+            setExpandedId(cf.id);
+            if (!zonesMap[cf.id]) fetchZones(cf);
+        }
+    };
+
+    const statusColors = { active: T.success, pending: T.warning, moved: T.muted };
+    const typeColors = { A: "#ef4444", AAAA: "#f97316", CNAME: "#3b82f6", MX: "#8b5cf6", TXT: "#6b7280", NS: "#10b981" };
+
+    return (
+        <>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <div style={{ fontSize: 11, color: T.muted }}>{cfAccounts.length} account{cfAccounts.length !== 1 ? "s" : ""} configured</div>
+                <Button onClick={onAdd}>+ Add Cloudflare Account</Button>
+            </div>
+            {cfAccounts.length === 0
+                ? <div style={S.emptyState}>No Cloudflare accounts yet. Add one in Settings → Cloudflare Profiles.</div>
+                : cfAccounts.map(cf => {
+                    const isExpanded = expandedId === cf.id;
+                    const zoneData = zonesMap[cf.id];
+                    return (
+                        <Card key={cf.id} style={{ marginBottom: 8, overflow: "hidden" }}>
+                            {/* Header row */}
+                            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", cursor: "pointer" }}
+                                onClick={() => toggleExpand(cf)}>
+                                <span style={{ fontSize: 14, transform: isExpanded ? "rotate(90deg)" : "rotate(0)", transition: "transform .15s" }}>▶</span>
+                                <div style={{ flex: 2 }}>
+                                    <div style={{ fontWeight: 700, fontSize: 13 }}>{cf.label || cf.name || "—"}</div>
+                                    <div style={{ fontSize: 10, color: T.muted, fontFamily: "monospace" }}>{(cf.accountId || cf.account_id || "—")}</div>
+                                </div>
+                                <div style={{ fontSize: 11, color: T.muted }}>
+                                    {zoneData?.zones ? `${zoneData.zones.length} domains` : "—"}
+                                </div>
+                                <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
+                                    <button onClick={() => { fetchZones(cf); flash?.(`Refreshing zones for ${cf.label}...`); }}
+                                        style={{ ...S.miniBtn, background: `${T.primary}22`, color: T.primary, border: "none", borderRadius: 5, cursor: "pointer" }}>↻ Zones</button>
+                                    <button onClick={() => onTest(cf)} disabled={testingCfId === cf.id}
+                                        style={{ ...S.miniBtn, background: `${T.success}22`, color: T.success, border: "none", borderRadius: 5, cursor: "pointer" }}>
+                                        {testingCfId === cf.id ? "..." : "Test"}
+                                    </button>
+                                    <button onClick={() => onEdit(cf)}
+                                        style={{ ...S.miniBtn, background: `${T.primary}22`, color: T.primary, border: "none", borderRadius: 5, cursor: "pointer" }}>Edit</button>
+                                    <button onClick={() => onDelete(cf)}
+                                        style={{ ...S.miniBtn, background: `${T.danger}22`, color: T.danger, border: "none", borderRadius: 5, cursor: "pointer" }}>✕</button>
+                                </div>
+                            </div>
+
+                            {/* Expanded zone list */}
+                            {isExpanded && (
+                                <div style={{ borderTop: `1px solid ${T.border}`, padding: "0 16px 12px" }}>
+                                    {zoneData?.loading && <div style={{ padding: 16, textAlign: "center", color: T.muted, fontSize: 11 }}>Loading zones...</div>}
+                                    {zoneData?.error && <div style={{ padding: 12, color: T.danger, fontSize: 11 }}>✗ {zoneData.error}</div>}
+                                    {zoneData?.zones?.length === 0 && !zoneData?.loading && !zoneData?.error && (
+                                        <div style={{ padding: 16, textAlign: "center", color: T.muted, fontSize: 11 }}>No zones found in this account</div>
+                                    )}
+                                    {zoneData?.zones?.map(zone => {
+                                        const rd = recordsMap[zone.id];
+                                        const isZoneOpen = rd !== undefined;
+                                        return (
+                                            <div key={zone.id} style={{ marginTop: 8 }}>
+                                                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: T.card2, borderRadius: 7, cursor: "pointer" }}
+                                                    onClick={() => !isZoneOpen ? fetchRecords(cf, zone.id) : setRecordsMap(p => { const n = {...p}; delete n[zone.id]; return n; })}>
+                                                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: statusColors[zone.status] || T.muted }} />
+                                                    <div style={{ flex: 1 }}>
+                                                        <span style={{ fontSize: 12, fontWeight: 600 }}>{zone.name}</span>
+                                                        <span style={{ fontSize: 10, color: T.muted, marginLeft: 8 }}>{zone.status}</span>
+                                                    </div>
+                                                    <span style={{ fontSize: 10, color: T.muted }}>
+                                                        {rd?.records ? `${rd.records.length} records` : "click to load"}
+                                                    </span>
+                                                    <span style={{ fontSize: 10, transform: isZoneOpen ? "rotate(180deg)" : "rotate(0)", transition: "transform .15s" }}>▼</span>
+                                                </div>
+                                                {/* DNS Records */}
+                                                {isZoneOpen && (
+                                                    <div style={{ marginLeft: 20, marginTop: 4 }}>
+                                                        {rd?.loading && <div style={{ padding: 8, color: T.muted, fontSize: 10 }}>Loading records...</div>}
+                                                        {rd?.error && <div style={{ padding: 8, color: T.danger, fontSize: 10 }}>{rd.error}</div>}
+                                                        {rd?.records?.length === 0 && !rd?.loading && <div style={{ padding: 8, color: T.muted, fontSize: 10 }}>No records</div>}
+                                                        {rd?.records?.length > 0 && (
+                                                            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 10, marginTop: 4 }}>
+                                                                <thead>
+                                                                    <tr style={{ color: T.muted, textAlign: "left" }}>
+                                                                        <th style={{ padding: "4px 8px", fontWeight: 600, width: 55 }}>Type</th>
+                                                                        <th style={{ padding: "4px 8px", fontWeight: 600 }}>Name</th>
+                                                                        <th style={{ padding: "4px 8px", fontWeight: 600 }}>Content</th>
+                                                                        <th style={{ padding: "4px 8px", fontWeight: 600, width: 40 }}>Proxy</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {rd.records.map(r => (
+                                                                        <tr key={r.id} style={{ borderTop: `1px solid ${T.border}33` }}>
+                                                                            <td style={{ padding: "4px 8px", fontWeight: 700, color: typeColors[r.type] || T.text }}>{r.type}</td>
+                                                                            <td style={{ padding: "4px 8px", fontFamily: "monospace" }}>{r.name?.replace(`.${zone.name}`, "") || "@"}</td>
+                                                                            <td style={{ padding: "4px 8px", fontFamily: "monospace", maxWidth: 250, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.content}</td>
+                                                                            <td style={{ padding: "4px 8px", textAlign: "center" }}>{r.proxied ? "☁️" : "—"}</td>
+                                                                        </tr>
+                                                                    ))}
+                                                                </tbody>
+                                                            </table>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </Card>
+                    );
+                })}
+        </>
+    );
+}
+
+function D1DatabaseTab() {
+    const [sqlQuery, setSqlQuery] = useState("SELECT * FROM sqlite_master WHERE type='table' ORDER BY name");
+    const [queryResult, setQueryResult] = useState(null);
+    const [queryError, setQueryError] = useState(null);
+    const [tables, setTables] = useState([]);
+    const [selectedTable, setSelectedTable] = useState(null);
+    const [tableData, setTableData] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [connectionStatus, setConnectionStatus] = useState(null);
+    const [initError, setInitError] = useState(null);
+
+    const loadTables = async () => {
+        try {
+            const result = await getTables();
+            if (result.success) {
+                setTables(result.tables || []);
+                setInitError(null);
+            } else {
+                setInitError(result.error || "Failed to load tables");
+            }
+        } catch (error) {
+            setInitError(error.message);
+        }
+    };
+
+    useEffect(() => {
+        const testConn = async () => {
+            try {
+                setLoading(true);
+                const result = await testConnection();
+                setConnectionStatus(result);
+                if (result.success) {
+                    await loadTables();
+                } else {
+                    setInitError(result.error || "Connection failed");
+                }
+            } catch (error) {
+                setInitError(error.message);
+                setConnectionStatus({ success: false, error: error.message });
+            } finally {
+                setLoading(false);
+            }
+        };
+        testConn();
+    }, []);
+
+    const handleRunQuery = async () => {
+        if (!sqlQuery.trim()) return;
+        setLoading(true);
+        setQueryError(null);
+        setQueryResult(null);
+        try {
+            const result = await query(sqlQuery);
+            if (result.success) {
+                setQueryResult(result.results || []);
+                setQueryError(null);
+            } else {
+                setQueryError(result.error);
+            }
+        } catch (error) {
+            setQueryError(error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleViewTable = async (tableName) => {
+        setSelectedTable(tableName);
+        setLoading(true);
+        setTableData(null);
+        try {
+            const result = await query(`SELECT * FROM ${tableName} LIMIT 100`);
+            if (result.success) {
+                setTableData(result.results || []);
+            } else {
+                setQueryError(result.error);
+            }
+        } catch (error) {
+            setQueryError(error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const QuickTableBtn = ({ name, onClick }) => (
+        <button
+            onClick={onClick}
+            style={{
+                padding: "8px 14px",
+                background: T.card2,
+                border: `1px solid ${T.border}`,
+                borderRadius: 6,
+                fontSize: 12,
+                cursor: "pointer",
+                color: T.text,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+            }}
+        >
+            📊 {name}
+        </button>
+    );
+
+    const ResultTable = ({ data }) => {
+        if (!data || data.length === 0) {
+            return <div style={{ padding: 20, textAlign: "center", color: T.dim }}>No results</div>;
+        }
+        const columns = Object.keys(data[0]);
+
+        return (
+            <div style={{ overflowX: "auto", maxHeight: 400, overflowY: "auto" }}>
+                <table style={{ width: "100%", fontSize: 11, borderCollapse: "collapse" }}>
+                    <thead style={{ position: "sticky", top: 0, background: T.card2 }}>
+                        <tr>
+                            {columns.map(col => (
+                                <th key={col} style={{
+                                    padding: "8px 12px",
+                                    textAlign: "left",
+                                    borderBottom: `2px solid ${T.border}`,
+                                    color: T.primary,
+                                    fontWeight: 600,
+                                }}>
+                                    {col}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {data.map((row, i) => (
+                            <tr key={i} style={{ borderBottom: `1px solid ${T.border}22` }}>
+                                {columns.map(col => (
+                                    <td key={col} style={{
+                                        padding: "6px 12px",
+                                        maxWidth: 300,
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                        whiteSpace: "nowrap",
+                                    }}>
+                                        {row[col]?.toString() || "NULL"}
+                                    </td>
+                                ))}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        );
+    };
+
+    return (
+        <div>
+            <Card style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: T.text }}>
+                    🔗 Connection Status
+                </div>
+                {loading ? (
+                    <div style={{ color: T.muted, fontSize: 11 }}>Testing connection...</div>
+                ) : connectionStatus ? (
+                    <div style={{
+                        color: connectionStatus.success ? T.success : T.danger,
+                        fontSize: 11,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6
+                    }}>
+                        <span>{connectionStatus.success ? "✅" : "❌"}</span>
+                        {connectionStatus.success ? "Connected to D1 Database" : connectionStatus.error}
+                    </div>
+                ) : (
+                    <div style={{ color: T.muted, fontSize: 11 }}>Not tested</div>
+                )}
+
+                {initError && (
+                    <div style={{
+                        marginTop: 8,
+                        padding: 8,
+                        background: `${T.danger}11`,
+                        border: `1px solid ${T.danger}44`,
+                        borderRadius: 6,
+                        fontSize: 11,
+                        color: T.danger
+                    }}>
+                        ⚠️ {initError}
+                    </div>
+                )}
+            </Card>
+
+            {tables.length > 0 && (
+                <Card style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: T.text }}>
+                        📊 Tables ({tables.length})
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                        {tables.map(t => (
+                            <QuickTableBtn
+                                key={t}
+                                name={t}
+                                onClick={() => handleViewTable(t)}
+                            />
+                        ))}
+                    </div>
+                </Card>
+            )}
+
+            <Card style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: T.text }}>
+                    🔍 SQL Query
+                </div>
+                <textarea
+                    value={sqlQuery}
+                    onChange={(e) => setSqlQuery(e.target.value)}
+                    placeholder="SELECT * FROM table_name WHERE condition = ?"
+                    style={{
+                        width: "100%",
+                        minHeight: 80,
+                        padding: 10,
+                        borderRadius: 7,
+                        background: T.input,
+                        border: `1px solid ${T.border}`,
+                        color: T.text,
+                        fontSize: 12,
+                        fontFamily: "monospace",
+                        resize: "vertical",
+                        boxSizing: "border-box",
+                    }}
+                />
+                <div style={{ display: "flex", gap: 8, marginTop: 10, justifyContent: "flex-end" }}>
+                    <Button
+                        onClick={handleRunQuery}
+                        disabled={loading}
+                        style={{ minWidth: 80 }}
+                    >
+                        {loading ? "..." : "▶ Run Query"}
+                    </Button>
+                </div>
+            </Card>
+
+            {queryError && (
+                <Card style={{ marginBottom: 12, border: `1px solid ${T.danger}`, background: `${T.danger}11` }}>
+                    <div style={{ fontSize: 12, color: T.danger }}>
+                        ❌ {queryError}
+                    </div>
+                </Card>
+            )}
+
+            {queryResult && (
+                <Card>
+                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: T.text }}>
+                        📋 Results ({queryResult.length} rows)
+                    </div>
+                    <ResultTable data={queryResult} />
+                </Card>
+            )}
+
+            {tableData && selectedTable && (
+                <Card>
+                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: T.text }}>
+                        📊 Table: {selectedTable} ({tableData.length} rows)
+                    </div>
+                    <ResultTable data={tableData} />
+                </Card>
+            )}
+        </div>
+    );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   OpsCenter — Tasks 7, 8, 9, 11, 12
+   ═══════════════════════════════════════════════════════════════════════ */
+export function OpsCenter({ data, add, del, upd, settings }) {
+    /* ─── Core state ─────────────────────────────────────────────────── */
+    const [tab, setTab] = useState("overview");
+    const [modal, setModal] = useState(null);
+    const [lcCards, setLcCards] = useState([]);
+    const [lcBins, setLcBins] = useState([]);
+    const [lcAddresses, setLcAddresses] = useState([]);
+    const [lcTags, setLcTags] = useState([]);
+    const [mlProfiles, setMlProfiles] = useState([]);
+    const [lcLoading, setLcLoading] = useState(false);
+    const [mlLoading, setMlLoading] = useState(false);
+    const [txDateFrom, setTxDateFrom] = useState(() => new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10));
+    const [txDateTo, setTxDateTo] = useState(() => new Date().toISOString().slice(0, 10));
+    const [txLoading, setTxLoading] = useState(false);
+
+    /* ─── New state (Tasks 7-12) ─────────────────────────────────────── */
+    const [lcFilter, setLcFilter] = useState("");
+    const [lcTransactions, setLcTransactions] = useState([]);
+    const [changingLimit, setChangingLimit] = useState(null);   // { uuid, value }
+    const [suspending, setSuspending] = useState(null);          // account id string
+    const [wizardStep, setWizardStep] = useState(0);
+    const [wizardData, setWizardData] = useState({});
+    const [statusMsg, setStatusMsg] = useState(null);            // { msg, type }
+    const [syncing, setSyncing] = useState(false);
+    const [testingCfId, setTestingCfId] = useState(null);
+    const [testingRegId, setTestingRegId] = useState(null);
+    const [editingReg, setEditingReg] = useState(null);
+    const [requestingIp, setRequestingIp] = useState(false);
+    const [domainDeployMap, setDomainDeployMap] = useState({});
+    const [domainCfFilter, setDomainCfFilter] = useState("all");
+    const [compactDomainView, setCompactDomainView] = useState(false);
+    const [expandedCard, setExpandedCard] = useState(null); // card uuid
+    const [linkingProfile, setLinkingProfile] = useState({}); // { cardUuid: profileId }
+
+    /* ─── Flash a status message for 3s ──────────────────────────────── */
+    const flash = (msg, type = "success") => {
+        setStatusMsg({ msg, type });
+        setTimeout(() => setStatusMsg(null), 3000);
+    };
+
+    const formatBalance = (balance, currency) => {
+        const amount =
+            balance && typeof balance === "object"
+                ? (balance.amount ?? balance.value ?? balance.balance ?? balance?.[0]?.amount ?? balance?.[0]?.balance ?? null)
+                : balance;
+        const curr =
+            currency ||
+            (balance && typeof balance === "object"
+                ? (balance.currency ?? balance?.[0]?.currency ?? "")
+                : "");
+
+        if (amount === null || amount === undefined || amount === "") return "N/A";
+        return curr ? `${amount} ${curr}` : String(amount);
+    };
+
+    const handleTestCfAccount = async (cf) => {
+        const accountId = cf.accountId || cf.account_id || "";
+        const apiToken = cf.apiKey || cf.api_key || "";
+        if (!accountId || !apiToken) {
+            flash("Cloudflare Account ID or API Token is missing", "error");
+            return;
+        }
+
+        setTestingCfId(cf.id);
+        try {
+            const testRes = await api.post("/api/automation/cf-validate", { accountId, apiToken });
+            if (testRes?.success) {
+                flash(`Cloudflare test passed: ${cf.label || cf.email || cf.id}`);
+            } else {
+                flash(testRes?.error || "Cloudflare test failed", "error");
+            }
+        } catch (e) {
+            flash(`Cloudflare test failed: ${e.message}`, "error");
+        } finally {
+            setTestingCfId(null);
+        }
+    };
+
+    const handleTestRegistrarAccount = async (reg) => {
+        setTestingRegId(reg.id);
+        try {
+            const result = await registrarApi.testConnection(reg.id);
+            if (result.success) {
+                flash(`Connected! Balance: ${formatBalance(result.balance, result.currency)}`, "success");
+            } else {
+                flash(`Connection failed: ${result.message || "Unknown error"}`, "error");
+            }
+        } catch (e) {
+            flash(`Connection failed: ${e.message}`, "error");
+        } finally {
+            setTestingRegId(null);
+        }
+    };
+
+    const handleRequestIp = async () => {
+        setRequestingIp(true);
+        try {
+            const res = await api.get("/api/automation/registrar/ip");
+            if (res.success) {
+                // Copy to clipboard
+                if (navigator.clipboard) {
+                    await navigator.clipboard.writeText(res.ip);
+                    flash(`Worker IP: ${res.ip} (Copied!)`, "success");
+                } else {
+                    flash(`Worker IP: ${res.ip}`, "success");
+                }
+            } else {
+                flash(res.error || "Failed to get IP", "error");
+            }
+        } catch (e) {
+            flash(`Failed to get IP: ${e.message}`, "error");
+        } finally {
+            setRequestingIp(false);
+        }
+    };
+
+    /* ─── Sync MLX token from settings ──────────────────────────────── */
+    useEffect(() => {
+        if (settings.mlToken) multiloginApi.setToken(settings.mlToken);
+    }, [settings.mlToken]);
+
+    /* ─── Data fetching (direct MLX API) ─────────────────────────────── */
+    useEffect(() => {
+        let cancelled = false;
+
+        if (tab === "payments" || tab === "overview") {
+            setLcLoading(true);
+            Promise.all([
+                leadingCardsApi.getCards(),
+                leadingCardsApi.getBins(),
+                leadingCardsApi.getBillingAddresses(),
+                leadingCardsApi.getTags()
+            ]).then(([cardsRes, binsRes, addrRes, tagsRes]) => {
+                if (cancelled) return;
+                setLcCards(cardsRes.results || []);
+                setLcBins(binsRes || []);
+                setLcAddresses(addrRes.results || []);
+                setLcTags(Array.isArray(tagsRes) ? tagsRes : (tagsRes.tags || tagsRes.results || []));
+            }).catch(() => { })
+                .finally(() => { if (!cancelled) setLcLoading(false); });
+        }
+        if (tab === "profiles" || tab === "overview") {
+            setMlLoading(true);
+            multiloginApi.getProfiles()
+                .then(res => {
+                    if (cancelled) return;
+                    const list = res?.data?.profiles || (Array.isArray(res) ? res : []);
+                    setMlProfiles(list);
+                })
+                .catch(() => { })
+                .finally(() => { if (!cancelled) setMlLoading(false); });
+        }
+
+        return () => { cancelled = true; };
+    }, [tab, settings.mlToken]);  // re-fetch when token arrives (e.g. after Neon recovery)
+
+    useEffect(() => {
+        if (tab !== "profiles") return;
+        const poll = setInterval(() => {
+            multiloginApi.getActiveProfiles()
+                .then(res => {
+                    const activeList = Array.isArray(res) ? res : (res?.data || []);
+                    const activeIds = activeList.map(p => p.mlProfileId || p.uuid || p.id);
+                    // Update mlProfiles status based on active list
+                    setMlProfiles(prev => (Array.isArray(prev) ? prev : []).map(p => {
+                        const pid = p.uuid || p.id;
+                        const isActive = activeIds.includes(pid);
+                        return { ...p, status: isActive ? "running" : (p.status === "running" ? "stopped" : p.status) };
+                    }));
+                })
+                .catch(() => { });
+        }, 30000);
+        return () => clearInterval(poll);
+    }, [tab]);
+
+    useEffect(() => {
+        const onResize = () => setCompactDomainView(window.innerWidth < 1180);
+        onResize();
+        window.addEventListener("resize", onResize);
+        return () => window.removeEventListener("resize", onResize);
+    }, []);
+
+    useEffect(() => {
+        if (tab !== "domains") return;
+        let cancelled = false;
+
+        const loadDomainDeploys = async () => {
+            try {
+                const history = await getDeploymentHistory(null, null, "success", 300);
+                if (cancelled) return;
+
+                const byDomain = {};
+                const pushRecord = (key, record) => {
+                    if (!key) return;
+                    const normalizedKey = String(key).trim().toLowerCase();
+                    if (!normalizedKey) return;
+
+                    if (!byDomain[normalizedKey]) {
+                        byDomain[normalizedKey] = { targets: {}, latest: null };
+                    }
+
+                    const createdAt = record.createdAt || record.created_at || record.timestamp || "";
+                    const prev = byDomain[normalizedKey].targets[record.target];
+                    if (!prev || new Date(createdAt).getTime() > new Date(prev.createdAt || 0).getTime()) {
+                        byDomain[normalizedKey].targets[record.target] = {
+                            target: record.target,
+                            url: record.url,
+                            createdAt,
+                        };
+                    }
+
+                    if (!byDomain[normalizedKey].latest || new Date(createdAt).getTime() > new Date(byDomain[normalizedKey].latest.createdAt || 0).getTime()) {
+                        byDomain[normalizedKey].latest = {
+                            target: record.target,
+                            url: record.url,
+                            createdAt,
+                        };
+                    }
+                };
+
+                (history || []).forEach((record) => {
+                    if (!record?.url || !record?.target) return;
+                    pushRecord(record.domainId || record.domain_id, record);
+                    pushRecord(record.domain, record);
+                });
+
+                setDomainDeployMap(byDomain);
+            } catch (e) {
+                console.warn("[OpsCenter] Failed to load domain deploys:", e?.message || e);
+                if (!cancelled) setDomainDeployMap({});
+            }
+        };
+
+        loadDomainDeploys();
+        return () => { cancelled = true; };
+    }, [tab]);
+
+    /* ─── Refresh helpers ────────────────────────────────────────────── */
+    const refreshCards = () => leadingCardsApi.getCards().then(res => setLcCards(res.results || []));
+    const refreshProfiles = () => multiloginApi.getProfiles().then(res => {
+        const list = res?.data?.profiles || (Array.isArray(res) ? res : []);
+        setMlProfiles(list);
+    });
+
+    const handleMapProfile = async (cardUuid, profileId) => {
+        const existing = (data.accounts || []).find(acc => acc.cardUuid === cardUuid);
+        const profile = mlProfiles.find(p => (p.uuid || p.id) === profileId);
+
+        if (existing) {
+            await upd("accounts", existing.id, { ...existing, profileId, profileName: profile?.name || profile?.label });
+        } else {
+            const card = lcCards.find(c => c.uuid === cardUuid);
+            await add("accounts", {
+                id: Date.now().toString(),
+                cardUuid,
+                profileId,
+                accountName: card?.comment || `Account ${card?.card_last_4}`,
+                profileName: profile?.name || profile?.label,
+                status: 'ACTIVE'
+            });
+        }
+        flash("Card-Profile mapping saved!");
+    };
+
+    /* ─── Risk detection via engine ──────────────────────────────────── */
+    const risks = useMemo(() => {
+        // Build proper payments array from lcCards for risk engine
+        const paymentsData = lcCards.map(card => ({
+            id: card.uuid,
+            label: `**** ${card.card_last_4}`,
+            paymentId: card.payment_id,
+            status: card.status,
+        }));
+        return detectRisks({
+            accounts: data.accounts,
+            payments: paymentsData,
+            profiles: data.profiles,
+            domains: data.domains,
+            lcCards,
+        });
+    }, [data, lcCards]);
+
+    /* ─── Tabs ───────────────────────────────────────────────────────── */
+    const tabs = [
+        { id: "overview", label: "Overview", icon: "🏠" },
+        { id: "domains", label: "Domains", icon: "🌐", count: data.domains.length },
+        { id: "accounts", label: "Ads Accounts", icon: "💰", count: data.accounts.length },
+        { id: "deploy", label: "Deploy", icon: "🚀" },
+        { id: "cf", label: "CF Accounts", icon: "☁️", count: data.cfAccounts?.length || 0 },
+        { id: "profiles", label: "Profiles", icon: "👤", count: data.profiles.length },
+        { id: "payments", label: "Payment Methods", icon: "💳", count: lcCards.length },
+        { id: "api-accounts", label: "API Accounts", icon: "🔑", count: (data.cfAccounts?.length || 0) + (data.registrarAccounts?.length || 0) },
+        { id: "d1", label: "D1 Database", icon: "🗄️" },
+        { id: "proxy-list", label: "Proxy Pool", icon: "🌐" },
+        { id: "proxy-health", label: "Proxy Health", icon: "🛡️" },
+        { id: "risks", label: "Risks", icon: "⚠️" },
+        { id: "logs", label: "Audit Logs", icon: "📋" },
+    ];
+
+    /* ─── Filtered cards (Task 7) ────────────────────────────────────── */
+    const filteredCards = useMemo(() => {
+        if (!lcFilter) return lcCards;
+        return lcCards.filter(c => c.status === lcFilter);
+    }, [lcCards, lcFilter]);
+
+    const getDomainCfState = (domain) => {
+        const cfAccountId = domain.cfAccountId || domain.cf_account_id || "";
+        const hasCfZone = !!(domain.zoneId || domain.zone_id);
+        return String(domain.cfStatus || domain.cf_status || (hasCfZone ? "active" : cfAccountId ? "pending" : "not-connected")).toLowerCase();
+    };
+
+    const filteredDomains = useMemo(() => {
+        const list = data.domains || [];
+        if (domainCfFilter === "all") return list;
+        return list.filter((d) => getDomainCfState(d) === domainCfFilter);
+    }, [data.domains, domainCfFilter]);
+
+    /* ─────────────────────────────────────────────────────────────────
+       SHARED COMPONENTS — AddModal, ListTable
+       ───────────────────────────────────────────────────────────────── */
+    const AddModal = ({ title, coll, fields, onSubmit }) => {
+        const [form, setForm] = useState({});
+        return (
+            <div style={S.overlay}>
+                <Card style={{ width: 440, padding: 24, animation: "fadeIn .2s" }}>
+                    <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>{title}</h3>
+                    {fields.map(f => (
+                        <div key={f.key} style={S.fieldWrap}>
+                            <label style={S.label}>{f.label}</label>
+                            {f.options ? (
+                                <select value={form[f.key] || ""} onChange={e => setForm({ ...form, [f.key]: e.target.value })} style={S.select}>
+                                    <option value="">Select...</option>
+                                    {f.options.map(o => <option key={o.id || o.value || o.uuid || o} value={o.id || o.value || o.uuid || o}>{o.displayLabel || o.label || o.name || o}</option>)}
+                                </select>
+                            ) : f.type === "textarea" ? (
+                                <textarea value={form[f.key] || ""} onChange={e => setForm({ ...form, [f.key]: e.target.value })} placeholder={f.ph} rows={3}
+                                    style={{ ...S.select, resize: "vertical", minHeight: 60 }} />
+                            ) : (
+                                <Inp value={form[f.key] || ""} onChange={v => setForm({ ...form, [f.key]: v })} placeholder={f.ph} type={f.type || "text"} />
+                            )}
+                        </div>
+                    ))}
+                    <div style={S.btnRow}>
+                        <Button variant="ghost" onClick={() => setModal(null)}>Cancel</Button>
+                        <Button onClick={() => {
+                            if (onSubmit) { onSubmit(form); }
+                            else { add(coll, { id: uid(), ...form, status: "active", createdAt: now() }); }
+                            setModal(null);
+                        }}>Add</Button>
+                    </div>
+                </Card>
+            </div>
+        );
+    };
+
+    const ListTable = ({ items, coll, cols, noDelete }) => (
+        <div style={{ marginTop: 12 }}>
+            {!items || items.length === 0
+                ? <div style={S.emptyState}>No items yet</div>
+                : items.map(item => (
+                    <div key={item.id || item.uuid} style={S.row}>
+                        {cols.map((col, ci) => (
+                            <div key={ci} style={{ flex: col.flex || 1, color: ci === 0 ? T.text : T.muted, fontWeight: ci === 0 ? 600 : 400, fontSize: ci === 0 ? 12 : 11 }}>
+                                {col.render ? col.render(item) : item[col.key] || "\u2014"}
+                            </div>
+                        ))}
+                        {!noDelete && <button onClick={() => del(coll, item.id)} style={{ background: `${T.danger}22`, border: "none", borderRadius: 5, padding: "4px 8px", color: T.danger, cursor: "pointer", fontSize: 10 }}>\u2715</button>}
+                    </div>
+                ))}
+        </div>
+    );
+
+    /* ─────────────────────────────────────────────────────────────────
+       TASK 12 — Account Ban / Suspend Flow
+       ───────────────────────────────────────────────────────────────── */
+    const handleSuspend = async (account) => {
+        if (!confirm(`Suspend account "${account.label}"? This will block the card and stop the profile.`)) return;
+        setSuspending(account.id);
+        try {
+            // 1. Block card if linked
+            if (account.cardUuid) {
+                await leadingCardsApi.blockCard(account.cardUuid);
+            }
+            // 2. Stop profile if linked
+            if (account.profileId) {
+                const prof = data.profiles.find(p => p.id === account.profileId);
+                if (prof && prof.mlProfileId) {
+                    await multiloginApi.stopProfile(prof.mlProfileId);
+                }
+            }
+            // 3. Update local state + persist to API
+            upd("accounts", account.id, { status: "suspended", cardStatus: "BLOCKED" });
+            await refreshCards();
+            flash(`Account "${account.label}" suspended successfully`, "success");
+        } catch (e) {
+            flash(`Suspend failed: ${e.message}`, "error");
+        } finally {
+            setSuspending(null);
+        }
+    };
+
+    /* ═════════════════════════════════════════════════════════════════
+       RENDER
+       ═════════════════════════════════════════════════════════════════ */
+    return (
+        <div style={{ animation: "fadeIn .3s ease" }}>
+            <h1 style={{ fontSize: 22, fontWeight: 700, margin: "0 0 16px" }}>🏢 Ops Center</h1>
+
+            {/* ─── Tab Bar ────────────────────────────────────────────── */}
+            <div style={{ display: "flex", gap: 4, marginBottom: 20, flexWrap: "wrap" }}>
+                {tabs.map(t => (
+                    <button key={t.id} onClick={() => setTab(t.id)} style={{
+                        padding: "6px 14px", background: tab === t.id ? `${T.primary}18` : "transparent",
+                        border: `1px solid ${tab === t.id ? T.primary : T.border}`, borderRadius: 6,
+                        color: tab === t.id ? T.text : T.muted, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                        display: "flex", alignItems: "center", gap: 5,
+                    }}>
+                        <span style={{ fontSize: 13 }}>{t.icon}</span> {t.label}
+                        {t.count !== undefined && <span style={{ fontSize: 10, background: T.card2, padding: "1px 5px", borderRadius: 4 }}>{t.count}</span>}
+                    </button>
+                ))}
+            </div>
+
+            <StatusMsg msg={statusMsg?.msg} type={statusMsg?.type} />
+
+            {/* ═══════════════════════════════════════════════════════════
+                TAB: OVERVIEW
+                ═══════════════════════════════════════════════════════════ */}
+            {tab === "overview" && <>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 10, marginBottom: 16 }}>
+                    {[
+                        { l: "Domains", v: data.domains.length, c: "#60a5fa" },
+                        { l: "Ads Accounts", v: data.accounts.length, c: T.success },
+                        { l: "Profiles", v: data.profiles.length, c: "#a78bfa" },
+                        { l: "Payments", v: lcCards.length, c: T.warning },
+                        { l: "Risks", v: risks.length, c: risks.length > 0 ? T.danger : T.success },
+                    ].map((m, i) => (
+                        <Card key={i} style={{ padding: 14 }}>
+                            <div style={{ fontSize: 10, color: T.muted }}>{m.l}</div>
+                            <div style={{ fontSize: 22, fontWeight: 800, color: m.c }}>{m.v}</div>
+                        </Card>
+                    ))}
+                </div>
+
+                {/* Risks summary */}
+                {risks.length > 0 && <Card style={{ marginBottom: 16, padding: 16 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: T.danger, marginBottom: 8 }}>⚠ Active Risks</div>
+                    {risks.slice(0, 5).map((r, i) => (
+                        <div key={i} style={{ padding: "4px 0", fontSize: 12, color: T.muted }}>
+                            <span style={{ marginRight: 6 }}>{RISK_ICONS[r.category] || "⚠️"}</span>
+                            <Badge style={{ background: `${RISK_COLORS[r.level] || T.warning}18`, color: RISK_COLORS[r.level] || T.warning, border: `1px solid ${RISK_COLORS[r.level] || T.warning}44` }}>{r.level}</Badge>
+                            <span style={{ marginLeft: 8 }}>{r.msg}</span>
+                        </div>
+                    ))}
+                    {risks.length > 5 && <div style={{ fontSize: 11, color: T.dim, marginTop: 6 }}>+{risks.length - 5} more — see Risks tab</div>}
+                </Card>}
+
+                {/* Task 11 — New Account (E2E) wizard launch */}
+                <Card style={{ padding: 16, marginBottom: 16 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div>
+                            <div style={{ fontSize: 14, fontWeight: 700 }}>Quick Actions</div>
+                            <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>Create a full account stack end-to-end</div>
+                        </div>
+                        <Button onClick={() => { setWizardStep(0); setWizardData({}); setModal("wizard"); }}>+ New Account (E2E)</Button>
+                    </div>
+                </Card>
+            </>}
+
+            {/* ═══════════════════════════════════════════════════════════
+                TAB: DOMAINS
+                ═══════════════════════════════════════════════════════════ */}
+            {tab === "domains" && <>
+                <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+                    <Button onClick={() => setModal("domain-check")}>🔍 Check & Register</Button>
+                    <Button variant="ghost" onClick={() => setModal("domain-import")}>📥 Import from Registrar</Button>
+                    <Button variant="ghost" onClick={() => setModal("domain-add-existing")}>+ Add Existing Domain</Button>
+                </div>
+
+                <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
+                    <button style={S.filterBtn(domainCfFilter === "all")} onClick={() => setDomainCfFilter("all")}>CF: All</button>
+                    <button style={S.filterBtn(domainCfFilter === "active")} onClick={() => setDomainCfFilter("active")}>CF: Active</button>
+                    <button style={S.filterBtn(domainCfFilter === "pending")} onClick={() => setDomainCfFilter("pending")}>CF: Pending</button>
+                    <button style={S.filterBtn(domainCfFilter === "not-connected")} onClick={() => setDomainCfFilter("not-connected")}>CF: Not Connected</button>
+                </div>
+
+                {/* Domain list with actions */}
+                <div style={{ marginTop: 12 }}>
+                    {filteredDomains.length === 0
+                        ? <div style={S.emptyState}>No domains yet. Click "Check & Register" to get started.</div>
+                        : <>
+                            {!compactDomainView && <div style={{ display: "flex", gap: 10, padding: "6px 12px", fontSize: 10, fontWeight: 700, color: T.dim, textTransform: "uppercase", letterSpacing: 0.4 }}>
+                                <div style={{ flex: 2 }}>Domain</div>
+                                <div style={{ flex: 1 }}>Registrar</div>
+                                <div style={{ flex: 2 }}>Cloudflare</div>
+                                <div style={{ flex: 2.2 }}>Deploy</div>
+                                <div style={{ flex: 1.1 }}>Status</div>
+                                <div style={{ width: 92, textAlign: "right" }}>Actions</div>
+                            </div>}
+                            {filteredDomains.map(d => {
+                                const cfAccountId = d.cfAccountId || d.cf_account_id || "";
+                                const cfAccount = data.cfAccounts?.find(c =>
+                                    c.id === cfAccountId || c.accountId === cfAccountId || c.account_id === cfAccountId
+                                );
+                                const deployInfo = domainDeployMap[String(d.id || "").toLowerCase()] || domainDeployMap[String(d.domain || "").toLowerCase()] || { targets: {}, latest: null };
+                                const deployTargets = Object.values(deployInfo.targets || {});
+                                const cfStateRaw = getDomainCfState(d);
+                                const cfStateLabel = cfStateRaw === "active"
+                                    ? "Active"
+                                    : cfStateRaw === "pending"
+                                        ? "Pending"
+                                        : "Not connected";
+                                const cfStateColor = cfStateRaw === "active"
+                                    ? T.success
+                                    : cfStateRaw === "pending"
+                                        ? T.warning
+                                        : T.dim;
+                                return (
+                                    <div key={d.id} style={{ ...S.row, ...(compactDomainView ? { flexWrap: "wrap", alignItems: "flex-start", gap: 8 } : {}) }}>
+                                        <div style={{ flex: 2, fontWeight: 600, fontSize: 12 }}>{d.domain || "—"}</div>
+                                        <div style={{ flex: 1, fontSize: 11 }}>{d.registrar || "—"}</div>
+                                        <div style={{ flex: 2, fontSize: 11 }}>
+                                            <div>{cfAccount ? cfAccount.label : cfAccountId ? `${cfAccountId.slice(0, 8)}...` : "—"}</div>
+                                            <div style={{ marginTop: 2 }}>
+                                                <Badge style={{ background: `${cfStateColor}18`, color: cfStateColor, border: `1px solid ${cfStateColor}44` }}>{cfStateLabel}</Badge>
+                                            </div>
+                                        </div>
+                                        <div style={{ flex: 2.2, fontSize: 11 }}>
+                                            {deployTargets.length === 0 ? (
+                                                <span style={{ color: T.dim }}>Not deployed</span>
+                                            ) : (
+                                                <div>
+                                                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 2 }}>
+                                                        {deployTargets.map((entry) => (
+                                                            <Badge key={entry.target} color={T.primary}>{entry.target}</Badge>
+                                                        ))}
+                                                    </div>
+                                                    {deployInfo.latest?.url && (
+                                                        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                                                            <a
+                                                                href={deployInfo.latest.url}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                style={{ color: T.primary, textDecoration: "none", fontSize: 10 }}
+                                                            >
+                                                                Open latest ↗
+                                                            </a>
+                                                            <button
+                                                                onClick={() => navigator.clipboard?.writeText(deployInfo.latest.url)}
+                                                                style={{ background: "none", border: "none", color: T.muted, cursor: "pointer", fontSize: 10, padding: 0 }}
+                                                            >
+                                                                Copy URL
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div style={{ flex: 1.1 }}>
+                                            <Badge style={{ background: `${d.status === "active" ? T.success : d.status === "pending" ? T.warning : T.dim}18`, color: d.status === "active" ? T.success : d.status === "pending" ? T.warning : T.dim, border: `1px solid ${d.status === "active" ? T.success : d.status === "pending" ? T.warning : T.dim}44` }}>
+                                                {d.status || "unknown"}
+                                            </Badge>
+                                        </div>
+                                        <div style={{ display: "flex", gap: 4, width: 92, justifyContent: "flex-end" }}>
+                                            <button onClick={() => setModal({ type: "domain-manage", domain: d })}
+                                                style={{ ...S.miniBtn, background: `${T.primary}22`, color: T.primary }}>Manage</button>
+                                            <button onClick={() => del("domains", d.id)}
+                                                style={{ background: `${T.danger}22`, border: "none", borderRadius: 5, padding: "4px 8px", color: T.danger, cursor: "pointer", fontSize: 10 }}>{"\u2715"}</button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </>}
+                </div>
+            </>}
+
+            {/* ═══════════════════════════════════════════════════════════
+                MODAL: CHECK & REGISTER DOMAIN
+                ═══════════════════════════════════════════════════════════ */}
+            {modal === "domain-check" && (() => {
+                const CheckRegisterModal = () => {
+                    const [step, setStep] = useState(1);
+                    const [domain, setDomain] = useState("");
+                    const [available, setAvailable] = useState(null);
+                    const [checking, setChecking] = useState(false);
+                    const [registering, setRegistering] = useState(false);
+                    const [selectedRegistrar, setSelectedRegistrar] = useState("internetbs");
+                    const [selectedCfAccount, setSelectedCfAccount] = useState("");
+                    const [error, setError] = useState(null);
+
+                    const handleCheck = async () => {
+                        if (!domain || !domain.includes(".")) {
+                            setError("Please enter a valid domain");
+                            return;
+                        }
+                        setChecking(true);
+                        setError(null);
+                        try {
+                            const result = await registrarApi.checkAvailability(domain);
+                            setAvailable(result.available);
+                            if (!result.success) {
+                                setError(result.message || "Check failed");
+                            }
+                        } catch (e) {
+                            setError(e.message);
+                        } finally {
+                            setChecking(false);
+                        }
+                    };
+
+                    const handleRegister = async () => {
+                        setRegistering(true);
+                        setError(null);
+                        try {
+                            let finalZoneId = null;
+                            let finalNameservers = [];
+
+                            // Register domain
+                            const regResult = await registrarApi.registerDomain({
+                                domain,
+                                period: "1Y",
+                                accountId: selectedRegistrar,
+                            });
+
+                            if (!regResult.success) {
+                                setError(regResult.message || "Registration failed");
+                                setRegistering(false);
+                                return;
+                            }
+
+                            // Add to Cloudflare - get API token from selected CF account
+                            if (selectedCfAccount) {
+                                const cfAccount = data.cfAccounts?.find(c => c.id === selectedCfAccount);
+                                if (cfAccount?.api_key) {
+                                    const zoneResult = await cloudflareDns.getOrCreateZone(domain, selectedCfAccount, cfAccount.api_key);
+                                    if (zoneResult.success) {
+                                        finalZoneId = zoneResult.zoneId;
+                                        finalNameservers = zoneResult.nameservers || [];
+                                        // Update nameservers at registrar
+                                        await registrarApi.updateNameservers(domain, finalNameservers, selectedRegistrar);
+                                    } else {
+                                        setError("Failed to add to Cloudflare: " + zoneResult.error);
+                                        setRegistering(false);
+                                        return;
+                                    }
+                                }
+                            }
+
+                            // Add to local database
+                            add("domains", {
+                                id: uid(),
+                                domain,
+                                registrar: data.registrarAccounts?.find(r => r.id === selectedRegistrar)?.provider || "internetbs",
+                                registrarAccountId: selectedRegistrar,
+                                cfAccountId: selectedCfAccount,
+                                zoneId: finalZoneId,
+                                nameservers: finalNameservers,
+                                status: finalZoneId ? "active" : "pending",
+                                cfStatus: finalZoneId ? "active" : "pending",
+                                createdAt: now(),
+                            });
+
+                            flash(`Domain ${domain} registered and added to Cloudflare!`, "success");
+                            setModal(null);
+                        } catch (e) {
+                            setError(e.message);
+                        } finally {
+                            setRegistering(false);
+                        }
+                    };
+
+                    return (
+                        <div style={S.overlay}>
+                            <Card style={{ width: 500, padding: 24, animation: "fadeIn .2s" }}>
+                                <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>🔍 Check & Register Domain</h3>
+
+                                {/* Step 1: Check availability */}
+                                {step === 1 && <>
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>Domain Name</label>
+                                        <Inp value={domain} onChange={setDomain} placeholder="example.com" />
+                                    </div>
+                                    {error && <div style={{ padding: 8, marginBottom: 12, borderRadius: 6, background: `${T.danger}12`, color: T.danger, fontSize: 12 }}>{error}</div>}
+                                    {available !== null && (
+                                        <div style={{ padding: 8, marginBottom: 12, borderRadius: 6, background: available ? `${T.success}12` : `${T.danger}12`, color: available ? T.success : T.danger, fontSize: 12 }}>
+                                            {available ? `✓ ${domain} is available!` : `✗ ${domain} is not available.`}
+                                        </div>
+                                    )}
+                                    <div style={S.btnRow}>
+                                        <Button variant="ghost" onClick={() => setModal(null)}>Cancel</Button>
+                                        {available === true ? (
+                                            <Button onClick={() => setStep(2)}>Next →</Button>
+                                        ) : (
+                                            <Button onClick={handleCheck} disabled={checking}>{checking ? "Checking..." : "Check Availability"}</Button>
+                                        )}
+                                    </div>
+                                </>}
+
+                                {/* Step 2: Configure */}
+                                {step === 2 && <>
+                                    <div style={{ marginBottom: 16 }}>
+                                        <div style={{ fontSize: 12, color: T.muted }}>Domain</div>
+                                        <div style={{ fontSize: 14, fontWeight: 600 }}>{domain}</div>
+                                        <div style={{ fontSize: 11, color: T.success }}>✓ Available</div>
+                                    </div>
+
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>Registrar Account</label>
+                                        <select value={selectedRegistrar} onChange={e => setSelectedRegistrar(e.target.value)} style={S.select}>
+                                            <option value="">Select registrar account...</option>
+                                            {(data.registrarAccounts || []).filter(r => r.provider === "internetbs").map(r => (
+                                                <option key={r.id} value={r.id}>{r.label || r.provider}</option>
+                                            ))}
+                                        </select>
+                                        {(!data.registrarAccounts || data.registrarAccounts.length === 0) && (
+                                            <div style={{ fontSize: 10, color: T.warning, marginTop: 4 }}>
+                                                No registrar accounts. <button onClick={() => { setModal("registrar-account"); setStep(1); }} style={{ background: "none", border: "none", color: T.primary, cursor: "pointer", textDecoration: "underline" }}>Add one first</button>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>Cloudflare Account</label>
+                                        <select value={selectedCfAccount} onChange={e => setSelectedCfAccount(e.target.value)} style={S.select}>
+                                            <option value="">Select...</option>
+                                            {data.cfAccounts?.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                                        </select>
+                                        {(!data.cfAccounts || data.cfAccounts.length === 0) && (
+                                            <div style={{ fontSize: 10, color: T.warning, marginTop: 4 }}>
+                                                No Cloudflare accounts. <button onClick={() => { setModal("cf-account"); setStep(1); }} style={{ background: "none", border: "none", color: T.primary, cursor: "pointer", textDecoration: "underline" }}>Add one first</button>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {error && <div style={{ padding: 8, marginBottom: 12, borderRadius: 6, background: `${T.danger}12`, color: T.danger, fontSize: 12 }}>{error}</div>}
+
+                                    <div style={{ padding: 10, background: `${T.primary}10`, borderRadius: 6, marginBottom: 12, fontSize: 11 }}>
+                                        <strong>Flow:</strong> Register → Add to Cloudflare → Update Nameservers
+                                    </div>
+
+                                    <div style={S.btnRow}>
+                                        <Button variant="ghost" onClick={() => setStep(1)}>← Back</Button>
+                                        <Button onClick={handleRegister} disabled={registering || !selectedCfAccount || !selectedRegistrar}>
+                                            {registering ? "Registering..." : "Register & Setup"}
+                                        </Button>
+                                    </div>
+                                </>}
+                            </Card>
+                        </div>
+                    );
+                };
+                return <CheckRegisterModal />;
+            })()}
+
+            {/* ═══════════════════════════════════════════════════════════
+                MODAL: IMPORT DOMAINS FROM REGISTRAR
+                ═══════════════════════════════════════════════════════════ */}
+            {modal === "domain-import" && (() => {
+                const ImportModal = () => {
+                    const [importing, setImporting] = useState(false);
+                    const [selectedRegistrarAccount, setSelectedRegistrarAccount] = useState("");
+                    const [imported, setImported] = useState([]);
+
+                    const handleImport = async () => {
+                        if (!selectedRegistrarAccount) {
+                            flash("Please select a registrar account", "error");
+                            return;
+                        }
+                        setImporting(true);
+                        try {
+                            const result = await registrarApi.listDomains(selectedRegistrarAccount);
+                            if (result.success && result.domains) {
+                                setImported(result.domains);
+
+                                // Add domains to local DB
+                                for (const d of result.domains.slice(0, 10)) {
+                                    const exists = data.domains.find(existing => existing.domain === d.domain);
+                                    if (!exists) {
+                                        add("domains", {
+                                            id: uid(),
+                                            domain: typeof d === "string" ? d : d.domain,
+                                            registrar: data.registrarAccounts?.find(r => r.id === selectedRegistrarAccount)?.provider || "internetbs",
+                                            registrarAccountId: selectedRegistrarAccount,
+                                            status: typeof d === "string" ? "ACTIVE" : (d.status || "active"),
+                                            createdAt: now(),
+                                        });
+                                    }
+                                }
+                                flash(`Imported ${Math.min(result.domains.length, 10)} domains`);
+                            } else {
+                                flash(result.message || "Import failed", "error");
+                            }
+                        } catch (e) {
+                            flash(`Import failed: ${e.message}`, "error");
+                        } finally {
+                            setImporting(false);
+                        }
+                    };
+
+                    return (
+                        <div style={S.overlay}>
+                            <Card style={{ width: 450, padding: 24, animation: "fadeIn .2s" }}>
+                                <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>📥 Import from Registrar</h3>
+
+                                <div style={S.fieldWrap}>
+                                    <label style={S.label}>Registrar Account</label>
+                                    <select value={selectedRegistrarAccount} onChange={e => setSelectedRegistrarAccount(e.target.value)} style={S.select}>
+                                        <option value="">Select account...</option>
+                                        {(data.registrarAccounts || []).map(r => (
+                                            <option key={r.id} value={r.id}>{r.label || r.provider}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {imported.length > 0 && (
+                                    <div style={{ marginTop: 12, maxHeight: 200, overflowY: "auto" }}>
+                                        <div style={{ fontSize: 11, color: T.muted, marginBottom: 8 }}>Imported domains:</div>
+                                        {imported.slice(0, 10).map((d, i) => (
+                                            <div key={i} style={{ padding: "4px 8px", fontSize: 12, borderBottom: `1px solid ${T.border}` }}>
+                                                {typeof d === "string" ? d : d.domain} <Badge style={{ float: "right", background: `${(typeof d === "string" ? true : d.status) === "ACTIVE" ? T.success : T.dim}18`, color: (typeof d === "string" ? true : d.status) === "ACTIVE" ? T.success : T.dim, border: `1px solid ${(typeof d === "string" ? true : d.status) === "ACTIVE" ? T.success : T.dim}44` }}>{typeof d === "string" ? "ACTIVE" : d.status}</Badge>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <div style={S.btnRow}>
+                                    <Button variant="ghost" onClick={() => setModal(null)}>Close</Button>
+                                    <Button onClick={handleImport} disabled={importing || !selectedRegistrarAccount}>{importing ? "Importing..." : "Import"}</Button>
+                                </div>
+                            </Card>
+                        </div>
+                    );
+                };
+                return <ImportModal />;
+            })()}
+
+            {/* ═══════════════════════════════════════════════════════════
+                MODAL: ADD EXISTING DOMAIN
+                ═══════════════════════════════════════════════════════════ */}
+            {modal === "domain-add-existing" && <AddModal title="Add Existing Domain" coll="domains" fields={[
+                { key: "domain", label: "Domain", ph: "loanbridge.com" },
+                { key: "registrar", label: "Registrar", options: REGISTRARS },
+                { key: "cfAccountId", label: "Cloudflare Account", options: data.cfAccounts || [] },
+                { key: "accountId", label: "Ads Account ID" },
+                { key: "profileId", label: "Profile ID" }
+            ]} onSubmit={(form) => {
+                const hasCfAccount = !!String(form.cfAccountId || "").trim();
+                add("domains", {
+                    id: uid(),
+                    ...form,
+                    status: form.status || "pending",
+                    cfStatus: hasCfAccount ? "pending" : "not-connected",
+                    createdAt: now(),
+                });
+            }} />}
+
+            {/* ═══════════════════════════════════════════════════════════
+                MODAL: MANAGE DOMAIN
+                ═══════════════════════════════════════════════════════════ */}
+            {modal && modal.type === "domain-manage" && (() => {
+                const ManageDomainModal = () => {
+                    const d = modal.domain;
+                    const parseNameservers = (raw) => {
+                        if (Array.isArray(raw)) {
+                            return raw.map((s) => String(s || "").trim()).filter(Boolean);
+                        }
+
+                        if (typeof raw !== "string") return [];
+
+                        const trimmed = raw.trim();
+                        if (!trimmed) return [];
+
+                        // D1 can store this field as JSON text (e.g. ["ns1","ns2"])
+                        if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+                            try {
+                                const parsed = JSON.parse(trimmed);
+                                if (Array.isArray(parsed)) {
+                                    return parsed.map((s) => String(s || "").trim()).filter(Boolean);
+                                }
+                            } catch (_e) {
+                                // Fallback to CSV parsing below
+                            }
+                        }
+
+                        return trimmed
+                            .split(",")
+                            .map((s) => s.replace(/[\[\]"]+/g, "").trim())
+                            .filter(Boolean);
+                    };
+
+                    const nameserverList = parseNameservers(d.nameservers);
+                    const [addingToCf, setAddingToCf] = useState(false);
+                    const [updatingNs, setUpdatingNs] = useState(false);
+                    const [selectedCfAccount, setSelectedCfAccount] = useState(d.cfAccountId || "");
+                    const [actionMsg, setActionMsg] = useState(null); // { type: 'success'|'error'|'info', msg }
+
+                    const withTimeout = (promise, ms = 25000) => Promise.race([
+                        promise,
+                        new Promise((_, reject) =>
+                            setTimeout(() => reject(new Error("Request timed out. Please try again.")), ms)
+                        ),
+                    ]);
+
+                    const handleAddToCloudflare = async () => {
+                        if (!selectedCfAccount) {
+                            const msg = "Select a Cloudflare account first";
+                            flash(msg, "error");
+                            setActionMsg({ type: "error", msg });
+                            return;
+                        }
+                        setAddingToCf(true);
+                        setActionMsg({ type: "info", msg: "Adding domain to Cloudflare..." });
+                        try {
+                            // Get CF API token from the selected CF account
+                            const cfAccount = data.cfAccounts?.find(c => c.id === selectedCfAccount);
+                            const cfToken = (cfAccount?.api_key || cfAccount?.apiKey || cfAccount?.api_token || cfAccount?.apiToken || "").trim();
+                            if (!cfToken) {
+                                flash("Cloudflare API token not found for this account", "error");
+                                setActionMsg({ type: "error", msg: "Cloudflare API token not found for this account" });
+                                setAddingToCf(false);
+                                return;
+                            }
+
+                            const result = await withTimeout(
+                                cloudflareDns.getOrCreateZone(d.domain, selectedCfAccount, cfToken)
+                            );
+                            if (result.success) {
+                                // Update domain record and require persistence success
+                                const updatePayload = {
+                                    cfAccountId: selectedCfAccount,
+                                    zoneId: result.zoneId,
+                                    nameservers: result.nameservers,
+                                    status: "active",
+                                    cfStatus: "active",
+                                };
+                                const saveRes = await upd("domains", d.id, updatePayload);
+                                if (saveRes?.error) {
+                                    const errMsg = saveRes.detail || saveRes.error || "Failed to save domain update";
+                                    flash(errMsg, "error");
+                                    setActionMsg({ type: "error", msg: errMsg });
+                                    return;
+                                }
+
+                                flash(`Added ${d.domain} to Cloudflare`);
+                                setActionMsg({ type: "success", msg: `Added ${d.domain} to Cloudflare` });
+                                setModal(null);
+                            } else {
+                                flash(result.error, "error");
+                                setActionMsg({ type: "error", msg: result.error || "Failed to add to Cloudflare" });
+                            }
+                        } catch (e) {
+                            flash(`Failed: ${e.message}`, "error");
+                            setActionMsg({ type: "error", msg: `Failed: ${e.message}` });
+                        } finally {
+                            setAddingToCf(false);
+                        }
+                    };
+
+                    const handleUpdateNameservers = async () => {
+                        setUpdatingNs(true);
+                        setActionMsg({ type: "info", msg: "Updating nameservers at registrar..." });
+                        try {
+                            const currentNs = nameserverList.filter(ns => ns && ns !== "[]");
+                            if (currentNs.length === 0 && !d.zoneId) {
+                                flash("Add this domain to Cloudflare first, then update nameservers", "error");
+                                setActionMsg({ type: "error", msg: "Add this domain to Cloudflare first, then update nameservers" });
+                                setUpdatingNs(false);
+                                return;
+                            }
+
+                            const ns = currentNs.length > 0
+                                ? currentNs
+                                : registrarApi.getCloudflareNameservers();
+
+                            // Resolve registrar account id (stored id preferred, then provider/label match)
+                            const normalizeRegistrar = (value) =>
+                                String(value || "")
+                                    .toLowerCase()
+                                    .replace(/[^a-z0-9]/g, "");
+
+                            const provider = normalizeRegistrar(d.registrar);
+                            const registrars = data.registrarAccounts || [];
+
+                            const matchedRegistrar = registrars.find((r) => {
+                                const byId = String(r.id || "") === String(d.registrarAccountId || "");
+                                const providerMatch = provider && normalizeRegistrar(r.provider) === provider;
+                                const labelMatch = provider && normalizeRegistrar(r.label) === provider;
+                                return byId || providerMatch || labelMatch;
+                            });
+
+                            const internetBsFallback = provider === "internetbs"
+                                ? registrars.find((r) => normalizeRegistrar(r.provider) === "internetbs")
+                                : null;
+
+                            const accountId = d.registrarAccountId || matchedRegistrar?.id || internetBsFallback?.id || undefined;
+                            if (!accountId) {
+                                const errMsg = "No matching registrar account found for this domain. Please check Registrar Accounts mapping.";
+                                flash(errMsg, "error");
+                                setActionMsg({ type: "error", msg: errMsg });
+                                setUpdatingNs(false);
+                                return;
+                            }
+
+                            const result = await withTimeout(
+                                registrarApi.updateNameservers(d.domain, ns, accountId)
+                            );
+                            if (result.success) {
+                                const okMsg = result.message ? `Nameservers updated: ${result.message}` : "Nameservers updated at registrar";
+                                flash(okMsg);
+                                setActionMsg({ type: "success", msg: okMsg });
+                            } else {
+                                const errMsg = result.error || result.message || "Update failed";
+                                flash(errMsg, "error");
+                                setActionMsg({ type: "error", msg: errMsg });
+                            }
+                        } catch (e) {
+                            flash(`Failed: ${e.message}`, "error");
+                            setActionMsg({ type: "error", msg: `Failed: ${e.message}` });
+                        } finally {
+                            setUpdatingNs(false);
+                        }
+                    };
+
+                    return (
+                        <div style={S.overlay}>
+                            <Card style={{ width: 480, padding: 24, animation: "fadeIn .2s" }}>
+                                <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>Manage {d.domain}</h3>
+
+                                <div style={{ marginBottom: 16 }}>
+                                    <div style={{ fontSize: 11, color: T.muted }}>Registrar</div>
+                                    <div style={{ fontSize: 13 }}>{d.registrar || "\u2014"}</div>
+                                </div>
+
+                                <div style={{ marginBottom: 16 }}>
+                                    <div style={{ fontSize: 11, color: T.muted }}>Status</div>
+                                    <Badge style={{ background: `${d.status === "active" ? T.success : T.warning}18`, color: d.status === "active" ? T.success : T.warning, border: `1px solid ${d.status === "active" ? T.success : T.warning}44` }}>{d.status || "unknown"}</Badge>
+                                </div>
+
+                                {actionMsg && (
+                                    <div
+                                        style={{
+                                            marginBottom: 12,
+                                            padding: "8px 10px",
+                                            borderRadius: 6,
+                                            fontSize: 11,
+                                            background:
+                                                actionMsg.type === "success"
+                                                    ? `${T.success}14`
+                                                    : actionMsg.type === "error"
+                                                        ? `${T.danger}14`
+                                                        : `${T.primary}12`,
+                                            color:
+                                                actionMsg.type === "success"
+                                                    ? T.success
+                                                    : actionMsg.type === "error"
+                                                        ? T.danger
+                                                        : T.primary,
+                                            border: `1px solid ${actionMsg.type === "success" ? `${T.success}44` : actionMsg.type === "error" ? `${T.danger}44` : `${T.primary}44`}`,
+                                        }}
+                                    >
+                                        {actionMsg.msg}
+                                    </div>
+                                )}
+
+                                {d.zoneId ? (
+                                    <div style={{ marginBottom: 16 }}>
+                                        <div style={{ fontSize: 11, color: T.muted }}>Cloudflare Zone</div>
+                                        <div style={{ fontSize: 13, fontFamily: "monospace" }}>{d.zoneId}</div>
+                                        <div style={{ fontSize: 10, color: T.success }}>✓ Connected to Cloudflare</div>
+                                    </div>
+                                ) : (
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>Add to Cloudflare Account</label>
+                                        <select value={selectedCfAccount} onChange={e => setSelectedCfAccount(e.target.value)} style={S.select}>
+                                            <option value="">Select account...</option>
+                                            {data.cfAccounts?.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                                        </select>
+                                        {!selectedCfAccount && (
+                                            <div style={{ fontSize: 10, color: T.warning, marginTop: 6 }}>
+                                                Select Cloudflare account before adding this domain.
+                                            </div>
+                                        )}
+                                        <Button onClick={handleAddToCloudflare} disabled={addingToCf} style={{ marginTop: 8, fontSize: 12 }}>
+                                            {addingToCf ? "Adding..." : "Add to Cloudflare"}
+                                        </Button>
+                                    </div>
+                                )}
+
+                                <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${T.border}` }}>
+                                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>Nameservers</div>
+                                    {nameserverList.length > 0 ? (
+                                        <div style={{ fontSize: 11 }}>
+                                            {nameserverList.map((ns, i) => <div key={i}>{ns}</div>)}
+                                        </div>
+                                    ) : (
+                                        <div style={{ fontSize: 11, color: T.dim }}>Not set</div>
+                                    )}
+                                    <Button variant="ghost" onClick={handleUpdateNameservers} disabled={updatingNs} style={{ marginTop: 8, fontSize: 11 }}>
+                                        {updatingNs ? "Updating..." : "Update Nameservers"}
+                                    </Button>
+                                </div>
+
+                                <div style={S.btnRow}>
+                                    <Button onClick={() => setModal(null)}>Close</Button>
+                                </div>
+                            </Card>
+                        </div>
+                    );
+                };
+                return <ManageDomainModal />;
+            })()}
+
+            {/* ═══════════════════════════════════════════════════════════
+                TAB: ACCOUNTS (Task 9 + Task 12)
+                ═══════════════════════════════════════════════════════════ */}
+            {tab === "accounts" && <>
+                <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                    <Button onClick={() => setModal("account")}>+ Add Account</Button>
+                </div>
+
+                {/* Account rows */}
+                <div style={{ marginTop: 12 }}>
+                    {data.accounts.length === 0
+                        ? <div style={S.emptyState}>No accounts yet</div>
+                        : data.accounts.map(acct => {
+                            const linkedCard = lcCards.find(c => c.uuid === acct.cardUuid);
+                            const linkedProfile = data.profiles.find(p => p.id === acct.profileId);
+                            const isSuspending = suspending === acct.id;
+                            return (
+                                <div key={acct.id} style={{ ...S.row, padding: "10px 14px" }}>
+                                    {/* Label */}
+                                    <div style={{ flex: 2, fontWeight: 600, fontSize: 12 }}>{acct.label || "\u2014"}</div>
+                                    {/* Email */}
+                                    <div style={{ flex: 2, fontSize: 11, color: T.muted }}>{acct.email || "\u2014"}</div>
+                                    {/* Linked card */}
+                                    <div style={{ flex: 1.5, fontSize: 11 }}>
+                                        {acct.cardUuid ? (
+                                            <span>
+                                                💳 ****{acct.cardLast4 || linkedCard?.card_last_4 || "?"}{" "}
+                                                <Badge style={{
+                                                    background: `${(acct.cardStatus || linkedCard?.status) === "ACTIVE" ? T.success
+                                                        : (acct.cardStatus || linkedCard?.status) === "BLOCKED" ? T.danger : T.warning
+                                                        }18`, color:
+                                                        (acct.cardStatus || linkedCard?.status) === "ACTIVE" ? T.success
+                                                            : (acct.cardStatus || linkedCard?.status) === "BLOCKED" ? T.danger : T.warning
+                                                    , border: `1px solid ${(acct.cardStatus || linkedCard?.status) === "ACTIVE" ? T.success
+                                                        : (acct.cardStatus || linkedCard?.status) === "BLOCKED" ? T.danger : T.warning
+                                                        }44`
+                                                }}>{acct.cardStatus || linkedCard?.status || "?"}</Badge>
+                                            </span>
+                                        ) : <span style={{ color: T.dim }}>No card</span>}
+                                    </div>
+                                    {/* Linked profile */}
+                                    <div style={{ flex: 1.5, fontSize: 11, color: T.muted }}>
+                                        {linkedProfile ? linkedProfile.name : acct.profileId ? acct.profileId : "\u2014"}
+                                    </div>
+                                    {/* Monthly spend */}
+                                    <div style={{ flex: 1, fontSize: 11, color: T.muted }}>
+                                        {acct.monthlySpend ? `$${acct.monthlySpend}` : "\u2014"}
+                                    </div>
+                                    {/* Status badge + quick change */}
+                                    <div style={{ flex: 1 }}>
+                                        <select
+                                            value={acct.status || "active"}
+                                            onChange={e => {
+                                                const newStatus = e.target.value;
+                                                if (newStatus === "suspended") {
+                                                    handleSuspend(acct);
+                                                } else {
+                                                    upd("accounts", acct.id, { status: newStatus });
+                                                }
+                                            }}
+                                            style={{ ...S.select, padding: 4, fontSize: 10, width: "auto", minWidth: 80 }}
+                                        >
+                                            <option value="active">Active</option>
+                                            <option value="paused">Paused</option>
+                                            <option value="suspended">Suspended</option>
+                                        </select>
+                                    </div>
+                                    {/* Actions */}
+                                    <div style={{ display: "flex", gap: 4 }}>
+                                        <button onClick={() => setModal({ type: "edit-account", account: { ...acct } })} style={{ ...S.miniBtn, background: `${T.primary}22`, border: "none", borderRadius: 5, color: T.primary, cursor: "pointer" }}>Edit</button>
+                                        <button onClick={() => handleSuspend(acct)} disabled={isSuspending || acct.status === "suspended"}
+                                            style={{ ...S.miniBtn, background: `${T.danger}22`, border: "none", borderRadius: 5, color: T.danger, cursor: isSuspending ? "wait" : "pointer", opacity: acct.status === "suspended" ? 0.4 : 1 }}>
+                                            {isSuspending ? "..." : "Suspend"}
+                                        </button>
+                                        <button onClick={() => del("accounts", acct.id)} style={{ background: `${T.danger}22`, border: "none", borderRadius: 5, padding: "4px 8px", color: T.danger, cursor: "pointer", fontSize: 10 }}>{"\u2715"}</button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                </div>
+
+                {/* ─── Add Account Modal (Task 9) ─────────────────────── */}
+                {modal === "account" && (() => {
+                    const cardOptions = lcCards.map(c => ({
+                        id: c.uuid,
+                        value: c.uuid,
+                        displayLabel: `**** ${c.card_last_4} (${c.brand || "VCC"})`,
+                    }));
+                    const profileOptions = data.profiles.map(p => ({
+                        id: p.id,
+                        value: p.id,
+                        displayLabel: p.name || p.id,
+                    }));
+                    return <AddModal title="Add Ads Account" coll="accounts" fields={[
+                        { key: "label", label: "Account Name", ph: "Google Ads #1" },
+                        { key: "email", label: "Email", ph: "account@domain.com" },
+                        { key: "cardUuid", label: "Linked Card", options: cardOptions },
+                        { key: "profileId", label: "Linked Profile", options: profileOptions },
+                        { key: "budget", label: "Daily Budget ($)", type: "number", ph: "50" },
+                    ]} onSubmit={(form) => {
+                        const selectedCard = lcCards.find(c => c.uuid === form.cardUuid);
+                        add("accounts", {
+                            id: uid(),
+                            ...form,
+                            cardLast4: selectedCard?.card_last_4 || "",
+                            cardStatus: selectedCard?.status || "",
+                            status: "active",
+                            createdAt: now(),
+                        });
+                    }} />;
+                })()}
+
+                {/* ─── Edit Account Modal (Task 9) ────────────────────── */}
+                {modal && modal.type === "edit-account" && (() => {
+                    const acct = modal.account;
+                    const EditAccountModal = () => {
+                        const [form, setForm] = useState({
+                            label: acct.label || "",
+                            email: acct.email || "",
+                            cardUuid: acct.cardUuid || "",
+                            profileId: acct.profileId || "",
+                            budget: acct.budget || "",
+                            status: acct.status || "active",
+                        });
+                        const cardOptions = lcCards.map(c => ({
+                            value: c.uuid,
+                            displayLabel: `**** ${c.card_last_4} (${c.brand || "VCC"})`,
+                        }));
+                        const profileOptions = data.profiles.map(p => ({
+                            value: p.id,
+                            displayLabel: p.name || p.id,
+                        }));
+                        return (
+                            <div style={S.overlay}>
+                                <Card style={{ width: 440, padding: 24, animation: "fadeIn .2s" }}>
+                                    <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>Edit Account: {acct.label}</h3>
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>Account Name</label>
+                                        <Inp value={form.label} onChange={v => setForm({ ...form, label: v })} />
+                                    </div>
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>Email</label>
+                                        <Inp value={form.email} onChange={v => setForm({ ...form, email: v })} />
+                                    </div>
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>Linked Card</label>
+                                        <select value={form.cardUuid} onChange={e => setForm({ ...form, cardUuid: e.target.value })} style={S.select}>
+                                            <option value="">None</option>
+                                            {cardOptions.map(o => <option key={o.value} value={o.value}>{o.displayLabel}</option>)}
+                                        </select>
+                                    </div>
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>Linked Profile</label>
+                                        <select value={form.profileId} onChange={e => setForm({ ...form, profileId: e.target.value })} style={S.select}>
+                                            <option value="">None</option>
+                                            {profileOptions.map(o => <option key={o.value} value={o.value}>{o.displayLabel}</option>)}
+                                        </select>
+                                    </div>
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>Daily Budget ($)</label>
+                                        <Inp value={form.budget} onChange={v => setForm({ ...form, budget: v })} type="number" />
+                                    </div>
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>Status</label>
+                                        <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })} style={S.select}>
+                                            <option value="active">Active</option>
+                                            <option value="paused">Paused</option>
+                                            <option value="suspended">Suspended</option>
+                                        </select>
+                                    </div>
+                                    <div style={S.btnRow}>
+                                        <Button variant="ghost" onClick={() => setModal(null)}>Cancel</Button>
+                                        <Button onClick={() => {
+                                            const selectedCard = lcCards.find(c => c.uuid === form.cardUuid);
+                                            const updates = {
+                                                ...form,
+                                                cardLast4: selectedCard?.card_last_4 || "",
+                                                cardStatus: selectedCard?.status || "",
+                                            };
+                                            upd("accounts", acct.id, updates);
+                                            setModal(null);
+                                            flash("Account updated");
+                                        }}>Save Changes</Button>
+                                    </div>
+                                </Card>
+                            </div>
+                        );
+                    };
+                    return <EditAccountModal />;
+                })()}
+            </>}
+
+            {/* ═══════════════════════════════════════════════════════════
+                TAB: CF ACCOUNTS (Enhanced with zone details)
+                ═══════════════════════════════════════════════════════════ */}
+            {tab === "cf" && <CfAccountsTab
+                cfAccounts={data.cfAccounts || []}
+                testingCfId={testingCfId}
+                onTest={handleTestCfAccount}
+                onEdit={(cf) => setModal({ type: "cf-account-edit", account: cf })}
+                onDelete={(cf) => {
+                    if (confirm(`Delete CF account "${cf.label}"?`)) {
+                        del("cf-accounts", cf.id);
+                        flash("CF account deleted");
+                    }
+                }}
+                onAdd={() => setModal("cf-account")}
+                flash={flash}
+            />}
+
+            {/* ═══════════════════════════════════════════════════════════
+                TAB: PROFILES (Task 8)
+                ═══════════════════════════════════════════════════════════ */}
+            {tab === "profiles" && <>
+                {/* Action buttons */}
+                <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+                    <Button onClick={() => setModal("mlx-create")}>+ Create Profile</Button>
+                    <Button variant="ghost" onClick={async () => {
+                        setSyncing(true);
+                        try {
+                            const res = await multiloginApi.syncProfiles();
+                            if (res.error) { flash(`Sync failed: ${res.error}`, "error"); }
+                            else { flash(`Synced: ${res.created || 0} created, ${res.deleted || 0} removed`); }
+                            await refreshProfiles();
+                        } catch (e) { flash(`Sync failed: ${e.message}`, "error"); }
+                        finally { setSyncing(false); }
+                    }}>{syncing ? "Syncing..." : "\uD83D\uDD04 Sync from MLX"}</Button>
+                    <Button variant="ghost" onClick={() => {
+                        setMlLoading(true);
+                        refreshProfiles().finally(() => setMlLoading(false));
+                    }} style={{ fontSize: 11 }}>↻ Refresh</Button>
+                    <Button variant="destructive" onClick={async () => {
+                        if (!confirm("Stop all running profiles?")) return;
+                        const running = (Array.isArray(mlProfiles) ? mlProfiles : []).filter(p => p.status === "running" || p.status === "started");
+                        for (const p of running) {
+                            const pid = p.uuid || p.id;
+                            await multiloginApi.stopProfile(pid).catch(() => { });
+                        }
+                        await refreshProfiles();
+                        flash(`Stopped ${running.length} profiles`);
+                    }} style={{ fontSize: 11, marginLeft: "auto" }}>⏹ Stop All</Button>
+                </div>
+
+                {/* Unified profile list */}
+                {mlLoading ? <div style={S.emptyState}>Loading profiles...</div> : (
+                    <div>
+                        {/* Header row */}
+                        <div style={{ display: "flex", padding: "6px 12px", fontSize: 10, fontWeight: 700, color: T.dim, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                            <div style={{ flex: 2 }}>Name</div>
+                            <div style={{ flex: 1.2 }}>MLX ID</div>
+                            <div style={{ flex: 0.8 }}>Browser</div>
+                            <div style={{ flex: 0.8 }}>OS</div>
+                            <div style={{ flex: 1.5 }}>Proxy</div>
+                            <div style={{ flex: 0.8 }}>Status</div>
+                            <div style={{ flex: 1.5, textAlign: "right" }}>Actions</div>
+                        </div>
+
+                        {(!Array.isArray(mlProfiles) || mlProfiles.length === 0)
+                            ? <div style={S.emptyState}>{mlProfiles?.error || 'No profiles found. Click "Sync from MLX" or create a new profile.'}</div>
+                            : mlProfiles.map(p => {
+                                const pid = p.uuid || p.id;
+                                const isRunning = p.status === "running" || p.status === "started";
+                                const proxyObj = p.parameters?.proxy || (typeof p.proxy === "object" ? p.proxy : null);
+                                const proxyInfo = proxyObj?.host
+                                    ? `${proxyObj.host}:${proxyObj.port || ""}`
+                                    : (typeof p.proxy === "string" ? p.proxy : null) || "\u2014";
+                                // Find linked D1 profile
+                                const d1Profile = data.profiles.find(dp => dp.mlProfileId === pid);
+                                return (
+                                    <div key={pid} style={{ ...S.row, padding: "10px 12px" }}>
+                                        <div style={{ flex: 2, fontWeight: 600, fontSize: 12 }}>
+                                            {p.name || pid.slice(0, 12)}
+                                            {d1Profile?.accountId && <span style={{ marginLeft: 6, fontSize: 9, color: T.dim, background: T.card2, padding: "1px 5px", borderRadius: 3 }}>A:{d1Profile.accountId.slice(0, 6)}</span>}
+                                        </div>
+                                        <div style={{ flex: 1.2, fontSize: 10, color: T.muted, fontFamily: "monospace" }}>
+                                            {pid.slice(0, 10)}...
+                                        </div>
+                                        <div style={{ flex: 0.8, fontSize: 11, color: T.muted }}>
+                                            {p.browser_type || d1Profile?.browserType || "\u2014"}
+                                        </div>
+                                        <div style={{ flex: 0.8, fontSize: 11, color: T.muted }}>
+                                            {p.os_type || d1Profile?.os || "\u2014"}
+                                        </div>
+                                        <div style={{ flex: 1.5, fontSize: 10, color: T.muted, fontFamily: "monospace" }}>
+                                            {proxyInfo}
+                                        </div>
+                                        <div style={{ flex: 0.8 }}>
+                                            <Dot c={isRunning ? T.success : "#666"} label={isRunning ? "Running" : "Stopped"} />
+                                        </div>
+                                        <div style={{ flex: 1.5, display: "flex", gap: 3, justifyContent: "flex-end" }}>
+                                            {isRunning ? (
+                                                <Button variant="destructive" onClick={() => {
+                                                    multiloginApi.stopProfile(pid).then(() => {
+                                                        refreshProfiles();
+                                                        flash("Profile stopped");
+                                                    }).catch(e => flash(`Stop failed: ${e.message}`, "error"));
+                                                }} style={S.miniBtn}>Stop</Button>
+                                            ) : (
+                                                <Button variant="success" onClick={() => {
+                                                    const fid = p.folder_id || settings.mlFolderId || "";
+                                                    multiloginApi.startProfile(pid, fid).then((res) => {
+                                                        if (res?.error) { flash(`Start failed: ${res.error}`, "error"); return; }
+                                                        refreshProfiles();
+                                                        flash("Profile started");
+                                                    }).catch(e => flash(`Start failed: ${e.message}`, "error"));
+                                                }} style={S.miniBtn}>Start</Button>
+                                            )}
+                                            <Button variant="ghost" onClick={() => {
+                                                multiloginApi.cloneProfile(pid).then(() => {
+                                                    refreshProfiles();
+                                                    flash("Profile cloned");
+                                                }).catch(e => flash(`Clone failed: ${e.message}`, "error"));
+                                            }} style={S.miniBtn}>Clone</Button>
+                                            <Button variant="ghost" onClick={() => {
+                                                if (!confirm(`Delete profile "${p.name || pid}"?`)) return;
+                                                const folderId = p.folder_id || settings.mlFolderId || "";
+                                                multiloginApi.deleteProfiles([pid], folderId).then(() => {
+                                                    refreshProfiles();
+                                                    flash("Profile deleted");
+                                                }).catch(e => flash(`Delete failed: ${e.message}`, "error"));
+                                            }} style={{ ...S.miniBtn, color: T.danger }}>Del</Button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                    </div>
+                )}
+
+                {/* D1 profiles (unlinked) */}
+                {data.profiles.filter(p => !(Array.isArray(mlProfiles) ? mlProfiles : []).some(mp => (mp.uuid || mp.id) === p.mlProfileId)).length > 0 && <>
+                    <div style={{ ...S.sectionTitle, marginTop: 24, fontSize: 11, color: T.dim }}>Local Only (not linked to MLX)</div>
+                    <ListTable items={data.profiles.filter(p => !(Array.isArray(mlProfiles) ? mlProfiles : []).some(mp => (mp.uuid || mp.id) === p.mlProfileId))} coll="profiles" cols={[
+                        { key: "name", flex: 2 },
+                        { key: "proxyIp", render: i => i.proxyIp || i.proxyHost || "\u2014" },
+                        { key: "browserType" },
+                        { key: "mlProfileId", render: i => i.mlProfileId ? <Badge style={{ background: `${T.primary}18`, color: T.primary, border: `1px solid ${T.primary}44` }}>ML: {i.mlProfileId.slice(0, 8)}...</Badge> : <span style={{ color: T.dim }}>Not linked</span> },
+                    ]} />
+                </>}
+
+                {/* Enhanced Create Profile Modal */}
+                {modal === "mlx-create" && (() => {
+                    const MLXCreateModal = () => {
+                        const [form, setForm] = useState({
+                            name: "",
+                            browser_type: "mimic",
+                            os_type: "windows",
+                            proxy_host: "",
+                            proxy_port: "",
+                            proxy_user: "",
+                            proxy_pass: "",
+                            proxy_type: "http",
+                            start_urls: "",
+                            accountId: "",
+                        });
+                        const [creating, setCreating] = useState(false);
+                        return (
+                            <div style={S.overlay}>
+                                <Card style={{ width: 520, padding: 24, animation: "fadeIn .2s", maxHeight: "85vh", overflowY: "auto" }}>
+                                    <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>Create MLX Profile</h3>
+
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>Profile Name</label>
+                                        <Inp value={form.name} onChange={v => setForm({ ...form, name: v })} placeholder="Account-01" />
+                                    </div>
+
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                                        <div style={S.fieldWrap}>
+                                            <label style={S.label}>Browser Type</label>
+                                            <select value={form.browser_type} onChange={e => setForm({ ...form, browser_type: e.target.value })} style={S.select}>
+                                                <option value="mimic">Mimic</option>
+                                                <option value="stealthfox">Stealthfox</option>
+                                            </select>
+                                        </div>
+                                        <div style={S.fieldWrap}>
+                                            <label style={S.label}>OS Type</label>
+                                            <select value={form.os_type} onChange={e => setForm({ ...form, os_type: e.target.value })} style={S.select}>
+                                                <option value="windows">Windows</option>
+                                                <option value="macos">macOS</option>
+                                                <option value="linux">Linux</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ ...S.sectionTitle, marginTop: 12, fontSize: 11 }}>Proxy Settings</div>
+                                    <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 12 }}>
+                                        <div style={S.fieldWrap}>
+                                            <label style={S.label}>Host</label>
+                                            <Inp value={form.proxy_host} onChange={v => setForm({ ...form, proxy_host: v })} placeholder="proxy.example.com" />
+                                        </div>
+                                        <div style={S.fieldWrap}>
+                                            <label style={S.label}>Port</label>
+                                            <Inp value={form.proxy_port} onChange={v => setForm({ ...form, proxy_port: v })} placeholder="8080" />
+                                        </div>
+                                        <div style={S.fieldWrap}>
+                                            <label style={S.label}>Type</label>
+                                            <select value={form.proxy_type} onChange={e => setForm({ ...form, proxy_type: e.target.value })} style={S.select}>
+                                                <option value="http">HTTP</option>
+                                                <option value="socks5">SOCKS5</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                                        <div style={S.fieldWrap}>
+                                            <label style={S.label}>Proxy Username</label>
+                                            <Inp value={form.proxy_user} onChange={v => setForm({ ...form, proxy_user: v })} placeholder="user" />
+                                        </div>
+                                        <div style={S.fieldWrap}>
+                                            <label style={S.label}>Proxy Password</label>
+                                            <Inp value={form.proxy_pass} onChange={v => setForm({ ...form, proxy_pass: v })} type="password" placeholder="pass" />
+                                        </div>
+                                    </div>
+
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>Custom Start URLs (one per line)</label>
+                                        <textarea value={form.start_urls} onChange={e => setForm({ ...form, start_urls: e.target.value })} placeholder={"https://ads.google.com\nhttps://business.facebook.com"} rows={3}
+                                            style={{ ...S.select, resize: "vertical", minHeight: 60 }} />
+                                    </div>
+
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>Link to Account (optional)</label>
+                                        <select value={form.accountId} onChange={e => setForm({ ...form, accountId: e.target.value })} style={S.select}>
+                                            <option value="">None</option>
+                                            {data.accounts.map(a => <option key={a.id} value={a.id}>{a.label || a.email || a.id}</option>)}
+                                        </select>
+                                    </div>
+
+                                    <div style={S.btnRow}>
+                                        <Button variant="ghost" onClick={() => setModal(null)}>Cancel</Button>
+                                        <Button disabled={creating} onClick={async () => {
+                                            setCreating(true);
+                                            try {
+                                                const folderId = settings.mlFolderId || "";
+                                                const profileData = {
+                                                    browser_type: form.browser_type,
+                                                    folder_id: folderId,
+                                                    name: form.name || `Profile-${uid().slice(0, 6)}`,
+                                                    os_type: form.os_type,
+                                                    parameters: {
+                                                        proxy: form.proxy_host ? {
+                                                            host: form.proxy_host,
+                                                            type: form.proxy_type,
+                                                            port: parseInt(form.proxy_port) || 8080,
+                                                            username: form.proxy_user,
+                                                            password: form.proxy_pass,
+                                                        } : undefined,
+                                                        flags: {
+                                                            navigator_masking: "mask",
+                                                            audio_masking: "mask",
+                                                            localization_masking: "mask",
+                                                            geolocation_popup: "prompt",
+                                                            geolocation_masking: "mask",
+                                                            timezone_masking: "mask",
+                                                            canvas_noise: "natural",
+                                                            graphics_noise: "natural",
+                                                            graphics_masking: "mask",
+                                                            webrtc_masking: "natural",
+                                                            fonts_masking: "mask",
+                                                            media_devices_masking: "mask",
+                                                            screen_masking: "mask",
+                                                            ports_masking: "mask",
+                                                        },
+                                                        custom_start_urls: form.start_urls ? form.start_urls.split("\n").map(u => u.trim()).filter(Boolean) : undefined,
+                                                    },
+                                                };
+                                                const res = await multiloginApi.createProfile(profileData);
+                                                if (res.error) throw new Error(res.error);
+                                                await refreshProfiles();
+                                                setModal(null);
+                                                flash("Profile created in MLX + D1");
+                                            } catch (e) {
+                                                flash(`Create failed: ${e.message || e.detail || "Unknown error"}`, "error");
+                                            } finally {
+                                                setCreating(false);
+                                            }
+                                        }}>{creating ? "Creating..." : "Create Profile"}</Button>
+                                    </div>
+                                </Card>
+                            </div>
+                        );
+                    };
+                    return <MLXCreateModal />;
+                })()}
+            </>}
+
+            {/* ═══════════════════════════════════════════════════════════
+                TAB: PAYMENTS (Task 7)
+                ═══════════════════════════════════════════════════════════ */}
+            {tab === "payments" && <>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <Button onClick={() => setModal("lc-card")}>+ Create Card</Button>
+                        <Button variant="ghost" onClick={() => {
+                            setLcLoading(true);
+                            refreshCards().finally(() => setLcLoading(false));
+                        }} style={{ fontSize: 11 }}>🔄 Refresh</Button>
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>LeadingCards Management</div>
+                </div>
+
+                <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+                    {[
+                        { label: "All", value: "" },
+                        { label: "Active", value: "ACTIVE" },
+                        { label: "Blocked", value: "BLOCKED" },
+                    ].map(f => (
+                        <button key={f.value} onClick={() => setLcFilter(f.value)} style={S.filterBtn(lcFilter === f.value)}>
+                            {f.label} {f.value === "" ? `(${lcCards.length})` : `(${lcCards.filter(c => c.status === f.value).length})`}
+                        </button>
+                    ))}
+                </div>
+
+                {lcLoading ? <div style={S.emptyState}>Loading cards...</div> : (
+                    <div style={{ marginTop: 8 }}>
+                        {filteredCards.length === 0
+                            ? <div style={S.emptyState}>{lcFilter ? `No ${lcFilter} cards` : "No cards yet"}</div>
+                            : filteredCards.map(card => {
+                                const cardTags = [];
+                                if (card.tags) {
+                                    const tagsArr = Array.isArray(card.tags) ? card.tags : [card.tags];
+                                    tagsArr.forEach(t => {
+                                        if (t && t.name) cardTags.push(t.name);
+                                        else if (typeof t === 'string') {
+                                            const found = lcTags.find(lt => lt.uuid === t);
+                                            if (found) cardTags.push(found.name);
+                                        }
+                                    });
+                                }
+                                return (
+                                    <React.Fragment key={card.uuid}>
+                                        <div
+                                            style={{ ...S.row, flexWrap: "wrap", cursor: "pointer", borderLeft: expandedCard === card.uuid ? `3px solid ${T.primary}` : "3px solid transparent" }}
+                                            onClick={(e) => {
+                                                if (e.target.closest('button') || e.target.closest('input')) return;
+                                                setExpandedCard(expandedCard === card.uuid ? null : card.uuid);
+                                            }}
+                                        >
+                                            <div style={{ flex: 2, fontWeight: 600, fontSize: 12 }}>
+                                                <span style={{ marginRight: 8 }}>{expandedCard === card.uuid ? "▼" : "▶"}</span>
+                                                💳 **** {card.card_last_4} <span style={{ fontWeight: 400, color: T.muted }}>({card.brand || "VCC"})</span>
+                                                {card.comment && <div style={{ fontWeight: 400, fontSize: 10, color: T.accent, marginTop: 2 }}>{card.comment}</div>}
+                                            </div>
+                                            <div style={{ flex: 1.5, display: "flex", gap: 3, flexWrap: "wrap", alignItems: "center" }}>
+                                                {cardTags.length > 0 ? cardTags.map(tag => (
+                                                    <span key={tag} style={{ fontSize: 9, padding: "1px 6px", borderRadius: 4, background: `${T.primary}18`, color: T.primaryH, border: `1px solid ${T.primary}33` }}>{tag}</span>
+                                                )) : <span style={{ fontSize: 9, color: T.dim }}>No tags</span>}
+                                            </div>
+                                            <div style={{ flex: 1.2, fontSize: 11 }}>
+                                                {changingLimit && changingLimit.uuid === card.uuid ? (
+                                                    <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                                                        <Inp value={changingLimit.value} onChange={v => setChangingLimit({ ...changingLimit, value: v })} type="number"
+                                                            style={{ width: 70, padding: "3px 6px", fontSize: 11 }} />
+                                                        <button onClick={async () => {
+                                                            try {
+                                                                await leadingCardsApi.changeLimit(card.uuid, parseFloat(changingLimit.value));
+                                                                await refreshCards();
+                                                                flash("Limit updated");
+                                                            } catch (e) { flash(`Failed: ${e.message}`, "error"); }
+                                                            setChangingLimit(null);
+                                                        }} style={{ background: T.success, border: "none", color: "#fff", borderRadius: 4, padding: "2px 6px", fontSize: 10, cursor: "pointer" }}>OK</button>
+                                                        <button onClick={() => setChangingLimit(null)} style={{ background: "transparent", border: "none", color: T.dim, cursor: "pointer", fontSize: 10 }}>X</button>
+                                                    </div>
+                                                ) : (
+                                                    <span style={{ cursor: "pointer" }} onClick={() => setChangingLimit({ uuid: card.uuid, value: card.limit || "" })}>
+                                                        ${card.limit} {card.currency}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div style={{ flex: 0.8 }}>
+                                                <Badge style={{ background: `${card.status === "ACTIVE" ? T.success : card.status === "BLOCKED" ? T.danger : T.warning}18`, color: card.status === "ACTIVE" ? T.success : card.status === "BLOCKED" ? T.danger : T.warning, border: `1px solid ${card.status === "ACTIVE" ? T.success : card.status === "BLOCKED" ? T.danger : T.warning}44` }}>{card.status}</Badge>
+                                            </div>
+                                            <div style={{ display: "flex", gap: 4 }}>
+                                                {card.status === "ACTIVE" ? (
+                                                    <Button variant="ghost" onClick={() => {
+                                                        if (confirm("Block this card?")) {
+                                                            leadingCardsApi.blockCard(card.uuid)
+                                                                .then(() => { refreshCards(); flash("Card blocked"); })
+                                                                .catch(e => flash(`Block failed: ${e.message}`, "error"));
+                                                        }
+                                                    }} style={{ ...S.miniBtn, color: T.danger }}>Block</Button>
+                                                ) : (
+                                                    <Button variant="ghost" onClick={() => {
+                                                        leadingCardsApi.activateCard(card.uuid)
+                                                            .then(() => { refreshCards(); flash("Card activated"); })
+                                                            .catch(e => flash(`Activate failed: ${e.message}`, "error"));
+                                                    }} style={{ ...S.miniBtn, color: T.success }}>Activate</Button>
+                                                )}
+                                                <Button variant="ghost" onClick={() => setChangingLimit({ uuid: card.uuid, value: card.limit || "" })}
+                                                    style={{ ...S.miniBtn, color: T.primary }}>Limit</Button>
+                                            </div>
+                                        </div>
+
+                                        {expandedCard === card.uuid && (
+                                            <div style={{ width: "100%", background: T.card2, padding: 20, borderLeft: `3px solid ${T.primary}`, marginBottom: 8 }}>
+                                                <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+                                                    <div style={{ flex: 1, minWidth: 240 }}>
+                                                        <div style={{ fontSize: 10, fontWeight: 700, marginBottom: 8, color: T.muted }}>Linked MLX Profile</div>
+                                                        {(() => {
+                                                            const accounts = data?.accounts || [];
+                                                            const linked = accounts.find(acc => acc.cardUuid === card.uuid);
+                                                            const currentProfileId = linkingProfile[card.uuid] || linked?.profileId || "";
+                                                            const profiles = Array.isArray(mlProfiles) ? mlProfiles : [];
+                                                            return (
+                                                                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                                                    <select value={currentProfileId} onChange={(e) => setLinkingProfile({ ...linkingProfile, [card.uuid]: e.target.value })} style={S.select}>
+                                                                        <option value="">-- No Profile Linked --</option>
+                                                                        {profiles.map(p => <option key={p.uuid || p.id} value={p.uuid || p.id}>{p.name || p.label || p.uuid}</option>)}
+                                                                    </select>
+                                                                    <div style={{ display: "flex", gap: 6 }}>
+                                                                        <Button size="sm" disabled={!currentProfileId} onClick={() => handleMapProfile(card.uuid, currentProfileId)} style={{ flex: 1 }}>{linked ? "Update Link" : "Link to MLX"}</Button>
+                                                                        {linked && <Button size="sm" variant="ghost" onClick={() => { if (confirm("Remove mapping?")) del("accounts", linked.id); }} style={{ color: T.danger }}>🗑️</Button>}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })()}
+                                                    </div>
+                                                    <div style={{ flex: 1.2 }}>
+                                                        <div style={{ fontSize: 10, fontWeight: 700, marginBottom: 8, color: T.muted }}>Card Info</div>
+                                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                                                            <div style={{ padding: 10, background: `${T.primary}05`, borderRadius: 6, border: `1px solid ${T.border}` }}><div style={{ fontSize: 8, color: T.dim }}>CURRENCY</div><div style={{ fontSize: 11, fontWeight: 600 }}>{card.currency || card.card_bin?.currency || "USD"}</div></div>
+                                                            <div style={{ padding: 10, background: `${T.primary}05`, borderRadius: 6, border: `1px solid ${T.border}` }}><div style={{ fontSize: 8, color: T.dim }}>BIN</div><div style={{ fontSize: 11, fontWeight: 600 }}>{typeof card.card_bin === 'object' ? card.card_bin?.bin : card.card_bin}</div></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </React.Fragment>
+                                );
+                            })}
+                    </div>
+                )}
+
+                <div style={{ marginTop: 24 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
+                        <div style={S.sectionTitle}>Transactions</div>
+                        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                            <label style={{ fontSize: 10, color: T.muted }}>From</label>
+                            <input type="date" value={txDateFrom} onChange={e => setTxDateFrom(e.target.value)}
+                                style={{ padding: "4px 8px", borderRadius: 6, border: `1px solid ${T.border}`, background: T.input, color: T.text, fontSize: 11 }} />
+                            <label style={{ fontSize: 10, color: T.muted }}>To</label>
+                            <input type="date" value={txDateTo} onChange={e => setTxDateTo(e.target.value)}
+                                style={{ padding: "4px 8px", borderRadius: 6, border: `1px solid ${T.border}`, background: T.input, color: T.text, fontSize: 11 }} />
+                            <Button variant="ghost" disabled={txLoading} onClick={() => {
+                                setTxLoading(true);
+                                leadingCardsApi.getTransactions(txDateFrom, txDateTo)
+                                    .then(res => {
+                                        const txs = res.results || res || [];
+                                        setLcTransactions(txs);
+                                        flash(`Loaded ${txs.length} transactions`);
+                                    })
+                                    .catch(e => flash(`Failed: ${e.message}`, "error"))
+                                    .finally(() => setTxLoading(false));
+                            }} style={{ fontSize: 11 }}>{txLoading ? "Loading..." : "🔍 Load"}</Button>
+                        </div>
+                    </div>
+                    {lcTransactions.length === 0
+                        ? <div style={{ ...S.emptyState, fontSize: 11 }}>Select a date range and click "Load" to fetch transactions</div>
+                        : (
+                            <div>
+                                <div style={{ ...S.row, fontWeight: 700, fontSize: 10, color: T.muted, background: T.card, borderBottom: `1px solid ${T.border}` }}>
+                                    <div style={{ flex: 1.2 }}>Card</div>
+                                    <div style={{ flex: 2 }}>Merchant</div>
+                                    <div style={{ flex: 1 }}>Amount</div>
+                                    <div style={{ flex: 0.7 }}>Currency</div>
+                                    <div style={{ flex: 0.8 }}>Type</div>
+                                    <div style={{ flex: 1.5 }}>Date</div>
+                                </div>
+                                {lcTransactions.slice(0, 100).map((tx, i) => (
+                                    <div key={tx.uuid || i} style={{ ...S.row, fontSize: 11 }}>
+                                        <div style={{ flex: 1.2, fontWeight: 600 }}>****{tx.card_last_4 || "\u2014"}</div>
+                                        <div style={{ flex: 2, color: T.muted }}>{tx.merchant_name || tx.description || "\u2014"}</div>
+                                        <div style={{ flex: 1, color: tx.type === "decline" ? T.danger : T.success, fontWeight: 600 }}>
+                                            {tx.type === "decline" ? "DECLINED" : `$${tx.amount || 0}`}
+                                        </div>
+                                        <div style={{ flex: 0.7, color: T.dim }}>{tx.currency || ""}</div>
+                                        <div style={{ flex: 0.8 }}>
+                                            <Badge style={{ fontSize: 9, background: `${tx.type === "decline" ? T.danger : tx.type === "refund" ? T.warning : T.success}18`, color: tx.type === "decline" ? T.danger : tx.type === "refund" ? T.warning : T.success }}>{tx.type || "auth"}</Badge>
+                                        </div>
+                                        <div style={{ flex: 1.5, color: T.dim }}>{tx.created_at ? new Date(tx.created_at).toLocaleString() : "\u2014"}</div>
+                                    </div>
+                                ))}
+                                {lcTransactions.length > 100 && <div style={{ textAlign: "center", fontSize: 11, color: T.dim, padding: 8 }}>Showing 100 of {lcTransactions.length}</div>}
+                            </div>
+                        )}
+                </div>
+
+                {modal === "lc-card" && (() => {
+                    const CreateCardModal = () => {
+                        const [form, setForm] = useState({ bin_uuid: "", limit: "10", billing_address_uuid: "", comment: "" });
+                        const [creating, setCreating] = useState(false);
+                        return (
+                            <div style={S.overlay}>
+                                <Card style={{ width: 450, padding: 24 }}>
+                                    <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>Create New Card</h3>
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+                                        <div>
+                                            <label style={S.label}>Select BIN</label>
+                                            <select value={form.bin_uuid} onChange={e => setForm({ ...form, bin_uuid: e.target.value })} style={S.select}>
+                                                <option value="">Select BIN...</option>
+                                                {lcBins.map(b => <option key={b.uuid} value={b.uuid}>{b.brand} - {b.card_type} ({b.country})</option>)}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label style={S.label}>Limit ($)</label>
+                                            <Inp value={form.limit} onChange={v => setForm({ ...form, limit: v })} type="number" placeholder="10" />
+                                        </div>
+                                    </div>
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>Billing Address</label>
+                                        <select value={form.billing_address_uuid} onChange={e => setForm({ ...form, billing_address_uuid: e.target.value })} style={S.select}>
+                                            <option value="">Select Address...</option>
+                                            {lcAddresses.map(a => <option key={a.uuid} value={a.uuid}>{a.first_name} {a.last_name} - {a.address}, {a.city}</option>)}
+                                        </select>
+                                    </div>
+                                    <div style={{ marginBottom: 20 }}>
+                                        <label style={S.label}>Comment (Auto-tagging)</label>
+                                        <Inp value={form.comment} onChange={v => setForm({ ...form, comment: v })} placeholder="google-ads-account-X" />
+                                    </div>
+                                    <div style={S.btnRow}>
+                                        <Button variant="ghost" onClick={() => setModal(null)}>Cancel</Button>
+                                        <Button disabled={creating} onClick={async () => {
+                                            setCreating(true);
+                                            try {
+                                                await leadingCardsApi.createCard({
+                                                    bin_uuid: form.bin_uuid,
+                                                    limit: parseFloat(form.limit) || 10,
+                                                    comment: form.comment,
+                                                    billing_address_uuid: form.billing_address_uuid,
+                                                    amount: 1,
+                                                });
+                                                await refreshCards();
+                                                setModal(null);
+                                                flash("Card created");
+                                            } catch (e) {
+                                                flash(`Create failed: ${e.message}`, "error");
+                                            } finally {
+                                                setCreating(false);
+                                            }
+                                        }}>{creating ? "Creating..." : "Create Card"}</Button>
+                                    </div>
+                                </Card>
+                            </div>
+                        );
+                    };
+                    return <CreateCardModal />;
+                })()}
+            </>}
+
+            {/* ═══════════════════════════════════════════════════════════
+                TAB: RISKS
+                ═══════════════════════════════════════════════════════════ */}
+            {
+                tab === "risks" && (
+                    risks.length === 0
+                        ? <Card style={{ textAlign: "center", padding: 40 }}>
+                            <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
+                            <div style={{ fontSize: 14, fontWeight: 600 }}>No risks detected</div>
+                        </Card>
+                        : risks.map((r, i) => (
+                            <Card key={i} style={{ padding: "12px 16px", marginBottom: 6, borderColor: RISK_COLORS[r.level] ? `${RISK_COLORS[r.level]}44` : T.border }}>
+                                <span style={{ marginRight: 6 }}>{RISK_ICONS[r.category] || "⚠️"}</span>
+                                <Badge style={{ background: `${RISK_COLORS[r.level] || T.warning}18`, color: RISK_COLORS[r.level] || T.warning, border: `1px solid ${RISK_COLORS[r.level] || T.warning}44` }}>{r.level}</Badge>
+                                <span style={{ marginLeft: 10, fontSize: 13 }}>{r.msg}</span>
+                                {r.affectedIds && <span style={{ marginLeft: 8, fontSize: 10, color: T.dim }}>({r.affectedIds.length} affected)</span>}
+                            </Card>
+                        ))
+                )
+            }
+
+            {/* ═══════════════════════════════════════════════════════════
+                TAB: API ACCOUNTS (Cloudflare + Registrar)
+                ═══════════════════════════════════════════════════════════ */}
+            {
+                tab === "api-accounts" && (
+                    <div>
+                        {/* Cloudflare Accounts Section */}
+                        <div style={{ marginBottom: 32 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                                <div style={S.sectionTitle}>☁️ Cloudflare Accounts</div>
+                                <Button onClick={() => setModal("cf-account")}>+ Add CF Account</Button>
+                            </div>
+                            {(!data.cfAccounts || data.cfAccounts.length === 0)
+                                ? <div style={{ ...S.emptyState, marginBottom: 16 }}>No Cloudflare accounts yet</div>
+                                : data.cfAccounts.map(cf => (
+                                    <div key={cf.id} style={S.row}>
+                                        <div style={{ flex: 2, fontWeight: 600, fontSize: 12 }}>{cf.label || "\u2014"}</div>
+                                        <div style={{ flex: 2, fontSize: 11 }}>{cf.email || "\u2014"}</div>
+                                        <div style={{ flex: 3, fontSize: 11, fontFamily: "monospace" }}>
+                                            {cf.api_key ? `•••${cf.api_key.slice(-4)}` : "\u2014"}
+                                        </div>
+                                        <div style={{ display: "flex", gap: 4 }}>
+                                            <button
+                                                onClick={() => handleTestCfAccount(cf)}
+                                                disabled={testingCfId === cf.id}
+                                                style={{ ...S.miniBtn, background: `${T.success}22`, color: T.success }}
+                                            >
+                                                {testingCfId === cf.id ? "Testing..." : "Test"}
+                                            </button>
+                                            <button onClick={() => setModal({ type: "cf-account-edit", account: cf })}
+                                                style={{ ...S.miniBtn, background: `${T.primary}22`, color: T.primary }}>Edit</button>
+                                            <button onClick={() => {
+                                                if (confirm(`Delete CF account "${cf.label}"?`)) {
+                                                    del("cf-accounts", cf.id);
+                                                    flash("CF account deleted");
+                                                }
+                                            }} style={{ background: `${T.danger}22`, border: "none", borderRadius: 5, padding: "4px 8px", color: T.danger, cursor: "pointer", fontSize: 10 }}>✕</button>
+                                        </div>
+                                    </div>
+                                ))}
+                        </div>
+
+                        {/* Registrar Accounts Section */}
+                        <div>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                                <div style={S.sectionTitle}>🌐 Registrar Accounts</div>
+                                <div style={{ display: "flex", gap: 8 }}>
+                                    <Button variant="ghost" disabled={requestingIp} onClick={handleRequestIp}>
+                                        {requestingIp ? "..." : "Request IP"}
+                                    </Button>
+                                    <Button onClick={() => { setEditingReg(null); setModal("registrar-account"); }}>+ Add Registrar</Button>
+                                </div>
+                            </div>
+                            {(!data.registrarAccounts || data.registrarAccounts.length === 0)
+                                ? <div style={S.emptyState}>No registrar accounts yet. Add one to register domains.</div>
+                                : data.registrarAccounts.map(reg => (
+                                    <div key={reg.id} style={S.row}>
+                                        <div style={{ flex: 1, fontWeight: 600, fontSize: 12 }}>{reg.label || reg.provider || "\u2014"}</div>
+                                        <div style={{ flex: 1, fontSize: 11 }}>
+                                            <Badge style={{ background: `${T.primary}18`, color: T.primary, border: `1px solid ${T.primary}44` }}>{reg.provider || "internetbs"}</Badge>
+                                        </div>
+                                        <div style={{ flex: 2, fontSize: 11, fontFamily: "monospace" }}>
+                                            {reg.api_key ? `•••${reg.api_key.slice(-4)}` : "\u2014"}
+                                        </div>
+                                        <div style={{ flex: 1, fontSize: 11 }}>
+                                            {reg.status === "active" ? <Badge style={{ background: `${T.success}18`, color: T.success, border: `1px solid ${T.success}44` }}>Active</Badge> : <Badge style={{ background: `${T.dim}18`, color: T.dim, border: `1px solid ${T.dim}44` }}>{reg.status || "\u2014"}</Badge>}
+                                        </div>
+                                        <div style={{ display: "flex", gap: 4 }}>
+                                            <button
+                                                onClick={() => handleTestRegistrarAccount(reg)}
+                                                disabled={testingRegId === reg.id}
+                                                style={{ ...S.miniBtn, background: `${T.success}22`, color: T.success }}
+                                            >
+                                                {testingRegId === reg.id ? "Testing..." : "Test"}
+                                            </button>
+                                            <button
+                                                onClick={() => { setEditingReg(reg); setModal("registrar-account"); }}
+                                                style={{ ...S.miniBtn, background: `${T.primary}22`, color: T.primary, border: "none", borderRadius: 5, cursor: "pointer" }}
+                                            >
+                                                Edit
+                                            </button>
+                                            <button onClick={() => {
+                                                if (confirm(`Delete "${reg.label}"?`)) {
+                                                    // Remove via API
+                                                    api.del(`/registrar-accounts/${reg.id}`).catch(() => { });
+                                                    // Update local state via parent del function
+                                                    del("registrar-accounts", reg.id);
+                                                    flash("Registrar account deleted");
+                                                }
+                                            }} style={{ background: `${T.danger}22`, border: "none", borderRadius: 5, padding: "4px 8px", color: T.danger, cursor: "pointer", fontSize: 10 }}>{"\u2715"}</button>
+                                        </div>
+                                    </div>
+                                ))}
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* ═══════════════════════════════════════════════════════════
+                TAB: DEPLOY
+                ═══════════════════════════════════════════════════════════ */}
+            {
+                tab === "deploy" && (
+                    <DeployTab
+                        data={data}
+                        settings={settings}
+                        add={add}
+                        del={del}
+                        upd={upd}
+                        notify={(msg, type) => flash(msg, type)}
+                    />
+                )
+            }
+
+            {/* ═══════════════════════════════════════════════════════════
+                TAB: D1 DATABASE
+                ═══════════════════════════════════════════════════════════ */}
+            {tab === "d1" && <D1DatabaseTab />}
+
+            {/* ═══════════════════════════════════════════════════════════
+                TAB: PROXY HEALTH
+                ═══════════════════════════════════════════════════════════ */}
+            {tab === "proxy-list" && <ProxyListTab accounts={data.accounts} profiles={data.profiles} />}
+            {tab === "proxy-health" && <ProxyHealthTab profiles={data.profiles} settings={settings} />}
+
+            {/* ═══════════════════════════════════════════════════════════
+                TAB: LOGS
+                ═══════════════════════════════════════════════════════════ */}
+            {
+                tab === "logs" && (
+                    data.logs.length === 0
+                        ? <Card style={{ textAlign: "center", padding: 40, color: T.dim }}>No activity yet</Card>
+                        : <Card style={{ padding: 12 }}>
+                            {data.logs.slice(0, 50).map(log => (
+                                <div key={log.id} style={{ padding: "5px 8px", borderBottom: `1px solid ${T.border}`, fontSize: 12, display: "flex", justifyContent: "space-between" }}>
+                                    <span style={{ color: T.muted }}>{log.msg}</span>
+                                    <span style={{ color: T.dim, fontSize: 10 }}>{new Date(log.ts).toLocaleString()}</span>
+                                </div>
+                            ))}
+                        </Card>
+                )
+            }
+
+            {/* ═══════════════════════════════════════════════════════════
+                MODAL: ACCOUNT CREATION WIZARD (Task 11)
+                ═══════════════════════════════════════════════════════════ */}
+            {
+                modal === "wizard" && (() => {
+                    const WizardModal = () => {
+                        const [step, setStep] = useState(wizardStep);
+                        const [wd, setWd] = useState(wizardData);
+                        const [busy, setBusy] = useState(false);
+                        const [wizError, setWizError] = useState(null);
+                        const [wizSuccess, setWizSuccess] = useState(false);
+
+                        const steps = [
+                            { label: "1. Create Card", icon: "💳" },
+                            { label: "2. Create Profile", icon: "👤" },
+                            { label: "3. Account Details", icon: "💰" },
+                            { label: "4. Review & Create", icon: "🚀" },
+                        ];
+
+                        const handleFinish = async () => {
+                            setBusy(true);
+                            setWizError(null);
+                            try {
+                                // Step 1: Create card
+                                let cardRes = null;
+                                if (wd.bin_uuid) {
+                                    cardRes = await leadingCardsApi.createCard({
+                                        bin_uuid: wd.bin_uuid,
+                                        limit: parseFloat(wd.card_limit) || 10,
+                                        comment: wd.card_comment || "",
+                                        billing_address_uuid: wd.billing_address_uuid || "",
+                                        amount: 1,
+                                    });
+                                }
+
+                                // Step 2: Create profile
+                                let profileRes = null;
+                                if (wd.profile_browser) {
+                                    const profileData = {
+                                        browser_type: wd.profile_browser,
+                                        os_type: wd.profile_os || "windows",
+                                        parameters: {
+                                            proxy: wd.proxy_host ? {
+                                                host: wd.proxy_host,
+                                                port: parseInt(wd.proxy_port) || 8080,
+                                                username: wd.proxy_user || "",
+                                                password: wd.proxy_pass || "",
+                                                type: "http",
+                                            } : undefined,
+                                        },
+                                    };
+                                    profileRes = await multiloginApi.createProfile(profileData);
+                                }
+
+                                // Step 3: Save account to D1
+                                const newCardUuid = cardRes?.uuid || cardRes?.results?.[0]?.uuid || "";
+                                const newProfileId = profileRes?.uuid || profileRes?.id || "";
+                                const refreshedCards = await leadingCardsApi.getCards();
+                                setLcCards(refreshedCards.results || []);
+                                const newCard = (refreshedCards.results || []).find(c => c.uuid === newCardUuid);
+
+                                const localProfileId = uid();
+                                // Save local profile entry
+                                if (newProfileId) {
+                                    add("profiles", {
+                                        id: localProfileId,
+                                        name: wd.acct_label ? `Profile - ${wd.acct_label}` : `Profile ${localProfileId}`,
+                                        proxyIp: wd.proxy_host || "",
+                                        browserType: wd.profile_browser || "mimic",
+                                        mlProfileId: newProfileId,
+                                        status: "active",
+                                        createdAt: now(),
+                                    });
+                                }
+
+                                // Save account entry
+                                add("accounts", {
+                                    id: uid(),
+                                    label: wd.acct_label || "New Account",
+                                    email: wd.acct_email || "",
+                                    budget: wd.acct_budget || "",
+                                    cardUuid: newCardUuid,
+                                    cardLast4: newCard?.card_last_4 || "",
+                                    cardStatus: newCard?.status || "",
+                                    profileId: newProfileId ? localProfileId : "",
+                                    status: "active",
+                                    createdAt: now(),
+                                });
+
+                                await refreshProfiles();
+                                setWizSuccess(true);
+                                flash("Account stack created end-to-end!");
+                            } catch (e) {
+                                setWizError(e.message || "Unknown error");
+                            } finally {
+                                setBusy(false);
+                            }
+                        };
+
+                        if (wizSuccess) {
+                            return (
+                                <div style={S.overlay}>
+                                    <Card style={{ width: 460, padding: 32, textAlign: "center", animation: "fadeIn .2s" }}>
+                                        <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
+                                        <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Account Stack Created!</h3>
+                                        <p style={{ fontSize: 13, color: T.muted, marginBottom: 20 }}>Card, profile, and account have been created and linked.</p>
+                                        <Button onClick={() => { setModal(null); setWizardStep(0); setWizardData({}); }}>Close</Button>
+                                    </Card>
+                                </div>
+                            );
+                        }
+
+                        return (
+                            <div style={S.overlay}>
+                                <Card style={{ width: 560, padding: 24, animation: "fadeIn .2s" }}>
+                                    {/* Stepper */}
+                                    <div style={{ display: "flex", gap: 4, marginBottom: 20 }}>
+                                        {steps.map((s, i) => (
+                                            <div key={i} style={{
+                                                flex: 1, textAlign: "center", padding: "8px 4px", borderRadius: 6, fontSize: 11, fontWeight: 600,
+                                                background: i === step ? `${T.primary}22` : "transparent",
+                                                color: i === step ? T.text : i < step ? T.success : T.dim,
+                                                border: `1px solid ${i === step ? T.primary : "transparent"}`,
+                                            }}>
+                                                <span style={{ marginRight: 4 }}>{s.icon}</span>{s.label}
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {wizError && <div style={{ padding: 8, marginBottom: 12, borderRadius: 6, background: `${T.danger}12`, border: `1px solid ${T.danger}44`, color: T.danger, fontSize: 12 }}>{wizError}</div>}
+
+                                    {/* Step 0: Create Card */}
+                                    {step === 0 && <>
+                                        <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>Step 1: Create Card</h3>
+                                        <div style={S.fieldWrap}>
+                                            <label style={S.label}>Select BIN</label>
+                                            <select value={wd.bin_uuid || ""} onChange={e => setWd({ ...wd, bin_uuid: e.target.value })} style={S.select}>
+                                                <option value="">Select BIN...</option>
+                                                {lcBins.map(b => <option key={b.uuid} value={b.uuid}>{b.brand} - {b.card_type} ({b.country})</option>)}
+                                            </select>
+                                        </div>
+                                        <div style={S.fieldWrap}>
+                                            <label style={S.label}>Billing Address</label>
+                                            <select value={wd.billing_address_uuid || ""} onChange={e => setWd({ ...wd, billing_address_uuid: e.target.value })} style={S.select}>
+                                                <option value="">Select Address...</option>
+                                                {lcAddresses.map(a => <option key={a.uuid} value={a.uuid}>{a.first_name} {a.last_name} - {a.address}, {a.city}</option>)}
+                                            </select>
+                                        </div>
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                                            <div style={S.fieldWrap}>
+                                                <label style={S.label}>Card Limit ($)</label>
+                                                <Inp value={wd.card_limit || ""} onChange={v => setWd({ ...wd, card_limit: v })} type="number" placeholder="10" />
+                                            </div>
+                                            <div style={S.fieldWrap}>
+                                                <label style={S.label}>Comment</label>
+                                                <Inp value={wd.card_comment || ""} onChange={v => setWd({ ...wd, card_comment: v })} placeholder="auto-tag" />
+                                            </div>
+                                        </div>
+                                    </>}
+
+                                    {/* Step 1: Create Profile */}
+                                    {step === 1 && <>
+                                        <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>Step 2: Create Profile</h3>
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                                            <div style={S.fieldWrap}>
+                                                <label style={S.label}>Browser Type</label>
+                                                <select value={wd.profile_browser || "mimic"} onChange={e => setWd({ ...wd, profile_browser: e.target.value })} style={S.select}>
+                                                    <option value="mimic">Mimic</option>
+                                                    <option value="stealthfox">Stealthfox</option>
+                                                </select>
+                                            </div>
+                                            <div style={S.fieldWrap}>
+                                                <label style={S.label}>OS Type</label>
+                                                <select value={wd.profile_os || "windows"} onChange={e => setWd({ ...wd, profile_os: e.target.value })} style={S.select}>
+                                                    <option value="windows">Windows</option>
+                                                    <option value="macos">macOS</option>
+                                                    <option value="linux">Linux</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div style={{ ...S.sectionTitle, marginTop: 8, fontSize: 11 }}>Proxy</div>
+                                        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12 }}>
+                                            <div style={S.fieldWrap}>
+                                                <label style={S.label}>Host</label>
+                                                <Inp value={wd.proxy_host || ""} onChange={v => setWd({ ...wd, proxy_host: v })} placeholder="proxy.example.com" />
+                                            </div>
+                                            <div style={S.fieldWrap}>
+                                                <label style={S.label}>Port</label>
+                                                <Inp value={wd.proxy_port || ""} onChange={v => setWd({ ...wd, proxy_port: v })} placeholder="8080" />
+                                            </div>
+                                        </div>
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                                            <div style={S.fieldWrap}>
+                                                <label style={S.label}>Username</label>
+                                                <Inp value={wd.proxy_user || ""} onChange={v => setWd({ ...wd, proxy_user: v })} />
+                                            </div>
+                                            <div style={S.fieldWrap}>
+                                                <label style={S.label}>Password</label>
+                                                <Inp value={wd.proxy_pass || ""} onChange={v => setWd({ ...wd, proxy_pass: v })} type="password" />
+                                            </div>
+                                        </div>
+                                    </>}
+
+                                    {/* Step 2: Account Details */}
+                                    {step === 2 && <>
+                                        <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>Step 3: Account Details</h3>
+                                        <div style={S.fieldWrap}>
+                                            <label style={S.label}>Account Label</label>
+                                            <Inp value={wd.acct_label || ""} onChange={v => setWd({ ...wd, acct_label: v })} placeholder="Google Ads - US Market 1" />
+                                        </div>
+                                        <div style={S.fieldWrap}>
+                                            <label style={S.label}>Email</label>
+                                            <Inp value={wd.acct_email || ""} onChange={v => setWd({ ...wd, acct_email: v })} placeholder="account@domain.com" />
+                                        </div>
+                                        <div style={S.fieldWrap}>
+                                            <label style={S.label}>Daily Budget ($)</label>
+                                            <Inp value={wd.acct_budget || ""} onChange={v => setWd({ ...wd, acct_budget: v })} type="number" placeholder="50" />
+                                        </div>
+                                    </>}
+
+                                    {/* Step 3: Review & Create */}
+                                    {step === 3 && <>
+                                        <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>Step 4: Review & Create</h3>
+                                        <Card style={{ padding: 14, marginBottom: 12, background: T.card2 }}>
+                                            <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Summary</div>
+                                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 12 }}>
+                                                <div>
+                                                    <div style={{ color: T.dim, fontSize: 10 }}>Card</div>
+                                                    <div>{wd.bin_uuid ? `BIN: ${lcBins.find(b => b.uuid === wd.bin_uuid)?.brand || wd.bin_uuid.slice(0, 8)}, Limit: $${wd.card_limit || 10}` : "No card"}</div>
+                                                </div>
+                                                <div>
+                                                    <div style={{ color: T.dim, fontSize: 10 }}>Profile</div>
+                                                    <div>{wd.profile_browser || "mimic"} / {wd.profile_os || "windows"}{wd.proxy_host ? ` via ${wd.proxy_host}` : ""}</div>
+                                                </div>
+                                                <div>
+                                                    <div style={{ color: T.dim, fontSize: 10 }}>Account</div>
+                                                    <div>{wd.acct_label || "Unnamed"}</div>
+                                                </div>
+                                                <div>
+                                                    <div style={{ color: T.dim, fontSize: 10 }}>Budget</div>
+                                                    <div>${wd.acct_budget || "0"}/day</div>
+                                                </div>
+                                            </div>
+                                        </Card>
+                                        <div style={{ fontSize: 11, color: T.muted, marginBottom: 12 }}>
+                                            This will create a new LeadingCards card, a new Multilogin profile, and save the linked account to the database.
+                                        </div>
+                                    </>}
+
+                                    {/* Navigation */}
+                                    <div style={{ ...S.btnRow, marginTop: 20 }}>
+                                        <Button variant="ghost" onClick={() => { setModal(null); setWizardStep(0); setWizardData({}); }}>Cancel</Button>
+                                        {step > 0 && <Button variant="ghost" onClick={() => setStep(step - 1)}>Back</Button>}
+                                        {step < 3 ? (
+                                            <Button onClick={() => { setWd({ ...wd }); setStep(step + 1); }}>Next</Button>
+                                        ) : (
+                                            <Button disabled={busy} onClick={handleFinish}>
+                                                {busy ? "Creating..." : "Create Everything"}
+                                            </Button>
+                                        )}
+                                    </div>
+                                </Card>
+                            </div>
+                        );
+                    };
+                    return <WizardModal />;
+                })()
+            }
+
+            {/* ═══════════════════════════════════════════════════════════
+                MODAL: ADD CLOUDFLARE ACCOUNT
+                ═══════════════════════════════════════════════════════════ */}
+            {
+                modal === "cf-account" && (() => {
+                    const CfAccountModal = () => {
+                        const [form, setForm] = useState({ label: "", email: "", account_id: "", api_key: "" });
+                        const [saving, setSaving] = useState(false);
+
+                        const handleSave = async () => {
+                            if (!form.label || !form.account_id || !form.api_key) {
+                                flash("Label, Account ID, and API Token are required", "error");
+                                return;
+                            }
+                            setSaving(true);
+                            try {
+                                // Validate API key via our proxy (avoids CORS)
+                                const testRes = await api.post("/api/automation/cf-validate", {
+                                    accountId: form.account_id,
+                                    apiToken: form.api_key,
+                                });
+                                if (!testRes.success) {
+                                    flash(testRes.error || "Invalid Cloudflare API Token or Account ID", "error");
+                                    setSaving(false);
+                                    return;
+                                }
+
+                                // Save to API first and require success before updating UI state
+                                const payload = {
+                                    id: uid(),
+                                    ...form,
+                                    apiKey: form.api_key || "",
+                                    accountId: form.account_id || "",
+                                    apiToken: form.api_token || "",
+                                };
+                                const saveRes = await api.post("/cf-accounts", payload);
+                                if (saveRes?.error) {
+                                    flash(saveRes.detail || saveRes.error || "Failed to save Cloudflare account", "error");
+                                    setSaving(false);
+                                    return;
+                                }
+
+                                // Update local state only (API already saved above)
+                                add("cf-accounts", { ...payload }, { persist: false });
+                                flash("Cloudflare account added");
+                                setModal(null);
+                            } catch (e) {
+                                flash(`Failed: ${e.message}`, "error");
+                            } finally {
+                                setSaving(false);
+                            }
+                        };
+
+                        return (
+                            <div style={S.overlay}>
+                                <Card style={{ width: 480, padding: 24, animation: "fadeIn .2s" }}>
+                                    <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>Add Cloudflare Account</h3>
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>Label</label>
+                                        <Inp value={form.label} onChange={v => setForm({ ...form, label: v })} placeholder="Main CF Account" />
+                                    </div>
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>Account ID <span style={{ color: T.danger }}>*</span></label>
+                                        <Inp value={form.account_id} onChange={v => setForm({ ...form, account_id: v })} placeholder="32-character hex ID" />
+                                        <div style={{ fontSize: 10, color: T.muted, marginTop: 4 }}>
+                                            Found in Cloudflare dashboard → URL: /accounts/<strong style={{ color: T.primary }}>YourAccountID</strong>
+                                        </div>
+                                    </div>
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>Email (optional)</label>
+                                        <Inp value={form.email} onChange={v => setForm({ ...form, email: v })} placeholder="cf@example.com" />
+                                    </div>
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>API Token (Global Key) <span style={{ color: T.danger }}>*</span></label>
+                                        <Inp value={form.api_key} onChange={v => setForm({ ...form, api_key: v })} placeholder="••••" type="password" />
+                                        <div style={{ fontSize: 10, color: T.muted, marginTop: 4 }}>
+                                            Needs Zone:Zone, DNS:Edit, Zone:Read permissions
+                                        </div>
+                                    </div>
+                                    <div style={S.btnRow}>
+                                        <Button variant="ghost" onClick={() => setModal(null)}>Cancel</Button>
+                                        <Button disabled={saving} onClick={handleSave}>{saving ? "Saving..." : "Save"}</Button>
+                                    </div>
+                                </Card>
+                            </div>
+                        );
+                    };
+                    return <CfAccountModal />;
+                })()
+            }
+
+            {/* ═══════════════════════════════════════════════════════════
+                MODAL: ADD REGISTRAR ACCOUNT
+                ═══════════════════════════════════════════════════════════ */}
+            {
+                modal === "registrar-account" && (() => {
+                    const RegistrarAccountModal = () => {
+                        const [form, setForm] = useState(editingReg
+                            ? { provider: editingReg.provider, label: editingReg.label, api_key: editingReg.api_key, secret_key: editingReg.secret_key }
+                            : { provider: "internetbs", label: "", api_key: "", secret_key: "" }
+                        );
+                        const [saving, setSaving] = useState(false);
+                        const [testing, setTesting] = useState(false);
+                        const [testResult, setTestResult] = useState(null);
+
+                        const handleTest = async () => {
+                            if (!form.api_key || !form.secret_key) {
+                                flash("API Key and Secret Key are required", "error");
+                                return;
+                            }
+                            setTesting(true);
+                            setTestResult(null);
+                            try {
+                                // Route through Worker proxy (avoids browser CORS/network issues)
+                                const data = await api.post("/api/automation/registrar/ping", {
+                                    provider: form.provider || "internetbs",
+                                    apiKey: form.api_key,
+                                    secretKey: form.secret_key,
+                                });
+
+                                if (data?.success) {
+                                    setTestResult({
+                                        success: true,
+                                        balance: formatBalance(data.balance, data.currency),
+                                        message: data.message,
+                                    });
+                                } else {
+                                    setTestResult({ success: false, error: data?.error || data?.message || "Connection failed" });
+                                }
+                            } catch (e) {
+                                setTestResult({ success: false, error: e.message });
+                            } finally {
+                                setTesting(false);
+                            }
+                        };
+
+                        const handleSave = async () => {
+                            if (!form.label || !form.api_key || !form.secret_key) {
+                                flash("Label, API Key and Secret Key are required", "error");
+                                return;
+                            }
+                            setSaving(true);
+                            try {
+                                if (editingReg) {
+                                    await upd("registrar-accounts", editingReg.id, { ...form });
+                                    flash("Registrar account updated");
+                                } else {
+                                    const newAccount = { id: uid(), ...form };
+                                    await add("registrar-accounts", newAccount);
+                                    flash("Registrar account added");
+                                }
+                                setModal(null);
+                            } catch (e) {
+                                flash(`Failed: ${e.message}`, "error");
+                            } finally {
+                                setSaving(false);
+                            }
+                        };
+
+                        return (
+                            <div style={S.overlay}>
+                                <Card style={{ width: 460, padding: 24, animation: "fadeIn .2s" }}>
+                                    <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>
+                                        {editingReg ? "Edit Registrar Account" : "Add Registrar Account"}
+                                    </h3>
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>Provider</label>
+                                        <select value={form.provider} onChange={e => setForm({ ...form, provider: e.target.value })} style={S.select}>
+                                            <option value="internetbs">Internet.bs</option>
+                                        </select>
+                                    </div>
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>Label</label>
+                                        <Inp value={form.label} onChange={v => setForm({ ...form, label: v })} placeholder="Main Registrar" />
+                                    </div>
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>API Key</label>
+                                        <Inp value={form.api_key} onChange={v => setForm({ ...form, api_key: v })} placeholder="•••" type="password" />
+                                    </div>
+                                    <div style={S.fieldWrap}>
+                                        <label style={S.label}>Secret Key / Password</label>
+                                        <Inp value={form.secret_key} onChange={v => setForm({ ...form, secret_key: v })} placeholder="•••" type="password" />
+                                    </div>
+
+                                    {/* Test result */}
+                                    {testResult && (
+                                        <div style={{ padding: 10, borderRadius: 6, marginBottom: 12, background: testResult.success ? `${T.success}12` : `${T.danger}12`, fontSize: 12 }}>
+                                            {testResult.success
+                                                ? `✓ Connected! Balance: ${testResult.balance || "N/A"}`
+                                                : `✗ Failed: ${testResult.error}`}
+                                        </div>
+                                    )}
+
+                                    <div style={S.btnRow}>
+                                        <Button variant="ghost" onClick={() => setModal(null)}>Cancel</Button>
+                                        <Button variant="ghost" disabled={testing} onClick={handleTest}>
+                                            {testing ? "Testing..." : "Test Connection"}
+                                        </Button>
+                                        <Button disabled={saving} onClick={handleSave}>{saving ? "Saving..." : "Save"}</Button>
+                                    </div>
+                                </Card>
+                            </div>
+                        );
+                    };
+                    return <RegistrarAccountModal />;
+                })()
+            }
+        </div >
+    );
+}
+
+

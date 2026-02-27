@@ -1,0 +1,336 @@
+---
+import { Calculator, Info, TrendingUp, ShieldCheck, Zap } from "lucide-astro";
+---
+
+<section class="py-24 bg-white" id="calculator">
+    <div class="container-custom">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+            <h2
+                class="text-4xl md:text-5xl font-black text-primary mb-6 leading-tight"
+            >
+                Installment <span
+                    class="text-accent underline decoration-4 underline-offset-8 decoration-accent/20"
+                    >Loan Calculator</span
+                >
+            </h2>
+            <p class="text-lg text-charcoal-light font-medium">
+                Plan your future with precision. Estimate your monthly payments
+                and see how interest affects your total loan cost over time.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+            <!-- Calculator Inputs -->
+            <div
+                class="lg:col-span-7 bg-gray-50/50 rounded-[2.5rem] p-8 md:p-12 border border-gray-100 shadow-sm space-y-10"
+            >
+                <!-- Loan Amount -->
+                <div class="space-y-6">
+                    <div class="flex justify-between items-end">
+                        <label
+                            class="text-xs font-black text-primary uppercase tracking-[0.2em]"
+                            >Loan Amount</label
+                        >
+                        <span
+                            class="text-3xl font-black text-accent"
+                            id="amount-display">$2,500</span
+                        >
+                    </div>
+                    <input
+                        type="range"
+                        id="amount-slider"
+                        min="500"
+                        max="5000"
+                        step="100"
+                        value="2500"
+                        class="range-slider"
+                    />
+                    <div
+                        class="flex justify-between text-[10px] font-black text-charcoal/40 uppercase tracking-widest"
+                    >
+                        <span>$500</span>
+                        <span>$5,000</span>
+                    </div>
+                </div>
+
+                <!-- Loan Term -->
+                <div class="space-y-6">
+                    <div class="flex justify-between items-end">
+                        <label
+                            class="text-xs font-black text-primary uppercase tracking-[0.2em]"
+                            >Repayment Term</label
+                        >
+                        <span
+                            class="text-3xl font-black text-accent"
+                            id="term-display">12 Months</span
+                        >
+                    </div>
+                    <input
+                        type="range"
+                        id="term-slider"
+                        min="6"
+                        max="60"
+                        step="1"
+                        value="12"
+                        class="range-slider"
+                    />
+                    <div
+                        class="flex justify-between text-[10px] font-black text-charcoal/40 uppercase tracking-widest"
+                    >
+                        <span>6 Months</span>
+                        <span>60 Months</span>
+                    </div>
+                </div>
+
+                <!-- APR Slider -->
+                <div class="space-y-6">
+                    <div class="flex justify-between items-end">
+                        <label
+                            class="text-xs font-black text-primary uppercase tracking-[0.2em]"
+                            >Estimated APR</label
+                        >
+                        <span
+                            class="text-3xl font-black text-accent"
+                            id="apr-display">24.99%</span
+                        >
+                    </div>
+                    <input
+                        type="range"
+                        id="apr-slider"
+                        min="5.99"
+                        max="35.99"
+                        step="0.01"
+                        value="24.99"
+                        class="range-slider"
+                    />
+                    <div
+                        class="flex justify-between text-[10px] font-black text-charcoal/40 uppercase tracking-widest"
+                    >
+                        <span>5.99%</span>
+                        <span>35.99%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calculation Results Card -->
+            <div class="lg:col-span-5 space-y-6">
+                <div
+                    class="bg-primary rounded-[2.5rem] p-10 text-white shadow-xl shadow-primary/20 relative overflow-hidden group"
+                >
+                    <!-- Glow effect -->
+                    <div
+                        class="absolute -top-24 -right-24 w-64 h-64 bg-accent/20 rounded-full blur-3xl group-hover:bg-accent/30 transition-colors"
+                    >
+                    </div>
+
+                    <div class="relative z-10 space-y-10">
+                        <h3
+                            class="text-[10px] font-black uppercase tracking-[0.3em] text-white/60"
+                        >
+                            Estimated Results
+                        </h3>
+
+                        <div class="space-y-2">
+                            <p
+                                class="text-white/60 text-sm font-bold uppercase tracking-widest"
+                            >
+                                Monthly Payment
+                            </p>
+                            <p
+                                class="text-6xl font-black text-accent tracking-tighter"
+                                id="result-monthly"
+                            >
+                                $237.54
+                            </p>
+                        </div>
+
+                        <div
+                            class="grid grid-cols-2 gap-8 pt-8 border-t border-white/10"
+                        >
+                            <div>
+                                <p
+                                    class="text-white/40 text-[10px] font-black uppercase tracking-widest mb-1"
+                                >
+                                    Total Interest
+                                </p>
+                                <p
+                                    class="text-xl font-black text-white"
+                                    id="result-interest"
+                                >
+                                    $350.48
+                                </p>
+                            </div>
+                            <div>
+                                <p
+                                    class="text-white/40 text-[10px] font-black uppercase tracking-widest mb-1"
+                                >
+                                    Total Repayment
+                                </p>
+                                <p
+                                    class="text-xl font-black text-white"
+                                    id="result-total"
+                                >
+                                    $2,850.48
+                                </p>
+                            </div>
+                        </div>
+
+                        <button
+                            data-modal-target="modal-apply"
+                            class="w-full bg-accent hover:bg-accent-hover text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-accent/20 transition-all active:scale-95"
+                        >
+                            Apply Now
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Compliance Box -->
+                <div
+                    class="bg-blue-50/50 border border-blue-100/50 rounded-3xl p-6 flex gap-4 items-start"
+                >
+                    <Info class="w-5 h-5 text-blue-600 mt-1 shrink-0" />
+                    <div class="space-y-4">
+                        <p
+                            class="text-[11px] leading-relaxed text-blue-900 font-medium"
+                        >
+                            <strong>Representative Example:</strong> A $2,000 loan
+                            over 12 months with a 25% APR and a 5% origination fee
+                            ($100) would have a monthly payment of $189.92 and a total
+                            repayment amount of $2,279.04.
+                        </p>
+                        <div class="overflow-x-auto">
+                            <table
+                                class="w-full text-[10px] text-blue-900/60 font-black uppercase tracking-tighter"
+                            >
+                                <tr class="border-b border-blue-100">
+                                    <th class="py-2 text-left">APR Ranges</th>
+                                    <th class="py-2 text-right">Min Term</th>
+                                    <th class="py-2 text-right">Max Term</th>
+                                </tr>
+                                <tr>
+                                    <td class="py-2">5.99% - 35.99%</td>
+                                    <td class="py-2 text-right">6 Months</td>
+                                    <td class="py-2 text-right">60 Months</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    /* Premium Range Slider Styling */
+    .range-slider {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 12px;
+        background: #e2e8f0;
+        border-radius: 10px;
+        outline: none;
+        transition: background 0.2s;
+    }
+
+    .range-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 28px;
+        height: 28px;
+        background: #22c55e;
+        border: 4px solid white;
+        border-radius: 50%;
+        cursor: pointer;
+        shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        transition: transform 0.2s;
+    }
+
+    .range-slider::-webkit-slider-thumb:hover {
+        transform: scale(1.15);
+    }
+
+    .range-slider::-moz-range-thumb {
+        width: 28px;
+        height: 28px;
+        background: #22c55e;
+        border: 4px solid white;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+</style>
+
+<script>
+    /**
+     * LOAN CALCULATOR LOGIC
+     * Uses Standard Amortization Formula: M = P [ i(1 + i)^n ] / [ (1 + i)^n – 1 ]
+     * P = Principal, i = Monthly Interest Rate (APR/100/12), n = Number of Months.
+     */
+    const initCalculator = () => {
+        const amountSlider = document.getElementById(
+            "amount-slider",
+        ) as HTMLInputElement;
+        const termSlider = document.getElementById(
+            "term-slider",
+        ) as HTMLInputElement;
+        const aprSlider = document.getElementById(
+            "apr-slider",
+        ) as HTMLInputElement;
+
+        const amountDisplay = document.getElementById("amount-display");
+        const termDisplay = document.getElementById("term-display");
+        const aprDisplay = document.getElementById("apr-display");
+
+        const resultMonthly = document.getElementById("result-monthly");
+        const resultInterest = document.getElementById("result-interest");
+        const resultTotal = document.getElementById("result-total");
+
+        const calculate = () => {
+            const P = parseFloat(amountSlider.value);
+            const n = parseInt(termSlider.value);
+            const apr = parseFloat(aprSlider.value);
+
+            // Monthly interest rate
+            const i = apr / 100 / 12;
+
+            // M = P [ i(1 + i)^n ] / [ (1 + i)^n – 1 ]
+            let monthlyPayment = 0;
+            if (i === 0) {
+                monthlyPayment = P / n;
+            } else {
+                monthlyPayment =
+                    (P * (i * Math.pow(1 + i, n))) / (Math.pow(1 + i, n) - 1);
+            }
+
+            const totalRepayment = monthlyPayment * n;
+            const totalInterest = totalRepayment - P;
+
+            // Updates
+            if (amountDisplay)
+                amountDisplay.textContent = `$${P.toLocaleString()}`;
+            if (termDisplay) termDisplay.textContent = `${n} Months`;
+            if (aprDisplay) aprDisplay.textContent = `${apr.toFixed(2)}%`;
+
+            if (resultMonthly)
+                resultMonthly.textContent = `$${monthlyPayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            if (resultInterest)
+                resultInterest.textContent = `$${totalInterest.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            if (resultTotal)
+                resultTotal.textContent = `$${totalRepayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        };
+
+        [amountSlider, termSlider, aprSlider].forEach((slider) => {
+            if (slider) {
+                slider.addEventListener("input", calculate);
+            }
+        });
+
+        // Initial calculation
+        calculate();
+    };
+
+    // Initialize on load and after view transitions
+    initCalculator();
+    document.addEventListener("astro:after-swap", initCalculator);
+</script>

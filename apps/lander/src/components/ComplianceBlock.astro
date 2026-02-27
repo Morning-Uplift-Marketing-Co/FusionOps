@@ -1,0 +1,64 @@
+---
+// ============================================================
+// ComplianceBlock — Legal disclaimer and compliance text
+// ============================================================
+// - Required on every landing page
+// - Configurable per-template
+// - No PII disclosure
+// ============================================================
+
+interface Props {
+  companyName?: string;
+  apDisclosure?: boolean;
+  stateDisclosures?: boolean;
+}
+
+const {
+  companyName = 'LoanConnect',
+  apDisclosure = true,
+  stateDisclosures = true,
+} = Astro.props;
+---
+
+<footer class="w-full max-w-2xl mx-auto mt-12 px-4 pb-8">
+  <div class="border-t border-gray-200 pt-6">
+    <div class="text-xs text-gray-500 leading-relaxed space-y-3">
+
+      {apDisclosure && (
+        <p>
+          <strong>APR Disclosure:</strong> Some lenders may offer loans with an Annual Percentage
+          Rate (APR) between 5.99% and 35.99%. The APR is the cost of your loan expressed as a
+          yearly rate. The APR and loan terms you are offered depend on your credit score, income,
+          debt, loan amount requested, and credit history. Only borrowers with excellent credit will
+          qualify for the lowest rates. All loans are subject to credit review and approval.
+        </p>
+      )}
+
+      <p>
+        <strong>Not a Lender:</strong> {companyName} is not a lender, does not broker loans, and
+        does not make credit decisions. {companyName} provides a free service to connect consumers
+        with lenders who may offer them loans. We do not guarantee that you will be matched with a
+        lender or that you will receive a loan offer, nor do we guarantee the terms of any loan offer.
+      </p>
+
+      <p>
+        <strong>Credit Impact:</strong> Checking your rate will not affect your credit score. If
+        you are matched with a lender, and you choose to accept a loan offer, the lender will
+        conduct a hard credit inquiry which may impact your credit score.
+      </p>
+
+      {stateDisclosures && (
+        <p>
+          <strong>State Disclosures:</strong> Loans may not be available in all states. The
+          availability of loans and specific terms depend on your state of residence and applicable
+          laws and regulations. Please consult your state's regulations for more information.
+        </p>
+      )}
+
+      <p class="pt-2 text-gray-400">
+        &copy; {new Date().getFullYear()} {companyName}. All rights reserved.
+        This site is not affiliated with any government agency.
+      </p>
+    </div>
+  </div>
+</footer>

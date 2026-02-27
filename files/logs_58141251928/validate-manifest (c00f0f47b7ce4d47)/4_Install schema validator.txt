@@ -1,0 +1,11 @@
+﻿2026-02-22T00:30:42.6250777Z ##[group]Run npm i -g ajv-cli
+2026-02-22T00:30:42.6251498Z [36;1mnpm i -g ajv-cli[0m
+2026-02-22T00:30:42.6297559Z shell: /usr/bin/bash -e {0}
+2026-02-22T00:30:42.6297917Z ##[endgroup]
+2026-02-22T00:30:44.0866465Z npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+2026-02-22T00:30:44.1195275Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-02-22T00:30:44.2615417Z 
+2026-02-22T00:30:44.2616063Z added 26 packages in 2s
+2026-02-22T00:30:44.2616425Z 
+2026-02-22T00:30:44.2616692Z 4 packages are looking for funding
+2026-02-22T00:30:44.2617192Z   run `npm fund` for details

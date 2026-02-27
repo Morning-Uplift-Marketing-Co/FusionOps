@@ -1,0 +1,100 @@
+---
+import { Star } from "lucide-astro";
+
+const reviews = [
+    {
+        name: "Sarah Jenkins",
+        location: "Chicago, IL",
+        text: "Needed emergency car repairs on a Friday. Applied at lunch and had the funds by Monday morning. Truly a lifesaver!",
+        initials: "SJ",
+        color: "bg-blue-600",
+    },
+    {
+        name: "Michael Chen",
+        location: "Houston, TX",
+        text: "The process was incredibly easy. I've used other sites before, but ElasticCredits was the fastest and most transparent.",
+        initials: "MC",
+        color: "bg-green-600",
+    },
+    {
+        name: "Jessica Miller",
+        location: "Phoenix, AZ",
+        text: "Bad credit made me nervous, but I still found a lender who worked with me. Highly recommend for anyone in a pinch.",
+        initials: "JM",
+        color: "bg-purple-600",
+    },
+];
+---
+
+<section id="testimonials" class="py-24 bg-white">
+    <div class="container-custom">
+        <div
+            class="flex flex-col md:flex-row justify-between items-end gap-10 mb-20"
+        >
+            <div class="space-y-4 max-w-2xl">
+                <h2
+                    class="text-[10px] font-black text-accent uppercase tracking-[0.3em]"
+                >
+                    Success Stories
+                </h2>
+                <p
+                    class="text-4xl md:text-5xl font-black text-primary tracking-tight leading-tight"
+                >
+                    Real people. <br class="hidden md:block" /> Real results.
+                </p>
+            </div>
+            <div
+                class="flex items-center gap-6 bg-gray-50 px-8 py-5 rounded-[2rem] border border-gray-100 shadow-sm"
+            >
+                <div class="flex text-yellow-500 gap-1">
+                    {
+                        [1, 2, 3, 4, 5].map(() => (
+                            <Star class="w-5 h-5 fill-current" />
+                        ))
+                    }
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-xl font-black text-primary leading-tight"
+                        >4.8 / 5</span
+                    >
+                    <span
+                        class="text-[10px] font-black text-charcoal/40 uppercase tracking-widest"
+                        >Global Review Score</span
+                    >
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {
+                reviews.map((r) => (
+                    <div class="p-10 rounded-[2.5rem] bg-gray-50 relative flex flex-col h-full border border-transparent hover:bg-white hover:border-gray-100 hover:shadow-premium transition-all duration-300 group">
+                        <div class="flex text-yellow-500 gap-1 mb-8">
+                            {[1, 2, 3, 4, 5].map(() => (
+                                <Star class="w-4 h-4 fill-current" />
+                            ))}
+                        </div>
+                        <p class="text-lg text-primary font-bold italic leading-relaxed mb-auto">
+                            "{r.text}"
+                        </p>
+                        <div class="flex items-center gap-4 pt-8 border-t border-gray-200 mt-8">
+                            <div
+                                class={`w-12 h-12 rounded-xl ${r.color} flex items-center justify-center text-white font-black text-xs shadow-md`}
+                            >
+                                {r.initials}
+                            </div>
+                            <div>
+                                <div class="text-base font-black text-primary leading-tight">
+                                    {r.name}
+                                </div>
+                                <div class="text-[10px] font-bold text-charcoal/40 uppercase tracking-widest mt-1">
+                                    {r.location}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ))
+            }
+        </div>
+    </div>
+</section>

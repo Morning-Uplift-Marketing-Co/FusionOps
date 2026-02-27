@@ -1,0 +1,159 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import HeroFormStatic from '../components/HeroFormStatic.astro';
+import CalcStatic from '../components/CalcStatic.astro';
+import FAQStatic from '../components/FAQStatic.astro';
+import Testimonials from '../components/Testimonials.astro';
+---
+
+<Layout>
+  <!-- Skip Link -->
+  <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:bg-primary focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-lg">
+    Skip to content
+  </a>
+  <Header />
+  <main id="main-content" class="pt-16">
+    <!-- HERO -->
+    <section id="apply" aria-label="Loan application" class="relative overflow-hidden text-white section-padding" style="background:linear-gradient(135deg,hsl(217 91% 35%) 0%,hsl(217 91% 25%) 100%)">
+      <div class="absolute top-0 right-0 pointer-events-none" style="width:500px;height:500px;border-radius:50%;filter:blur(64px);background:rgba(255,255,255,0.05);transform:translate(25%,-50%);contain:strict"></div>
+      <div class="absolute bottom-0 left-0 pointer-events-none" style="width:400px;height:400px;border-radius:50%;filter:blur(64px);background:hsl(15 92% 62% / 0.1);transform:translate(-25%,33%);contain:strict"></div>
+      <div class="container relative z-10">
+        <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          <div class="text-center lg:text-left">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2)">
+              <div class="w-2 h-2 rounded-full bg-secondary animate-pulse-soft"></div>
+              <span class="text-sm font-medium text-white/90">4,200+ funded this month</span>
+            </div>
+            <h1 class="text-4xl md:text-5xl lg:text-[3.5rem] font-bold leading-[1.1] mb-6">A Smarter Way<br/><span class="text-accent">to Borrow</span></h1>
+            <p class="text-lg md:text-xl text-white/70 max-w-lg mx-auto lg:mx-0 mb-8">Get approved in minutes. Funds as fast as next business day. Direct deposit to your bank account.</p>
+            <div class="flex flex-wrap justify-center lg:justify-start gap-x-6 gap-y-3">
+              <div class="flex items-center gap-2 text-sm text-white/70"><svg class="w-5 h-5 text-secondary" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg><span>All Credit Welcome</span></div>
+              <div class="flex items-center gap-2 text-sm text-white/70"><svg class="w-5 h-5 text-secondary" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg><span>2-Minute Application</span></div>
+              <div class="flex items-center gap-2 text-sm text-white/70"><svg class="w-5 h-5 text-secondary" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg><span>No Hidden Fees</span></div>
+            </div>
+          </div>
+          <HeroFormStatic />
+        </div>
+      </div>
+    </section>
+    <!-- SOCIAL PROOF -->
+    <section class="bg-card border-b border-border">
+      <div class="container py-6">
+        <div class="flex flex-wrap justify-center gap-x-8 gap-y-4 items-center">
+          <div class="flex items-center gap-2">
+            <div class="flex -space-x-2">
+              <div class="w-8 h-8 rounded-full bg-muted border-2 border-card flex items-center justify-center text-xs font-bold text-muted-foreground">J</div>
+              <div class="w-8 h-8 rounded-full bg-muted border-2 border-card flex items-center justify-center text-xs font-bold text-muted-foreground">M</div>
+              <div class="w-8 h-8 rounded-full bg-muted border-2 border-card flex items-center justify-center text-xs font-bold text-muted-foreground">S</div>
+              <div class="w-8 h-8 rounded-full bg-muted border-2 border-card flex items-center justify-center text-xs font-bold text-muted-foreground">K</div>
+            </div>
+            <span class="text-sm text-muted-foreground"><strong class="text-foreground">15,000+</strong> loans funded</span>
+          </div>
+          <div class="h-6 w-px bg-border hidden md:block"></div>
+          <div class="flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-amber-400" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-amber-400" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-amber-400" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-amber-400" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-amber-400" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <span class="text-sm text-muted-foreground ml-1"><strong class="text-foreground">4.8/5</strong> rating</span>
+          </div>
+          <div class="h-6 w-px bg-border hidden md:block"></div>
+          <div class="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <svg class="w-4 h-4 text-secondary" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+            <span><strong class="text-foreground">256-bit</strong> encryption</span>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- HOW IT WORKS -->
+    <section id="how-it-works" role="region" aria-labelledby="how-it-works-heading" class="section-padding" style="background:linear-gradient(180deg,hsl(210 40% 98%) 0%,hsl(210 40% 96%) 100%)">
+      <div class="container">
+        <div class="text-center mb-12">
+          <span class="inline-block px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wider mb-4" style="background:hsl(217 91% 35% / 0.05);color:hsl(217 91% 35%)">How It Works</span>
+          <h2 id="how-it-works-heading" class="text-3xl md:text-4xl font-bold text-foreground mb-3">Get Funded in 3 Simple Steps</h2>
+          <p class="text-muted-foreground max-w-xl mx-auto">No paperwork. No waiting in line. Everything happens online.</p>
+        </div>
+        <div class="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+          <div class="card-elevated text-center">
+            <div class="w-14 h-14 mx-auto mb-4 rounded-2xl flex items-center justify-center" style="background:hsl(217 91% 35% / 0.1)"><svg class="w-7 h-7 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+            <div class="w-8 h-8 mx-auto -mt-8 mb-2 rounded-full bg-primary text-white text-sm font-bold flex items-center justify-center shadow-md">1</div>
+            <h3 class="text-lg font-bold text-foreground mb-2">Apply Online</h3>
+            <p class="text-sm text-muted-foreground">Fill out our simple 2-minute form. No impact on your credit score.</p>
+          </div>
+          <div class="card-elevated text-center">
+            <div class="w-14 h-14 mx-auto mb-4 rounded-2xl flex items-center justify-center" style="background:hsl(158 64% 42% / 0.1)"><svg class="w-7 h-7 text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+            <div class="w-8 h-8 mx-auto -mt-8 mb-2 rounded-full bg-secondary text-white text-sm font-bold flex items-center justify-center shadow-md">2</div>
+            <h3 class="text-lg font-bold text-foreground mb-2">Get Approved</h3>
+            <p class="text-sm text-muted-foreground">Receive personalized loan offers from trusted lenders in seconds.</p>
+          </div>
+          <div class="card-elevated text-center">
+            <div class="w-14 h-14 mx-auto mb-4 rounded-2xl flex items-center justify-center" style="background:hsl(15 92% 62% / 0.1)"><svg class="w-7 h-7 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
+            <div class="w-8 h-8 mx-auto -mt-8 mb-2 rounded-full bg-accent text-white text-sm font-bold flex items-center justify-center shadow-md">3</div>
+            <h3 class="text-lg font-bold text-foreground mb-2">Get Funded</h3>
+            <p class="text-sm text-muted-foreground">Accept your offer and receive funds as fast as the next business day.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- CALCULATOR -->
+    <section id="calculator" role="region" aria-labelledby="calculator-heading" class="section-padding">
+      <div class="container max-w-3xl">
+        <div class="text-center mb-10">
+          <span class="inline-block px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wider mb-4" style="background:hsl(15 92% 62% / 0.05);color:hsl(15 92% 62%)">Payment Calculator</span>
+          <h2 id="calculator-heading" class="text-3xl md:text-4xl font-bold text-foreground mb-3">Estimate Your Monthly Payment</h2>
+          <p class="text-muted-foreground">See how affordable your loan could be.</p>
+        </div>
+        <CalcStatic />
+      </div>
+    </section>
+    <!-- FEATURES -->
+    <section id="features" role="region" aria-labelledby="features-heading" class="section-padding" style="background:linear-gradient(180deg,hsl(210 40% 98%) 0%,hsl(210 40% 96%) 100%)">
+      <div class="container">
+        <div class="text-center mb-12">
+          <span class="inline-block px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wider mb-4" style="background:hsl(158 64% 42% / 0.05);color:hsl(158 64% 42%)">Why ElasticCredits</span>
+          <h2 id="features-heading" class="text-3xl md:text-4xl font-bold text-foreground">Built Around Trust</h2>
+        </div>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div class="card-elevated text-center"><div class="w-12 h-12 mx-auto mb-4 rounded-xl flex items-center justify-center" style="background:hsl(217 91% 35% / 0.1)"><svg class="w-6 h-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><h3 class="font-bold text-foreground mb-1.5">Fast Decisions</h3><p class="text-sm text-muted-foreground">Get your decision in minutes, not days.</p></div>
+          <div class="card-elevated text-center"><div class="w-12 h-12 mx-auto mb-4 rounded-xl flex items-center justify-center" style="background:hsl(158 64% 42% / 0.1)"><svg class="w-6 h-6 text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><h3 class="font-bold text-foreground mb-1.5">No Hidden Fees</h3><p class="text-sm text-muted-foreground">Transparent terms with clear pricing upfront.</p></div>
+          <div class="card-elevated text-center"><div class="w-12 h-12 mx-auto mb-4 rounded-xl flex items-center justify-center" style="background:hsl(15 92% 62% / 0.1)"><svg class="w-6 h-6 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><h3 class="font-bold text-foreground mb-1.5">All Credit Types</h3><p class="text-sm text-muted-foreground">Lenders who consider all credit histories.</p></div>
+          <div class="card-elevated text-center"><div class="w-12 h-12 mx-auto mb-4 rounded-xl flex items-center justify-center" style="background:hsl(217 91% 35% / 0.1)"><svg class="w-6 h-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div><h3 class="font-bold text-foreground mb-1.5">Direct Deposit</h3><p class="text-sm text-muted-foreground">Funds deposited straight to your bank account.</p></div>
+        </div>
+      </div>
+    </section>
+    <!-- TESTIMONIALS -->
+    <section id="testimonials" role="region" aria-labelledby="testimonials-heading" class="section-padding">
+      <div class="container">
+        <div class="text-center mb-12">
+          <span class="inline-block px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wider mb-4" style="background:hsl(217 91% 35% / 0.05);color:hsl(217 91% 35%)">Customer Stories</span>
+          <h2 id="testimonials-heading" class="text-3xl md:text-4xl font-bold text-foreground mb-3">Trusted by Thousands</h2>
+          <p class="text-muted-foreground max-w-xl mx-auto">See what our customers are saying about their experience.</p>
+        </div>
+        <Testimonials />
+      </div>
+    </section>
+    <!-- FAQ -->
+    <section id="faq" role="region" aria-labelledby="faq-heading" class="section-padding">
+      <div class="container max-w-2xl">
+        <div class="text-center mb-10">
+          <span class="inline-block px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wider mb-4" style="background:hsl(217 91% 35% / 0.05);color:hsl(217 91% 35%)">FAQ</span>
+          <h2 id="faq-heading" class="text-3xl md:text-4xl font-bold text-foreground mb-3">Common Questions</h2>
+        </div>
+        <FAQStatic />
+      </div>
+    </section>
+    <!-- FINAL CTA -->
+    <section class="section-padding relative overflow-hidden text-white" style="background:linear-gradient(135deg,hsl(217 91% 35%) 0%,hsl(217 91% 25%) 100%)">
+      <div class="container relative z-10 text-center max-w-2xl">
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">Ready to Get Started?</h2>
+        <p class="text-lg text-white/70 mb-8">Join thousands who've found a smarter way to borrow.</p>
+        <a href="#apply" class="btn-cta inline-flex text-xl !h-16 !px-10">Check My Rate Now <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+        <p class="text-sm text-white/50 mt-4">No impact on your credit score &bull; 100% free to check</p>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>

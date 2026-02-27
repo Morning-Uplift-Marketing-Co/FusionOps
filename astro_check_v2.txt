@@ -1,0 +1,701 @@
+[2m02:22:21[22m [34m[content][39m Syncing content
+[2m02:22:21[22m [34m[content][39m Synced content
+[2m02:22:21[22m [34m[types][39m Generated [2m32ms[22m
+[2m02:22:21[22m [34m[check][39m Getting diagnostics for Astro files in F:\AI_Workspace\beta-project\ppc-claude-web-V1...
+[96msrc/App.jsx[0m:[93m530[0m:[93m9[0m - [93mwarning[0m[90m ts(6133): [0m'next' is declared but its value is never read.
+
+[7m530[0m     let next;
+[7m   [0m [93m        ~~~~[0m
+[96msrc/App.jsx[0m:[93m422[0m:[93m9[0m - [93mwarning[0m[90m ts(6133): [0m'updSite' is declared but its value is never read.
+
+[7m422[0m   const updSite = async (id, updates) => {
+[7m   [0m [93m        ~~~~~~~[0m
+[96msrc/App.jsx[0m:[93m363[0m:[93m9[0m - [93mwarning[0m[90m ts(6133): [0m'forceUpdateTemplate' is declared but its value is never read.
+
+[7m363[0m   const forceUpdateTemplate = async (siteId, newTemplateId) => {
+[7m   [0m [93m        ~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/App.jsx[0m:[93m345[0m:[93m9[0m - [93mwarning[0m[90m ts(6133): [0m'refreshSitesFromDB' is declared but its value is never read.
+
+[7m345[0m   const refreshSitesFromDB = async () => {
+[7m   [0m [93m        ~~~~~~~~~~~~~~~~~~[0m
+[96msrc/App.jsx[0m:[93m322[0m:[93m9[0m - [93mwarning[0m[90m ts(6133): [0m'updateSiteTemplate' is declared but its value is never read.
+
+[7m322[0m   const updateSiteTemplate = async (siteId, newTemplateId) => {
+[7m   [0m [93m        ~~~~~~~~~~~~~~~~~~[0m
+[96msrc/App.jsx[0m:[93m1[0m:[93m8[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React, { useState, useEffect } from "react";
+[7m [0m [93m       ~~~~~[0m
+
+[96msrc/components/AccountMap.jsx[0m:[93m14[0m:[93m24[0m - [93mwarning[0m[90m ts(6133): [0m'setVoluumData' is declared but its value is never read.
+
+[7m14[0m     const [voluumData, setVoluumData] = useState([]);
+[7m  [0m [93m                       ~~~~~~~~~~~~~[0m
+[96msrc/components/AccountMap.jsx[0m:[93m14[0m:[93m12[0m - [93mwarning[0m[90m ts(6133): [0m'voluumData' is declared but its value is never read.
+
+[7m14[0m     const [voluumData, setVoluumData] = useState([]);
+[7m  [0m [93m           ~~~~~~~~~~[0m
+[96msrc/components/AccountMap.jsx[0m:[93m13[0m:[93m12[0m - [93mwarning[0m[90m ts(6133): [0m'transactions' is declared but its value is never read.
+
+[7m13[0m     const [transactions, setTransactions] = useState([]);
+[7m  [0m [93m           ~~~~~~~~~~~~[0m
+[96msrc/components/AccountMap.jsx[0m:[93m12[0m:[93m12[0m - [93mwarning[0m[90m ts(6133): [0m'cards' is declared but its value is never read.
+
+[7m12[0m     const [cards, setCards] = useState([]);
+[7m  [0m [93m           ~~~~~[0m
+[96msrc/components/AccountMap.jsx[0m:[93m10[0m:[93m37[0m - [93mwarning[0m[90m ts(6133): [0m'neonOk' is declared but its value is never read.
+
+[7m10[0m export function AccountMap({ apiOk, neonOk, ops }) {
+[7m  [0m [93m                                    ~~~~~~[0m
+[96msrc/components/AccountMap.jsx[0m:[93m10[0m:[93m30[0m - [93mwarning[0m[90m ts(6133): [0m'apiOk' is declared but its value is never read.
+
+[7m10[0m export function AccountMap({ apiOk, neonOk, ops }) {
+[7m  [0m [93m                             ~~~~~[0m
+[96msrc/components/AccountMap.jsx[0m:[93m8[0m:[93m1[0m - [93mwarning[0m[90m ts(6133): [0m'T' is declared but its value is never read.
+
+[7m8[0m import { THEME as T } from "../constants";
+[7m [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/components/AccountMap.jsx[0m:[93m1[0m:[93m8[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React, { useState, useEffect } from "react";
+[7m [0m [93m       ~~~~~[0m
+
+[96msrc/components/ChangelogViewer.jsx[0m:[93m2[0m:[93m1[0m - [93mwarning[0m[90m ts(6133): [0m'T' is declared but its value is never read.
+
+[7m2[0m import { THEME as T } from '../constants';
+[7m [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/components/ChangelogViewer.jsx[0m:[93m1[0m:[93m8[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React, { useState } from 'react';
+[7m [0m [93m       ~~~~~[0m
+
+[96msrc/components/Dashboard.jsx[0m:[93m10[0m:[93m77[0m - [93mwarning[0m[90m ts(6133): [0m'Tooltip' is declared but its value is never read.
+
+[7m10[0m import { BarChart, Bar, LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
+[7m  [0m [93m                                                                            ~~~~~~~[0m
+[96msrc/components/Dashboard.jsx[0m:[93m10[0m:[93m70[0m - [93mwarning[0m[90m ts(6133): [0m'YAxis' is declared but its value is never read.
+
+[7m10[0m import { BarChart, Bar, LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
+[7m  [0m [93m                                                                     ~~~~~[0m
+[96msrc/components/Dashboard.jsx[0m:[93m10[0m:[93m63[0m - [93mwarning[0m[90m ts(6133): [0m'XAxis' is declared but its value is never read.
+
+[7m10[0m import { BarChart, Bar, LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
+[7m  [0m [93m                                                              ~~~~~[0m
+[96msrc/components/Dashboard.jsx[0m:[93m8[0m:[93m1[0m - [93mwarning[0m[90m ts(6133): [0m'Badge' is declared but its value is never read.
+
+[7m8[0m import { Badge } from "./ui/badge";
+[7m [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/components/Dashboard.jsx[0m:[93m5[0m:[93m1[0m - [93mwarning[0m[90m ts(6133): [0m'Dot' is declared but its value is never read.
+
+[7m5[0m import { Dot } from "./ui/dot";
+[7m [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/components/Dashboard.jsx[0m:[93m2[0m:[93m30[0m - [93mwarning[0m[90m ts(6133): [0m'APP_VERSION' is declared but its value is never read.
+
+[7m2[0m import { THEME as T, COLORS, APP_VERSION } from "../constants";
+[7m [0m [93m                             ~~~~~~~~~~~[0m
+[96msrc/components/Dashboard.jsx[0m:[93m1[0m:[93m8[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React, { useMemo, useState } from "react";
+[7m [0m [93m       ~~~~~[0m
+
+[96msrc/components/DeployHistory.jsx[0m:[93m1[0m:[93m1[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React from "react";
+[7m [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/ErrorLog.jsx[0m:[93m12[0m:[93m59[0m - [93mwarning[0m[90m ts(6385): [0m'(from: number, length?: number | undefined): string' is deprecated.
+
+[7m12[0m     id: `error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+[7m  [0m [93m                                                          ~~~~~~[0m
+[96msrc/components/ErrorLog.jsx[0m:[93m5[0m:[93m14[0m - [93mwarning[0m[90m ts(6133): [0m'now' is declared but its value is never read.
+
+[7m5[0m import { LS, now } from "../utils";
+[7m [0m [93m             ~~~[0m
+[96msrc/components/ErrorLog.jsx[0m:[93m1[0m:[93m8[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React, { useState, useEffect } from "react";
+[7m [0m [93m       ~~~~~[0m
+
+[96msrc/components/OpsCenter.jsx[0m:[93m898[0m:[93m28[0m - [93mwarning[0m[90m ts(6133): [0m'nameservers' is declared but its value is never read.
+
+[7m898[0m                     const [nameservers, setNameservers] = useState([]);
+[7m   [0m [93m                           ~~~~~~~~~~~[0m
+[96msrc/components/OpsCenter.jsx[0m:[93m897[0m:[93m28[0m - [93mwarning[0m[90m ts(6133): [0m'zoneId' is declared but its value is never read.
+
+[7m897[0m                     const [zoneId, setZoneId] = useState(null);
+[7m   [0m [93m                           ~~~~~~[0m
+[96msrc/components/OpsCenter.jsx[0m:[93m17[0m:[93m17[0m - [93mwarning[0m[90m ts(6133): [0m'execute' is declared but its value is never read.
+
+[7m17[0m import { query, execute, testConnection, getTables } from "../services/d1";
+[7m  [0m [93m                ~~~~~~~[0m
+[96msrc/components/OpsCenter.jsx[0m:[93m9[0m:[93m1[0m - [93mwarning[0m[90m ts(6133): [0m'cn' is declared but its value is never read.
+
+[7m9[0m import { cn } from "../lib/utils";
+[7m [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/Settings.jsx[0m:[93m66[0m:[93m28[0m - [93mwarning[0m[90m ts(6133): [0m'setLoadingFolders' is declared but its value is never read.
+
+[7m66[0m     const [loadingFolders, setLoadingFolders] = useState(false);
+[7m  [0m [93m                           ~~~~~~~~~~~~~~~~~[0m
+[96msrc/components/Settings.jsx[0m:[93m66[0m:[93m12[0m - [93mwarning[0m[90m ts(6133): [0m'loadingFolders' is declared but its value is never read.
+
+[7m66[0m     const [loadingFolders, setLoadingFolders] = useState(false);
+[7m  [0m [93m           ~~~~~~~~~~~~~~[0m
+[96msrc/components/Settings.jsx[0m:[93m65[0m:[93m24[0m - [93mwarning[0m[90m ts(6133): [0m'setLauncherOk' is declared but its value is never read.
+
+[7m65[0m     const [launcherOk, setLauncherOk] = useState(null);
+[7m  [0m [93m                       ~~~~~~~~~~~~~[0m
+[96msrc/components/Settings.jsx[0m:[93m65[0m:[93m12[0m - [93mwarning[0m[90m ts(6133): [0m'launcherOk' is declared but its value is never read.
+
+[7m65[0m     const [launcherOk, setLauncherOk] = useState(null);
+[7m  [0m [93m           ~~~~~~~~~~[0m
+[96msrc/components/Settings.jsx[0m:[93m64[0m:[93m21[0m - [93mwarning[0m[90m ts(6133): [0m'setFolders' is declared but its value is never read.
+
+[7m64[0m     const [folders, setFolders] = useState(null);
+[7m  [0m [93m                    ~~~~~~~~~~[0m
+[96msrc/components/Settings.jsx[0m:[93m64[0m:[93m12[0m - [93mwarning[0m[90m ts(6133): [0m'folders' is declared but its value is never read.
+
+[7m64[0m     const [folders, setFolders] = useState(null);
+[7m  [0m [93m           ~~~~~~~[0m
+[96msrc/components/Settings.jsx[0m:[93m61[0m:[93m29[0m - [93mwarning[0m[90m ts(6133): [0m'setGeneratingToken' is declared but its value is never read.
+
+[7m61[0m     const [generatingToken, setGeneratingToken] = useState(false);
+[7m  [0m [93m                            ~~~~~~~~~~~~~~~~~~[0m
+[96msrc/components/Settings.jsx[0m:[93m61[0m:[93m12[0m - [93mwarning[0m[90m ts(6133): [0m'generatingToken' is declared but its value is never read.
+
+[7m61[0m     const [generatingToken, setGeneratingToken] = useState(false);
+[7m  [0m [93m           ~~~~~~~~~~~~~~~[0m
+[96msrc/components/Settings.jsx[0m:[93m54[0m:[93m27[0m - [93mwarning[0m[90m ts(6133): [0m'setCfPagesTarget' is declared but its value is never read.
+
+[7m54[0m     const [cfPagesTarget, setCfPagesTarget] = useState(settings.cfPagesTarget || "");
+[7m  [0m [93m                          ~~~~~~~~~~~~~~~~[0m
+[96msrc/components/Settings.jsx[0m:[93m54[0m:[93m12[0m - [93mwarning[0m[90m ts(6133): [0m'cfPagesTarget' is declared but its value is never read.
+
+[7m54[0m     const [cfPagesTarget, setCfPagesTarget] = useState(settings.cfPagesTarget || "");
+[7m  [0m [93m           ~~~~~~~~~~~~~[0m
+[96msrc/components/Settings.jsx[0m:[93m53[0m:[93m27[0m - [93mwarning[0m[90m ts(6133): [0m'setNetlifyTarget' is declared but its value is never read.
+
+[7m53[0m     const [netlifyTarget, setNetlifyTarget] = useState(settings.netlifyTarget || "");
+[7m  [0m [93m                          ~~~~~~~~~~~~~~~~[0m
+[96msrc/components/Settings.jsx[0m:[93m53[0m:[93m12[0m - [93mwarning[0m[90m ts(6133): [0m'netlifyTarget' is declared but its value is never read.
+
+[7m53[0m     const [netlifyTarget, setNetlifyTarget] = useState(settings.netlifyTarget || "");
+[7m  [0m [93m           ~~~~~~~~~~~~~[0m
+[96msrc/components/Settings.jsx[0m:[93m24[0m:[93m34[0m - [93mwarning[0m[90m ts(6133): [0m'setDefaultProxyProvider' is declared but its value is never read.
+
+[7m24[0m     const [defaultProxyProvider, setDefaultProxyProvider] = useState(settings.defaultProxyProvider || "multilogin");
+[7m  [0m [93m                                 ~~~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/components/Settings.jsx[0m:[93m24[0m:[93m12[0m - [93mwarning[0m[90m ts(6133): [0m'defaultProxyProvider' is declared but its value is never read.
+
+[7m24[0m     const [defaultProxyProvider, setDefaultProxyProvider] = useState(settings.defaultProxyProvider || "multilogin");
+[7m  [0m [93m           ~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/components/Settings.jsx[0m:[93m19[0m:[93m32[0m - [93mwarning[0m[90m ts(6133): [0m'setDefaultBillingUuid' is declared but its value is never read.
+
+[7m19[0m     const [defaultBillingUuid, setDefaultBillingUuid] = useState(settings.defaultBillingUuid || "");
+[7m  [0m [93m                               ~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/components/Settings.jsx[0m:[93m19[0m:[93m12[0m - [93mwarning[0m[90m ts(6133): [0m'defaultBillingUuid' is declared but its value is never read.
+
+[7m19[0m     const [defaultBillingUuid, setDefaultBillingUuid] = useState(settings.defaultBillingUuid || "");
+[7m  [0m [93m           ~~~~~~~~~~~~~~~~~~[0m
+[96msrc/components/Settings.jsx[0m:[93m18[0m:[93m28[0m - [93mwarning[0m[90m ts(6133): [0m'setDefaultBinUuid' is declared but its value is never read.
+
+[7m18[0m     const [defaultBinUuid, setDefaultBinUuid] = useState(settings.defaultBinUuid || "");
+[7m  [0m [93m                           ~~~~~~~~~~~~~~~~~[0m
+[96msrc/components/Settings.jsx[0m:[93m18[0m:[93m12[0m - [93mwarning[0m[90m ts(6133): [0m'defaultBinUuid' is declared but its value is never read.
+
+[7m18[0m     const [defaultBinUuid, setDefaultBinUuid] = useState(settings.defaultBinUuid || "");
+[7m  [0m [93m           ~~~~~~~~~~~~~~[0m
+[96msrc/components/Settings.jsx[0m:[93m17[0m:[93m24[0m - [93mwarning[0m[90m ts(6133): [0m'setLcTeamUuid' is declared but its value is never read.
+
+[7m17[0m     const [lcTeamUuid, setLcTeamUuid] = useState(settings.lcTeamUuid || "");
+[7m  [0m [93m                       ~~~~~~~~~~~~~[0m
+[96msrc/components/Settings.jsx[0m:[93m17[0m:[93m12[0m - [93mwarning[0m[90m ts(6133): [0m'lcTeamUuid' is declared but its value is never read.
+
+[7m17[0m     const [lcTeamUuid, setLcTeamUuid] = useState(settings.lcTeamUuid || "");
+[7m  [0m [93m           ~~~~~~~~~~[0m
+[96msrc/components/Settings.jsx[0m:[93m2[0m:[93m1[0m - [93mwarning[0m[90m ts(6133): [0m'T' is declared but its value is never read.
+
+[7m2[0m import { THEME as T } from "../constants";
+[7m [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/components/Settings.jsx[0m:[93m1[0m:[93m8[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React, { useState, useEffect } from "react";
+[7m [0m [93m       ~~~~~[0m
+
+[96msrc/components/Sidebar.jsx[0m:[93m1[0m:[93m8[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React, { useState } from "react";
+[7m [0m [93m       ~~~~~[0m
+
+[96msrc/components/Sites.jsx[0m:[93m457[0m:[93m11[0m - [93mwarning[0m[90m ts(6133): [0m'getGroupBadgeButtonStyle' is declared but its value is never read.
+
+[7m457[0m     const getGroupBadgeButtonStyle = (mode) => {
+[7m   [0m [93m          ~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/components/Sites.jsx[0m:[93m181[0m:[93m17[0m - [93mwarning[0m[90m ts(7027): [0mUnreachable code detected.
+
+[7m181[0m                 console.log("[Sites] Using git-push target, calling generateAstroProjectByTemplate");
+[7m   [0m [93m                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m182[0m                 const astroFiles = generateAstroProjectByTemplate(site);
+[7m   [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m...[0m 
+[7m184[0m                 content = { ...astroFiles, "apply.html": applyHtml };
+[7m   [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m185[0m                 console.log("[Sites] Generated astro files count:", Object.keys(content).length);
+[7m   [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/components/Sites.jsx[0m:[93m15[0m:[93m84[0m - [93mwarning[0m[90m ts(6133): [0m'updateSite' is declared but its value is never read.
+
+[7m15[0m export function Sites({ sites, del, notify, startCreate, settings, addDeploy, ops, updateSite }) {
+[7m  [0m [93m                                                                                   ~~~~~~~~~~[0m
+[96msrc/components/Sites.jsx[0m:[93m10[0m:[93m16[0m - [93mwarning[0m[90m ts(6133): [0m'CardContent' is declared but its value is never read.
+
+[7m10[0m import { Card, CardContent } from "./ui/card";
+[7m  [0m [93m               ~~~~~~~~~~~[0m
+[96msrc/components/Sites.jsx[0m:[93m1[0m:[93m8[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React, { useState, useEffect, useRef, useMemo } from "react";
+[7m [0m [93m       ~~~~~[0m
+
+[96msrc/components/SpendDashboard.jsx[0m:[93m34[0m:[93m12[0m - [93mwarning[0m[90m ts(6133): [0m'transactions' is declared but its value is never read.
+
+[7m34[0m     const [transactions, setTransactions] = useState([]);
+[7m  [0m [93m           ~~~~~~~~~~~~[0m
+[96msrc/components/SpendDashboard.jsx[0m:[93m27[0m:[93m32[0m - [93mwarning[0m[90m ts(6198): [0mAll destructured elements are unused.
+
+[7m27[0m export function SpendDashboard({ apiOk, neonOk }) {
+[7m  [0m [93m                               ~~~~~~~~~~~~~~~~~[0m
+[96msrc/components/SpendDashboard.jsx[0m:[93m1[0m:[93m8[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React, { useState, useEffect } from "react";
+[7m [0m [93m       ~~~~~[0m
+
+[96msrc/components/TemplateEditor.jsx[0m:[93m2[0m:[93m30[0m - [93mwarning[0m[90m ts(6133): [0m'FONTS' is declared but its value is never read.
+
+[7m2[0m import { THEME as T, COLORS, FONTS } from "../constants";
+[7m [0m [93m                             ~~~~~[0m
+[96msrc/components/TemplateEditor.jsx[0m:[93m2[0m:[93m22[0m - [93mwarning[0m[90m ts(6133): [0m'COLORS' is declared but its value is never read.
+
+[7m2[0m import { THEME as T, COLORS, FONTS } from "../constants";
+[7m [0m [93m                     ~~~~~~[0m
+[96msrc/components/TemplateEditor.jsx[0m:[93m1[0m:[93m8[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React, { useState } from "react";
+[7m [0m [93m       ~~~~~[0m
+
+[96msrc/components/TemplateRegistry.jsx[0m:[93m8[0m:[93m44[0m - [93mwarning[0m[90m ts(6133): [0m'resolveTemplateId' is declared but its value is never read.
+
+[7m8[0m import { getAllTemplates, getTemplateById, resolveTemplateId } from "../utils/template-registry.js";
+[7m [0m [93m                                           ~~~~~~~~~~~~~~~~~[0m
+[96msrc/components/TemplateRegistry.jsx[0m:[93m6[0m:[93m8[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m6[0m import React, { useState, useEffect } from "react";
+[7m [0m [93m       ~~~~~[0m
+
+[96msrc/components/TopBar.jsx[0m:[93m1[0m:[93m1[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React from "react";
+[7m [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/VariantStudio.jsx[0m:[93m34[0m:[93m80[0m - [93mwarning[0m[90m ts(6133): [0m'apiOk' is declared but its value is never read.
+
+[7m34[0m export function VariantStudio({ notify, sites, addSite, registry, setRegistry, apiOk }) {
+[7m  [0m [93m                                                                               ~~~~~[0m
+[96msrc/components/VariantStudio.jsx[0m:[93m34[0m:[93m41[0m - [93mwarning[0m[90m ts(6133): [0m'sites' is declared but its value is never read.
+
+[7m34[0m export function VariantStudio({ notify, sites, addSite, registry, setRegistry, apiOk }) {
+[7m  [0m [93m                                        ~~~~~[0m
+[96msrc/components/VariantStudio.jsx[0m:[93m4[0m:[93m10[0m - [93mwarning[0m[90m ts(6133): [0m'generateLP' is declared but its value is never read.
+
+[7m4[0m import { generateLP, makeThemeJson } from "../utils/lp-generator";
+[7m [0m [93m         ~~~~~~~~~~[0m
+[96msrc/components/VariantStudio.jsx[0m:[93m2[0m:[93m45[0m - [93mwarning[0m[90m ts(6133): [0m'LOAN_TYPES' is declared but its value is never read.
+
+[7m2[0m import { THEME as T, COLORS, FONTS, RADIUS, LOAN_TYPES } from "../constants";
+[7m [0m [93m                                            ~~~~~~~~~~[0m
+[96msrc/components/VariantStudio.jsx[0m:[93m1[0m:[93m36[0m - [93mwarning[0m[90m ts(6133): [0m'useCallback' is declared but its value is never read.
+
+[7m1[0m import React, { useState, useMemo, useCallback } from "react";
+[7m [0m [93m                                   ~~~~~~~~~~~[0m
+[96msrc/components/VariantStudio.jsx[0m:[93m1[0m:[93m27[0m - [93mwarning[0m[90m ts(6133): [0m'useMemo' is declared but its value is never read.
+
+[7m1[0m import React, { useState, useMemo, useCallback } from "react";
+[7m [0m [93m                          ~~~~~~~[0m
+[96msrc/components/VariantStudio.jsx[0m:[93m1[0m:[93m8[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React, { useState, useMemo, useCallback } from "react";
+[7m [0m [93m       ~~~~~[0m
+
+[96msrc/components/Wizard.jsx[0m:[93m223[0m:[93m11[0m - [93mwarning[0m[90m ts(6133): [0m'mainMaxWidth' is declared but its value is never read.
+
+[7m223[0m     const mainMaxWidth = showPreview ? 680 : 780;
+[7m   [0m [93m          ~~~~~~~~~~~~[0m
+[96msrc/components/Wizard.jsx[0m:[93m71[0m:[93m63[0m - [93mwarning[0m[90m ts(6133): [0m'settings' is declared but its value is never read.
+
+[7m71[0m export function Wizard({ config, setConfig, addSite, setPage, settings, notify }) {
+[7m  [0m [93m                                                              ~~~~~~~~[0m
+[96msrc/components/Wizard.jsx[0m:[93m2[0m:[93m1[0m - [93mwarning[0m[90m ts(6133): [0m'T' is declared but its value is never read.
+
+[7m2[0m import { THEME as T } from "../constants";
+[7m [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/components/Wizard.jsx[0m:[93m1[0m:[93m8[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React, { useState, useMemo, useEffect, useRef } from "react";
+[7m [0m [93m       ~~~~~[0m
+
+[96msrc/components/OpsCenter/deploy/DeployTab.jsx[0m:[93m77[0m:[93m56[0m - [93mwarning[0m[90m ts(6133): [0m'result' is declared but its value is never read.
+
+[7m77[0m     const handleQuickAction = useCallback((actionType, result) => {
+[7m  [0m [93m                                                       ~~~~~~[0m
+[96msrc/components/OpsCenter/deploy/DeployTab.jsx[0m:[93m35[0m:[93m55[0m - [93mwarning[0m[90m ts(6133): [0m'upd' is declared but its value is never read.
+
+[7m35[0m export function DeployTab({ data, settings, add, del, upd, notify }) {
+[7m  [0m [93m                                                      ~~~[0m
+[96msrc/components/OpsCenter/deploy/DeployTab.jsx[0m:[93m35[0m:[93m50[0m - [93mwarning[0m[90m ts(6133): [0m'del' is declared but its value is never read.
+
+[7m35[0m export function DeployTab({ data, settings, add, del, upd, notify }) {
+[7m  [0m [93m                                                 ~~~[0m
+[96msrc/components/OpsCenter/deploy/DeployTab.jsx[0m:[93m35[0m:[93m45[0m - [93mwarning[0m[90m ts(6133): [0m'add' is declared but its value is never read.
+
+[7m35[0m export function DeployTab({ data, settings, add, del, upd, notify }) {
+[7m  [0m [93m                                            ~~~[0m
+[96msrc/components/OpsCenter/deploy/DeployTab.jsx[0m:[93m11[0m:[93m1[0m - [93mwarning[0m[90m ts(6133): [0m'Button' is declared but its value is never read.
+
+[7m11[0m import { Button } from "../../ui/button";
+[7m  [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/components/OpsCenter/deploy/DeployTab.jsx[0m:[93m10[0m:[93m1[0m - [93mwarning[0m[90m ts(6133): [0m'Card' is declared but its value is never read.
+
+[7m10[0m import { Card } from "../../ui/card";
+[7m  [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/OpsCenter/deploy/DnsRecordModal.jsx[0m:[93m31[0m:[93m79[0m - [93mwarning[0m[90m ts(6133): [0m'cfApiToken' is declared but its value is never read.
+
+[7m31[0m export function DnsRecordModal({ mode, record, zoneId, zoneName, cfAccountId, cfApiToken, onSave, onCancel }) {
+[7m  [0m [93m                                                                              ~~~~~~~~~~[0m
+
+[96msrc/components/OpsCenter/deploy/DnsSection.jsx[0m:[93m397[0m:[93m43[0m - [93mwarning[0m[90m ts(6133): [0m'propagationStat' is declared but its value is never read.
+
+[7m397[0m                                     const propagationStat = getPropagationStatus(r.id);
+[7m   [0m [93m                                          ~~~~~~~~~~~~~~~[0m
+[96msrc/components/OpsCenter/deploy/DnsSection.jsx[0m:[93m52[0m:[93m12[0m - [93mwarning[0m[90m ts(6133): [0m'loading' is declared but its value is never read.
+
+[7m52[0m     const [loading, setLoading] = useState(false);
+[7m  [0m [93m           ~~~~~~~[0m
+
+[96msrc/components/TemplateGenerator/TemplateGeneratorModal.jsx[0m:[93m74[0m:[93m11[0m - [93mwarning[0m[90m ts(6133): [0m'resetAndSetMode' is declared but its value is never read.
+
+[7m74[0m     const resetAndSetMode = (mode) => {
+[7m  [0m [93m          ~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/TemplateGenerator/generateTemplateCode.js[0m:[93m15[0m:[93m9[0m - [93mwarning[0m[90m ts(6133): [0m'hasDarkMode' is declared but its value is never read.
+
+[7m15[0m         hasDarkMode = false,
+[7m  [0m [93m        ~~~~~~~~~~~[0m
+[96msrc/components/TemplateGenerator/generateTemplateCode.js[0m:[93m12[0m:[93m9[0m - [93mwarning[0m[90m ts(6133): [0m'hasTestimonials' is declared but its value is never read.
+
+[7m12[0m         hasTestimonials = false,
+[7m  [0m [93m        ~~~~~~~~~~~~~~~[0m
+[96msrc/components/TemplateGenerator/generateTemplateCode.js[0m:[93m11[0m:[93m9[0m - [93mwarning[0m[90m ts(6133): [0m'hasCalculator' is declared but its value is never read.
+
+[7m11[0m         hasCalculator = false,
+[7m  [0m [93m        ~~~~~~~~~~~~~[0m
+
+[96msrc/components/TemplateGenerator/steps/StepTemplateCode.jsx[0m:[93m3[0m:[93m1[0m - [93mwarning[0m[90m ts(6133): [0m'Inp' is declared but its value is never read.
+
+[7m3[0m import { InputField as Inp } from "../../ui/input-field";
+[7m [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/TemplateGenerator/steps/StepTemplateFromDir.jsx[0m:[93m214[0m:[93m41[0m - [93mwarning[0m[90m ts(6133): [0m'tmpl' is declared but its value is never read.
+
+[7m214[0m function generateSourceCode(templateId, tmpl) {
+[7m   [0m [93m                                        ~~~~[0m
+[96msrc/components/TemplateGenerator/steps/StepTemplateFromDir.jsx[0m:[93m214[0m:[93m10[0m - [93mwarning[0m[90m ts(6133): [0m'generateSourceCode' is declared but its value is never read.
+
+[7m214[0m function generateSourceCode(templateId, tmpl) {
+[7m   [0m [93m         ~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/TemplateGenerator/steps/StepTemplateFromZip.jsx[0m:[93m5[0m:[93m1[0m - [93mwarning[0m[90m ts(6133): [0m'Button' is declared but its value is never read.
+
+[7m5[0m import { Button } from "../../ui/button";
+[7m [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/TemplateGenerator/steps/StepTemplateInfo.jsx[0m:[93m20[0m:[93m42[0m - [93mwarning[0m[90m ts(6133): [0m'templates' is declared but its value is never read.
+
+[7m20[0m export function StepTemplateInfo({ c, u, templates }) {
+[7m  [0m [93m                                         ~~~~~~~~~[0m
+
+[96msrc/components/Wizard/StepBrand.jsx[0m:[93m1[0m:[93m8[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React, { useState, useEffect } from "react";
+[7m [0m [93m       ~~~~~[0m
+
+[96msrc/components/Wizard/StepCopy.jsx[0m:[93m1[0m:[93m1[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React from "react";
+[7m [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/Wizard/StepDesign.jsx[0m:[93m20[0m:[93m28[0m - [93mwarning[0m[90m ts(6133): [0m'forceRefresh' is declared but its value is never read.
+
+[7m20[0m     const loadTemplates = (forceRefresh = false) => {
+[7m  [0m [93m                           ~~~~~~~~~~~~[0m
+[96msrc/components/Wizard/StepDesign.jsx[0m:[93m1[0m:[93m8[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React, { useState, useEffect } from "react";
+[7m [0m [93m       ~~~~~[0m
+
+[96msrc/components/Wizard/StepProduct.jsx[0m:[93m1[0m:[93m1[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React from "react";
+[7m [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/Wizard/StepReview.jsx[0m:[93m1[0m:[93m8[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React, { useState, useMemo } from "react";
+[7m [0m [93m       ~~~~~[0m
+
+[96msrc/components/Wizard/StepTracking.jsx[0m:[93m1[0m:[93m1[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React from "react";
+[7m [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/spend/DailyLogTab.jsx[0m:[93m1[0m:[93m1[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React from "react";
+[7m [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/spend/MonthlyPnLTab.jsx[0m:[93m1[0m:[93m1[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React from "react";
+[7m [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/spend/OpexTab.jsx[0m:[93m1[0m:[93m8[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React, { useState, useEffect } from "react";
+[7m [0m [93m       ~~~~~[0m
+
+[96msrc/components/spend/OverviewTab.jsx[0m:[93m1[0m:[93m1[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React from "react";
+[7m [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/spend/PerAccountTab.jsx[0m:[93m1[0m:[93m1[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React from "react";
+[7m [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/spend/PerCardTab.jsx[0m:[93m1[0m:[93m1[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React from "react";
+[7m [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/spend/PerDomainTab.jsx[0m:[93m1[0m:[93m1[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React from "react";
+[7m [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/spend/ReconcileTab.jsx[0m:[93m1[0m:[93m1[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React from "react";
+[7m [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/ui/dot.tsx[0m:[93m1[0m:[93m1[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import * as React from "react";
+[7m [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/ui/table.tsx[0m:[93m81[0m:[93m28[0m - [93mwarning[0m[90m ts(6385): [0m'HTMLTableDataCellElement' is deprecated.
+
+[7m81[0m     React.TdHTMLAttributes<HTMLTableDataCellElement>
+[7m  [0m [93m                           ~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/components/ui/table.tsx[0m:[93m80[0m:[93m5[0m - [93mwarning[0m[90m ts(6385): [0m'HTMLTableDataCellElement' is deprecated.
+
+[7m80[0m     HTMLTableDataCellElement,
+[7m  [0m [93m    ~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/components/ui/table.tsx[0m:[93m66[0m:[93m28[0m - [93mwarning[0m[90m ts(6385): [0m'HTMLTableHeaderCellElement' is deprecated.
+
+[7m66[0m     React.ThHTMLAttributes<HTMLTableHeaderCellElement>
+[7m  [0m [93m                           ~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/components/ui/table.tsx[0m:[93m65[0m:[93m5[0m - [93mwarning[0m[90m ts(6385): [0m'HTMLTableHeaderCellElement' is deprecated.
+
+[7m65[0m     HTMLTableHeaderCellElement,
+[7m  [0m [93m    ~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/ui/tabs.tsx[0m:[93m41[0m:[93m11[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m41[0m     React.ElementRef<typeof TabsPrimitive.Content>,
+[7m  [0m [93m          ~~~~~~~~~~[0m
+[96msrc/components/ui/tabs.tsx[0m:[93m23[0m:[93m11[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m23[0m     React.ElementRef<typeof TabsPrimitive.Trigger>,
+[7m  [0m [93m          ~~~~~~~~~~[0m
+[96msrc/components/ui/tabs.tsx[0m:[93m8[0m:[93m11[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m8[0m     React.ElementRef<typeof TabsPrimitive.List>,
+[7m [0m [93m          ~~~~~~~~~~[0m
+
+[96msrc/components/ui/theme-toggle.tsx[0m:[93m1[0m:[93m8[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import React, { useEffect, useState } from "react";
+[7m [0m [93m       ~~~~~[0m
+
+[96msrc/components/ui/toast.tsx[0m:[93m1[0m:[93m1[0m - [93mwarning[0m[90m ts(6133): [0m'React' is declared but its value is never read.
+
+[7m1[0m import * as React from "react";
+[7m [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/services/cloudflare-dns.js[0m:[93m21[0m:[93m10[0m - [93mwarning[0m[90m ts(6133): [0m'getCfApiBase' is declared but its value is never read.
+
+[7m21[0m function getCfApiBase() {
+[7m  [0m [93m         ~~~~~~~~~~~~[0m
+
+[96msrc/services/cloudflare-zone.js[0m:[93m18[0m:[93m10[0m - [93mwarning[0m[90m ts(6133): [0m'getCfApiBase' is declared but its value is never read.
+
+[7m18[0m function getCfApiBase() {
+[7m  [0m [93m         ~~~~~~~~~~~~[0m
+[96msrc/services/cloudflare-zone.js[0m:[93m7[0m:[93m1[0m - [93mwarning[0m[90m ts(6133): [0m'api' is declared but its value is never read.
+
+[7m7[0m import { api } from "./api";
+[7m [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/services/d1.js[0m:[93m10[0m:[93m7[0m - [93mwarning[0m[90m ts(6133): [0m'D1_API_BASE' is declared but its value is never read.
+
+[7m10[0m const D1_API_BASE = "https://api.cloudflare.com/client/v4";
+[7m  [0m [93m      ~~~~~~~~~~~[0m
+
+[96msrc/services/lendingcard.js[0m:[93m56[0m:[93m19[0m - [93mwarning[0m[90m ts(6133): [0m'feePercent' is declared but its value is never read.
+
+[7m56[0m             const feePercent = tx.card.card_bin.fee_percentage / 10000; // e.g., 200 = 2%? Verify actual schema scalar
+[7m  [0m [93m                  ~~~~~~~~~~[0m
+
+[96msrc/services/neon.js[0m:[93m140[0m:[93m10[0m - [93mwarning[0m[90m ts(6133): [0m'isNeonReady' is declared but its value is never read.
+
+[7m140[0m function isNeonReady() {
+[7m   [0m [93m         ~~~~~~~~~~~[0m
+
+[96msrc/services/registrar.js[0m:[93m248[0m:[93m44[0m - [93mwarning[0m[90m ts(6133): [0m'cfAccountId' is declared but its value is never read.
+
+[7m248[0m export function getCfNameserversForAccount(cfAccountId) {
+[7m   [0m [93m                                           ~~~~~~~~~~~[0m
+[96msrc/services/registrar.js[0m:[93m25[0m:[93m10[0m - [93mwarning[0m[90m ts(6133): [0m'parseFormResponse' is declared but its value is never read.
+
+[7m25[0m function parseFormResponse(text) {
+[7m  [0m [93m         ~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/templates/PDL_Loans_V3/src/components/EligibilityForm.tsx[0m:[93m33[0m:[93m41[0m - [93mwarning[0m[90m ts(6385): [0m'FormEvent' is deprecated.
+
+[7m33[0m   const handleSubmit = async (ev: React.FormEvent) => {
+[7m  [0m [93m                                        ~~~~~~~~~[0m
+
+[96msrc/templates/PDL_Loans_V3/src/components/HeroForm.tsx[0m:[93m10[0m:[93m34[0m - [93mwarning[0m[90m ts(6385): [0m'FormEvent' is deprecated.
+
+[7m10[0m   const handleSubmit = (e: React.FormEvent) => {
+[7m  [0m [93m                                 ~~~~~~~~~[0m
+
+[96msrc/templates/PDL_Loans_V3/src/layouts/Layout.astro[0m:[93m42[0m:[93m164[0m - [93mwarning[0m[90m ts(6133): [0m'media' is declared but its value is never read.
+
+[7m42[0m     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+[7m  [0m [93m                                                                                                                                                                   ~~~~~[0m
+[96msrc/templates/PDL_Loans_V3/src/layouts/Layout.astro[0m:[93m56[0m:[93m13[0m - [93mwarning[0m[90m astro(4000): [0mThis script will be treated as if it has the `is:inline` directive because it contains an attribute. Therefore, features that require processing (e.g. using TypeScript or npm packages in the script) are unavailable.
+
+See docs for more details: https://docs.astro.build/en/guides/client-side-scripts/#script-processing.
+
+Add the `is:inline` directive explicitly to silence this hint.
+
+[7m56[0m     <script type="application/ld+json">
+[7m  [0m [93m            ~~~~[0m
+
+[96msrc/templates/pet_loans_v1/src/components/EligibilityForm.tsx[0m:[93m33[0m:[93m41[0m - [93mwarning[0m[90m ts(6385): [0m'FormEvent' is deprecated.
+
+[7m33[0m   const handleSubmit = async (ev: React.FormEvent) => {
+[7m  [0m [93m                                        ~~~~~~~~~[0m
+
+[96msrc/templates/pet_loans_v1/src/components/HeroForm.tsx[0m:[93m10[0m:[93m34[0m - [93mwarning[0m[90m ts(6385): [0m'FormEvent' is deprecated.
+
+[7m10[0m   const handleSubmit = (e: React.FormEvent) => {
+[7m  [0m [93m                                 ~~~~~~~~~[0m
+
+[96msrc/templates/pet_loans_v1/src/layouts/Layout.astro[0m:[93m42[0m:[93m164[0m - [93mwarning[0m[90m ts(6133): [0m'media' is declared but its value is never read.
+
+[7m42[0m     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+[7m  [0m [93m                                                                                                                                                                   ~~~~~[0m
+[96msrc/templates/pet_loans_v1/src/layouts/Layout.astro[0m:[93m56[0m:[93m13[0m - [93mwarning[0m[90m astro(4000): [0mThis script will be treated as if it has the `is:inline` directive because it contains an attribute. Therefore, features that require processing (e.g. using TypeScript or npm packages in the script) are unavailable.
+
+See docs for more details: https://docs.astro.build/en/guides/client-side-scripts/#script-processing.
+
+Add the `is:inline` directive explicitly to silence this hint.
+
+[7m56[0m     <script type="application/ld+json">
+[7m  [0m [93m            ~~~~[0m
+
+[96msrc/utils/image-gen.js[0m:[93m52[0m:[93m9[0m - [93mwarning[0m[90m ts(6133): [0m'fg' is declared but its value is never read.
+
+[7m52[0m   const fg = `hsl(${c.fg[0]},${c.fg[1]}%,${c.fg[2]}%)`;
+[7m  [0m [93m        ~~[0m
+[96msrc/utils/image-gen.js[0m:[93m51[0m:[93m9[0m - [93mwarning[0m[90m ts(6133): [0m'bg' is declared but its value is never read.
+
+[7m51[0m   const bg = `hsl(${c.bg[0]},${c.bg[1]}%,${c.bg[2]}%)`;
+[7m  [0m [93m        ~~[0m
+[96msrc/utils/image-gen.js[0m:[93m50[0m:[93m9[0m - [93mwarning[0m[90m ts(6133): [0m'a' is declared but its value is never read.
+
+[7m50[0m   const a = `hsl(${c.a[0]},${c.a[1]}%,${c.a[2]}%)`;
+[7m  [0m [93m        ~[0m
+
+[96msrc/utils/lp-generator.js[0m:[93m52[0m:[93m9[0m - [93mwarning[0m[90m ts(6133): [0m'loanLabel' is declared but its value is never read.
+
+[7m52[0m   const loanLabel = LOAN_TYPES.find(l => l.id === site.loanType)?.label || "Personal Loans";
+[7m  [0m [93m        ~~~~~~~~~[0m
+
+[96msrc/utils/template-registry.js[0m:[93m14[0m:[93m5[0m - [93mwarning[0m[90m ts(6133): [0m'moduleLoaded' is declared but its value is never read.
+
+[7m14[0m let moduleLoaded = true;
+[7m  [0m [93m    ~~~~~~~~~~~~[0m
+[96msrc/utils/template-registry.js[0m:[93m7[0m:[93m10[0m - [93mwarning[0m[90m ts(6133): [0m'generateLP' is declared but its value is never read.
+
+[7m7[0m import { generateLP, generateAstrodeckLoanPreview, generateLanderCorePreview } from './lp-generator.js';
+[7m [0m [93m         ~~~~~~~~~~[0m
+
+[96msrc/utils/__tests__/template-registry.test.js[0m:[93m5[0m:[93m32[0m - [93mwarning[0m[90m ts(6133): [0m'beforeEach' is declared but its value is never read.
+
+[7m5[0m import { describe, it, expect, beforeEach, vi } from 'vitest';
+[7m [0m [93m                               ~~~~~~~~~~[0m
+
+[96msrc/utils/__tests__/template-router.integration.test.js[0m:[93m5[0m:[93m32[0m - [93mwarning[0m[90m ts(6133): [0m'beforeEach' is declared but its value is never read.
+
+[7m5[0m import { describe, it, expect, beforeEach } from 'vitest';
+[7m [0m [93m                               ~~~~~~~~~~[0m
+
+[96msrc/utils/deployers/cf-pages.js[0m:[93m93[0m:[93m16[0m - [93mwarning[0m[90m ts(6133): [0m'cfFetch' is declared but its value is never read.
+
+[7m93[0m async function cfFetch(url, opts = {}) {
+[7m  [0m [93m               ~~~~~~~[0m
+
+[96msrc/utils/deployers/git-push.js[0m:[93m77[0m:[93m41[0m - [93mwarning[0m[90m ts(6133): [0m'site' is declared but its value is never read.
+
+[7m77[0m export async function checkDeployStatus(site, settings) {
+[7m  [0m [93m                                        ~~~~[0m
+
+[96msrc/utils/deployers/index.js[0m:[93m447[0m:[93m16[0m - [93mwarning[0m[90m ts(6133): [0m'getAllDeployConfigs' is declared but its value is never read.
+
+[7m447[0m async function getAllDeployConfigs(domainId) {
+[7m   [0m [93m               ~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/utils/deployers/index.js[0m:[93m377[0m:[93m10[0m - [93mwarning[0m[90m ts(6133): [0m'clearDeploymentHistory' is declared but its value is never read.
+
+[7m377[0m function clearDeploymentHistory() {
+[7m   [0m [93m         ~~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/utils/deployers/index.js[0m:[93m182[0m:[93m64[0m - [93mwarning[0m[90m ts(6385): [0m'(from: number, length?: number | undefined): string' is deprecated.
+
+[7m182[0m         id: `deploy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+[7m   [0m [93m                                                               ~~~~~~[0m
+[96msrc/utils/deployers/index.js[0m:[93m146[0m:[93m74[0m - [93mwarning[0m[90m ts(6385): [0m'(from: number, length?: number | undefined): string' is deprecated.
+
+[7m146[0m       id: deployId || `deploy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+[7m   [0m [93m                                                                         ~~~~~~[0m
+
+[96msrc/utils/deployers/s3-cloudfront.js[0m:[93m83[0m:[93m36[0m - [93mwarning[0m[90m ts(6133): [0m'site' is declared but its value is never read.
+
+[7m83[0m export async function deploy(html, site, settings) {
+[7m  [0m [93m                                   ~~~~[0m
+
+Result (131 files): 
+- 0 errors
+- 0 warnings
+- 153 hints
+

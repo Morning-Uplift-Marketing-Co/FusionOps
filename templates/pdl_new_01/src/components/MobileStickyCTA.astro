@@ -1,0 +1,67 @@
+---
+import { ArrowRight } from "lucide-astro";
+---
+
+<div
+    id="mobile-sticky-cta"
+    class="fixed bottom-0 left-0 w-full p-4 z-50 transform translate-y-full transition-transform duration-500 lg:hidden pointer-events-none pb-[calc(1rem+env(safe-area-inset-bottom))]"
+>
+    <div class="container-custom">
+        <a
+            href="#apply"
+            class="flex items-center justify-between w-full bg-primary text-white p-2 pl-6 rounded-2xl shadow-[0_20px_50px_rgba(0,31,63,0.3)] border border-white/10 active:scale-95 transition-transform pointer-events-auto group backdrop-blur-md"
+        >
+            <div class="flex flex-col">
+                <span
+                    class="text-[10px] font-black uppercase tracking-widest text-accent"
+                    >Fast Approval</span
+                >
+                <span class="text-sm font-black uppercase tracking-tight"
+                    >Check Your Rate Now</span
+                >
+            </div>
+
+            <div
+                class="w-12 h-12 bg-accent rounded-xl flex items-center justify-center group-hover:bg-emerald-400 transition-colors shadow-lg shadow-accent/20"
+            >
+                <ArrowRight class="w-6 h-6 text-white" aria-hidden="true" />
+            </div>
+        </a>
+    </div>
+</div>
+
+<script>
+    const setupStickyCTA = () => {
+        const cta = document.getElementById("mobile-sticky-cta");
+
+        if (!cta) return;
+
+        const handleScroll = () => {
+            // Show CTA after scrolling 300px (sooner than before)
+            if (window.scrollY > 300) {
+                cta.classList.remove("translate-y-full");
+            } else {
+                cta.classList.add("translate-y-full");
+            }
+        };
+
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        handleScroll(); // Initial check
+    };
+
+    // Initialize
+    setupStickyCTA();
+
+    // Support View Transitions
+    document.addEventListener("astro:after-swap", setupStickyCTA);
+</script>
+
+<style>
+    #mobile-sticky-cta {
+        background: linear-gradient(
+            0deg,
+            rgba(255, 255, 255, 0.95) 0%,
+            rgba(255, 255, 255, 0) 100%
+        );
+    }
+</style>

@@ -1,0 +1,133 @@
+---
+
+---
+
+<div
+    class={`bg-white rounded-[2rem] shadow-premium overflow-hidden border border-gray-100 ${Astro.props.className}`}
+>
+    <!-- Form Header -->
+    <div class="bg-primary p-5 md:p-6 text-center">
+        <h2
+            class="text-white text-lg md:text-xl font-black uppercase tracking-widest"
+        >
+            Check Your Rate
+        </h2>
+        <p
+            class="text-gray-300 text-[9px] md:text-[10px] font-bold uppercase tracking-widest mt-1"
+        >
+            No Impact on Credit Score
+        </p>
+    </div>
+
+    <form class="p-6 md:p-8 space-y-5 md:space-y-6" id="loan-form">
+        <div class="space-y-3 md:space-y-4">
+            <label
+                class="text-[9px] md:text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1"
+                >Loan Amount Desired</label
+            >
+            <div class="grid grid-cols-2 gap-2 md:gap-3">
+                {
+                    [
+                        "$100 - $500",
+                        "$500 - $1,500",
+                        "$1,500 - $3,000",
+                        "$3,000 - $5,000",
+                    ].map((amount) => (
+                        <label class="relative group cursor-pointer">
+                            <input
+                                type="radio"
+                                name="amount"
+                                class="peer sr-only"
+                                required
+                            />
+                            <div class="px-2 py-3 md:px-3 md:py-4 text-center border-2 border-gray-100 rounded-xl font-bold text-xs md:text-sm text-charcoal group-hover:border-accent/30 group-hover:bg-gray-50 peer-checked:border-accent peer-checked:bg-accent/5 peer-checked:text-accent transition-all">
+                                {amount}
+                            </div>
+                        </label>
+                    ))
+                }
+            </div>
+        </div>
+
+        <div class="space-y-3 md:space-y-4">
+            <label
+                class="text-[9px] md:text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1"
+                >Zip Code</label
+            >
+            <div class="relative">
+                <input
+                    type="text"
+                    id="zipcode"
+                    name="zipcode"
+                    placeholder="Enter 5-digit zip"
+                    maxlength="5"
+                    pattern="[0-9]{5}"
+                    inputmode="numeric"
+                    required
+                    class="w-full px-4 py-3 md:px-5 md:py-4 bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-accent focus:bg-white outline-none transition-all font-medium text-base md:text-lg text-charcoal placeholder:text-gray-400 group-[.invalid]:border-red-500"
+                />
+                <p
+                    id="zip-error"
+                    class="hidden text-[9px] font-bold text-red-500 mt-2 ml-1 uppercase tracking-wider"
+                >
+                    Please enter a valid 5-digit zip code
+                </p>
+            </div>
+        </div>
+
+        <button
+            type="submit"
+            class="btn btn-primary w-full py-4 md:py-5 text-lg md:text-xl uppercase tracking-widest font-black shadow-lg shadow-accent/20 hover:shadow-accent/40 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+            See My Options
+        </button>
+
+        <div
+            class="flex items-center justify-center gap-3 md:gap-4 text-[9px] text-charcoal/40 uppercase tracking-widest font-black"
+        >
+            <div class="flex gap-1 items-center">
+                <svg
+                    class="w-2.5 h-2.5 md:w-3 md:h-3 text-accent"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    ><path
+                        fill-rule="evenodd"
+                        d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 4.908-3.235 9.12-7.726 10.599a1.001 1.001 0 01-.54 0C5.235 16.12 2 11.908 2 7c0-.681.057-1.35.166-2.001z"
+                        clip-rule="evenodd"></path></svg
+                >
+                256-bit Secure
+            </div>
+            <div class="w-1 h-1 bg-gray-200 rounded-full"></div>
+            <div>Verified Lenders</div>
+        </div>
+    </form>
+</div>
+
+<script>
+    const form = document.getElementById("loan-form") as HTMLFormElement;
+    const zipInput = document.getElementById("zipcode") as HTMLInputElement;
+    const zipError = document.getElementById("zip-error");
+
+    zipInput?.addEventListener("input", (e) => {
+        const target = e.target as HTMLInputElement;
+        // Only allow numbers
+        target.value = target.value.replace(/[^0-9]/g, "");
+
+        if (target.value.length > 0 && target.value.length < 5) {
+            zipInput.classList.add("border-red-500");
+            zipError?.classList.remove("hidden");
+        } else {
+            zipInput.classList.remove("border-red-500");
+            zipError?.classList.add("hidden");
+        }
+    });
+
+    form?.addEventListener("submit", (e) => {
+        if (zipInput.value.length !== 5) {
+            e.preventDefault();
+            zipInput.classList.add("border-red-500");
+            zipError?.classList.remove("hidden");
+            zipInput.focus();
+        }
+    });
+</script>

@@ -1,0 +1,5 @@
+﻿2026-02-22T00:31:24.5431471Z ##[group]Run echo "✅ Deploy pipeline completed for c00f0f47b7ce4d47"
+2026-02-22T00:31:24.5432020Z [36;1mecho "✅ Deploy pipeline completed for c00f0f47b7ce4d47"[0m
+2026-02-22T00:31:24.5468443Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-02-22T00:31:24.5468816Z ##[endgroup]
+2026-02-22T00:31:24.5532860Z ✅ Deploy pipeline completed for c00f0f47b7ce4d47

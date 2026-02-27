@@ -1,0 +1,63 @@
+🔑 Using Token: b2fbf...
+📅 Fetching transactions from: 2026-02-01
+✅ Success! Fetched 10 transactions.
+📄 Sample Transaction Data:
+{
+  "uuid": "a1fe748d-4653-4dbb-be78-19ace06d704f",
+  "merchant": "GOOGLE*ADS8343368603",
+  "transaction_date": 1771734917,
+  "amount": 643.29,
+  "amount_ui": 643.29,
+  "response": "authentication approved",
+  "response_text": "approved or completed successfully",
+  "local_amount": 20000,
+  "local_currency": "THB",
+  "type": "",
+  "country": "SGP",
+  "status": {
+    "name": "approved",
+    "reason": null,
+    "level": "success"
+  },
+  "is_pending": true,
+  "repr_id": "214755",
+  "card_id": 305655,
+  "card": {
+    "uuid": "b8d92cb7-f4b0-445b-b993-ef1f05e48b32",
+    "team_uuid": null,
+    "name": "Juthamas Chieplaem",
+    "card_bin": {
+      "uuid": "e50c59b4-3d64-45b6-8153-fb462b857547",
+      "bin_name": "554866",
+      "bin": "554866",
+      "currency": "USD",
+      "is_expiration": true,
+      "issuer": {
+        "name": "MasterCard",
+        "logo_path": "/static/ui/svg/card_icons/MasterCard.svg"
+      },
+      "is_phone_number": false,
+      "is_any_charge": false,
+      "fee_percentage": 200,
+      "verified_platforms": [
+        "GOOGLE"
+      ],
+      "default_billing_address": null,
+      "no_custom_address": false,
+      "highly_recommended": false
+    },
+    "censored_number": "554866...6977",
+    "card_id": null,
+    "repr_id": "104561",
+    "last4": "6977",
+    "censored_phone_number": null,
+    "team_name": null
+  },
+  "last_4": "6977",
+  "bin": "XXXX",
+  "card_assignee": null,
+  "card_team": null,
+  "parent_uuid": null,
+  "is_refund_request_waiting": false,
+  "provider_card_id": null
+}

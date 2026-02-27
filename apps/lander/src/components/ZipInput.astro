@@ -1,0 +1,85 @@
+---
+// ============================================================
+// ZipInput — 5-digit numeric zip code input
+// ============================================================
+// - Numeric only, maxlength 5
+// - Pattern validation: exactly 5 digits
+// - Stores to sessionStorage on valid input
+// - No hydration — uses inline <script>
+// ============================================================
+
+interface Props {
+  label?: string;
+  placeholder?: string;
+  id?: string;
+}
+
+const {
+  label = 'Enter your ZIP code',
+  placeholder = '00000',
+  id = 'zip-input',
+} = Astro.props;
+---
+
+<div class="w-full max-w-sm mx-auto">
+  {label && (
+    <label for={id} class="block text-sm font-semibold text-gray-700 mb-2">
+      {label}
+    </label>
+  )}
+  <input
+    type="text"
+    id={id}
+    name="zip"
+    inputmode="numeric"
+    pattern="[0-9]{5}"
+    maxlength="5"
+    autocomplete="postal-code"
+    placeholder={placeholder}
+    required
+    class="w-full px-4 py-3 text-lg text-center tracking-widest border-2 border-gray-300 rounded-lg
+           focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20
+           focus:outline-none transition-colors duration-150"
+    aria-label="5-digit ZIP code"
+  />
+  <p id={`${id}-error`} class="mt-1 text-sm text-red-600 hidden" role="alert">
+    Please enter a valid 5-digit ZIP code
+  </p>
+</div>
+
+<script define:vars={{ id }}>
+  (function() {
+    const input = document.getElementById(id);
+    const error = document.getElementById(id + '-error');
+    if (!input) return;
+
+    // Strip non-numeric on input
+    input.addEventListener('input', function(e) {
+      const target = e.target;
+      target.value = target.value.replace(/\D/g, '').slice(0, 5);
+
+      if (target.value.length === 5) {
+        error.classList.add('hidden');
+        sessionStorage.setItem('zip', target.value);
+      } else {
+        sessionStorage.removeItem('zip');
+      }
+    });
+
+    // Show error on blur if invalid
+    input.addEventListener('blur', function(e) {
+      const target = e.target;
+      if (target.value.length > 0 && target.value.length !== 5) {
+        error.classList.remove('hidden');
+      } else {
+        error.classList.add('hidden');
+      }
+    });
+
+    // Restore from sessionStorage
+    const stored = sessionStorage.getItem('zip');
+    if (stored && stored.length === 5) {
+      input.value = stored;
+    }
+  })();
+</script>

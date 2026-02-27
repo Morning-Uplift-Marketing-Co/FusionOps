@@ -1,0 +1,76 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://lp-factory.dev/schemas/deploy-manifest.schema.json",
+  "title": "DeployManifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "siteId",
+    "brand",
+    "templateId",
+    "environment",
+    "targets",
+    "build",
+    "tracking",
+    "meta"
+  ],
+  "properties": {
+    "version": { "type": "integer", "minimum": 1 },
+    "siteId": { "type": "string", "minLength": 1 },
+    "brand": { "type": "string" },
+    "templateId": { "type": "string", "minLength": 1 },
+    "environment": { "type": "string", "enum": ["dev", "staging", "production"] },
+    "targets": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["provider"],
+        "properties": {
+          "provider": { "type": "string", "enum": ["github-actions", "cloudflare-pages", "netlify", "vercel"] },
+          "projectName": { "type": "string" },
+          "siteId": { "type": "string" },
+          "vercelProjectId": { "type": "string" },
+          "customDomain": { "type": "string" },
+          "branch": { "type": "string" }
+        }
+      }
+    },
+    "build": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entry", "extraFiles"],
+      "properties": {
+        "entry": { "type": "string", "const": "index.html" },
+        "extraFiles": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "tracking": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["googleAdsId", "pixelEndpoint", "voluumDomain"],
+      "properties": {
+        "googleAdsId": { "type": "string" },
+        "pixelEndpoint": { "type": "string" },
+        "voluumDomain": { "type": "string" }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requestedBy", "requestedAt", "requestId", "commitMessage"],
+      "properties": {
+        "requestedBy": { "type": "string" },
+        "requestedAt": { "type": "string" },
+        "requestId": { "type": "string" },
+        "commitMessage": { "type": "string" },
+        "deployRecordId": { "type": "string" }
+      }
+    }
+  }
+}

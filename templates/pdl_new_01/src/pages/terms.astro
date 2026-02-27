@@ -1,0 +1,73 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Navbar from "../components/Navbar.astro";
+import Footer from "../components/Footer.astro";
+
+const title = "Terms of Service | ElasticCredits";
+---
+
+<Layout title={title}>
+    <Navbar />
+    <main class="pt-32 pb-20 bg-background-alt min-h-screen">
+        <div class="container-custom max-w-4xl">
+            <div
+                class="bg-white rounded-3xl p-10 md:p-16 shadow-premium border border-gray-100"
+            >
+                <h1
+                    class="text-4xl md:text-6xl font-black text-primary mb-8 underline decoration-accent decoration-8 underline-offset-4"
+                >
+                    Terms of <span class="text-accent underline-none"
+                        >Service</span>
+                </h1>
+
+                <div
+                    class="prose prose-lg max-w-none text-charcoal-light space-y-8 font-medium"
+                >
+                    <p>Effective Date: January 1, 2026</p>
+                    <p>
+                        By using ElasticCredits.com, you agree to these Terms of
+                        Service. If you do not agree, please do not use our
+                        website.
+                    </p>
+
+                    <h2 class="text-2xl font-black text-primary pt-4 text-left">
+                        1. Service Description
+                    </h2>
+                    <p>
+                        ElasticCredits is a matching service. We are not a
+                        lender and do not make loans. We connect you with
+                        third-party lenders.
+                    </p>
+
+                    <h2 class="text-2xl font-black text-primary pt-4 text-left">
+                        2. Eliigbility
+                    </h2>
+                    <p>
+                        You must be at least 18 years old and a legal resident
+                        of the United States to use our services. Residents of
+                        certain states (AR, NY, VT, WV) are not eligible.
+                    </p>
+
+                    <h2 class="text-2xl font-black text-primary pt-4 text-left">
+                        3. Communication
+                    </h2>
+                    <p>
+                        By submitting your information, you authorize us and our
+                        partners to contact you via email, SMS, or phone
+                        regarding your inquiry.
+                    </p>
+
+                    <h2 class="text-2xl font-black text-primary pt-4 text-left">
+                        4. Disclaimers
+                    </h2>
+                    <p>
+                        We do not guarantee that you will be matched with a
+                        lender or that any lender will approve your application.
+                        Loan terms are solely determined by the lender.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+    <Footer />
+</Layout>

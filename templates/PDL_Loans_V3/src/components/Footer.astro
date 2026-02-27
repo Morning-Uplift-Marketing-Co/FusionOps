@@ -1,0 +1,55 @@
+---
+const year = new Date().getFullYear();
+---
+
+<footer role="contentinfo" class="bg-card border-t border-border mt-auto">
+  <div class="container section-padding">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+      <div class="col-span-2 md:col-span-1">
+        <a href="/" class="flex items-center gap-2 mb-4">
+          <div class="w-8 h-8 rounded-lg bg-hero-gradient flex items-center justify-center">
+            <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <span class="text-lg font-bold text-foreground">ElasticCredits</span>
+        </a>
+        <p class="text-sm text-muted-foreground leading-relaxed">Connecting you with trusted lenders for personal installment loans up to $5,000.</p>
+      </div>
+      <nav aria-label="Company links">
+        <h3 class="text-sm font-semibold text-foreground mb-3">Company</h3>
+        <ul class="space-y-2 text-sm text-muted-foreground">
+          <li><a href="#how-it-works" class="hover:text-foreground transition-colors">How It Works</a></li>
+          <li><a href="#calculator" class="hover:text-foreground transition-colors">Calculator</a></li>
+          <li><a href="#faq" class="hover:text-foreground transition-colors">FAQ</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Legal links">
+        <h3 class="text-sm font-semibold text-foreground mb-3">Legal</h3>
+        <ul class="space-y-2 text-sm text-muted-foreground">
+          <li><a href="/privacy" class="hover:text-foreground transition-colors">Privacy Policy</a></li>
+          <li><a href="/terms" class="hover:text-foreground transition-colors">Terms of Service</a></li>
+          <li><a href="/disclosures" class="hover:text-foreground transition-colors">Disclosures</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Support links">
+        <h3 class="text-sm font-semibold text-foreground mb-3">Support</h3>
+        <ul class="space-y-2 text-sm text-muted-foreground">
+          <li><a href="mailto:support@elasticcredits.com" class="hover:text-foreground transition-colors">Contact Us</a></li>
+          <li><a href="/licensing" class="hover:text-foreground transition-colors">Licensing</a></li>
+        </ul>
+      </nav>
+    </div>
+
+    <!-- Compliance -->
+    <div class="border-t border-border pt-8 space-y-4 text-xs text-muted-foreground leading-relaxed">
+      <p><strong class="text-foreground/70">Representative Example:</strong> A $1,000 loan repaid over 12 monthly installments at 15% APR would result in 12 monthly payments of $90.26. Total amount payable: $1,083.12. Total interest: $83.12. Minimum repayment period: 61 days. Maximum repayment period: 24 months.</p>
+      <p><strong class="text-foreground/70">APR Disclosure:</strong> Annual Percentage Rate (APR) ranges from 5.99% to 35.99%. APR depends on credit score, loan amount, loan term, credit usage and history. Only the most creditworthy applicants qualify for the lowest rates.</p>
+      <p>ElasticCredits.com is NOT a lender and does not make loan or credit decisions. ElasticCredits.com connects interested persons with a lender from its network of approved lenders. Not all lenders can provide loan amounts up to $5,000. Cash transfer times may vary. Repayment terms vary by lender and local laws.</p>
+      <p>Loans issued by WebBank, Member FDIC. Checking your rate won't affect your credit score.</p>
+      <div class="pt-4 border-t border-border flex flex-col md:flex-row items-center justify-between gap-2">
+        <p>&copy; {year} ElasticCredits. All rights reserved.</p>
+      </div>
+    </div>
+  </div>
+</footer>

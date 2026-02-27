@@ -1,0 +1,209 @@
+
+[34mโ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•[0m
+[36m  Pre-flight Checks[0m
+[34mโ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•[0m
+
+[32m[SUCCESS][0m Node.js: v24.13.1
+[32m[SUCCESS][0m npm: 11.8.0
+[32m[SUCCESS][0m Wrangler: 4.63.0
+[32m[SUCCESS][0m Cloudflare: Authenticated
+[34m[INFO][0m Checking dependencies...
+[32m[SUCCESS][0m Dependencies OK
+[32m[SUCCESS][0m Pre-flight checks complete!
+
+[34mโ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•[0m
+[36m  Deploying Cloudflare Workers[0m
+[34mโ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•[0m
+
+[34m[INFO][0m Deploying api-worker...
+[34m[INFO][0m   Installing dependencies...
+[34m[INFO][0m   Running: npx -y wrangler@latest deploy
+
+ โ…๏ธ wrangler 4.67.0
+โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+
+Cloudflare collects anonymous telemetry about your usage of Wrangler. Learn more at https://github.com/cloudflare/workers-sdk/tree/main/packages/wrangler/telemetry.md
+โ–ฒ [WARNING] Duplicate key "responseformat" in object literal [duplicate-object-key]
+
+    src/worker.js:2145:10:
+      2145 โ”           responseformat: 'JSON',
+           โ•ต           ~~~~~~~~~~~~~~
+
+  The original key "responseformat" is here:
+
+    src/worker.js:2143:10:
+      2143 โ”           responseformat: 'JSON',
+           โ•ต           ~~~~~~~~~~~~~~
+
+
+โ–ฒ [WARNING] Duplicate key "Domain" in object literal [duplicate-object-key]
+
+    src/worker.js:2146:10:
+      2146 โ”           Domain: domain,
+           โ•ต           ~~~~~~
+
+  The original key "Domain" is here:
+
+    src/worker.js:2144:10:
+      2144 โ”           Domain: domain,
+           โ•ต           ~~~~~~
+
+
+Total Upload: 117.21 KiB / gzip: 17.57 KiB
+Your Worker has access to the following bindings:
+Binding                                            Resource         
+env.DB (6d699556-e9f6-4cf0-815f-f2ae077c4f5a)      D1 Database      
+
+
+X [ERROR] A request to the Cloudflare API (/accounts/***CF_ACCOUNT_ID_REMOVED***/workers/scripts/lp-factory-api/versions) failed.
+
+  binding DB of type d1 must have a database that already exists. Use wrangler or the UI to create the database. [code: 10021]
+  To learn more about this error, visit: https://developers.cloudflare.com/workers/observability/errors/#validation-errors-10021
+
+  
+  If you think this is a bug, please open an issue at: https://github.com/cloudflare/workers-sdk/issues/new/choose
+
+
+๐ชต  Logs were written to "C:\Users\Barbara\AppData\Roaming\xdg.config\.wrangler\logs\wrangler-2026-02-22_07-09-36_769.log"
+[31m[ERROR][0m โ— api-worker failed
+[34m[INFO][0m Deploying cf-proxy...
+[34m[INFO][0m   Running: npx -y wrangler@latest deploy
+
+ โ…๏ธ wrangler 4.67.0
+โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+
+X [ERROR] A request to the Cloudflare API (/accounts/***CF_ACCOUNT_ID_REMOVED***/workers/services/lp-cors-proxy) failed.
+
+  Authentication error [code: 10000]
+
+
+Getting User settings...
+๐‘ You are logged in with an OAuth Token, associated with the email songsawat.w@gmail.com.
+โ”โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”ฌโ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”
+โ” Account Name                    โ” Account ID                       โ”
+โ”โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”ผโ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”ค
+โ” Songsawat.w@gmail.com's Account โ” ***CF_ACCOUNT_ID_REMOVED*** โ”
+โ””โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”ดโ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”
+๐”“ Token Permissions:
+Scope (Access)
+- account (read)
+- user (read)
+- workers (write)
+- workers_kv (write)
+- workers_routes (write)
+- workers_scripts (write)
+- workers_tail (read)
+- d1 (write)
+- pages (write)
+- zone (read)
+- ssl_certs (write)
+- ai (write)
+- ai-search (write)
+- ai-search (run)
+- queues (write)
+- pipelines (write)
+- secrets_store (write)
+- containers (write)
+- cloudchamber (write)
+- connectivity (admin)
+- offline_access 
+๐ชต  Logs were written to "C:\Users\Barbara\AppData\Roaming\xdg.config\.wrangler\logs\wrangler-2026-02-22_07-09-45_686.log"
+[31m[ERROR][0m โ— cf-proxy failed
+[34m[INFO][0m Deploying pixel-worker...
+[34m[INFO][0m   Installing dependencies...
+[34m[INFO][0m   Running: npx -y wrangler@latest deploy
+
+ โ…๏ธ wrangler 4.67.0
+โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+โ–ฒ [WARNING] Multiple environments are defined in the Wrangler configuration file, but no target environment was specified for the deploy command.
+
+  To avoid unintentional changes to the wrong environment, it is recommended to explicitly specify the target environment using the `-e|--env` flag.
+  If your intention is to use the top-level environment of your configuration simply pass an empty string to the flag to target such environment. For example `--env=""`.
+
+
+Total Upload: 24.05 KiB / gzip: 5.92 KiB
+Your Worker has access to the following bindings:
+Binding                                                     Resource                  
+env.DB (c1b8eed8-91bb-4188-bf93-59d8c6d09871)               D1 Database               
+env.ENVIRONMENT ("production")                              Environment Variable      
+
+
+X [ERROR] A request to the Cloudflare API (/accounts/***CF_ACCOUNT_ID_REMOVED***/workers/scripts/lp-factory-pixel/versions) failed.
+
+  binding DB of type d1 must have a database that already exists. Use wrangler or the UI to create the database. [code: 10021]
+  To learn more about this error, visit: https://developers.cloudflare.com/workers/observability/errors/#validation-errors-10021
+
+  
+  If you think this is a bug, please open an issue at: https://github.com/cloudflare/workers-sdk/issues/new/choose
+
+
+๐ชต  Logs were written to "C:\Users\Barbara\AppData\Roaming\xdg.config\.wrangler\logs\wrangler-2026-02-22_07-09-49_842.log"
+[31m[ERROR][0m โ— pixel-worker failed
+[34m[INFO][0m Deploying worker...
+[34m[INFO][0m   Installing dependencies...
+[34m[INFO][0m   Running: npx -y wrangler@latest deploy
+
+ โ…๏ธ wrangler 4.67.0
+โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+โ–ฒ [WARNING] Multiple environments are defined in the Wrangler configuration file, but no target environment was specified for the deploy command.
+
+  To avoid unintentional changes to the wrong environment, it is recommended to explicitly specify the target environment using the `-e|--env` flag.
+  If your intention is to use the top-level environment of your configuration simply pass an empty string to the flag to target such environment. For example `--env=""`.
+
+
+Total Upload: 33.14 KiB / gzip: 8.02 KiB
+Your Worker has access to the following bindings:
+Binding                                                     Resource                  
+env.DB (507cd6ec-67c5-42ad-afba-4e292d0bdfc8)               D1 Database               
+env.ENVIRONMENT ("production")                              Environment Variable      
+
+
+X [ERROR] A request to the Cloudflare API (/accounts/***CF_ACCOUNT_ID_REMOVED***/workers/scripts/fusionops-callback-worker) failed.
+
+  binding DB of type d1 must have a database that already exists. Use wrangler or the UI to create the database. [code: 10021]
+  To learn more about this error, visit: https://developers.cloudflare.com/workers/observability/errors/#validation-errors-10021
+
+  
+  If you think this is a bug, please open an issue at: https://github.com/cloudflare/workers-sdk/issues/new/choose
+
+
+๐ชต  Logs were written to "C:\Users\Barbara\AppData\Roaming\xdg.config\.wrangler\logs\wrangler-2026-02-22_07-09-54_605.log"
+[31m[ERROR][0m โ— worker failed
+[33m[WARNING][0m 4 worker(s) failed to deploy
+
+[34mโ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•[0m
+[36m  Deployment URLs[0m
+[34mโ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•[0m
+
+
+Worker URLs:
+  api-worker: https://lp-factory-api.workers.dev
+  cf-proxy: https://lp-cors-proxy.workers.dev
+  pixel-worker: https://lp-factory-pixel.workers.dev
+  worker: https://fusionops-callback-worker.workers.dev
+
+Web App:
+  fusionops-web: https://fusionops-web.pages.dev
+
+
+[34mโ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•[0m
+[36m  Deployment Complete![0m
+[34mโ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•[0m
+
+
+โ•”โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•—
+โ•‘              Deployment Summary ๐“                         โ•‘
+โ• โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•ฃ
+โ•‘  Workers Deployed:                        0 โ•‘
+โ•‘  Workers Failed:                          4 โ•‘
+โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•
+
+Next steps:
+1. Visit your deployed URLs above
+2. Test the application
+3. Set up custom domains
+4. Configure monitoring
+
+For troubleshooting, check Cloudflare Dashboard:
+https://dash.cloudflare.com
+

@@ -1,0 +1,121 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Navbar from "../components/Navbar.astro";
+import Footer from "../components/Footer.astro";
+
+const title = "Privacy Policy | ElasticCredits";
+const pages = [
+    {
+        id: "privacy",
+        title: "Privacy Policy",
+        content:
+            "This Privacy Policy describes how ElasticCredits.com collects, uses, and shares your personal information...",
+    },
+    {
+        id: "terms",
+        title: "Terms of Service",
+        content:
+            "By using ElasticCredits.com, you agree to these Terms of Service. Please read them carefully...",
+    },
+    {
+        id: "ccpa",
+        title: "California Privacy Rights",
+        content:
+            "If you are a California resident, you have specific rights under the CCPA regarding your personal information...",
+    },
+    {
+        id: "econsent",
+        title: "E-Consent",
+        content:
+            "By using our service, you agree to receive all disclosures and communications electronically...",
+    },
+    {
+        id: "unsubscribe",
+        title: "Unsubscribe",
+        content:
+            "To stop receiving marketing communications from ElasticCredits, please enter your email below...",
+    },
+];
+
+// In a real app, I'd separate these, but for brevity here I'll create a component for them
+---
+
+<Layout title={title}>
+    <Navbar />
+    <main class="pt-32 pb-20 bg-background-alt min-h-screen">
+        <div class="container-custom max-w-4xl">
+            <div
+                class="bg-white rounded-3xl p-10 md:p-16 shadow-premium border border-gray-100"
+            >
+                <h1
+                    class="text-4xl md:text-6xl font-black text-primary mb-8"
+                    id="page-title"
+                >
+                    Privacy Policy
+                </h1>
+
+                <div
+                    class="prose prose-lg max-w-none text-charcoal-light space-y-8 font-medium"
+                    id="page-content"
+                >
+                    <p>Effective Date: January 1, 2026</p>
+                    <p>
+                        At ElasticCredits.com, we value your privacy. This
+                        policy explains how we handle your data when you use our
+                        referral service. We collect information you provide
+                        directly (such as your name, email, and ZIP code) to
+                        match you with lenders.
+                    </p>
+                    <h2 class="text-2xl font-black text-primary pt-4">
+                        1. Information We Collect
+                    </h2>
+                    <p>
+                        We may collect personally identifiable information when
+                        you fill out forms on our site. This includes but is not
+                        limited to: Contact info, employment info, and financial
+                        data.
+                    </p>
+
+                    <h2 class="text-2xl font-black text-primary pt-4">
+                        2. How We Use Information
+                    </h2>
+                    <p>
+                        We use your information to facilitate connections with
+                        lenders, improve our services, and communicate with you
+                        about your application status.
+                    </p>
+
+                    <h2 class="text-2xl font-black text-primary pt-4">
+                        3. Information Sharing
+                    </h2>
+                    <p>
+                        We share your data with independent lenders and
+                        third-party partners who provide financial products you
+                        may be interested in.
+                    </p>
+
+                    <h2 class="text-2xl font-black text-primary pt-4">
+                        4. Your Choices
+                    </h2>
+                    <p>
+                        You can opt-out of marketing communications at any time
+                        by visiting our unsubscribe page.
+                    </p>
+
+                    <div id="dns" class="pt-12 mt-12 border-t border-gray-100">
+                        <h2 class="text-2xl font-black text-primary">
+                            Do Not Sell My Personal Information
+                        </h2>
+                        <p class="mt-4">
+                            California residents have the right to opt-out of
+                            the sale of their personal information. If you wish
+                            to exercise this right, please contact us at
+                            privacy@elasticcredits.com.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <Footer />
+</Layout>

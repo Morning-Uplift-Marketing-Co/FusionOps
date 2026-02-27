@@ -1,0 +1,130 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Navbar from "../components/Navbar.astro";
+import HeroSection from "../components/HeroSection.astro";
+import LoanCalculator from "../components/LoanCalculator.astro";
+import FundingSolutions from "../components/FundingSolutions.astro";
+import FeaturesSection from "../components/FeaturesSection.astro";
+import HowItWorks from "../components/HowItWorks.astro";
+import Testimonials from "../components/Testimonials.astro";
+import FAQ from "../components/FAQ.astro";
+import CTASection from "../components/CTASection.astro";
+import Footer from "../components/Footer.astro";
+import LoanDisclosure from "../components/LoanDisclosure.astro";
+import MobileStickyCTA from "../components/MobileStickyCTA.astro";
+
+// SEO Metadata
+const title = "ElasticCredits | Fast Personal Funding Solutions $100 - $5,000";
+const description =
+	"Need cash fast? ElasticCredits connects you with 100+ lenders for quick funding. Simple application, secure process, next-day deposits available.";
+---
+
+<Layout title={title} description={description}>
+	<!-- Skip to main content for Accessibility -->
+	<a href="#main-content" class="skip-link">Skip to main content</a>
+
+	<Navbar />
+
+	<main id="main-content" class="relative overflow-hidden">
+		<!-- Section-specific Background Accents -->
+		<div
+			class="absolute top-0 left-0 w-full h-screen bg-gradient-to-b from-blue-50/50 to-white -z-10 pointer-events-none"
+		>
+		</div>
+
+		<!-- 1. Hero Section (Visual Impact & Primary Conversion) -->
+		<HeroSection />
+
+		<!-- 2. Loan Calculator (High-Performance Planning Tool) -->
+		<LoanCalculator />
+
+		<!-- 3. Funding Solutions (Use Case Relevancy) -->
+		<FundingSolutions />
+
+		<!-- 4. Features (Key Value Propositions) -->
+		<FeaturesSection />
+
+		<!-- 5. Process (Clarity & Ease of Use) -->
+		<HowItWorks />
+
+		<!-- 6. Social Proof (Trust & Community) -->
+		<Testimonials />
+
+		<!-- 7. Educational Content (FAQ) -->
+		<FAQ />
+
+		<!-- 8. Final Call to Action -->
+		<CTASection />
+
+		<!-- 9. Regulatory Disclosures (Compliance) -->
+		<div class="bg-gray-50 py-12 border-t border-gray-100">
+			<div class="container-custom">
+				<LoanDisclosure />
+			</div>
+		</div>
+	</main>
+
+	<Footer />
+	<MobileStickyCTA />
+</Layout>
+
+<style is:global>
+	/* Premium Scroll Reveal Animation Configuration */
+	[data-reveal] {
+		opacity: 0;
+		transform: translateY(40px);
+		transition:
+			opacity 1s cubic-bezier(0.16, 1, 0.3, 1),
+			transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	[data-reveal].revealed {
+		opacity: 1;
+		transform: translateY(0);
+	}
+
+	/* Micro-interactions: Smooth hover for cards globally */
+	.premium-card {
+		@apply transition-all duration-300 hover:-translate-y-2 hover:shadow-premium;
+	}
+
+	/* Focus state accessibility improvements */
+	:focus-visible {
+		@apply outline-none ring-2 ring-accent ring-offset-2;
+	}
+</style>
+
+<script>
+	// Initialize smooth scroll reveal using Intersection Observer
+	const initReveal = () => {
+		const observer = new IntersectionObserver(
+			(entries) => {
+				entries.forEach((entry) => {
+					if (entry.isIntersecting) {
+						entry.target.classList.add("revealed");
+						// Unobserve after revelation to save performance
+						observer.unobserve(entry.target);
+					}
+				});
+			},
+			{
+				threshold: 0.15,
+				rootMargin: "0px 0px -50px 0px",
+			},
+		);
+
+		// Target all major containers within sections for a staggered look
+		document
+			.querySelectorAll("section > .container-custom")
+			.forEach((container) => {
+				container.setAttribute("data-reveal", "");
+				observer.observe(container);
+			});
+	};
+
+	// Execute on load
+	initReveal();
+
+	// Support View Transitions / Client-side navigation if enabled
+	document.addEventListener("astro:after-swap", initReveal);
+</script>

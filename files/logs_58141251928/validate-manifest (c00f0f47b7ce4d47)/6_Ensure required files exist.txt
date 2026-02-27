@@ -1,0 +1,7 @@
+﻿2026-02-22T00:30:44.5687677Z ##[group]Run set -euo pipefail
+2026-02-22T00:30:44.5688205Z [36;1mset -euo pipefail[0m
+2026-02-22T00:30:44.5688596Z [36;1mDIR="sites/c00f0f47b7ce4d47"[0m
+2026-02-22T00:30:44.5689012Z [36;1mtest -f "$DIR/index.html"[0m
+2026-02-22T00:30:44.5689268Z [36;1mtest -f "$DIR/apply.html"[0m
+2026-02-22T00:30:44.5722317Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-02-22T00:30:44.5722661Z ##[endgroup]

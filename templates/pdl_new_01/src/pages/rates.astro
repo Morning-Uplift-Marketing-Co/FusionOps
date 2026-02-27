@@ -1,0 +1,96 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Navbar from "../components/Navbar.astro";
+import Footer from "../components/Footer.astro";
+
+const title = "Rates & Fees | ElasticCredits";
+---
+
+<Layout title={title}>
+    <Navbar />
+    <main class="pt-32 pb-20 bg-background-alt min-h-screen">
+        <div class="container-custom max-w-4xl">
+            <div
+                class="bg-white rounded-3xl p-10 md:p-16 shadow-premium border border-gray-100"
+            >
+                <h1
+                    class="text-4xl md:text-6xl font-black text-primary mb-8 leading-tight"
+                >
+                    Rates <span class="text-accent">&</span> Fees
+                </h1>
+
+                <div
+                    class="prose prose-lg max-w-none text-charcoal-light space-y-8 font-medium"
+                >
+                    <p class="text-xl">
+                        ElasticCredits.com is not a lender. As such, we cannot
+                        provide you with a specific interest rate (APR) or the
+                        exact terms of your loan.
+                    </p>
+
+                    <div
+                        class="bg-blue-50 p-8 rounded-2xl border border-blue-100"
+                    >
+                        <h2 class="text-2xl font-black text-primary mb-4">
+                            APR Disclosure
+                        </h2>
+                        <p>
+                            Annual Percentage Rate (APR) reflects the cost of
+                            borrowing a loan. It includes the interest rate plus
+                            any fees related to the loan. Lenders in our network
+                            typically offer APRs ranging from <strong
+                                class="text-primary">5.99% to 35.99%</strong
+                            > for qualified consumers.
+                        </p>
+                    </div>
+
+                    <section class="space-y-4">
+                        <h2 class="text-2xl font-black text-primary pt-4">
+                            Representative Example
+                        </h2>
+                        <p>
+                            If you borrow $1,000 over a 12-month period with a
+                            24% APR, your monthly payment would be $94.56. The
+                            total amount payable would be $1,134.72, with a
+                            total cost of $134.72.
+                        </p>
+                    </section>
+
+                    <section class="space-y-4">
+                        <h2 class="text-2xl font-black text-primary pt-4">
+                            Lender Fees
+                        </h2>
+                        <p>
+                            Lenders may charge additional fees such as
+                            origination fees, late payment fees, or returned
+                            check fees. ElasticCredits.com does NOT charge you
+                            any fees for using our service. All loan terms and
+                            fees are determined by the lender you are matched
+                            with.
+                        </p>
+                    </section>
+
+                    <section class="space-y-4">
+                        <h2 class="text-2xl font-black text-primary pt-4">
+                            Non-Payment Implications
+                        </h2>
+                        <p>
+                            If you cannot make your payments on time, it could
+                            result in additional charges and negative impacts to
+                            your credit score. If you struggle to make a
+                            payment, we strongly advise you to contact your
+                            lender immediately to discuss repayment options.
+                        </p>
+                    </section>
+                </div>
+
+                <div class="mt-12 pt-12 border-t border-gray-100 text-center">
+                    <a href="/#apply" class="btn btn-primary px-10 py-4 text-lg"
+                        >Back to Application</a
+                    >
+                </div>
+            </div>
+        </div>
+    </main>
+    <Footer />
+</Layout>

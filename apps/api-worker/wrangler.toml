@@ -1,0 +1,12 @@
+name = "lp-factory-api"
+main = "src/worker.js"
+compatibility_date = "2024-12-01"
+account_id = "***CF_ACCOUNT_ID_REMOVED***"
+
+# D1 Database binding
+# CRITICAL RULE: DO NOT CHANGE THIS DATABASE. MUST USE fusionops-main-new-v2
+[[d1_databases]]
+binding = "DB"
+database_name = "fusionops-main-new-v2"
+database_id = "4eaee76d-10fb-42a7-bb9d-50737c3da785"
+preview_database_id = "4eaee76d-10fb-42a7-bb9d-50737c3da785"

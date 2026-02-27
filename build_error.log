@@ -1,0 +1,30 @@
+
+> lp-factory-web@2.1.0 build
+> astro build
+
+[2m21:23:04[22m [34m[content][39m Syncing content
+[2m21:23:04[22m [34m[content][39m Synced content
+[2m21:23:04[22m [34m[types][39m Generated [2m23ms[22m
+[2m21:23:04[22m [34m[build][39m output: [34m"static"[39m
+[2m21:23:04[22m [34m[build][39m mode: [34m"static"[39m
+[2m21:23:04[22m [34m[build][39m directory: [34mF:\AI_Workspace\beta-project\ppc-claude-web-V1\dist\[39m
+[2m21:23:04[22m [34m[build][39m Collecting build info...
+[2m21:23:04[22m [34m[build][39m [32mโ“ Completed in 36ms.[39m
+[2m21:23:04[22m [34m[build][39m Building static entrypoints...
+[2m21:23:04[22m [34m[vite][39m [32mโ“ built in 461ms[39m
+[2m21:23:04[22m [34m[build][39m [32mโ“ Completed in 482ms.[39m
+
+[42m[30m building client (vite) [39m[49m
+[2m21:23:04[22m [34m[vite][39m transforming...
+[2m21:23:04[22m [34m[vite][39m [32mโ“[39m 95 modules transformed.
+21:23:04 [ERROR] [vite] โ— Build failed in 243ms
+[vite]: Rollup failed to resolve import "recharts" from "F:/AI_Workspace/beta-project/ppc-claude-web-V1/src/components/SpendDashboard.jsx".
+This is most likely unintended because it can break your application at runtime.
+If you do want to externalize this module explicitly add it to
+`build.rollupOptions.external`
+  Stack trace:
+    at viteLog (file:///F:/AI_Workspace/beta-project/ppc-claude-web-V1/node_modules/vite/dist/node/chunks/dep-D4NMHUTW.js:46374:15)
+    at onwarn (file:///F:/AI_Workspace/beta-project/ppc-claude-web-V1/node_modules/@vitejs/plugin-react/dist/index.js:90:7)
+    at onRollupLog (file:///F:/AI_Workspace/beta-project/ppc-claude-web-V1/node_modules/vite/dist/node/chunks/dep-D4NMHUTW.js:46422:5)
+    at file:///F:/AI_Workspace/beta-project/ppc-claude-web-V1/node_modules/rollup/dist/es/shared/node-entry.js:20958:32
+    at ModuleLoader.handleInvalidResolvedId (file:///F:/AI_Workspace/beta-project/ppc-claude-web-V1/node_modules/rollup/dist/es/shared/node-entry.js:21689:26)

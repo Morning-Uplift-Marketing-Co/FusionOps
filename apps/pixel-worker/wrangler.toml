@@ -1,0 +1,45 @@
+# ============================================================
+# Wrangler Configuration — FusionOps Pixel Worker
+# ============================================================
+# Receives sendBeacon events from LP pages at t.{domain}/e
+# Stores all events in D1 for first-party analytics.
+# ============================================================
+
+name = "lp-factory-pixel"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+account_id = "***CF_ACCOUNT_ID_REMOVED***"
+
+[vars]
+ENVIRONMENT = "production"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "fusionops-pixel-new-v2"
+database_id = "99437cde-5e7c-4b58-97ad-69e43019c6ff"
+preview_database_id = "99437cde-5e7c-4b58-97ad-69e43019c6ff"
+
+# Worker routes — one per LP domain, pattern: t.{domain}/*
+# Add routes as domains are provisioned:
+#
+# [[routes]]
+# pattern = "t.bearloannow.com/*"
+# zone_name = "bearloannow.com"
+#
+# [[routes]]
+# pattern = "t.loanbears.com/*"
+# zone_name = "loanbears.com"
+
+# --- Staging ---
+[env.staging]
+name = "lp-factory-pixel-staging"
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "fusionops-pixel-new-v2"
+database_id = "c1b8eed8-91bb-4188-bf93-59d8c6d09871"

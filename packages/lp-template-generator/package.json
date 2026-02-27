@@ -1,0 +1,25 @@
+{
+  "name": "@lp-factory/template-generator",
+  "version": "2.0.0",
+  "description": "Stable Astro landing page template generator — always builds, never breaks",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "lp-gen": "bin/lp-gen.js"
+  },
+  "exports": {
+    ".": "./src/index.js",
+    "./core": "./src/core/index.js",
+    "./templates": "./src/templates/index.js"
+  },
+  "scripts": {
+    "test": "node test/generate-all.js",
+    "test:build": "node test/build-test.js",
+    "gen": "node bin/lp-gen.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

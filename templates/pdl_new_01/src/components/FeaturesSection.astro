@@ -1,0 +1,73 @@
+---
+import { Zap, Clock, ThumbsUp, Wallet } from "lucide-astro";
+
+const features = [
+    {
+        title: "Instant Decision",
+        desc: "Get matched with potential lenders in real-time. No waiting days for an answer.",
+        icon: Zap,
+        color: "text-amber-600",
+        bg: "bg-amber-50",
+    },
+    {
+        title: "Next-Day Funding",
+        desc: "Funds can be deposited directly into your bank account as soon as the next business day.",
+        icon: Clock,
+        color: "text-blue-600",
+        bg: "bg-blue-50",
+    },
+    {
+        title: "All Credit Types",
+        desc: "Whether your credit is perfect or has some marks, our network of lenders may be able to help.",
+        icon: ThumbsUp,
+        color: "text-accent",
+        bg: "bg-green-50",
+    },
+    {
+        title: "Flexible Terms",
+        desc: "Review multiple offers and choose the one that fits your budget and repayment schedule.",
+        icon: Wallet,
+        color: "text-purple-600",
+        bg: "bg-purple-50",
+    },
+];
+---
+
+<section id="features" class="py-24 bg-white">
+    <div class="container-custom">
+        <div class="text-center max-w-3xl mx-auto mb-20 space-y-4">
+            <h2
+                class="text-[10px] font-black text-accent uppercase tracking-[0.3em]"
+            >
+                Why Choose Us
+            </h2>
+            <p
+                class="text-4xl md:text-5xl font-black text-primary tracking-tight"
+            >
+                Financial help, when <span
+                    class="text-accent underline decoration-4 underline-offset-8 decoration-accent/30"
+                    >life happens.</span>
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {
+                features.map((f) => (
+                    <div class="group p-10 rounded-[2.5rem] bg-gray-50 hover:bg-white border border-transparent hover:border-gray-100 hover:shadow-premium transition-all duration-300">
+                        <div
+                            class={`w-14 h-14 ${f.bg} ${f.color} rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform`}
+                        >
+                            <f.icon class="w-7 h-7" />
+                        </div>
+                        <h3 class="text-xl font-black text-primary mb-4">
+                            {f.title}
+                        </h3>
+                        <p class="text-charcoal-light font-medium leading-relaxed">
+                            {f.desc}
+                        </p>
+                    </div>
+                ))
+            }
+        </div>
+    </div>
+</section>

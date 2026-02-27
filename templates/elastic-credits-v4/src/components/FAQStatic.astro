@@ -1,0 +1,26 @@
+---
+const faqs = [
+  { q: 'Will checking my rate affect my credit score?', a: 'No. We use a soft credit inquiry which does not affect your credit score. A hard inquiry may occur only if you proceed with a loan offer.' },
+  { q: 'How much can I borrow?', a: 'Loan amounts range from $100 to $5,000 depending on your state, credit profile, and lender terms.' },
+  { q: 'How fast can I get funded?', a: 'Many lenders offer next-business-day funding once approved. Some may fund same day.' },
+  { q: 'What are the interest rates?', a: 'APR ranges from 5.99% to 35.99% depending on your credit profile, loan amount, and term.' },
+  { q: 'Can I repay my loan early?', a: 'Most lenders allow early repayment without prepayment penalties, saving you money on interest.' },
+  { q: 'What do I need to apply?', a: 'Be 18+, have a valid U.S. bank account, steady income, and a valid email and phone number.' },
+];
+---
+
+<div class="space-y-3">
+  {faqs.map((f, i) => (
+    <details class="faq-details group rounded-xl border border-border bg-card overflow-hidden transition-all duration-300 hover:border-primary/10" open={i === 0}>
+      <summary class="flex items-center justify-between p-5 cursor-pointer">
+        <span class="text-sm font-semibold text-foreground pr-4">{f.q}</span>
+        <svg class="w-5 h-5 text-muted-foreground shrink-0 transition-transform duration-300 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </summary>
+      <div class="px-5 pb-5">
+        <p class="text-sm text-muted-foreground leading-relaxed">{f.a}</p>
+      </div>
+    </details>
+  ))}
+</div>
