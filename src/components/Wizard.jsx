@@ -1,0 +1,398 @@
+import React, { useState, useMemo, useEffect, useRef } from "react";
+import { THEME as T } from "../constants";
+import { uid, now } from "../utils";
+import { generateHtmlByTemplate } from "../utils/template-router";
+import { api } from "../services/api";
+import { getOrCreateZone, createDnsRecord, ensurePixelSubdomain } from "../services/cloudflare-dns";
+import { MockPhone } from "./ui/mock-phone";
+import { Card } from "./ui/card";
+import { Button } from "./ui/button";
+import { StepBrand, StepProduct, StepTemplate, StepDesign, StepCopy, StepTracking, StepReview } from "./Wizard/index.js";
+
+// Domain validation regex
+const DOMAIN_REGEX = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/i;
+
+// URL validation for redirect URLs
+const isValidUrl = (url) => {
+    try {
+        new URL(url);
+        return true;
+    } catch {
+        return false;
+    }
+};
+
+// Validation function for each step
+function validateStep(stepNum, config) {
+    const errors = [];
+
+    if (stepNum === 1) {
+        if (!config.brand?.trim()) errors.push("Brand Name is required");
+        if (!config.domain?.trim()) errors.push("Domain is required");
+        // Validate domain format
+        if (config.domain?.trim() && !DOMAIN_REGEX.test(config.domain.trim())) {
+            errors.push("Invalid domain format (e.g., example.com)");
+        }
+        // Require CF profile if profiles exist (passed via config._cfProfilesExist)
+        if (config._cfProfilesExist && !config.cfProfileId) {
+            errors.push("Cloudflare Profile is required for DNS & deploy");
+        }
+    }
+
+    if (stepNum === 2) {
+        if (!config.loanType) errors.push("Loan Type is required");
+        if (config.amountMin < 0) errors.push("Min Amount cannot be negative");
+        if (config.amountMax < 0) errors.push("Max Amount cannot be negative");
+        if (config.amountMin >= config.amountMax) errors.push("Min Amount must be less than Max Amount");
+        if (config.aprMin < 0) errors.push("Min APR cannot be negative");
+        if (config.aprMax < 0) errors.push("Max APR cannot be negative");
+        if (config.aprMin >= config.aprMax) errors.push("Min APR must be less than Max APR");
+    }
+
+    if (stepNum === 3) {
+        if (!config.templateId) errors.push("Template is required");
+    }
+
+    if (stepNum === 4) {
+        if (!config.colorId) errors.push("Color Scheme is required");
+    }
+
+    if (stepNum === 6) {
+        const gtagId = config.gtagId || config.conversionId || "";
+        if (!gtagId.trim()) {
+            errors.push("Google Ads Conversion ID is required");
+        }
+        if ((config.trackingMode || "minimal") === "voluum") {
+            if (!config.voluumCampaignId) errors.push("Voluum campaign must be selected");
+            if (!config.voluumTrackingDomain && !config.domain) errors.push("Voluum tracking domain is required (set domain in Brand step)");
+        }
+    }
+
+    return { valid: errors.length === 0, errors };
+}
+
+const steps = ["Brand", "Product", "Template", "Design", "Copy", "Tracking", "Review"];
+
+export function Wizard({ config, setConfig, addSite, setPage, settings, notify }) {
+    const [step, setStep] = useState(1);
+    const [building, setBuilding] = useState(false);
+    const [validationErrors, setValidationErrors] = useState([]);
+    const [aiLoading, setAiLoading] = useState(false);
+    const [aiMetaLoading, setAiMetaLoading] = useState(false);
+    const [initialConfig, setInitialConfig] = useState(null);
+    const cardRef = useRef(null);
+
+    const upd = (k, v) => setConfig(p => ({ ...p, [k]: v }));
+
+    // Set helper flag for validation
+    useEffect(() => {
+        const hasProfiles = (settings?.cfProfiles || []).length > 0;
+        if (hasProfiles !== config._cfProfilesExist) {
+            setConfig(p => ({ ...p, _cfProfilesExist: hasProfiles }));
+        }
+    }, [settings?.cfProfiles]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Safe JSON serializer — strips non-serializable values (DOM nodes, functions, circular refs)
+    const safeStringify = (obj) => {
+        try {
+            return JSON.stringify(obj, (_, v) => {
+                if (typeof v === "function" || (typeof v === "object" && v !== null && (v instanceof Node || v === window))) return undefined;
+                return v;
+            });
+        } catch {
+            return "{}";
+        }
+    };
+
+    // Track initial state for dirty detection
+    useEffect(() => {
+        if (config && !initialConfig) {
+            setInitialConfig(safeStringify(config));
+        }
+    }, [config, initialConfig]);
+
+    const isDirty = initialConfig && safeStringify(config) !== initialConfig;
+
+    // beforeunload handler for unsaved changes
+    useEffect(() => {
+        const handleBeforeUnload = (e) => {
+            if (isDirty) {
+                e.preventDefault();
+                e.returnValue = "";
+            }
+        };
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+    }, [isDirty]);
+
+    const handleNext = () => {
+        const { valid, errors } = validateStep(step, config);
+        if (!valid) {
+            setValidationErrors(errors);
+            cardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+            return;
+        }
+        setValidationErrors([]);
+        if (step < 7) setStep(s => s + 1);
+    };
+
+    const handleBackOrCancel = () => {
+        if (isDirty && step > 1) {
+            if (confirm("You have unsaved changes. Are you sure you want to go back?")) {
+                step === 1 ? setPage("dashboard") : setStep(s => s - 1);
+            }
+        } else {
+            step === 1 ? setPage("dashboard") : setStep(s => s - 1);
+        }
+    };
+
+    const handleAiGenerate = async () => {
+        setAiLoading(true);
+        try {
+            const p = await api.post("/ai/generate-copy", {
+                brand: config.brand,
+                loanType: config.loanType,
+                amountMin: config.amountMin,
+                amountMax: config.amountMax,
+                lang: config.lang || "English"
+            });
+
+            if (p && !p.error) {
+                if (p.h1) upd("h1", p.h1);
+                if (p.badge) upd("badge", p.badge);
+                if (p.cta) upd("cta", p.cta);
+                if (p.sub) upd("sub", p.sub);
+                if (p.tagline) upd("tagline", p.tagline);
+                if (p.metaTitle) upd("metaTitle", p.metaTitle);
+                if (p.metaDesc) upd("metaDesc", p.metaDesc);
+                notify("AI copy generated! (23 Pillars)");
+            } else {
+                notify(p?.error || "AI generation failed. Check your API key.", "warning");
+            }
+        } catch (e) {
+            console.warn("[Wizard] AI generation failed:", e?.message || e);
+            notify("AI generation failed. Check your API key.", "warning");
+        } finally {
+            setAiLoading(false);
+        }
+    };
+
+    const handleAiMeta = async () => {
+        setAiMetaLoading(true);
+        try {
+            const p = await api.post("/ai/generate-meta", {
+                brand: config.brand,
+                domain: config.domain,
+                loanType: config.loanType,
+                amountMin: config.amountMin,
+                amountMax: config.amountMax,
+                h1: config.h1,
+                cta: config.cta,
+                sub: config.sub,
+                lang: config.lang || "English"
+            });
+            if (p && !p.error) {
+                if (p.metaTitle) upd("metaTitle", p.metaTitle);
+                if (p.metaDesc) upd("metaDesc", p.metaDesc);
+                notify("Meta tags generated!");
+            } else {
+                notify(p?.error || "Meta generation failed.", "warning");
+            }
+        } catch (e) {
+            console.warn("[Wizard] AI meta gen failed:", e?.message || e);
+            notify("Meta generation failed. Check your API key.", "warning");
+        } finally {
+            setAiMetaLoading(false);
+        }
+    };
+
+    const handleBuild = async () => {
+        setBuilding(true);
+        let finalConfig = { ...config };
+        console.log("[Wizard] handleBuild - finalConfig.templateId:", finalConfig.templateId);
+        console.log("[Wizard] handleBuild - finalConfig keys:", Object.keys(finalConfig));
+
+        // Only generate AI copy if fields are empty
+        const needsAiCopy = !finalConfig.h1 || !finalConfig.badge || !finalConfig.cta || !finalConfig.sub;
+        if (needsAiCopy) {
+            try {
+                const p = await api.post("/ai/generate-copy", {
+                    brand: finalConfig.brand,
+                    loanType: finalConfig.loanType,
+                    amountMin: finalConfig.amountMin,
+                    amountMax: finalConfig.amountMax,
+                    lang: finalConfig.lang || "English"
+                });
+
+                if (p && !p.error) {
+                    if (!finalConfig.h1 && p.h1) finalConfig.h1 = p.h1;
+                    if (!finalConfig.badge && p.badge) finalConfig.badge = p.badge;
+                    if (!finalConfig.cta && p.cta) finalConfig.cta = p.cta;
+                    if (!finalConfig.sub && p.sub) finalConfig.sub = p.sub;
+                    if (!finalConfig.tagline && p.tagline) finalConfig.tagline = p.tagline;
+                    setConfig(prev => ({ ...prev, ...finalConfig }));
+                }
+            } catch (e) {
+                // AI copy generation is optional - continue with default values
+                console.warn("[Wizard] Auto AI generation skipped:", e?.message || e);
+            }
+        }
+
+        await new Promise(r => setTimeout(r, 1000));
+        if (finalConfig._editMode) {
+            addSite({ ...finalConfig, status: "completed", updatedAt: now() });
+        } else {
+            addSite({ ...finalConfig, id: uid(), status: "completed", createdAt: now(), cost: 0.001 });
+        }
+
+        // ── Auto-provision DNS subdomains (t. + trk.) ──
+        const domain = finalConfig.domain?.trim();
+        // Resolve CF credentials from selected profile, fallback to legacy settings
+        const cfProfile = (settings?.cfProfiles || []).find(p => p.id === finalConfig.cfProfileId);
+        const cfAccountId = cfProfile?.accountId || settings?.cfAccountId;
+        const cfApiToken = cfProfile?.apiToken || settings?.cfApiToken;
+        if (domain && cfAccountId && cfApiToken) {
+            try {
+                // 1. Ensure t.{domain} pixel subdomain
+                ensurePixelSubdomain({ domain, cfAccountId, cfApiToken }).then(r => {
+                    if (r.success) notify?.(`✅ t.${domain} DNS provisioned`);
+                    else console.warn("[DNS] pixel subdomain:", r.error);
+                });
+
+                // 2. Ensure trk.{domain} for Voluum (only if Voluum mode)
+                // Uses CloudFront CNAME if provided (new setup), otherwise track.voluum.com (legacy)
+                if (finalConfig.trackingMode === "voluum" && finalConfig.voluumTrackingDomain) {
+                    const trkHost = finalConfig.voluumTrackingDomain; // e.g. trk.domain.com
+                    const trkSub = trkHost.split(".")[0]; // "trk"
+                    const trkTarget = finalConfig.voluumCfCname || "track.voluum.com";
+                    // Skip if DNS already provisioned via StepTracking button
+                    if (!finalConfig._trkDnsProvisioned) {
+                        getOrCreateZone(domain, cfAccountId, cfApiToken).then(zone => {
+                            if (!zone.success || !zone.zoneId) return;
+                            createDnsRecord({
+                                zoneId: zone.zoneId,
+                                cfAccountId,
+                                cfApiToken,
+                                type: "CNAME",
+                                name: `${trkSub}.${domain}`,
+                                content: trkTarget,
+                                proxied: false,
+                            }).then(r => {
+                                if (r.success) notify?.(`✅ ${trkHost} DNS → ${trkTarget.slice(0, 30)}...`);
+                                else console.warn("[DNS] trk CNAME:", r.error);
+                            });
+
+                            // Also create ACM cert CNAME if provided
+                            if (finalConfig.voluumAcmName && finalConfig.voluumAcmValue) {
+                                createDnsRecord({
+                                    zoneId: zone.zoneId,
+                                    cfAccountId,
+                                    cfApiToken,
+                                    type: "CNAME",
+                                    name: finalConfig.voluumAcmName,
+                                    content: finalConfig.voluumAcmValue,
+                                    proxied: false,
+                                }).then(r => {
+                                    if (r.success) notify?.(`✅ ACM cert CNAME created`);
+                                    else console.warn("[DNS] ACM CNAME:", r.error);
+                                });
+                            }
+                        });
+                    } else {
+                        console.log("[DNS] trk DNS already provisioned via StepTracking, skipping");
+                    }
+                }
+            } catch (e) {
+                console.warn("[DNS] auto-provision failed:", e.message);
+            }
+        }
+
+        setBuilding(false);
+    };
+
+    // Enter key navigation (skip if target is textarea)
+    const handleKeyDown = (e) => {
+        if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") {
+            e.preventDefault();
+            if (step < 7) handleNext();
+        }
+    };
+
+    // Live preview HTML for steps 4(Design), 5(Copy), 7(Review)
+    const previewHtml = useMemo(
+        () => generateHtmlByTemplate(config),
+        [config.templateId, config.brand, config.domain, config.loanType, config.colorId, config.fontId, config.layout, config.radius, config.trustBadgeStyle, config.trustBadgeIconTone, config.h1, config.badge, config.cta, config.sub, config.amountMin, config.amountMax, config.redirectUrl, config.conversionId]
+    );
+
+    // Two-column layout for steps 4(Design), 5(Copy), 7(Review)
+    const showPreview = step === 4 || step === 5 || step === 7;
+    const mainMaxWidth = showPreview ? 680 : 780;
+
+    return (
+        <div className="max-w-[1060px] mx-auto animate-[fadeIn_.3s_ease]" onKeyDown={handleKeyDown}>
+            <h1 className="text-[20px] font-bold m-0 mb-1">Create New LP</h1>
+            <p className="text-[hsl(var(--muted-foreground))] text-xs mb-5">Build a PPC-optimized loan landing page</p>
+
+            <Card className="px-4 py-3.5 mb-4">
+                <div className="flex justify-between text-xs mb-1.5">
+                    <b>Step {step}/7</b>
+                    <span className="text-[hsl(var(--muted-foreground))]">{steps[step - 1]}</span>
+                </div>
+                <div className="h-1 bg-[hsl(var(--border))] rounded-sm">
+                    <div className="h-full bg-[hsl(var(--primary))] rounded-sm transition-[width_.3s]" style={{ width: `${step / 7 * 100}%` }} />
+                </div>
+            </Card>
+
+            {validationErrors.length > 0 && (
+                <div className="bg-[hsl(var(--destructive))/8] border border-[hsl(var(--destructive))/33] rounded-lg px-4 py-3 mb-4">
+                    <div className="text-xs font-semibold text-[hsl(var(--destructive))] mb-1.5">⚠️ Please fix before continuing:</div>
+                    {validationErrors.map((err, i) => (
+                        <div key={i} className="text-[11px] text-[hsl(var(--destructive))] ml-1">• {err}</div>
+                    ))}
+                </div>
+            )}
+
+            {showPreview ? (
+                <div className="grid gap-6 items-start" style={{ gridTemplateColumns: "1fr 340px" }}>
+                    <Card className="p-7 mb-4" ref={cardRef}>
+                        {step === 1 && <StepBrand c={config} u={upd} settings={settings} />}
+                        {step === 2 && <StepProduct c={config} u={upd} />}
+                        {step === 3 && <StepTemplate c={config} u={upd} />}
+                        {step === 4 && <StepDesign c={config} u={upd} notify={notify} />}
+                        {step === 5 && <StepCopy c={config} u={upd} onAiGenerate={handleAiGenerate} aiLoading={aiLoading} onAiMeta={handleAiMeta} aiMetaLoading={aiMetaLoading} />}
+                        {step === 6 && <StepTracking c={config} u={upd} />}
+                        {step === 7 && <StepReview c={config} building={building} />}
+                    </Card>
+                    <div className="sticky top-6">
+                        <MockPhone>
+                            <iframe title="mobile-preview" className="w-full h-full border-none" srcDoc={previewHtml} />
+                        </MockPhone>
+                    </div>
+                </div>
+            ) : (
+                <Card className="p-7 mb-4 max-w-[780px] mx-auto" ref={cardRef}>
+                    {step === 1 && <StepBrand c={config} u={upd} settings={settings} />}
+                    {step === 2 && <StepProduct c={config} u={upd} />}
+                    {step === 3 && <StepTemplate c={config} u={upd} />}
+                    {step === 4 && <StepDesign c={config} u={upd} notify={notify} />}
+                    {step === 5 && <StepCopy c={config} u={upd} onAiGenerate={handleAiGenerate} aiLoading={aiLoading} onAiMeta={handleAiMeta} aiMetaLoading={aiMetaLoading} />}
+                    {step === 6 && <StepTracking c={config} u={upd} />}
+                    {step === 7 && <StepReview c={config} building={building} />}
+                </Card>
+            )}
+
+            <div className="flex justify-between max-w-[780px]">
+                <Button variant="ghost" onClick={handleBackOrCancel}>
+                    ← {step === 1 ? "Cancel" : "Back"}
+                </Button>
+                {step < 7 ? (
+                    <Button onClick={handleNext}>Next →</Button>
+                ) : (
+                    <Button onClick={handleBuild} disabled={building} className="px-6 py-2.5">
+                        {building ? "⏳ Saving..." : config._editMode ? "✅ Update & Save" : "🚀 Build & Save"}
+                    </Button>
+                )}
+            </div>
+        </div>
+    );
+}

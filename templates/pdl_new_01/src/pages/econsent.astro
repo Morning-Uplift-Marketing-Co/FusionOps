@@ -1,0 +1,61 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Navbar from "../components/Navbar.astro";
+import Footer from "../components/Footer.astro";
+
+const title = "E-Consent | ElasticCredits";
+---
+
+<Layout title={title}>
+    <Navbar />
+    <main class="pt-32 pb-20 bg-background-alt min-h-screen">
+        <div class="container-custom max-w-4xl">
+            <div
+                class="bg-white rounded-3xl p-10 md:p-16 shadow-premium border border-gray-100"
+            >
+                <h1
+                    class="text-4xl md:text-6xl font-black text-primary mb-8 tracking-tighter"
+                >
+                    E-Consent
+                </h1>
+
+                <div
+                    class="prose prose-lg max-w-none text-charcoal-light space-y-8 font-medium"
+                >
+                    <p>
+                        By using the ElasticCredits.com platform, you consent to
+                        receive all disclosures, notices, and communications
+                        from us and our lending partners electronically.
+                    </p>
+
+                    <h2 class="text-2xl font-black text-primary pt-4 text-left">
+                        Scope of Consent
+                    </h2>
+                    <p>
+                        This consent applies to all interactions and
+                        transactions you conduct with us or any lender in our
+                        network.
+                    </p>
+
+                    <h2 class="text-2xl font-black text-primary pt-4 text-left">
+                        Hardware & Software Requirements
+                    </h2>
+                    <p>
+                        To access electronic records, you will need a device
+                        with internet access and a PDF reader.
+                    </p>
+
+                    <h2 class="text-2xl font-black text-primary pt-4 text-left">
+                        Withdrawing Consent
+                    </h2>
+                    <p>
+                        You may withdraw your consent to receive electronic
+                        communications at any time by contacting us, though this
+                        may impact your ability to use our service.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+    <Footer />
+</Layout>

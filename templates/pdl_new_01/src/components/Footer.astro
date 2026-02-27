@@ -1,0 +1,412 @@
+---
+import {
+    ShieldCheck,
+    Facebook,
+    Twitter,
+    Instagram,
+    Mail,
+    Phone,
+    MapPin,
+    AlertCircle,
+    Info,
+} from "lucide-astro";
+import Modal from "./Modal.astro";
+import LoanForm from "./LoanForm.astro";
+
+const productLinks = [
+    { title: "How It Works", id: "modal-how" },
+    { title: "Rates & Terms", id: "modal-rates" },
+    { title: "Apply Now", id: "modal-apply" },
+    { title: "Contact Support", id: "modal-contact" },
+];
+
+const legalLinks = [
+    { title: "Privacy Policy", id: "modal-privacy" },
+    { title: "Terms of Service", id: "modal-terms" },
+    { title: "CCPA Notice", id: "modal-ccpa" },
+    { title: "E-Consent", id: "modal-econsent" },
+];
+
+const disclosures = [
+    {
+        title: "Material Disclosure",
+        content:
+            "The operator of this website is not a lender, loan broker, or agent for any lender or loan broker. We are an advertising referral service to qualified participating lenders that may be able to provide amounts between $500 and $5,000. Not all lenders can provide these amounts and there is no guarantee that you will be accepted by a participating independent lender. This service does not constitute an offer or solicitation for loan products.",
+    },
+    {
+        title: "Credit Implications",
+        content:
+            "The operator of this website does not make any credit decisions. Independent participating lenders you are connected with may perform credit checks with credit reporting bureaus or obtain consumer reports, typically through alternative providers to determine creditworthiness, credit standing, and/or credit capacity. By submitting your information, you agree to allow participating lenders to verify your information and check your credit.",
+    },
+    {
+        title: "APR Disclosure",
+        content:
+            "Representative APR Range: 5.99% to 35.99%. The Annual Percentage Rate (APR) is the rate at which your loan accrues interest and is based upon the amount, cost, and term of your loan, repayment amounts, and timing of payments. Lenders are legally required to show you the APR and other terms of your loan before you execute a loan agreement. APR rates may vary based on your credit score and the lender's criteria.",
+    },
+    {
+        title: "Repayment Terms",
+        content:
+            "Loan repayment terms range from a minimum of 6 months to a maximum of 60 months.",
+    },
+    {
+        title: "Representative Example",
+        content:
+            "If you borrow $2,000 over a 12-month period with a 25.00% APR and a 5% origination fee ($100), your monthly payment would be $189.92. The total amount payable would be $2,279.04, with a total cost of the loan being $379.04 (interest plus fees).",
+    },
+    {
+        title: "Availability",
+        content:
+            "Residents of some states may not be eligible for some or all short-term, small-dollar loans. We do not guarantee that completing a registration form will result in you being connected with a lender, or being offered a loan product with satisfactory rates or terms.",
+    },
+];
+---
+
+<footer
+    class="bg-gray-50 pt-24 pb-12 text-primary overflow-hidden relative border-t border-gray-100"
+>
+    <div class="container-custom relative z-10">
+        <div
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 mb-20"
+        >
+            <div class="space-y-8">
+                <div class="flex items-center gap-2">
+                    <div
+                        class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white"
+                    >
+                        <ShieldCheck class="w-6 h-6" />
+                    </div>
+                    <span class="text-xl font-black text-primary tracking-tight"
+                        >Elastic<span class="text-accent">Credits</span></span
+                    >
+                </div>
+                <p class="text-charcoal-light font-medium leading-relaxed">
+                    Providing transparent and reliable financial matching
+                    services when you need it most. Connect with lenders in
+                    minutes.
+                </p>
+                <div class="flex gap-4">
+                    {
+                        [Facebook, Twitter, Instagram].map((Icon) => (
+                            <a
+                                href="#"
+                                class="w-11 h-11 rounded-xl bg-white flex items-center justify-center hover:bg-accent hover:text-white transition-all duration-300 border border-gray-200 shadow-sm"
+                            >
+                                <Icon class="w-5 h-5" />
+                            </a>
+                        ))
+                    }
+                </div>
+            </div>
+
+            <div>
+                <h4
+                    class="text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-8"
+                >
+                    Product
+                </h4>
+                <ul class="space-y-5">
+                    {
+                        productLinks.map((link) => (
+                            <li>
+                                <button
+                                    data-modal-target={link.id}
+                                    class="text-charcoal-light hover:text-accent transition-colors font-semibold text-sm text-left"
+                                >
+                                    {link.title}
+                                </button>
+                            </li>
+                        ))
+                    }
+                </ul>
+            </div>
+
+            <div>
+                <h4
+                    class="text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-8"
+                >
+                    Legal Links
+                </h4>
+                <ul class="space-y-5">
+                    {
+                        legalLinks.map((link) => (
+                            <li>
+                                <button
+                                    data-modal-target={link.id}
+                                    class="text-charcoal-light hover:text-accent transition-colors font-semibold text-sm text-left"
+                                >
+                                    {link.title}
+                                </button>
+                            </li>
+                        ))
+                    }
+                </ul>
+            </div>
+
+            <div>
+                <h4
+                    class="text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-8"
+                >
+                    About Us
+                </h4>
+                <p
+                    class="text-[11px] leading-relaxed text-charcoal/60 font-medium"
+                >
+                    ElasticCredits is a premier financial referral network
+                    dedicated to speed, security, and transparency. Our goal is
+                    to bridge the gap between consumers and a diverse network of
+                    trusted lenders.
+                </p>
+            </div>
+        </div>
+
+        <!-- NEW: High-Impact Disclosures Section -->
+        <div class="pt-16 mt-16 border-t border-gray-200">
+            <div class="flex items-center gap-3 mb-10">
+                <div
+                    class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-charcoal/40"
+                >
+                    <Info class="w-4 h-4" />
+                </div>
+                <h4
+                    class="text-[10px] font-black uppercase tracking-[0.3em] text-charcoal/40"
+                >
+                    Detailed Loan Disclosures
+                </h4>
+            </div>
+
+            <div
+                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-10"
+            >
+                {
+                    disclosures.map((d) => (
+                        <div class="space-y-3">
+                            <h5 class="text-[10px] font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 rounded-full bg-accent" />
+                                {d.title}
+                            </h5>
+                            <p class="text-[11px] leading-relaxed text-charcoal-light font-medium text-justify italic opacity-80">
+                                {d.content}
+                            </p>
+                        </div>
+                    ))
+                }
+            </div>
+        </div>
+
+        <div
+            class="pt-12 mt-16 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-8"
+        >
+            <p
+                class="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.2em]"
+            >
+                &copy; {new Date().getFullYear()} ElasticCredits. All rights reserved.
+            </p>
+            <div class="flex gap-8">
+                <a
+                    href="/unsubscribe"
+                    class="text-[10px] font-black text-charcoal/40 hover:text-primary uppercase tracking-[0.2em] transition-colors"
+                >
+                    Unsubscribe
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals: Product -->
+    <Modal id="modal-how" title="How It Works">
+        <div class="space-y-8">
+            {
+                [
+                    {
+                        num: "01",
+                        t: "Apply Online",
+                        d: "Fill out our simple, secure online form in about 2 minutes.",
+                    },
+                    {
+                        num: "02",
+                        t: "Get Matched",
+                        d: "We scan our network of 100+ lenders to find your best potential matches.",
+                    },
+                    {
+                        num: "03",
+                        t: "Receive Funds",
+                        d: "If approved, review your offer and receive funds in your account fast.",
+                    },
+                ].map((s) => (
+                    <div class="flex gap-6 items-start p-6 bg-gray-50 rounded-3xl border border-gray-100">
+                        <div class="text-3xl font-black text-accent">
+                            {s.num}
+                        </div>
+                        <div>
+                            <h4 class="text-primary font-black text-lg mb-2">
+                                {s.t}
+                            </h4>
+                            <p class="text-charcoal-light text-sm leading-relaxed">
+                                {s.d}
+                            </p>
+                        </div>
+                    </div>
+                ))
+            }
+            <div class="text-center pt-4">
+                <button
+                    data-modal-target="modal-apply"
+                    class="btn btn-primary px-10 py-4 w-full md:w-auto"
+                    >Start Application</button
+                >
+            </div>
+        </div>
+    </Modal>
+
+    <Modal id="modal-rates" title="Rates & Terms">
+        <div class="prose prose-slate max-w-none">
+            <p class="text-lg font-bold text-primary mb-6 text-center">
+                Transparent Funding Options
+            </p>
+            <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100 mb-8">
+                <h4 class="text-primary font-black mb-2">APR Disclosure</h4>
+                <p class="text-sm">
+                    Lenders in our network typically offer APRs ranging from <span
+                        class="font-black">5.99% to 35.99%</span
+                    > for qualified consumers.
+                </p>
+            </div>
+            <div class="space-y-4 text-sm">
+                <h4 class="font-black text-primary">Representative Example</h4>
+                <p>
+                    If you borrow $1,000 over 12 months with a 24% APR, your
+                    monthly payment would be $94.56. Total payable: $1,134.72.
+                </p>
+                <h4 class="font-black text-primary">
+                    Non-Payment Implications
+                </h4>
+                <p>
+                    Late payments may result in additional fees and negative
+                    impacts to your credit score. Contact your lender
+                    immediately if you struggle with repayment.
+                </p>
+            </div>
+        </div>
+    </Modal>
+
+    <Modal id="modal-apply" title="Secure Application">
+        <div class="max-w-md mx-auto">
+            <LoanForm />
+        </div>
+    </Modal>
+
+    <Modal id="modal-contact" title="Contact Support">
+        <div class="space-y-8 text-center">
+            <p class="text-charcoal-light font-medium">
+                Our support team is available Mon-Fri, 9am - 6pm EST to assist
+                you with any questions.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                <div
+                    class="p-6 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center"
+                >
+                    <Mail class="w-6 h-6 text-accent mb-4" />
+                    <span
+                        class="text-[10px] font-black uppercase text-charcoal/40 mb-1"
+                        >Email Us</span
+                    >
+                    <span class="text-sm font-bold text-primary"
+                        >support@elasticcredits.com</span
+                    >
+                </div>
+                <div
+                    class="p-6 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center"
+                >
+                    <Phone class="w-6 h-6 text-accent mb-4" />
+                    <span
+                        class="text-[10px] font-black uppercase text-charcoal/40 mb-1"
+                        >Call Us</span
+                    >
+                    <span class="text-sm font-bold text-primary"
+                        >1-800-ELASTIC</span
+                    >
+                </div>
+                <div
+                    class="p-6 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center"
+                >
+                    <MapPin class="w-6 h-6 text-accent mb-4" />
+                    <span
+                        class="text-[10px] font-black uppercase text-charcoal/40 mb-1"
+                        >Location</span
+                    >
+                    <span class="text-sm font-bold text-primary"
+                        >Wilmington, DE</span
+                    >
+                </div>
+            </div>
+        </div>
+    </Modal>
+
+    <!-- Modals: Legal -->
+    <Modal id="modal-privacy" title="Privacy Policy">
+        <div class="prose prose-slate max-w-none text-sm">
+            <p class="font-black uppercase tracking-widest text-accent mb-4">
+                Effective: Jan 1, 2026
+            </p>
+            <p>
+                At ElasticCredits.com, we value your privacy. This policy
+                explains how we handle your data when you use our referral
+                service.
+            </p>
+            <h4 class="text-primary font-black mt-6">
+                1. Information We Collect
+            </h4>
+            <p>
+                We collect information you provide directly (Contact info,
+                employment, financial data) to match you with lenders.
+            </p>
+            <h4 class="text-primary font-black mt-6">2. Information Sharing</h4>
+            <p>
+                We share your data with participating lenders and partners who
+                provide financial products you may be interested in.
+            </p>
+        </div>
+    </Modal>
+
+    <Modal id="modal-terms" title="Terms of Service">
+        <div class="prose prose-slate max-w-none text-sm">
+            <p>
+                By using ElasticCredits.com, you agree to these Terms of
+                Service. Please read them carefully.
+            </p>
+            <h4 class="text-primary font-black mt-6">Matching Service Only</h4>
+            <p>
+                We do not guarantee matches or approvals. All credit decisions
+                and terms are made by independent lenders.
+            </p>
+        </div>
+    </Modal>
+
+    <Modal id="modal-ccpa" title="CCPA Notice">
+        <div class="prose prose-slate max-w-none text-sm">
+            <h4 class="text-primary font-black mb-4">
+                California Privacy Rights
+            </h4>
+            <p>
+                California residents have the right to know what data we collect
+                and request deletion. To opt-out of the sale of personal
+                information, email privacy@elasticcredits.com.
+            </p>
+            <div
+                class="mt-8 p-6 bg-red-50 border border-red-100 rounded-2xl text-red-900 font-bold"
+            >
+                Do Not Sell My Information
+            </div>
+        </div>
+    </Modal>
+
+    <Modal id="modal-econsent" title="E-Consent">
+        <div class="prose prose-slate max-w-none text-sm">
+            <p>
+                By using our service, you agree to receive all disclosures and
+                communications electronically. This consent applies to all
+                interactions with ElasticCredits and its network of lenders.
+            </p>
+        </div>
+    </Modal>
+</footer>

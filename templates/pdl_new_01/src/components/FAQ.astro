@@ -1,0 +1,84 @@
+---
+import { ChevronDown } from "lucide-astro";
+
+const faqs = [
+    {
+        q: "How fast can I get funds?",
+        a: "Many participating lenders can transfer funds to your bank account as soon as the next business day if your application is approved and you complete the process by their deadline.",
+    },
+    {
+        q: "Will checking my rate impact my credit?",
+        a: "Submitting an application through our site does not affect your FICO® credit score. However, individual lenders may perform a credit check during their final approval process.",
+    },
+    {
+        q: "How much can I borrow?",
+        a: "Our network offers credit options ranging from $100 up to $5,000. Your specific offer will depend on your state, income, and the lender's criteria.",
+    },
+    {
+        q: "What are the requirements to apply?",
+        a: "Generally, you need to be 18+, a US citizen/resident, have a regular source of income, and have an active bank account for fund deposit.",
+    },
+];
+---
+
+<section id="faq" class="py-24 bg-gray-50 overflow-hidden">
+    <div class="container-custom relative">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center space-y-4 mb-20">
+                <h2
+                    class="text-[10px] font-black text-accent uppercase tracking-[0.3em]"
+                >
+                    Common Questions
+                </h2>
+                <p
+                    class="text-4xl md:text-5xl font-black text-primary tracking-tight leading-tight"
+                >
+                    Need more <span
+                        class="text-accent underline decoration-4 underline-offset-8 decoration-accent/30"
+                        >clarity?</span>
+                </p>
+            </div>
+
+            <div class="space-y-4">
+                {
+                    faqs.map((f, i) => (
+                        <details class="group bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden active:border-accent/20 transition-all duration-300">
+                            <summary class="list-none p-8 flex items-center justify-between cursor-pointer focus:outline-none select-none">
+                                <h3 class="text-xl font-black text-primary group-hover:text-accent transition-colors duration-300 pr-8">
+                                    {f.q}
+                                </h3>
+                                <div class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center group-open:rotate-180 group-open:bg-primary group-open:text-white transition-all duration-300 text-primary">
+                                    <ChevronDown class="w-5 h-5" />
+                                </div>
+                            </summary>
+                            <div class="px-8 pb-8">
+                                <p class="text-lg text-charcoal-light font-medium leading-relaxed border-t border-gray-50 pt-6">
+                                    {f.a}
+                                </p>
+                            </div>
+                        </details>
+                    ))
+                }
+            </div>
+
+            <div class="mt-16 text-center">
+                <p
+                    class="text-charcoal/40 font-bold mb-8 uppercase tracking-widest text-[10px]"
+                >
+                    Still have questions?
+                </p>
+                <a
+                    href="/contact"
+                    class="btn btn-secondary px-10 py-4 shadow-sm font-black tracking-widest text-xs"
+                    >Contact Support</a
+                >
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    details summary::-webkit-details-marker {
+        display: none;
+    }
+</style>

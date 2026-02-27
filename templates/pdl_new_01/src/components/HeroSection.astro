@@ -1,0 +1,188 @@
+---
+import LoanForm from "./LoanForm.astro";
+import TrustBadges from "./TrustBadges.astro";
+import { Star, Zap, ShieldCheck, Globe } from "lucide-astro";
+
+const avatars = [
+    { name: "JM", color: "bg-blue-600" },
+    { name: "RK", color: "bg-green-500" },
+    { name: "SA", color: "bg-purple-500" },
+    { name: "ML", color: "bg-red-400" },
+];
+
+const benefits = [
+    {
+        icon: Zap,
+        title: "Lightning Fast",
+        desc: "Get your funds as early as the next business day.",
+    },
+    {
+        icon: ShieldCheck,
+        title: "100% Secure",
+        desc: "Bank-level encryption protecting your sensitive data.",
+    },
+    {
+        icon: Globe,
+        title: "Expansive Network",
+        desc: "We connect you with 100+ trusted financial partners.",
+    },
+];
+---
+
+<section
+    class="pt-32 pb-20 md:pt-44 md:pb-32 bg-white overflow-hidden relative"
+    id="hero"
+>
+    <!-- Decorative Elements -->
+    <div
+        class="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-gray-50 to-transparent pointer-events-none"
+    >
+    </div>
+
+    <div class="container-custom relative z-10">
+        <div
+            class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start"
+        >
+            <!-- Form Section (Conversion First on Mobile) -->
+            <div class="lg:col-span-5 lg:order-last relative" id="apply">
+                <div class="lg:hidden mb-10 text-center space-y-4">
+                    <h1
+                        class="text-4xl font-black text-primary leading-tight tracking-tight"
+                    >
+                        Borrowing <br />
+                        <span
+                            class="text-accent underline decoration-4 underline-offset-8 decoration-accent/20"
+                            >Made Easy</span
+                        >
+                    </h1>
+                    <p
+                        class="text-charcoal-light font-medium leading-relaxed px-4"
+                    >
+                        Get up to $5,000 instantly. Check your rate in 60
+                        seconds with zero credit impact.
+                    </p>
+                </div>
+
+                <LoanForm className="relative z-10 shadow-premium" />
+            </div>
+
+            <!-- Content Left -->
+            <div class="lg:col-span-7 space-y-12 animate-fade-in">
+                <!-- Desktop-only Top Headline -->
+                <div class="hidden lg:block space-y-6">
+                    <h1
+                        class="text-7xl font-black text-primary leading-tight tracking-tight"
+                    >
+                        Borrowing <br />
+                        <span
+                            class="text-accent underline decoration-4 underline-offset-8 decoration-accent/20"
+                            >Made Easy</span
+                        >
+                    </h1>
+                </div>
+
+                <!-- NEW: High-Impact Benefit Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-1 gap-6 max-w-2xl">
+                    {
+                        benefits.map((b) => (
+                            <div class="flex gap-6 items-center group">
+                                <div class="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center text-accent group-hover:bg-accent group-hover:text-white transition-all duration-300 shadow-sm border border-gray-100">
+                                    <b.icon
+                                        class="w-7 h-7"
+                                        aria-hidden="true"
+                                    />
+                                </div>
+                                <div class="space-y-1">
+                                    <h4 class="text-lg font-black text-primary leading-none">
+                                        {b.title}
+                                    </h4>
+                                    <p class="text-charcoal-light font-medium">
+                                        {b.desc}
+                                    </p>
+                                </div>
+                            </div>
+                        ))
+                    }
+                </div>
+
+                <div
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-green-50 rounded-full border border-green-100"
+                >
+                    <span
+                        class="w-2.5 h-2.5 rounded-full bg-accent animate-pulse"
+                    ></span>
+                    <span
+                        class="text-accent font-black text-[10px] uppercase tracking-widest leading-none"
+                        >Lenders Online Now</span
+                    >
+                </div>
+
+                <!-- Trust Signals Layer 1 -->
+                <div class="flex items-center gap-12">
+                    <div class="flex flex-col">
+                        <span class="text-3xl font-black text-primary"
+                            >$100 - $5,000</span
+                        >
+                        <span
+                            class="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.2em] mt-2"
+                            >Loan Range</span
+                        >
+                    </div>
+                    <div class="w-px h-12 bg-gray-100"></div>
+                    <div class="flex flex-col">
+                        <span class="text-3xl font-black text-primary"
+                            >Bad Credit OK</span
+                        >
+                        <span
+                            class="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.2em] mt-2"
+                            >Credit Fairness</span
+                        >
+                    </div>
+                </div>
+
+                <!-- Social Proof -->
+                <div class="flex flex-col sm:flex-row items-center gap-8 pt-4">
+                    <div class="flex -space-x-4">
+                        {
+                            avatars.map((a) => (
+                                <div
+                                    class={`w-12 h-12 rounded-full border-4 border-white ${a.color} flex items-center justify-center text-white font-black text-sm shadow-sm`}
+                                >
+                                    {a.name}
+                                </div>
+                            ))
+                        }
+                    </div>
+                    <div
+                        class="flex flex-col items-center sm:items-start text-center sm:text-left"
+                    >
+                        <div class="flex items-center gap-4">
+                            <div class="flex text-yellow-500 gap-0.5">
+                                {
+                                    [1, 2, 3, 4, 5].map(() => (
+                                        <Star
+                                            class="w-5 h-5 fill-current"
+                                            aria-hidden="true"
+                                        />
+                                    ))
+                                }
+                            </div>
+                            <span class="text-xl font-black text-primary"
+                                >4.8 / 5</span
+                            >
+                        </div>
+                        <p
+                            class="text-charcoal/40 text-[10px] font-black uppercase tracking-[0.2em] mt-2"
+                        >
+                            Trusted by 500K+ customers
+                        </p>
+                    </div>
+                </div>
+
+                <div class="pt-12 border-t border-gray-100">
+                    <TrustBadges />
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

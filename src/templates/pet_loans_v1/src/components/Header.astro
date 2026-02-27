@@ -1,0 +1,32 @@
+---
+// Static Header – zero client JS
+---
+
+<header class="fixed top-0 inset-x-0 z-50 border-b border-border/50" style="background:hsl(var(--background) / 0.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)">
+  <nav aria-label="Main navigation" class="container flex items-center justify-between h-16">
+    <a href="/" class="flex items-center gap-2 group">
+      <div class="w-9 h-9 rounded-lg bg-hero-gradient flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
+        <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+          <path d="M2 17l10 5 10-5"/>
+          <path d="M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <span class="text-xl font-bold text-foreground">
+        Elastic<span class="bg-clip-text text-transparent" style="background-image:linear-gradient(135deg,hsl(15 92% 62%),hsl(15 92% 52%))">Credits</span>
+      </span>
+    </a>
+
+    <div class="flex items-center gap-4">
+      <div class="hidden md:flex items-center gap-1.5 text-sm text-muted-foreground">
+        <svg class="w-4 h-4 text-secondary" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+        </svg>
+        <span>256-bit Secured</span>
+      </div>
+      <a href="#apply" aria-label="Apply for a loan now" class="btn-cta !h-10 !px-5 !text-sm !rounded-lg !shadow-sm hover:!shadow-cta">
+        Apply Now
+      </a>
+    </div>
+  </nav>
+</header>

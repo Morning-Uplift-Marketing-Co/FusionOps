@@ -1,0 +1,54 @@
+{
+  "variantId": "h2u48g",
+  "domain": "",
+  "email": "",
+  "gtmId": "",
+  "voluumCampaign": "",
+  "colors": {
+    "primary": "235 70% 42%",
+    "primary-foreground": "0 0% 100%",
+    "secondary": "170 60% 45%",
+    "secondary-foreground": "0 0% 100%",
+    "accent": "25 95% 58%",
+    "accent-foreground": "0 0% 100%",
+    "background": "230 25% 97%",
+    "foreground": "235 50% 12%",
+    "card": "0 0% 100%",
+    "card-foreground": "235 50% 12%",
+    "muted": "230 25% 95%",
+    "muted-foreground": "235 16% 47%",
+    "border": "235 32% 91%",
+    "input": "235 32% 91%",
+    "ring": "235 70% 42%"
+  },
+  "font": {
+    "family": "\"Plus Jakarta Sans\"",
+    "googleImport": "Plus+Jakarta+Sans:wght@400;600;700",
+    "id": "plus-jakarta"
+  },
+  "copy": {
+    "brand": "EasyLend",
+    "h1": "Borrowing",
+    "h1span": "Made Easy",
+    "sub": "2-minute application. All credit types welcome. Funds as fast as tomorrow.",
+    "cta": "Apply Now Free",
+    "badge": "2,900+ served nationwide"
+  },
+  "layout": {
+    "hero": "form-left",
+    "sections": [
+      "social",
+      "calc",
+      "steps",
+      "features",
+      "faq",
+      "cta"
+    ]
+  },
+  "radius": "1.5rem",
+  "compliance": {
+    "example": "A $2,500 personal loan with a 24-month term at 19.9% APR would have monthly payments of approximately $127.12.",
+    "apr": "Rates between 5.99% and 35.99% APR. Your actual rate depends on credit score and loan terms.",
+    "disclaimer": "operates as a lead generator and is not a direct lender. We match consumers with lending partners."
+  }
+}

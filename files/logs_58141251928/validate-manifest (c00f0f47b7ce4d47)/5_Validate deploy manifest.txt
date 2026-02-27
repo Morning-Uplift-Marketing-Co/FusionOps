@@ -1,0 +1,8 @@
+﻿2026-02-22T00:30:44.2784411Z ##[group]Run set -euo pipefail
+2026-02-22T00:30:44.2784742Z [36;1mset -euo pipefail[0m
+2026-02-22T00:30:44.2784961Z [36;1majv validate \[0m
+2026-02-22T00:30:44.2785242Z [36;1m  -s schemas/deploy-manifest.schema.json \[0m
+2026-02-22T00:30:44.2785603Z [36;1m  -d "sites/c00f0f47b7ce4d47/deploy-manifest.json"[0m
+2026-02-22T00:30:44.2821196Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-02-22T00:30:44.2821575Z ##[endgroup]
+2026-02-22T00:30:44.5532850Z sites/c00f0f47b7ce4d47/deploy-manifest.json valid

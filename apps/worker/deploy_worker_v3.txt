@@ -1,0 +1,28 @@
+
+ โ…๏ธ wrangler 3.114.17 (update available 4.67.0)
+-----------------------------------------------
+
+โ–ฒ [WARNING] The version of Wrangler you are using is now out-of-date.
+
+  Please update to the latest version to prevent critical errors.
+  Run `npm install --save-dev wrangler@4` to update to the latest version.
+  After installation, run Wrangler with `npx wrangler`.
+
+
+Total Upload: 31.65 KiB / gzip: 7.68 KiB
+Your worker has access to the following bindings:
+- D1 Databases:
+  - DB: fusionops-callback-new-v2 (507cd6ec-67c5-42ad-afba-4e292d0bdfc8), Preview: (507cd6ec-67c5-42ad-afba-4e292d0bdfc8)
+- Vars:
+  - ENVIRONMENT: "production"
+
+X [ERROR] A request to the Cloudflare API (/accounts/ef771cfd6197dedb36bb3cea22ecf4fc/workers/scripts/lp-factory-callback/versions) failed.
+
+  binding DB of type d1 must have a database that already exists. Use wrangler or the UI to create the database. [code: 10021]
+  To learn more about this error, visit: https://developers.cloudflare.com/workers/observability/errors/#validation-errors-10021
+
+  
+  If you think this is a bug, please open an issue at: https://github.com/cloudflare/workers-sdk/issues/new/choose
+
+
+๐ชต  Logs were written to "C:\Users\Barbara\AppData\Roaming\xdg.config\.wrangler\logs\wrangler-2026-02-22_06-57-50_928.log"

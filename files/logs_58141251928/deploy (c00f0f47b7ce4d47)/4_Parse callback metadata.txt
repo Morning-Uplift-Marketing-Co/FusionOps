@@ -1,0 +1,14 @@
+﻿2026-02-22T00:30:51.9124790Z ##[group]Run set -euo pipefail
+2026-02-22T00:30:51.9125929Z [36;1mset -euo pipefail[0m
+2026-02-22T00:30:51.9127380Z [36;1mM="sites/c00f0f47b7ce4d47/deploy-manifest.json"[0m
+2026-02-22T00:30:51.9129010Z [36;1mMANIFEST_DEPLOY_ID=$(jq -r '.meta.deployRecordId // ""' "$M")[0m
+2026-02-22T00:30:51.9130493Z [36;1mINPUT_DEPLOY_ID="0e31f3c5da1b"[0m
+2026-02-22T00:30:51.9131673Z [36;1mif [ -n "$INPUT_DEPLOY_ID" ]; then[0m
+2026-02-22T00:30:51.9132855Z [36;1m  DEPLOY_ID="$INPUT_DEPLOY_ID"[0m
+2026-02-22T00:30:51.9133934Z [36;1melse[0m
+2026-02-22T00:30:51.9134843Z [36;1m  DEPLOY_ID="$MANIFEST_DEPLOY_ID"[0m
+2026-02-22T00:30:51.9135953Z [36;1mfi[0m
+2026-02-22T00:30:51.9137274Z [36;1mecho "deploy_record_id=$DEPLOY_ID" >> "$GITHUB_OUTPUT"[0m
+2026-02-22T00:30:51.9139866Z [36;1mecho "run_url=https://github.com/Morning-Uplift-Marketing-Co/lp-factory-core/actions/runs/22267265839" >> "$GITHUB_OUTPUT"[0m
+2026-02-22T00:30:51.9171851Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-02-22T00:30:51.9173212Z ##[endgroup]

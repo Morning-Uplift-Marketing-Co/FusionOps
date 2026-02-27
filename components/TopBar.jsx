@@ -1,0 +1,46 @@
+import React from "react";
+import { THEME as T } from "../constants";
+import { Dot } from "./ui/dot";
+import { ChangelogViewer } from "./ChangelogViewer";
+
+export function TopBar({ stats, settings, deploys, apiOk, neonOk, onReconnectNeon }) {
+    const voluumOk = !!(
+        (settings?.voluumAccessKeyId && settings?.voluumAccessKey) ||
+        (import.meta.env.PUBLIC_VOLUUM_ACCESS_KEY_ID && import.meta.env.PUBLIC_VOLUUM_ACCESS_KEY)
+    );
+    const lcOk = !!(
+        settings?.lcToken ||
+        import.meta.env.PUBLIC_LENDINGCARD_API_TOKEN ||
+        import.meta.env.VITE_LENDINGCARD_TOKEN
+    );
+
+    return (
+        <div className="h-12 border-b border-[hsl(var(--border))] flex items-center justify-between px-7 bg-[hsl(var(--card))]/85 backdrop-blur-md sticky top-0 z-50">
+            <div className="text-xs text-[hsl(var(--muted-foreground))]">
+                Builds: <b className="text-[hsl(var(--foreground))]">{stats.builds}</b>
+                <span className="mx-2.5 text-[hsl(var(--border))]">│</span>
+                Cost: <b className="text-[hsl(var(--foreground))]">${stats.spend.toFixed(2)}</b>
+                <span className="mx-2.5 text-[hsl(var(--border))]">│</span>
+                Deployed: <b className="text-[hsl(var(--foreground))]">{deploys?.length || 0}</b>
+            </div>
+            <div className="flex items-center gap-3">
+                <ChangelogViewer />
+                <Dot c={neonOk ? T.success : T.warning} label={neonOk ? "Neon ✓" : apiOk ? "API ✓" : "Local"} />
+                {!neonOk && settings.neonUrl && (
+                    <button
+                        onClick={onReconnectNeon}
+                        className="text-[11px] px-2 py-1 bg-[hsl(var(--primary))] text-white border-none rounded cursor-pointer transition-all hover:opacity-90"
+                        title="Reconnect to Neon database"
+                    >
+                        Reconnect
+                    </button>
+                )}
+                {settings.netlifyToken && <Dot c={T.success} label="Netlify" />}
+                <Dot c={settings.apiKey ? T.success : T.danger} label={settings.apiKey ? "AI OK" : "No AI"} />
+                <Dot c={voluumOk ? T.success : T.dim} label={voluumOk ? "Voluum ✓" : "Voluum"} />
+                <Dot c={lcOk ? T.success : T.dim} label={lcOk ? "LC ✓" : "LC"} />
+                <Dot c={settings.mlToken ? T.success : T.dim} label={settings.mlToken ? "ML ✓" : "ML"} />
+            </div>
+        </div>
+    );
+}

@@ -1,0 +1,46 @@
+# ============================================================
+# Wrangler Configuration — FusionOps Callback Worker
+# ============================================================
+# Supports multi-account via route parameters.
+# Each account has its own callback token stored in D1.
+# ============================================================
+
+name = "fusionops-callback-worker"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+account_id = "ef771cfd6197dedb36bb3cea22ecf4fc"
+
+# Environment variables
+[vars]
+ENVIRONMENT = "production"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "fusionops-callback-new-v2"
+database_id = "5219aeec-c6d8-42e4-9a40-15573c6e53a4"
+preview_database_id = "5219aeec-c6d8-42e4-9a40-15573c6e53a4"
+
+# Worker routes — attach to your domains
+# Uncomment and configure per domain:
+#
+# [[routes]]
+# pattern = "api.yourdomain1.com/*"
+# zone_name = "yourdomain1.com"
+#
+# [[routes]]
+# pattern = "api.yourdomain2.com/*"
+# zone_name = "yourdomain2.com"
+
+# --- Staging environment override ---
+[env.staging]
+name = "lp-factory-worker-staging"
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "fusionops-callback-new-v2"
+database_id = "507cd6ec-67c5-42ad-afba-4e292d0bdfc8"

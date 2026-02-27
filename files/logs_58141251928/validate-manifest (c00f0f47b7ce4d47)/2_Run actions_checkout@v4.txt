@@ -1,0 +1,72 @@
+﻿2026-02-22T00:30:40.5089785Z ##[group]Run actions/checkout@v4
+2026-02-22T00:30:40.5090663Z with:
+2026-02-22T00:30:40.5091587Z   repository: Morning-Uplift-Marketing-Co/lp-factory-core
+2026-02-22T00:30:40.5092463Z   token: ***
+2026-02-22T00:30:40.5092853Z   ssh-strict: true
+2026-02-22T00:30:40.5093233Z   ssh-user: git
+2026-02-22T00:30:40.5093631Z   persist-credentials: true
+2026-02-22T00:30:40.5094066Z   clean: true
+2026-02-22T00:30:40.5094461Z   sparse-checkout-cone-mode: true
+2026-02-22T00:30:40.5094923Z   fetch-depth: 1
+2026-02-22T00:30:40.5095301Z   fetch-tags: false
+2026-02-22T00:30:40.5095691Z   show-progress: true
+2026-02-22T00:30:40.5096088Z   lfs: false
+2026-02-22T00:30:40.5096449Z   submodules: false
+2026-02-22T00:30:40.5096842Z   set-safe-directory: true
+2026-02-22T00:30:40.5097582Z ##[endgroup]
+2026-02-22T00:30:40.6238645Z Syncing repository: Morning-Uplift-Marketing-Co/lp-factory-core
+2026-02-22T00:30:40.6240650Z ##[group]Getting Git version info
+2026-02-22T00:30:40.6241755Z Working directory is '/home/runner/work/lp-factory-core/lp-factory-core'
+2026-02-22T00:30:40.6243098Z [command]/usr/bin/git version
+2026-02-22T00:30:40.6354111Z git version 2.52.0
+2026-02-22T00:30:40.6382259Z ##[endgroup]
+2026-02-22T00:30:40.6399170Z Temporarily overriding HOME='/home/runner/work/_temp/e38ef94d-2b31-4664-b9fe-7c06aaecba07' before making global git config changes
+2026-02-22T00:30:40.6401707Z Adding repository directory to the temporary git global config as a safe directory
+2026-02-22T00:30:40.6414965Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/lp-factory-core/lp-factory-core
+2026-02-22T00:30:40.6460715Z Deleting the contents of '/home/runner/work/lp-factory-core/lp-factory-core'
+2026-02-22T00:30:40.6464972Z ##[group]Initializing the repository
+2026-02-22T00:30:40.6470004Z [command]/usr/bin/git init /home/runner/work/lp-factory-core/lp-factory-core
+2026-02-22T00:30:40.6622854Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-02-22T00:30:40.6624266Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-02-22T00:30:40.6625293Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-02-22T00:30:40.6626903Z hint: call:
+2026-02-22T00:30:40.6627306Z hint:
+2026-02-22T00:30:40.6628368Z hint: 	git config --global init.defaultBranch <name>
+2026-02-22T00:30:40.6629416Z hint:
+2026-02-22T00:30:40.6630460Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-02-22T00:30:40.6632330Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-02-22T00:30:40.6633605Z hint:
+2026-02-22T00:30:40.6634315Z hint: 	git branch -m <name>
+2026-02-22T00:30:40.6635113Z hint:
+2026-02-22T00:30:40.6636172Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-02-22T00:30:40.6638186Z Initialized empty Git repository in /home/runner/work/lp-factory-core/lp-factory-core/.git/
+2026-02-22T00:30:40.6642114Z [command]/usr/bin/git remote add origin https://github.com/Morning-Uplift-Marketing-Co/lp-factory-core
+2026-02-22T00:30:40.6685566Z ##[endgroup]
+2026-02-22T00:30:40.6686849Z ##[group]Disabling automatic garbage collection
+2026-02-22T00:30:40.6688548Z [command]/usr/bin/git config --local gc.auto 0
+2026-02-22T00:30:40.6720684Z ##[endgroup]
+2026-02-22T00:30:40.6722091Z ##[group]Setting up auth
+2026-02-22T00:30:40.6728465Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-02-22T00:30:40.6761794Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-02-22T00:30:40.7211887Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-02-22T00:30:40.7246675Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-02-22T00:30:40.7476039Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-02-22T00:30:40.7508787Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-02-22T00:30:40.7747145Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-02-22T00:30:40.7783043Z ##[endgroup]
+2026-02-22T00:30:40.7784328Z ##[group]Fetching the repository
+2026-02-22T00:30:40.7792922Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +a2a3927eb94290c2ba1010b1b0251fd2e3eac23f:refs/remotes/origin/deploy/auto
+2026-02-22T00:30:41.9268944Z From https://github.com/Morning-Uplift-Marketing-Co/lp-factory-core
+2026-02-22T00:30:41.9270227Z  * [new ref]         a2a3927eb94290c2ba1010b1b0251fd2e3eac23f -> origin/deploy/auto
+2026-02-22T00:30:41.9307353Z ##[endgroup]
+2026-02-22T00:30:41.9308673Z ##[group]Determining the checkout info
+2026-02-22T00:30:41.9310246Z ##[endgroup]
+2026-02-22T00:30:41.9316258Z [command]/usr/bin/git sparse-checkout disable
+2026-02-22T00:30:41.9366200Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-02-22T00:30:41.9397668Z ##[group]Checking out the ref
+2026-02-22T00:30:41.9403485Z [command]/usr/bin/git checkout --progress --force -B deploy/auto refs/remotes/origin/deploy/auto
+2026-02-22T00:30:42.0135600Z Switched to a new branch 'deploy/auto'
+2026-02-22T00:30:42.0138775Z branch 'deploy/auto' set up to track 'origin/deploy/auto'.
+2026-02-22T00:30:42.0145157Z ##[endgroup]
+2026-02-22T00:30:42.0183710Z [command]/usr/bin/git log -1 --format=%H
+2026-02-22T00:30:42.0207585Z a2a3927eb94290c2ba1010b1b0251fd2e3eac23f

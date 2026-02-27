@@ -1,0 +1,22 @@
+﻿2026-02-22T00:30:33.5256119Z ##[group]Run set -euo pipefail
+2026-02-22T00:30:33.5257476Z [36;1mset -euo pipefail[0m
+2026-02-22T00:30:33.5259267Z [36;1mif [ "workflow_dispatch" = "workflow_dispatch" ] && [ -n "c00f0f47b7ce4d47" ]; then[0m
+2026-02-22T00:30:33.5261504Z [36;1m  echo "site_ids=[\"c00f0f47b7ce4d47\"]" >> "$GITHUB_OUTPUT"[0m
+2026-02-22T00:30:33.5263102Z [36;1m  exit 0[0m
+2026-02-22T00:30:33.5264057Z [36;1mfi[0m
+2026-02-22T00:30:33.5264973Z [36;1m[0m
+2026-02-22T00:30:33.5266404Z [36;1mif [ "workflow_dispatch" = "workflow_dispatch" ]; then[0m
+2026-02-22T00:30:33.5269297Z [36;1m  SITE_IDS=$(find sites -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort -u | jq -Rsc 'split("\n")|map(select(length>0))')[0m
+2026-02-22T00:30:33.5271894Z [36;1m  echo "site_ids=$SITE_IDS" >> "$GITHUB_OUTPUT"[0m
+2026-02-22T00:30:33.5273275Z [36;1m  exit 0[0m
+2026-02-22T00:30:33.5274242Z [36;1mfi[0m
+2026-02-22T00:30:33.5275139Z [36;1m[0m
+2026-02-22T00:30:33.5276257Z [36;1mBASE=""[0m
+2026-02-22T00:30:33.5277647Z [36;1mif [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then[0m
+2026-02-22T00:30:33.5279473Z [36;1m  BASE="$(git rev-parse HEAD~1 || true)"[0m
+2026-02-22T00:30:33.5280735Z [36;1mfi[0m
+2026-02-22T00:30:33.5282555Z [36;1mFILES=$(git diff --name-only "$BASE" "a2a3927eb94290c2ba1010b1b0251fd2e3eac23f" | grep '^sites/' || true)[0m
+2026-02-22T00:30:33.5285413Z [36;1mSITE_IDS=$(echo "$FILES" | awk -F/ '{print $2}' | sort -u | jq -Rsc 'split("\n")|map(select(length>0))')[0m
+2026-02-22T00:30:33.5287698Z [36;1mecho "site_ids=$SITE_IDS" >> "$GITHUB_OUTPUT"[0m
+2026-02-22T00:30:33.5326379Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-02-22T00:30:33.5327789Z ##[endgroup]

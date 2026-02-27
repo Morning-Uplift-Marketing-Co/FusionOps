@@ -1,0 +1,147 @@
+---
+interface Props {
+    id: string;
+    title: string;
+}
+
+const { id, title } = Astro.props;
+---
+
+<div
+    id={id}
+    class="modal-overlay fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-primary/40 backdrop-blur-sm transition-all duration-300 opacity-0"
+    aria-labelledby={`${id}-title`}
+    role="dialog"
+    aria-modal="true"
+>
+    <div
+        class="modal-content bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl relative overflow-hidden transform scale-95 transition-all duration-300"
+    >
+        <!-- Header -->
+        <div class="bg-primary p-6 md:p-8 text-center relative">
+            <h2
+                id={`${id}-title`}
+                class="text-white text-xl md:text-2xl font-black uppercase tracking-widest px-8"
+            >
+                {title}
+            </h2>
+            <button
+                type="button"
+                class="close-modal absolute top-6 right-6 text-white/60 hover:text-white hover:rotate-90 transition-all duration-300"
+                aria-label="Close modal"
+            >
+                <svg
+                    class="w-8 h-8"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-8 md:p-12 max-h-[70vh] overflow-y-auto custom-scrollbar">
+            <slot />
+        </div>
+
+        <!-- Footer -->
+        <div
+            class="p-6 md:p-8 border-t border-gray-100 flex justify-center bg-gray-50"
+        >
+            <button
+                type="button"
+                class="close-modal btn btn-secondary px-10 py-3 uppercase tracking-widest text-xs font-black shadow-sm"
+            >
+                Close Window
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .modal-overlay.open {
+        @apply flex opacity-100;
+    }
+    .modal-overlay.open .modal-content {
+        @apply scale-100;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 10px;
+    }
+</style>
+
+<script>
+    const setupModals = () => {
+        // Close logic
+        document.addEventListener("click", (e) => {
+            const target = e.target as HTMLElement;
+
+            // Close on close-btn or overlay click
+            if (
+                target.classList.contains("close-modal") ||
+                target.closest(".close-modal") ||
+                target.classList.contains("modal-overlay")
+            ) {
+                const openModal = target.closest(".modal-overlay");
+                if (openModal) {
+                    openModal.classList.remove("open");
+                    setTimeout(() => {
+                        openModal.classList.add("hidden");
+                        document.body.style.overflow = "";
+                    }, 300);
+                }
+            }
+
+            // Open logic
+            const trigger = target.closest("[data-modal-target]");
+            if (trigger) {
+                e.preventDefault();
+                const targetId = trigger.getAttribute("data-modal-target");
+                if (targetId) {
+                    const modal = document.getElementById(targetId);
+                    if (modal) {
+                        modal.classList.remove("hidden");
+                        // Force reflow
+                        void modal.offsetHeight;
+                        modal.classList.add("open");
+                        document.body.style.overflow = "hidden";
+                    }
+                }
+            }
+        });
+
+        // Escape key logic
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                const openModal = document.querySelector(".modal-overlay.open");
+                if (openModal) {
+                    openModal.classList.remove("open");
+                    setTimeout(() => {
+                        openModal.classList.add("hidden");
+                        document.body.style.overflow = "";
+                    }, 300);
+                }
+            }
+        });
+    };
+
+    // Initialize
+    setupModals();
+
+    // Support View Transitions
+    document.addEventListener("astro:after-swap", setupModals);
+</script>

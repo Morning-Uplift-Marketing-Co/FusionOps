@@ -1,0 +1,147 @@
+---
+// ============================================================
+// CTAButton — Loads LeadsGate script on demand
+// ============================================================
+// - Does NOT load LeadsGate script until user clicks
+// - On click: validates zip, then loads script dynamically
+// - Passes tracking data from sessionStorage
+// - No persistent cookies created
+// ============================================================
+
+interface Props {
+  text?: string;
+  leadsGateFormId: string;
+  leadsGateApiUrl?: string;
+  id?: string;
+}
+
+const {
+  text = 'See My Options',
+  leadsGateFormId,
+  leadsGateApiUrl = 'https://form.leadsgate.com',
+  id = 'cta-button',
+} = Astro.props;
+---
+
+<div class="w-full max-w-sm mx-auto">
+  <button
+    id={id}
+    type="button"
+    class="w-full py-4 px-6 text-lg font-bold text-white rounded-lg
+           bg-[var(--color-secondary)] hover:bg-[var(--color-secondary)]/90
+           active:scale-[0.98] transition-all duration-150
+           focus:outline-none focus:ring-4 focus:ring-[var(--color-secondary)]/30
+           disabled:opacity-50 disabled:cursor-not-allowed"
+    aria-label={text}
+  >
+    {text}
+  </button>
+  <p id={`${id}-error`} class="mt-2 text-sm text-center text-red-600 hidden" role="alert">
+    Please enter a valid ZIP code first
+  </p>
+
+  <!-- LeadsGate container — hidden until activated -->
+  <div id="leadsgate-container" class="mt-4 hidden"></div>
+</div>
+
+<script define:vars={{ id, leadsGateFormId, leadsGateApiUrl }}>
+  (function() {
+    const btn = document.getElementById(id);
+    const error = document.getElementById(id + '-error');
+    const container = document.getElementById('leadsgate-container');
+    if (!btn) return;
+
+    let leadsGateLoaded = false;
+
+    btn.addEventListener('click', function() {
+      // Validate zip
+      const zip = sessionStorage.getItem('zip');
+      if (!zip || zip.length !== 5) {
+        error.classList.remove('hidden');
+        // Focus the zip input
+        const zipInput = document.getElementById('zip-input');
+        if (zipInput) zipInput.focus();
+        return;
+      }
+      error.classList.add('hidden');
+
+      // Send beacon
+      const clickId = sessionStorage.getItem('click_id') || '';
+      const amount = sessionStorage.getItem('amount') || '';
+
+      if (typeof navigator.sendBeacon === 'function') {
+        const trackUrl = window.__TRACK_URL__ || '/track';
+        const payload = JSON.stringify({
+          event: 'cta_click',
+          click_id: clickId,
+          account_id: window.__ACCOUNT_ID__ || '',
+          zip: zip,
+          amount: amount,
+          timestamp: new Date().toISOString()
+        });
+        try {
+          navigator.sendBeacon(trackUrl, new Blob([payload], { type: 'application/json' }));
+        } catch(e) {}
+      }
+
+      // Disable button
+      btn.disabled = true;
+      btn.textContent = 'Loading...';
+
+      // Load LeadsGate on-demand
+      if (!leadsGateLoaded) {
+        loadLeadsGate(zip, amount, clickId);
+      }
+    });
+
+    function loadLeadsGate(zip, amount, clickId) {
+      leadsGateLoaded = true;
+      container.classList.remove('hidden');
+
+      // Build LeadsGate config
+      window.LGFormConfig = {
+        formId: leadsGateFormId,
+        containerId: 'leadsgate-container',
+        prefill: {
+          zip_code: zip,
+          loan_amount: amount,
+        },
+        tracking: {
+          click_id: clickId,
+          sub_id: sessionStorage.getItem('utm_source') || '',
+          sub_id2: sessionStorage.getItem('utm_campaign') || '',
+          sub_id3: sessionStorage.getItem('utm_medium') || '',
+          sub_id4: sessionStorage.getItem('gclid') || '',
+        },
+        onComplete: function() {
+          if (typeof navigator.sendBeacon === 'function') {
+            const trackUrl = window.__TRACK_URL__ || '/track';
+            const payload = JSON.stringify({
+              event: 'form_complete',
+              click_id: clickId,
+              account_id: window.__ACCOUNT_ID__ || '',
+              timestamp: new Date().toISOString()
+            });
+            try {
+              navigator.sendBeacon(trackUrl, new Blob([payload], { type: 'application/json' }));
+            } catch(e) {}
+          }
+        }
+      };
+
+      // Dynamically load LeadsGate script
+      var script = document.createElement('script');
+      script.src = leadsGateApiUrl + '/embed/' + leadsGateFormId + '.js';
+      script.async = true;
+      script.onerror = function() {
+        btn.disabled = false;
+        btn.textContent = 'See My Options';
+        leadsGateLoaded = false;
+        container.classList.add('hidden');
+        error.textContent = 'Failed to load. Please try again.';
+        error.classList.remove('hidden');
+      };
+      document.body.appendChild(script);
+    }
+  })();
+</script>

@@ -1,0 +1,114 @@
+---
+// ============================================================
+// BaseLayout — Shared layout for all landing page templates
+// ============================================================
+// - Voluum script placed once at end of <head>
+// - Self-hosted fonts only
+// - No GA4, no GTM
+// - Minimal blocking resources
+// - sessionStorage tracking init
+// ============================================================
+
+interface Props {
+  title: string;
+  description: string;
+  canonical?: string;
+  accountId?: string;
+  trackUrl?: string;
+  voluumDomain?: string;
+  noindex?: boolean;
+}
+
+const {
+  title,
+  description,
+  canonical,
+  accountId = '',
+  trackUrl = '/track',
+  voluumDomain = '',
+  noindex = false,
+} = Astro.props;
+
+const canonicalUrl = canonical || Astro.url.href;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content={description} />
+
+  <title>{title}</title>
+
+  <link rel="canonical" href={canonicalUrl} />
+
+  {noindex && <meta name="robots" content="noindex, nofollow" />}
+
+  <!-- Preload critical fonts -->
+  <link rel="preload" href="/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/inter-700.woff2" as="font" type="font/woff2" crossorigin />
+
+  <!-- Inline critical styles -->
+  <style is:global>
+    @import '../styles/global.css';
+  </style>
+
+  <!-- Voluum tracking pixel — placed once at end of head -->
+  {voluumDomain && (
+    <script
+      is:inline
+      define:vars={{ voluumDomain }}
+    >
+      (function(){
+        var i = new Image(1,1);
+        i.src = 'https://' + voluumDomain + '/impression?';
+      })();
+    </script>
+  )}
+</head>
+<body class="min-h-screen bg-[var(--color-surface)]">
+  <!-- Global tracking config — no PII -->
+  <script is:inline define:vars={{ accountId, trackUrl }}>
+    window.__ACCOUNT_ID__ = accountId;
+    window.__TRACK_URL__ = trackUrl;
+  </script>
+
+  <slot />
+
+  <!-- Tracking initialization — runs after DOM, non-blocking -->
+  <script is:inline>
+    (function() {
+      // Parse URL params into sessionStorage
+      var params = new URLSearchParams(window.location.search);
+      var keys = ['click_id', 'cid', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid'];
+      for (var i = 0; i < keys.length; i++) {
+        var val = params.get(keys[i]);
+        if (val) {
+          var storeKey = keys[i] === 'cid' ? 'click_id' : keys[i];
+          sessionStorage.setItem(storeKey, val);
+        }
+      }
+
+      // Send page view beacon
+      if (typeof navigator.sendBeacon === 'function') {
+        var clickId = sessionStorage.getItem('click_id') || '';
+        var payload = JSON.stringify({
+          event: 'page_view',
+          click_id: clickId,
+          account_id: window.__ACCOUNT_ID__ || '',
+          page: window.location.pathname,
+          referrer: document.referrer || '',
+          timestamp: new Date().toISOString()
+        });
+        try {
+          navigator.sendBeacon(
+            window.__TRACK_URL__ || '/track',
+            new Blob([payload], { type: 'application/json' })
+          );
+        } catch(e) {}
+      }
+    })();
+  </script>
+</body>
+</html>

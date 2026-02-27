@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --color-primary: #1E3A5F;
+        --color-accent: #22C55E;
+        --color-background: #FFFFFF;
+        --color-background-alt: #F3F4F6;
+        --color-charcoal: #1F2937;
+    }
+
+    html {
+        scroll-behavior: smooth;
+        -webkit-tap-highlight-color: transparent;
+        background-color: var(--color-background);
+    }
+
+    body {
+        @apply font-sans antialiased text-charcoal bg-background;
+        color: var(--color-charcoal);
+        background-color: var(--color-background);
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        @apply text-primary font-black tracking-tight;
+    }
+}
+
+@layer components {
+    .container-custom {
+        @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+    }
+
+    .btn {
+        @apply inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-bold rounded-xl transition-all duration-300 cursor-pointer select-none;
+    }
+
+    .btn-primary {
+        @apply bg-accent text-white border-none hover:bg-emerald-600 hover:shadow-lg active:scale-95;
+    }
+
+    .btn-secondary {
+        @apply bg-white text-primary border border-gray-200 hover:bg-gray-50 hover:border-gray-300 active:scale-95 shadow-sm;
+    }
+
+    .skip-link {
+        @apply sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-white focus:text-primary focus:rounded-lg focus:shadow-xl;
+    }
+}
+
+/* Custom Scrollbar for Light Theme */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #999;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+[data-reveal] {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-reveal].revealed {
+    opacity: 1;
+    transform: translateY(0);
+}
