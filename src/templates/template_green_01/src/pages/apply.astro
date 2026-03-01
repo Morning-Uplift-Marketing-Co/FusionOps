@@ -1,0 +1,159 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Layout title="Apply Now - GreenLoan" description="Complete your loan application in minutes">
+  <Header />
+  <main class="pt-16 min-h-screen bg-muted">
+    <section class="section-padding">
+      <div class="container max-w-2xl">
+        <div class="text-center mb-8">
+          <h1 class="text-3xl md:text-4xl font-bold text-foreground mb-3">Complete Your Application</h1>
+          <p class="text-muted-foreground">Just a few more details to get your personalized loan offers.</p>
+        </div>
+
+        <div class="card-elevated">
+          <form id="apply-form" class="space-y-6">
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label for="firstName" class="block text-sm font-semibold text-foreground mb-2">First Name</label>
+                <input type="text" id="firstName" name="firstName" required class="w-full h-12 px-4 rounded-lg border border-border bg-white text-foreground" />
+              </div>
+              <div>
+                <label for="lastName" class="block text-sm font-semibold text-foreground mb-2">Last Name</label>
+                <input type="text" id="lastName" name="lastName" required class="w-full h-12 px-4 rounded-lg border border-border bg-white text-foreground" />
+              </div>
+            </div>
+
+            <div>
+              <label for="email" class="block text-sm font-semibold text-foreground mb-2">Email Address</label>
+              <input type="email" id="email" name="email" required class="w-full h-12 px-4 rounded-lg border border-border bg-white text-foreground" />
+            </div>
+
+            <div>
+              <label for="phone" class="block text-sm font-semibold text-foreground mb-2">Phone Number</label>
+              <input type="tel" id="phone" name="phone" required pattern="[0-9]{10}" placeholder="1234567890" class="w-full h-12 px-4 rounded-lg border border-border bg-white text-foreground" />
+            </div>
+
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label for="amount" class="block text-sm font-semibold text-foreground mb-2">Loan Amount</label>
+                <select id="amount" name="amount" required class="w-full h-12 px-4 rounded-lg border border-border bg-white text-foreground">
+                  <option value="">Select amount</option>
+                  <option value="500">$500</option>
+                  <option value="1000">$1,000</option>
+                  <option value="2500">$2,500</option>
+                  <option value="5000">$5,000</option>
+                  <option value="7500">$7,500</option>
+                  <option value="10000">$10,000</option>
+                </select>
+              </div>
+              <div>
+                <label for="credit" class="block text-sm font-semibold text-foreground mb-2">Credit Rating</label>
+                <select id="credit" name="credit" required class="w-full h-12 px-4 rounded-lg border border-border bg-white text-foreground">
+                  <option value="">Select rating</option>
+                  <option value="excellent">Excellent (720+)</option>
+                  <option value="good">Good (680-719)</option>
+                  <option value="fair">Fair (640-679)</option>
+                  <option value="poor">Poor (&lt;640)</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label for="income" class="block text-sm font-semibold text-foreground mb-2">Annual Income</label>
+              <select id="income" name="income" required class="w-full h-12 px-4 rounded-lg border border-border bg-white text-foreground">
+                <option value="">Select income range</option>
+                <option value="0-25000">$0 - $25,000</option>
+                <option value="25000-50000">$25,000 - $50,000</option>
+                <option value="50000-75000">$50,000 - $75,000</option>
+                <option value="75000-100000">$75,000 - $100,000</option>
+                <option value="100000+">$100,000+</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="purpose" class="block text-sm font-semibold text-foreground mb-2">Loan Purpose</label>
+              <select id="purpose" name="purpose" required class="w-full h-12 px-4 rounded-lg border border-border bg-white text-foreground">
+                <option value="">Select purpose</option>
+                <option value="debt-consolidation">Debt Consolidation</option>
+                <option value="home-improvement">Home Improvement</option>
+                <option value="medical">Medical Expenses</option>
+                <option value="car-repair">Car Repair</option>
+                <option value="emergency">Emergency Expense</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div class="flex items-start gap-3 p-4 bg-muted rounded-lg">
+              <input type="checkbox" id="consent" name="consent" required class="mt-1 w-5 h-5 text-primary border-border rounded" />
+              <label for="consent" class="text-sm text-muted-foreground flex-1">
+                I authorize GreenLoan and its network of lenders to verify my information, check my credit, and contact me regarding loan offers. I agree to the <a href="#" class="text-primary underline hover:text-primary-dark">Terms of Service</a> and <a href="#" class="text-primary underline hover:text-primary-dark">Privacy Policy</a>.
+              </label>
+            </div>
+
+            <button type="submit" class="btn-cta w-full text-lg">
+              Submit Application
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+
+            <p class="text-xs text-center text-muted-foreground">Your information is encrypted and secure. We never sell your data.</p>
+          </form>
+        </div>
+
+        <div class="mt-8 grid sm:grid-cols-3 gap-4 text-center">
+          <div class="p-4">
+            <div class="w-10 h-10 mx-auto mb-2 rounded-full bg-primary/10 flex items-center justify-center">
+              <svg class="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <p class="text-sm font-semibold text-foreground">256-bit Encryption</p>
+          </div>
+          <div class="p-4">
+            <div class="w-10 h-10 mx-auto mb-2 rounded-full bg-primary/10 flex items-center justify-center">
+              <svg class="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <p class="text-sm font-semibold text-foreground">Instant Decision</p>
+          </div>
+          <div class="p-4">
+            <div class="w-10 h-10 mx-auto mb-2 rounded-full bg-primary/10 flex items-center justify-center">
+              <svg class="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <p class="text-sm font-semibold text-foreground">2-Minute Form</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<script>
+  import { pushDataLayer, getUrlParams } from '../lib/tracking';
+
+  const form = document.getElementById('apply-form') as HTMLFormElement;
+  const params = getUrlParams();
+
+  if (params.amount) {
+    const amountSelect = document.getElementById('amount') as HTMLSelectElement;
+    if (amountSelect) amountSelect.value = params.amount;
+  }
+
+  if (params.credit) {
+    const creditSelect = document.getElementById('credit') as HTMLSelectElement;
+    if (creditSelect) creditSelect.value = params.credit;
+  }
+
+  pushDataLayer('page_view', { page: 'apply', ...params });
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+
+    pushDataLayer('form_submit', { form: 'apply', ...data, ...params });
+
+    window.location.href = 'https://example.com/thank-you';
+  });
+</script>
