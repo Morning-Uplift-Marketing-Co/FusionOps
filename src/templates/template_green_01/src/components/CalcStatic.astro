@@ -1,0 +1,74 @@
+---
+---
+
+<div class="card-elevated">
+  <div class="space-y-6">
+    <div>
+      <div class="flex items-center justify-between mb-2">
+        <label for="calc-amount" class="text-sm font-semibold text-foreground">Loan Amount</label>
+        <span id="calc-amount-display" class="text-lg font-bold text-primary">$5,000</span>
+      </div>
+      <input
+        type="range"
+        id="calc-amount"
+        min="500"
+        max="10000"
+        step="100"
+        value="5000"
+        class="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+      />
+      <div class="flex justify-between text-xs text-muted-foreground mt-1">
+        <span>$500</span>
+        <span>$10,000</span>
+      </div>
+    </div>
+    <div>
+      <div class="flex items-center justify-between mb-2">
+        <label for="calc-term" class="text-sm font-semibold text-foreground">Loan Term</label>
+        <span id="calc-term-display" class="text-lg font-bold text-primary">24 months</span>
+      </div>
+      <input
+        type="range"
+        id="calc-term"
+        min="3"
+        max="60"
+        step="3"
+        value="24"
+        class="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+      />
+      <div class="flex justify-between text-xs text-muted-foreground mt-1">
+        <span>3 months</span>
+        <span>60 months</span>
+      </div>
+    </div>
+    <div class="bg-primary/5 rounded-xl p-6 text-center border border-primary/20">
+      <div class="text-sm text-muted-foreground mb-1">Estimated Monthly Payment</div>
+      <div id="calc-payment" class="text-4xl font-bold text-primary">$248</div>
+      <div class="text-xs text-muted-foreground mt-2">Based on 18% APR</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function updateCalc() {
+    const amount = parseFloat((document.getElementById('calc-amount') as HTMLInputElement)?.value || '5000');
+    const term = parseInt((document.getElementById('calc-term') as HTMLInputElement)?.value || '24');
+    const apr = 0.18;
+    const monthlyRate = apr / 12;
+    const payment = amount * (monthlyRate * Math.pow(1 + monthlyRate, term)) / (Math.pow(1 + monthlyRate, term) - 1);
+
+    if (document.getElementById('calc-amount-display')) {
+      document.getElementById('calc-amount-display')!.textContent = `$${amount.toLocaleString()}`;
+    }
+    if (document.getElementById('calc-term-display')) {
+      document.getElementById('calc-term-display')!.textContent = `${term} months`;
+    }
+    if (document.getElementById('calc-payment')) {
+      document.getElementById('calc-payment')!.textContent = `$${Math.round(payment)}`;
+    }
+  }
+
+  document.getElementById('calc-amount')?.addEventListener('input', updateCalc);
+  document.getElementById('calc-term')?.addEventListener('input', updateCalc);
+  updateCalc();
+</script>

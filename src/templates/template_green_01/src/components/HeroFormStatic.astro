@@ -1,0 +1,46 @@
+---
+---
+
+<div class="card-elevated bg-white/95 backdrop-blur-sm">
+  <form id="hero-form" class="space-y-4">
+    <div>
+      <label for="amount" class="block text-sm font-semibold text-foreground mb-2">Loan Amount</label>
+      <select id="amount" name="amount" required class="w-full h-12 px-4 rounded-lg border border-border bg-white text-foreground">
+        <option value="">Select amount</option>
+        <option value="500">$500</option>
+        <option value="1000">$1,000</option>
+        <option value="2500">$2,500</option>
+        <option value="5000">$5,000</option>
+        <option value="7500">$7,500</option>
+        <option value="10000">$10,000</option>
+      </select>
+    </div>
+    <div>
+      <label for="credit" class="block text-sm font-semibold text-foreground mb-2">Credit Rating</label>
+      <select id="credit" name="credit" required class="w-full h-12 px-4 rounded-lg border border-border bg-white text-foreground">
+        <option value="">Select rating</option>
+        <option value="excellent">Excellent (720+)</option>
+        <option value="good">Good (680-719)</option>
+        <option value="fair">Fair (640-679)</option>
+        <option value="poor">Poor (&lt;640)</option>
+      </select>
+    </div>
+    <button type="submit" class="btn-cta w-full">
+      Check My Rate
+      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+    </button>
+    <p class="text-xs text-center text-muted-foreground">No impact on your credit score</p>
+  </form>
+</div>
+
+<script>
+  document.getElementById('hero-form')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    const formData = new FormData(form);
+    const params = new URLSearchParams(window.location.search);
+    params.set('amount', formData.get('amount') as string);
+    params.set('credit', formData.get('credit') as string);
+    window.location.href = `/apply?${params.toString()}`;
+  });
+</script>
