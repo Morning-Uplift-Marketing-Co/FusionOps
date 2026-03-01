@@ -58,11 +58,15 @@ const MODULE_TEMPLATES_FALLBACK = [
   { id: 'installment-loans-v1', name: 'Installment Loans V1', badge: 'New', description: 'Standard installment loan LP with payment calculator', category: 'installment', source: 'module' },
   { id: 'installment-loans-v2', name: 'Installment Loans V2', badge: 'V2 Stable', description: 'V2 stable — inline CSS, shared compliance, guaranteed no white pages', category: 'installment', source: 'module' },
   { id: 'pet-care-v2', name: 'Pet Care V2', badge: 'V2 Stable', description: 'V2 stable pet financing LP with vet services grid', category: 'pet-care', source: 'module' },
+  { id: 'template-green-01', name: 'Template Green 01', badge: 'Premium', description: 'Teal/green premium finance LP with amber CTAs. Mobile-first, clean design with calculator, FAQ, and trust elements.', category: 'installment', source: 'module' },
 ];
 
 // Template ID aliases for backward compatibility
 const TEMPLATE_ALIASES = {
   'pdl-loansv1': 'pdl-loans-v1',
+  'template-green-01': 'template-green-01',
+  'green-01': 'template-green-01',
+  'green-loan': 'template-green-01',
 };
 
 // Cache for custom templates from API

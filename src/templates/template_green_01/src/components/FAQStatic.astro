@@ -1,0 +1,42 @@
+---
+const faqs = [
+  {
+    q: 'How quickly can I get approved?',
+    a: 'Most applicants receive a decision within minutes of submitting their application. Once approved, funds can be deposited as soon as the next business day.'
+  },
+  {
+    q: 'Will checking my rate affect my credit score?',
+    a: 'No. Checking your rate results in a soft credit inquiry, which does not impact your credit score. Only if you accept a loan offer and the lender performs a hard credit check will it affect your score.'
+  },
+  {
+    q: 'What can I use the loan for?',
+    a: 'You can use your personal loan for almost any purpose: debt consolidation, home improvements, medical expenses, car repairs, or unexpected bills.'
+  },
+  {
+    q: 'What are the requirements to apply?',
+    a: 'You must be at least 18 years old, have a valid email address and phone number, have a bank account, and meet minimum income requirements. Citizenship or permanent residency is required.'
+  },
+  {
+    q: 'Can I pay off my loan early?',
+    a: 'Yes. Many lenders in our network allow early payoff without penalties. Check with your specific lender for their prepayment policy.'
+  },
+  {
+    q: 'What if I have bad credit?',
+    a: 'We work with lenders who consider all credit types. Even with poor credit, you may still qualify for a loan, though rates and terms will vary based on your creditworthiness.'
+  }
+];
+---
+
+<div class="space-y-4">
+  {faqs.map((faq, i) => (
+    <details class="card-elevated group">
+      <summary class="flex items-center justify-between cursor-pointer list-none">
+        <span class="font-semibold text-foreground pr-4">{faq.q}</span>
+        <svg class="w-5 h-5 text-muted-foreground group-open:rotate-180 transition-transform flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m6 9 6 6 6-6"/>
+        </svg>
+      </summary>
+      <p class="text-sm text-muted-foreground mt-3 pt-3 border-t border-border">{faq.a}</p>
+    </details>
+  ))}
+</div>
