@@ -34,6 +34,13 @@ export function StepTemplate({ c, u }) {
         };
     }, []);
 
+    useEffect(() => {
+        const current = templates.find(t => t.id === (c.templateId || DEFAULT_TEMPLATE_ID));
+        if (current?.health && current.health.usable === false) {
+            u("templateId", DEFAULT_TEMPLATE_ID);
+        }
+    }, [templates, c.templateId, u]);
+
     const handleDelete = async (e, tpl) => {
         e.stopPropagation();
         if (!confirm(`Are you sure you want to delete "${tpl.name}"?`)) return;
@@ -91,6 +98,7 @@ export function StepTemplate({ c, u }) {
                     const active = (c.templateId || DEFAULT_TEMPLATE_ID) === tpl.id;
                     const isCustom = tpl.source === 'api';
                     const isDeleting = deletingId === tpl.dbId;
+                    const isBroken = tpl.health && tpl.health.usable === false;
 
                     // Preview gradient based on category
                     const previewBg = tpl._cat === 'pet'
@@ -104,17 +112,18 @@ export function StepTemplate({ c, u }) {
                     return (
                         <div key={tpl.id} style={{ position: 'relative' }}>
                             <button
-                                onClick={() => u("templateId", tpl.id)}
-                                disabled={isDeleting}
+                                onClick={() => !isBroken && u("templateId", tpl.id)}
+                                disabled={isDeleting || isBroken}
                                 style={{
-                                    width: '100%', padding: 0, overflow: "hidden", textAlign: "left", cursor: isDeleting ? "wait" : "pointer",
+                                    width: '100%', padding: 0, overflow: "hidden", textAlign: "left", cursor: isDeleting ? "wait" : (isBroken ? "not-allowed" : "pointer"),
                                     background: active ? T.primaryGlow : T.card2,
                                     border: `2px solid ${active ? T.primary : T.border}`,
                                     borderRadius: 12, position: "relative", color: T.text,
                                     transition: "all 0.2s ease",
                                     boxShadow: active ? `0 0 24px ${T.primary}20` : "none",
-                                    opacity: isDeleting ? 0.5 : 1,
+                                    opacity: (isDeleting || isBroken) ? 0.5 : 1,
                                 }}
+                                title={isBroken ? (tpl.health?.reason || "Template is invalid") : ""}
                             >
                                 {/* Thumbnail Preview */}
                                 <div style={{
@@ -138,6 +147,15 @@ export function StepTemplate({ c, u }) {
                                             borderRadius: 6, color: "#fff",
                                             textTransform: "uppercase", letterSpacing: ".02em",
                                         }}>{tpl.badge}</div>
+                                    )}
+                                    {isBroken && (
+                                        <div style={{
+                                            position: "absolute", top: 8, left: 10,
+                                            fontSize: 9, padding: "3px 8px", fontWeight: 800,
+                                            background: "rgba(239,68,68,.85)",
+                                            borderRadius: 6, color: "#fff",
+                                            textTransform: "uppercase", letterSpacing: ".02em",
+                                        }}>Broken</div>
                                     )}
 
                                     {active && (
