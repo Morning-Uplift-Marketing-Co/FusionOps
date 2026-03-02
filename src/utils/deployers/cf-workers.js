@@ -121,6 +121,20 @@ export default {
 `;
 }
 
+function normalizeHost(value) {
+  return String(value || "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/+$/, "");
+}
+
+function apexCandidates(host) {
+  const h = normalizeHost(host);
+  if (!h) return [];
+  const parts = h.split(".").filter(Boolean);
+  if (parts.length <= 2) return [h];
+  const candidates = [h, parts.slice(-2).join(".")];
+  if (parts.length >= 3) candidates.push(parts.slice(-3).join("."));
+  return [...new Set(candidates)];
+}
+
 export async function deploy(assets, site, settings) {
   const cfApiToken = (settings.cfApiToken || "").trim();
   const cfAccountId = (settings.cfAccountId || "").trim();
@@ -244,13 +258,35 @@ export async function deploy(assets, site, settings) {
     let routeError = null;
     if (site.domain) {
       try {
-        // 1. Resolve zone ID for the domain
-        const zonesRes = await fetch(
-          `${cfBase}/zones?name=${encodeURIComponent(site.domain)}&status=active`,
-          { headers: { ...auth, "Content-Type": "application/json" } }
-        );
-        const zonesData = await zonesRes.json();
-        const zoneId = zonesData.result?.[0]?.id;
+        // 1. Resolve zone ID robustly (handles apex + subdomain domain values)
+        async function resolveZoneId(domain) {
+          const candidates = apexCandidates(domain);
+          for (const zName of candidates) {
+            const zonesRes = await fetch(
+              `${cfBase}/zones?name=${encodeURIComponent(zName)}`,
+              { headers: { ...auth, "Content-Type": "application/json" } }
+            );
+            const zonesData = await zonesRes.json();
+            const direct = zonesData.result?.[0]?.id;
+            if (direct) return { zoneId: direct, zoneName: zName };
+          }
+
+          // Last fallback: scan and suffix-match
+          const allRes = await fetch(
+            `${cfBase}/zones?per_page=100`,
+            { headers: { ...auth, "Content-Type": "application/json" } }
+          );
+          const allData = await allRes.json();
+          const domainHost = normalizeHost(domain);
+          const zones = allData.result || [];
+          const matched = zones.find((z) => {
+            const zn = normalizeHost(z?.name);
+            return domainHost === zn || domainHost.endsWith(`.${zn}`);
+          });
+          return matched?.id ? { zoneId: matched.id, zoneName: matched.name } : { zoneId: null, zoneName: null };
+        }
+
+        const { zoneId, zoneName } = await resolveZoneId(site.domain);
 
         if (zoneId) {
           // 2. List existing routes for this zone
@@ -318,9 +354,9 @@ export async function deploy(assets, site, settings) {
           }
 
           routeCreated = true;
-          console.log(`[CFWorkers] ✅ Workers Routes configured for ${site.domain}`);
+          console.log(`[CFWorkers] ✅ Workers Routes configured for ${site.domain} (zone: ${zoneName || zoneId})`);
         } else {
-          routeError = `Zone not found for ${site.domain} — add it to Cloudflare first`;
+          routeError = `Zone not found for ${site.domain} in selected Cloudflare account`;
           console.warn(`[CFWorkers] ⚠️ ${routeError}`);
         }
       } catch (e) {

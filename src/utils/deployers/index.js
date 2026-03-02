@@ -99,6 +99,17 @@ export async function deployTo(target, html, site, settings) {
   }
 
   try {
+    // Resolve per-site Cloudflare credentials (cfProfileId) with fallback to global settings.
+    // This is critical for route/DNS operations when zones live in different CF accounts.
+    const resolvedSettings = { ...(settings || {}) };
+    if (site?.cfProfileId && Array.isArray(settings?.cfProfiles)) {
+      const profile = settings.cfProfiles.find((p) => p?.id === site.cfProfileId);
+      if (profile?.accountId && profile?.apiToken) {
+        resolvedSettings.cfAccountId = profile.accountId;
+        resolvedSettings.cfApiToken = profile.apiToken;
+      }
+    }
+
     // Build content: support three patterns:
     // 1. html is already a files map (object) — use directly (e.g. Sites.jsx git-push)
     // 2. html is a string + site._extraFiles — merge into files map
@@ -121,7 +132,7 @@ export async function deployTo(target, html, site, settings) {
     }
 
     const deployPayload = deployId ? { ...site, _deployRecordId: deployId } : site;
-    const result = await deployer.deploy(content, deployPayload, settings);
+    const result = await deployer.deploy(content, deployPayload, resolvedSettings);
     const finalStatus = result.queued ? "pending" : (result.success ? "success" : "failed");
 
     // Update deployment record with success
