@@ -11,6 +11,8 @@ function normalizeRegistrarProvider(value) {
 
 export function StepBrand({ c, u, settings, ops }) {
     const cfProfiles = settings?.cfProfiles || [];
+    const legacyCfAccountId = String(settings?.cfAccountId || "").trim();
+    const legacyCfApiToken = String(settings?.cfApiToken || "").trim();
     const registrarAccounts = ops?.registrarAccounts || [];
     const internetBsAccounts = useMemo(
         () => registrarAccounts.filter((r) => normalizeRegistrarProvider(r.provider) === "internetbs"),
@@ -26,17 +28,17 @@ export function StepBrand({ c, u, settings, ops }) {
         try {
             const domain = String(c.domain || "").trim().toLowerCase();
             if (!domain) throw new Error("Domain is required");
-            if (!c.cfProfileId) throw new Error("Select Cloudflare profile first");
-
             const cfProfile = cfProfiles.find((p) => p.id === c.cfProfileId);
-            if (!cfProfile?.accountId || !cfProfile?.apiToken) {
-                throw new Error("Cloudflare profile is incomplete (missing account/token)");
+            const cfAccountId = String(cfProfile?.accountId || legacyCfAccountId || "").trim();
+            const cfApiToken = String(cfProfile?.apiToken || legacyCfApiToken || "").trim();
+            if (!cfAccountId || !cfApiToken) {
+                throw new Error("Cloudflare credentials not found. Select CF Profile or set CF token/account in Settings.");
             }
 
             const registrarAccountId = c.registrarAccountId || internetBsAccounts[0]?.id;
             if (!registrarAccountId) throw new Error("No Internet.bs account found in Ops Center");
 
-            const zone = await getOrCreateZone(domain, cfProfile.accountId, cfProfile.apiToken);
+            const zone = await getOrCreateZone(domain, cfAccountId, cfApiToken);
             if (!zone?.success) throw new Error(zone?.error || "Failed to fetch Cloudflare zone");
 
             const nameservers = Array.isArray(zone.nameservers) && zone.nameservers.length >= 2
@@ -125,7 +127,7 @@ export function StepBrand({ c, u, settings, ops }) {
                             disabled={
                                 syncingDns ||
                                 !c.domain ||
-                                !c.cfProfileId ||
+                                !(c.cfProfileId || (legacyCfAccountId && legacyCfApiToken)) ||
                                 (!c.registrarAccountId && internetBsAccounts.length === 0)
                             }
                             style={{
@@ -138,7 +140,12 @@ export function StepBrand({ c, u, settings, ops }) {
                                 fontSize: 12,
                                 fontWeight: 700,
                                 cursor: syncingDns ? "not-allowed" : "pointer",
-                                opacity: syncingDns ? 0.6 : 1,
+                                opacity: (
+                                    syncingDns ||
+                                    !c.domain ||
+                                    !(c.cfProfileId || (legacyCfAccountId && legacyCfApiToken)) ||
+                                    (!c.registrarAccountId && internetBsAccounts.length === 0)
+                                ) ? 0.55 : 1,
                             }}
                         >
                             {syncingDns ? "⏳ Updating nameservers..." : "🌐 Add DNS to Internet.bs"}
