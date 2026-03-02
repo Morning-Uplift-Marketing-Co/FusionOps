@@ -4,6 +4,7 @@ import { Field } from "../../ui/field";
 import { InputField as Inp } from "../../ui/input-field";
 import { Button } from "../../ui/button";
 import JSZip from 'jszip';
+import { validateAstroStandard } from "../../../utils/template-standard";
 
 export function StepTemplateFromZip({ c, u, onGenerate }) {
     const [dragging, setDragging] = useState(false);
@@ -92,26 +93,12 @@ export function StepTemplateFromZip({ c, u, onGenerate }) {
             }
             // ---------------------------------
 
-            // Check for index.astro file (robust discovery)
-            let hasIndexAstro = false;
-            let indexPath = null;
-
-            for (const path of Object.keys(files)) {
-                if (path.endsWith('index.astro') || path.endsWith('/index.astro')) {
-                    hasIndexAstro = true;
-                    indexPath = path;
-                    break;
-                }
-            }
-
-            if (!hasIndexAstro) {
-                const foundFiles = Object.keys(files).slice(0, 5).join(', ');
-                setParseError(`ZIP must contain an index.astro file. Found: ${foundFiles}${Object.keys(files).length > 5 ? '...' : ''}`);
+            const standardCheck = validateAstroStandard(files);
+            if (!standardCheck.ok) {
+                setParseError(`Astro Standard Mode failed:\n- ${standardCheck.errors.join('\n- ')}`);
                 setParsing(false);
                 return;
             }
-
-            console.log('[ZIP Upload] Found index.astro at:', indexPath);
 
             setParsedFiles(files);
             const sourceCode = `// Uploaded from ZIP: ${file.name}\n// Files: ${Object.keys(files).length}\n// Normalized: ${Object.keys(files).some(k => !k.includes('/')) ? 'Yes' : 'No'}\n// Date: ${new Date().toISOString()}`;
@@ -226,7 +213,7 @@ export function StepTemplateFromZip({ c, u, onGenerate }) {
                                 Drop .zip file here or click to browse
                             </div>
                             <div style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>
-                                Must contain <code style={{ background: T.card, padding: "1px 4px", borderRadius: 3 }}>src/pages/index.astro</code>
+                                Astro Standard Mode: index + apply + layout + tracking
                             </div>
                         </>
                     )}
@@ -270,8 +257,10 @@ export function StepTemplateFromZip({ c, u, onGenerate }) {
             }}>
                 <div style={{ fontWeight: 700, color: T.primary, marginBottom: 6 }}>📋 ZIP Requirements</div>
                 <ul style={{ margin: 0, paddingLeft: 18 }}>
-                    <li>Must contain <code style={{ background: T.input, padding: "1px 4px", borderRadius: 3 }}>src/pages/index.astro</code></li>
-                    <li>Optionally: <code style={{ background: T.input, padding: "1px 4px", borderRadius: 3 }}>astro.config.mjs</code>, <code style={{ background: T.input, padding: "1px 4px", borderRadius: 3 }}>src/layouts/</code>, <code style={{ background: T.input, padding: "1px 4px", borderRadius: 3 }}>src/components/</code></li>
+                    <li>Must contain <code style={{ background: T.input, padding: "1px 4px", borderRadius: 3 }}>src/pages/index.astro</code> or <code style={{ background: T.input, padding: "1px 4px", borderRadius: 3 }}>index.html</code></li>
+                    <li>Must contain <code style={{ background: T.input, padding: "1px 4px", borderRadius: 3 }}>src/pages/apply.astro</code> or <code style={{ background: T.input, padding: "1px 4px", borderRadius: 3 }}>apply.html</code></li>
+                    <li>Must contain <code style={{ background: T.input, padding: "1px 4px", borderRadius: 3 }}>src/layouts/Layout.astro</code></li>
+                    <li>Must include tracking config/script (e.g. <code style={{ background: T.input, padding: "1px 4px", borderRadius: 3 }}>__trackingConfig</code>, <code style={{ background: T.input, padding: "1px 4px", borderRadius: 3 }}>src/lib/tracking.ts</code>)</li>
                     <li><code style={{ background: T.input, padding: "1px 4px", borderRadius: 3 }}>node_modules/</code> and <code style={{ background: T.input, padding: "1px 4px", borderRadius: 3 }}>dist/</code> are automatically excluded</li>
                 </ul>
             </div>

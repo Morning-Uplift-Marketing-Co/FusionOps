@@ -44,19 +44,30 @@ function getColorObj(colorId) {
 }
 
 // Convert Astro files to HTML preview with actual site data
-function astroToHtmlPreview(files, site) {
-  let indexContent = files['src/pages/index.astro'];
+function astroToHtmlPreview(files, site, options = {}) {
+  const entryCandidates = options.entryCandidates || ['src/pages/index.astro', 'index.astro'];
+  const htmlFallbackCandidates = options.htmlFallbackCandidates || ['index.html'];
+
+  let indexContent = null;
+  for (const candidate of entryCandidates) {
+    const direct = files[candidate];
+    if (direct) {
+      indexContent = direct;
+      break;
+    }
+    const key = Object.keys(files).find(k => k.endsWith(`/${candidate}`) || k.endsWith(candidate));
+    if (key && files[key]) {
+      indexContent = files[key];
+      break;
+    }
+  }
 
   if (!indexContent) {
-    // Robust discovery: look for any file ending with index.astro if standard path missing
-    const key = Object.keys(files).find(k => k.endsWith('/src/pages/index.astro') || k.endsWith('src/pages/index.astro') || k.endsWith('index.astro'));
-    if (key) indexContent = files[key];
-  }
-  // Support Vite/static templates that provide index.html instead of Astro entry
-  if (!indexContent) {
-    let htmlKey = Object.keys(files).find(k => k === 'index.html' || k.endsWith('/index.html'));
-    if (htmlKey && files[htmlKey]) {
-      return String(files[htmlKey]);
+    for (const candidate of htmlFallbackCandidates) {
+      const direct = files[candidate];
+      if (direct) return String(direct);
+      const key = Object.keys(files).find(k => k.endsWith(`/${candidate}`) || k.endsWith(candidate));
+      if (key && files[key]) return String(files[key]);
     }
   }
 
@@ -292,7 +303,10 @@ export function renderTemplateToAssets(template, site) {
   console.log('[Router] renderTemplateToAssets - looking for index.astro');
 
   // 1. Compile index.html
-  let html = astroToHtmlPreview(files, site);
+  let html = astroToHtmlPreview(files, site, {
+    entryCandidates: ['src/pages/index.astro', 'index.astro'],
+    htmlFallbackCandidates: ['index.html'],
+  });
 
   // Validate HTML was generated
   if (!html || html.length < 100 || html.includes('Preview Error') || html.includes('No index.astro found')) {
@@ -306,10 +320,25 @@ export function renderTemplateToAssets(template, site) {
   assets["/index.html"] = html;
   assets["/"] = html;
 
+  // Compile optional apply page into /apply.html for one-flow runtime parity
+  const applyHtml = astroToHtmlPreview(files, site, {
+    entryCandidates: ['src/pages/apply.astro', 'apply.astro'],
+    htmlFallbackCandidates: ['apply.html'],
+  });
+  if (
+    applyHtml &&
+    applyHtml.length > 80 &&
+    !applyHtml.includes('Preview Error') &&
+    !applyHtml.includes('No index.astro found')
+  ) {
+    assets["/apply.html"] = applyHtml;
+    assets["/apply"] = applyHtml;
+  }
+
   // 2. Map all other files into assets
   Object.keys(files).forEach(path => {
     // If it's the index, we already handled it
-    if (path.endsWith('index.astro') || path === 'package.json') return;
+    if (path.endsWith('index.astro') || path.endsWith('apply.astro') || path.endsWith('/index.html') || path.endsWith('/apply.html') || path === 'index.html' || path === 'apply.html' || path === 'package.json') return;
 
     // Normalize path for CF Workers/Pages mapping
     let deployPath = path;
