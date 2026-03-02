@@ -1,9 +1,11 @@
 import { THEME as T } from "../../../constants";
 import { Button } from "../../ui/button";
 import { COLORS, FONTS } from "../../../constants";
+import { TEMPLATE_AI_EDITABLE_FILES } from "../generateTemplateCode";
 
 export function StepTemplateReview({ c, u }) {
     const isCloneMode = !!c.sourceTemplate || (!c.colorId && !!c.generatedFiles);
+    const isImportedFiles = !!c.importType;
     const selectedColor = COLORS.find((x) => x.id === c.colorId);
     const selectedFont = FONTS.find((x) => x.id === c.fontId);
 
@@ -99,6 +101,10 @@ export function StepTemplateReview({ c, u }) {
                                 <span style={{ padding: "4px 8px", background: T.card2, borderRadius: 6 }}>
                                     📂 Cloned from: {c.sourceTemplate}
                                 </span>
+                            ) : isImportedFiles ? (
+                                <span style={{ padding: "4px 8px", background: T.card2, borderRadius: 6 }}>
+                                    📦 Imported: {c.importType}
+                                </span>
                             ) : isCloneMode ? (
                                 <span style={{ padding: "4px 8px", background: T.card2, borderRadius: 6 }}>
                                     📦 Uploaded from ZIP
@@ -191,6 +197,119 @@ export function StepTemplateReview({ c, u }) {
                 </div>
             </div>
 
+            {/* File Generation Status */}
+            <div style={{
+                padding: 16,
+                background: c.generatedFiles ? `${T.success}10` : `${T.danger}10`,
+                borderRadius: 12,
+                border: `1px solid ${c.generatedFiles ? `${T.success}30` : `${T.danger}30`}`,
+                marginBottom: 16,
+            }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: c.generatedFiles ? T.success : T.danger, marginBottom: 4 }}>
+                    {c.generatedFiles ? `✅ ${Object.keys(c.generatedFiles).length} files generated` : '❌ File generation failed'}
+                </div>
+                <div style={{ fontSize: 11, color: T.muted }}>
+                    {c.generatedFiles
+                        ? 'Template is ready to preview, build, and deploy.'
+                        : (c._fileErrors || []).join(', ') || 'Unknown error'
+                    }
+                </div>
+            </div>
+
+            {/* AI edit scope */}
+            <div style={{
+                padding: 16,
+                background: T.input,
+                borderRadius: 12,
+                border: `1px solid ${T.border}`,
+                marginBottom: 16,
+            }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 8 }}>
+                    🤖 AI Edit Scope (Template-only)
+                </div>
+                <div style={{ fontSize: 11, color: T.muted, marginBottom: 8 }}>
+                    AI should create/edit only these files in this template:
+                </div>
+                <div style={{ display: "grid", gap: 6 }}>
+                    {TEMPLATE_AI_EDITABLE_FILES.map((path) => (
+                        <code key={path} style={{
+                            display: "block",
+                            padding: "6px 8px",
+                            borderRadius: 6,
+                            background: T.card2,
+                            border: `1px solid ${T.border}`,
+                            color: T.text,
+                            fontSize: 11,
+                            fontFamily: "monospace",
+                        }}>
+                            {path}
+                        </code>
+                    ))}
+                </div>
+            </div>
+
+            {/* Optional Tracking Defaults */}
+            <div style={{
+                padding: 16,
+                background: T.input,
+                borderRadius: 12,
+                border: `1px solid ${T.border}`,
+                marginBottom: 16,
+            }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 10 }}>
+                    📊 Tracking Defaults (Optional)
+                </div>
+                <div style={{ display: "grid", gap: 10 }}>
+                    <input
+                        value={c.tracking?.googleAdsId || ""}
+                        onChange={(e) => u("tracking", { ...(c.tracking || {}), googleAdsId: e.target.value })}
+                        placeholder="Google Ads ID (AW-123456789)"
+                        style={{
+                            width: "100%",
+                            padding: "10px 12px",
+                            background: T.card2,
+                            border: `1px solid ${T.border}`,
+                            borderRadius: 8,
+                            color: T.text,
+                            fontSize: 13,
+                        }}
+                    />
+                    <input
+                        value={c.tracking?.pixelEndpoint || ""}
+                        onChange={(e) => u("tracking", { ...(c.tracking || {}), pixelEndpoint: e.target.value })}
+                        placeholder="Pixel Endpoint (https://t.yourdomain.com/e)"
+                        style={{
+                            width: "100%",
+                            padding: "10px 12px",
+                            background: T.card2,
+                            border: `1px solid ${T.border}`,
+                            borderRadius: 8,
+                            color: T.text,
+                            fontSize: 13,
+                        }}
+                    />
+                    <input
+                        value={c.tracking?.voluumDomain || ""}
+                        onChange={(e) => u("tracking", { ...(c.tracking || {}), voluumDomain: e.target.value })}
+                        placeholder="Voluum Domain (trk.yourdomain.com)"
+                        style={{
+                            width: "100%",
+                            padding: "10px 12px",
+                            background: T.card2,
+                            border: `1px solid ${T.border}`,
+                            borderRadius: 8,
+                            color: T.text,
+                            fontSize: 13,
+                        }}
+                    />
+                </div>
+                {c.tracking?.pixelEndpoint && !/^https:\/\//i.test(String(c.tracking?.pixelEndpoint || "")) && (
+                    <div style={{ fontSize: 11, color: T.danger, marginTop: 8 }}>
+                        If you set Pixel Endpoint, use `https://...`
+                    </div>
+                )}
+            </div>
+
             {/* Next Steps */}
             <div style={{
                 padding: 16,
@@ -202,9 +321,9 @@ export function StepTemplateReview({ c, u }) {
                     📝 Next Steps
                 </div>
                 <ol style={{ margin: 0, paddingLeft: 20, fontSize: 12, color: T.muted }}>
-                    <li>Click <strong>Save Template</strong> to save to the database</li>
-                    <li>Template will appear instantly in LP Wizard → Design step</li>
-                    <li>Select it when creating a new LP to use your custom template</li>
+                    <li>Click <strong>🚀 Finalize Architecture</strong> to save to database</li>
+                    <li>Template appears instantly in LP Wizard → Template step</li>
+                    <li>Select it when creating a new LP — all tracking, compliance, variants included</li>
                 </ol>
             </div>
         </>

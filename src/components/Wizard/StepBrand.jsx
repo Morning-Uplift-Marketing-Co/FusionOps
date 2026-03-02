@@ -1,10 +1,65 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import { THEME as T } from "../../constants";
 import { Field } from "../ui/field";
 import { InputField as Inp } from "../ui/input-field";
+import { getOrCreateZone } from "../../services/cloudflare-dns";
+import { updateNameservers, getCloudflareNameservers } from "../../services/registrar";
 
-export function StepBrand({ c, u, settings }) {
-    const cfProfiles = Array.isArray(settings?.cfProfiles) ? settings.cfProfiles : [];
+function normalizeRegistrarProvider(value) {
+    return String(value || "").trim().toLowerCase().replace(/[^a-z]/g, "");
+}
+
+export function StepBrand({ c, u, settings, ops }) {
+    const cfProfiles = settings?.cfProfiles || [];
+    const registrarAccounts = ops?.registrarAccounts || [];
+    const internetBsAccounts = useMemo(
+        () => registrarAccounts.filter((r) => normalizeRegistrarProvider(r.provider) === "internetbs"),
+        [registrarAccounts]
+    );
+    const [syncingDns, setSyncingDns] = useState(false);
+    const [dnsStatus, setDnsStatus] = useState(null);
+
+    const handleSyncDnsToInternetBs = async () => {
+        setDnsStatus(null);
+        setSyncingDns(true);
+
+        try {
+            const domain = String(c.domain || "").trim().toLowerCase();
+            if (!domain) throw new Error("Domain is required");
+            if (!c.cfProfileId) throw new Error("Select Cloudflare profile first");
+
+            const cfProfile = cfProfiles.find((p) => p.id === c.cfProfileId);
+            if (!cfProfile?.accountId || !cfProfile?.apiToken) {
+                throw new Error("Cloudflare profile is incomplete (missing account/token)");
+            }
+
+            const registrarAccountId = c.registrarAccountId || internetBsAccounts[0]?.id;
+            if (!registrarAccountId) throw new Error("No Internet.bs account found in Ops Center");
+
+            const zone = await getOrCreateZone(domain, cfProfile.accountId, cfProfile.apiToken);
+            if (!zone?.success) throw new Error(zone?.error || "Failed to fetch Cloudflare zone");
+
+            const nameservers = Array.isArray(zone.nameservers) && zone.nameservers.length >= 2
+                ? zone.nameservers
+                : getCloudflareNameservers();
+
+            const result = await updateNameservers(domain, nameservers, registrarAccountId);
+            if (!result?.success) {
+                throw new Error(result?.error || result?.message || "Failed to update nameservers");
+            }
+
+            u("registrarAccountId", registrarAccountId);
+            u("_internetbsDnsUpdatedAt", new Date().toISOString());
+            setDnsStatus({
+                type: "success",
+                message: `Updated Internet.bs nameservers for ${domain} → ${nameservers.join(", ")}`,
+            });
+        } catch (e) {
+            setDnsStatus({ type: "error", message: e?.message || "DNS sync failed" });
+        } finally {
+            setSyncingDns(false);
+        }
+    };
 
     return (
         <>
@@ -42,7 +97,70 @@ export function StepBrand({ c, u, settings }) {
                     </Field>
                 </div>
             )}
+
+            {/* Internet.bs quick action */}
+            <div style={{ marginTop: 16 }}>
+                <Field label="Add DNS to Internet.bs" help="One-click update nameservers at Internet.bs using Cloudflare zone nameservers">
+                    <div style={{ display: "grid", gap: 10 }}>
+                        <select
+                            value={c.registrarAccountId || ""}
+                            onChange={e => u("registrarAccountId", e.target.value)}
+                            style={{
+                                width: "100%", padding: "8px 12px", borderRadius: 8,
+                                border: `1px solid hsl(var(--border))`, background: "hsl(var(--input))",
+                                color: "hsl(var(--foreground))", fontSize: 13, outline: "none",
+                            }}
+                        >
+                            <option value="">Select Internet.bs account...</option>
+                            {internetBsAccounts.map(acc => (
+                                <option key={acc.id} value={acc.id}>
+                                    {acc.label || acc.name || acc.id} ({acc.provider || "internetbs"})
+                                </option>
+                            ))}
+                        </select>
+
+                        <button
+                            type="button"
+                            onClick={handleSyncDnsToInternetBs}
+                            disabled={
+                                syncingDns ||
+                                !c.domain ||
+                                !c.cfProfileId ||
+                                (!c.registrarAccountId && internetBsAccounts.length === 0)
+                            }
+                            style={{
+                                width: "100%",
+                                padding: "10px 12px",
+                                borderRadius: 8,
+                                border: "none",
+                                background: "hsl(var(--primary))",
+                                color: "hsl(var(--primary-foreground))",
+                                fontSize: 12,
+                                fontWeight: 700,
+                                cursor: syncingDns ? "not-allowed" : "pointer",
+                                opacity: syncingDns ? 0.6 : 1,
+                            }}
+                        >
+                            {syncingDns ? "⏳ Updating nameservers..." : "🌐 Add DNS to Internet.bs"}
+                        </button>
+
+                        {dnsStatus && (
+                            <div style={{
+                                fontSize: 11,
+                                padding: "8px 10px",
+                                borderRadius: 8,
+                                border: `1px solid ${dnsStatus.type === "success" ? "rgba(16,185,129,0.25)" : "rgba(239,68,68,0.25)"}`,
+                                background: dnsStatus.type === "success" ? "rgba(16,185,129,0.08)" : "rgba(239,68,68,0.08)",
+                                color: dnsStatus.type === "success" ? "hsl(var(--success))" : "hsl(var(--destructive))",
+                                whiteSpace: "pre-wrap",
+                                lineHeight: 1.4,
+                            }}>
+                                {dnsStatus.message}
+                            </div>
+                        )}
+                    </div>
+                </Field>
+            </div>
         </>
     );
 }
-

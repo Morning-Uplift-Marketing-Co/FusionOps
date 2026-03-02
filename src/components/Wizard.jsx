@@ -1,11 +1,9 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { THEME as T } from "../constants";
 import { uid, now } from "../utils";
-import { generateHtmlByTemplate, generateApplyPageByTemplate, generateDeployAssetsByTemplate } from "../utils/template-router";
+import { generateHtmlByTemplate } from "../utils/template-router";
 import { api } from "../services/api";
 import { getOrCreateZone, createDnsRecord, ensurePixelSubdomain } from "../services/cloudflare-dns";
-import { deployTo, getAvailableTargets } from "../utils/deployers";
-import { MockPhone } from "./ui/mock-phone";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { StepBrand, StepProduct, StepTemplate, StepDesign, StepCopy, StepTracking, StepReview } from "./Wizard/index.js";
@@ -74,8 +72,7 @@ function validateStep(stepNum, config) {
 
 const steps = ["Brand", "Product", "Template", "Design", "Copy", "Tracking", "Review"];
 
-export function Wizard({ config, setConfig, addSite, addDeploy, setPage, settings, notify }) {
-    const asArray = (v) => Array.isArray(v) ? v : [];
+export function Wizard({ config, setConfig, addSite, setPage, settings, ops, notify }) {
     const [step, setStep] = useState(1);
     const [building, setBuilding] = useState(false);
     const [validationErrors, setValidationErrors] = useState([]);
@@ -83,17 +80,32 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
     const [aiMetaLoading, setAiMetaLoading] = useState(false);
     const [initialConfig, setInitialConfig] = useState(null);
     const cardRef = useRef(null);
-    const deployTargets = useMemo(() => getAvailableTargets(settings), [settings]);
 
     const upd = (k, v) => setConfig(p => ({ ...p, [k]: v }));
 
     // Set helper flag for validation
     useEffect(() => {
-        const hasProfiles = asArray(settings?.cfProfiles).length > 0;
+        const hasProfiles = (settings?.cfProfiles || []).length > 0;
         if (hasProfiles !== config._cfProfilesExist) {
             setConfig(p => ({ ...p, _cfProfilesExist: hasProfiles }));
         }
     }, [settings?.cfProfiles]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Auto-fill meta title/desc for edit mode (sites saved before SITE_FIELDS fix)
+    useEffect(() => {
+        if (!config.brand) return;
+        setConfig(p => {
+            const updates = {};
+            if (!p.metaTitle) {
+                const amt = p.amountMax ? ` ${p.amountMin || 100}–${p.amountMax}` : "";
+                updates.metaTitle = `${p.h1 || `Get Cash Fast${amt}`} | ${p.brand} — Apply Now`;
+            }
+            if (!p.metaDesc) {
+                updates.metaDesc = `Apply online in 2 minutes${p.amountMax ? ` for ${p.amountMin || 100}–${p.amountMax}` : ""}. No hidden fees, instant decision. Check your rate now — it won't affect your credit score!`;
+            }
+            return Object.keys(updates).length ? { ...p, ...updates } : p;
+        });
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Safe JSON serializer — strips non-serializable values (DOM nodes, functions, circular refs)
     const safeStringify = (obj) => {
@@ -136,6 +148,16 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
             return;
         }
         setValidationErrors([]);
+        // Auto-fill meta title/description when entering Copy step (step 5)
+        if (step === 4 && config.brand) {
+            if (!config.metaTitle) {
+                const amt = config.amountMax ? ` ${config.amountMin || 100}–${config.amountMax}` : "";
+                upd("metaTitle", `${config.h1 || `Get Cash Fast${amt}`} | ${config.brand} — Apply Now`);
+            }
+            if (!config.metaDesc) {
+                upd("metaDesc", `Apply online in 2 minutes${config.amountMax ? ` for ${config.amountMin || 100}–${config.amountMax}` : ""}. No hidden fees, instant decision. Check your rate now — it won't affect your credit score!`);
+            }
+        }
         if (step < 7) setStep(s => s + 1);
     };
 
@@ -195,9 +217,15 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                 lang: config.lang || "English"
             });
             if (p && !p.error) {
-                if (p.metaTitle) upd("metaTitle", p.metaTitle);
-                if (p.metaDesc) upd("metaDesc", p.metaDesc);
-                notify("Meta tags generated!");
+                const mt = p.metaTitle || p.title || "";
+                const md = p.metaDesc || p.description || "";
+                if (mt) upd("metaTitle", mt);
+                if (md) upd("metaDesc", md);
+                if (mt || md) {
+                    notify("Meta tags generated!");
+                } else {
+                    notify("AI returned empty meta tags.", "warning");
+                }
             } else {
                 notify(p?.error || "Meta generation failed.", "warning");
             }
@@ -242,53 +270,16 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
         }
 
         await new Promise(r => setTimeout(r, 1000));
-
-        const siteId = finalConfig._editMode ? finalConfig.id : uid();
-        const sitePayload = finalConfig._editMode
-            ? { ...finalConfig, id: siteId, status: "completed", updatedAt: now() }
-            : { ...finalConfig, id: siteId, status: "completed", createdAt: now(), cost: 0.001 };
-
-        // One-flow mode: save + deploy + DNS in one click
-        if (finalConfig.deployOnBuild) {
-            try {
-                const target = finalConfig.deployTarget || "cf-pages";
-                const targetConfig = deployTargets.find(t => t.id === target);
-                if (!targetConfig?.configured) {
-                    notify(`Deploy target "${target}" is not configured in Settings`, "warning");
-                } else {
-                    const assets = generateDeployAssetsByTemplate(sitePayload);
-                    const applyHtml = generateApplyPageByTemplate(sitePayload);
-                    const deployContent = typeof assets === "string"
-                        ? { "index.html": assets, "apply.html": applyHtml }
-                        : { ...assets, "apply.html": applyHtml };
-
-                    const deployResult = await deployTo(target, deployContent, sitePayload, settings);
-                    if (deployResult.success) {
-                        addDeploy?.({
-                            id: uid(),
-                            siteId: sitePayload.id,
-                            brand: sitePayload.brand,
-                            url: deployResult.url,
-                            ts: now(),
-                            type: "deploy",
-                            target,
-                        });
-                        notify(`✅ Save + Deploy complete (${target})`);
-                    } else {
-                        notify(`Saved, but deploy failed: ${deployResult.error}`, "warning");
-                    }
-                }
-            } catch (e) {
-                notify(`Saved, but deploy error: ${e.message}`, "warning");
-            }
+        if (finalConfig._editMode) {
+            addSite({ ...finalConfig, status: "completed", updatedAt: now() });
+        } else {
+            addSite({ ...finalConfig, id: uid(), status: "completed", createdAt: now(), cost: 0.001 });
         }
-
-        await addSite(sitePayload);
 
         // ── Auto-provision DNS subdomains (t. + trk.) ──
         const domain = finalConfig.domain?.trim();
         // Resolve CF credentials from selected profile, fallback to legacy settings
-        const cfProfile = asArray(settings?.cfProfiles).find(p => p.id === finalConfig.cfProfileId);
+        const cfProfile = (settings?.cfProfiles || []).find(p => p.id === finalConfig.cfProfileId);
         const cfAccountId = cfProfile?.accountId || settings?.cfAccountId;
         const cfApiToken = cfProfile?.apiToken || settings?.cfApiToken;
         if (domain && cfAccountId && cfApiToken) {
@@ -358,15 +349,14 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
         }
     };
 
-    // Live preview HTML for steps 4(Design), 5(Copy), 7(Review)
+    // Live preview HTML
     const previewHtml = useMemo(
-        () => generateHtmlByTemplate(config),
-        [config.templateId, config.brand, config.domain, config.loanType, config.colorId, config.fontId, config.layout, config.radius, config.trustBadgeStyle, config.trustBadgeIconTone, config.h1, config.badge, config.cta, config.sub, config.amountMin, config.amountMax, config.redirectUrl, config.conversionId]
+        () => generateHtmlByTemplate(config, { preview: true }),
+        [config.templateId, config.brand, config.domain, config.loanType, config.colorId, config.fontId, config.layout, config.radius, config.trustBadgeStyle, config.trustBadgeIconTone, config.h1, config.badge, config.cta, config.sub, config.amountMin, config.amountMax, config.redirectUrl, config.conversionId, config.heroVariant, config.trustVariant, config.whyVariant, config.faqVariant, config.ctaVariant, config.themeVariant, config.stickyBar]
     );
 
-    // Two-column layout for steps 4(Design), 5(Copy), 7(Review)
-    const showPreview = step === 4 || step === 5 || step === 7;
-    const mainMaxWidth = showPreview ? 680 : 780;
+    // Preview modal state
+    const [previewOpen, setPreviewOpen] = useState(false);
 
     return (
         <div className="max-w-[1060px] mx-auto animate-[fadeIn_.3s_ease]" onKeyDown={handleKeyDown}>
@@ -392,100 +382,63 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                 </div>
             )}
 
-            {showPreview ? (
-                <div className="grid gap-6 items-start" style={{ gridTemplateColumns: "1fr 340px" }}>
-                    <Card className="p-7 mb-4" ref={cardRef}>
-                        {step === 1 && <StepBrand c={config} u={upd} settings={settings} />}
-                        {step === 2 && <StepProduct c={config} u={upd} />}
-                        {step === 3 && <StepTemplate c={config} u={upd} />}
-                        {step === 4 && <StepDesign c={config} u={upd} notify={notify} />}
-                        {step === 5 && <StepCopy c={config} u={upd} onAiGenerate={handleAiGenerate} aiLoading={aiLoading} onAiMeta={handleAiMeta} aiMetaLoading={aiMetaLoading} />}
-                        {step === 6 && <StepTracking c={config} u={upd} />}
-                        {step === 7 && <StepReview c={config} building={building} />}
-                        {step === 7 && (
-                            <div className="mt-4 p-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))/30]">
-                                <label className="flex items-center gap-2 text-sm font-medium mb-2">
-                                    <input
-                                        type="checkbox"
-                                        checked={!!config.deployOnBuild}
-                                        onChange={(e) => upd("deployOnBuild", e.target.checked)}
-                                    />
-                                    Save + Deploy + DNS in one flow
-                                </label>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xs text-[hsl(var(--muted-foreground))]">Deploy target:</span>
-                                    <select
-                                        className="text-xs bg-[hsl(var(--input))] border border-[hsl(var(--border))] rounded px-2 py-1"
-                                        value={config.deployTarget || "cf-pages"}
-                                        onChange={(e) => upd("deployTarget", e.target.value)}
-                                        disabled={!config.deployOnBuild}
-                                    >
-                                        {deployTargets.map((t) => (
-                                            <option key={t.id} value={t.id}>
-                                                {t.label}{t.configured ? "" : " (not configured)"}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
+            <Card className="p-7 mb-4 max-w-[780px] mx-auto" ref={cardRef}>
+                {step === 1 && <StepBrand c={config} u={upd} settings={settings} ops={ops} />}
+                {step === 2 && <StepProduct c={config} u={upd} />}
+                {step === 3 && <StepTemplate c={config} u={upd} />}
+                {step === 4 && <StepDesign c={config} u={upd} notify={notify} />}
+                {step === 5 && <StepCopy c={config} u={upd} onAiGenerate={handleAiGenerate} aiLoading={aiLoading} onAiMeta={handleAiMeta} aiMetaLoading={aiMetaLoading} />}
+                {step === 6 && <StepTracking c={config} u={upd} />}
+                {step === 7 && <StepReview c={config} building={building} />}
+            </Card>
+
+            {/* Preview Modal */}
+            {previewOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }} onClick={(e) => { if (e.target === e.currentTarget) setPreviewOpen(false); }}>
+                    <div className="relative flex flex-col" style={{ width: 420, maxWidth: 420, height: '92vh' }}>
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between px-5 py-3 rounded-t-2xl" style={{ background: 'hsl(var(--card))', borderBottom: '1px solid hsl(var(--border))' }}>
+                            <div className="flex items-center gap-3">
+                                <span className="text-sm font-bold">👁 Preview</span>
+                                <span className="text-[11px] px-2.5 py-1 rounded-full font-semibold" style={{ background: 'hsl(var(--primary) / 0.15)', color: 'hsl(var(--primary))' }}>{config.brand || 'Untitled'} — {config.domain || ''}</span>
                             </div>
-                        )}
-                    </Card>
-                    <div className="sticky top-6">
-                        <MockPhone>
-                            <iframe title="mobile-preview" className="w-full h-full border-none" srcDoc={previewHtml} />
-                        </MockPhone>
-                    </div>
-                </div>
-            ) : (
-                <Card className="p-7 mb-4 max-w-[780px] mx-auto" ref={cardRef}>
-                    {step === 1 && <StepBrand c={config} u={upd} settings={settings} />}
-                    {step === 2 && <StepProduct c={config} u={upd} />}
-                    {step === 3 && <StepTemplate c={config} u={upd} />}
-                    {step === 4 && <StepDesign c={config} u={upd} notify={notify} />}
-                    {step === 5 && <StepCopy c={config} u={upd} onAiGenerate={handleAiGenerate} aiLoading={aiLoading} onAiMeta={handleAiMeta} aiMetaLoading={aiMetaLoading} />}
-                    {step === 6 && <StepTracking c={config} u={upd} />}
-                    {step === 7 && <StepReview c={config} building={building} />}
-                    {step === 7 && (
-                        <div className="mt-4 p-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))/30]">
-                            <label className="flex items-center gap-2 text-sm font-medium mb-2">
-                                <input
-                                    type="checkbox"
-                                    checked={!!config.deployOnBuild}
-                                    onChange={(e) => upd("deployOnBuild", e.target.checked)}
-                                />
-                                Save + Deploy + DNS in one flow
-                            </label>
                             <div className="flex items-center gap-2">
-                                <span className="text-xs text-[hsl(var(--muted-foreground))]">Deploy target:</span>
-                                <select
-                                    className="text-xs bg-[hsl(var(--input))] border border-[hsl(var(--border))] rounded px-2 py-1"
-                                    value={config.deployTarget || "cf-pages"}
-                                    onChange={(e) => upd("deployTarget", e.target.value)}
-                                    disabled={!config.deployOnBuild}
-                                >
-                                    {deployTargets.map((t) => (
-                                        <option key={t.id} value={t.id}>
-                                            {t.label}{t.configured ? "" : " (not configured)"}
-                                        </option>
-                                    ))}
-                                </select>
+                                <span className="text-[11px] px-2 py-1 rounded-md font-semibold" style={{ background: 'hsl(var(--muted))', color: 'hsl(var(--muted-foreground))', border: '1px solid hsl(var(--border))' }}>📱 Mobile</span>
+                                <button onClick={() => setPreviewOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-lg text-base font-bold transition-colors hover:bg-[hsl(var(--muted))]" style={{ color: 'hsl(var(--muted-foreground))' }}>✕</button>
                             </div>
                         </div>
-                    )}
-                </Card>
+                        {/* Modal Body */}
+                        <div className="flex-1 flex items-stretch justify-center overflow-hidden rounded-b-2xl" style={{ background: '#0a0a0a' }}>
+                            <div className="w-full h-full overflow-hidden" style={{ borderBottomLeftRadius: 16, borderBottomRightRadius: 16 }}>
+                                <iframe title="preview-mobile" style={{ width: '100%', height: '100%', border: 'none', display: 'block' }} srcDoc={previewHtml} />
+                            </div>
+                        </div>
+                    </div>
+                </div>
             )}
 
-            <div className="flex justify-between max-w-[780px]">
+            <div className="flex items-center justify-between max-w-[780px] mx-auto">
                 <Button variant="ghost" onClick={handleBackOrCancel}>
                     ← {step === 1 ? "Cancel" : "Back"}
                 </Button>
-                {step < 7 ? (
-                    <Button onClick={handleNext}>Next →</Button>
-                ) : (
-                    <Button onClick={handleBuild} disabled={building} className="px-6 py-2.5">
-                        {building ? "⏳ Saving..." : config._editMode ? "✅ Update & Save" : "🚀 Build & Save"}
-                    </Button>
-                )}
+                <div className="flex items-center gap-3">
+                    {step >= 3 && (
+                        <button
+                            onClick={() => setPreviewOpen(true)}
+                            className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+                            style={{ background: 'hsl(var(--muted))', color: 'hsl(var(--foreground))', border: '1px solid hsl(var(--border))' }}
+                        >
+                            👁 Preview
+                        </button>
+                    )}
+                    {step < 7 ? (
+                        <Button onClick={handleNext}>Next →</Button>
+                    ) : (
+                        <Button onClick={handleBuild} disabled={building} className="px-6 py-2.5">
+                            {building ? "⏳ Saving..." : config._editMode ? "✅ Update & Save" : "🚀 Build & Save"}
+                        </Button>
+                    )}
+                </div>
             </div>
         </div>
     );

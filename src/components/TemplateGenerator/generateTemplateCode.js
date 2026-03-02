@@ -1,99 +1,216 @@
 /**
- * Generate template code from wizard state
- * Separated to avoid JSX/template literal conflicts
+ * Generate template code + files from wizard state
+ * 
+ * V3-1.3: Fixed to actually generate usable files by running bigpicture-v1
+ * generator with niche defaults. Previously only generated source code string
+ * but no actual files — templates saved to DB were empty shells.
+ * 
+ * Strategy: Run bigpicture-v1 engine with niche-specific config overrides.
+ * The output includes both:
+ * - sourceCode: JS module string (for reference/download)
+ * - files: Actual Astro project files (for rendering + deploy)
  */
 
+import { generate as moduleGenerate } from '#lp-template-generator/core/generator.js';
+
+export const TEMPLATE_AI_EDITABLE_FILES = [
+  "src/layouts/Layout.astro",
+  "src/styles/global.css",
+  "tailwind.config.mjs",
+];
+
+// Niche presets — default copy & config overrides per niche
+const NICHE_PRESETS = {
+  installment: {
+    loanType: 'installment',
+    h1: 'Get Cash Fast',
+    h1span: '$100–$5,000',
+    badge: '✓ No Credit Check Required',
+    cta: 'Check My Rate →',
+    sub: 'Fast approval. Funds as soon as tomorrow.',
+    metaTitle: '{brand} | Installment Loans $100–$5,000 — Apply Online',
+    metaDesc: 'Apply in 2 minutes for installment loans up to $5,000. No hidden fees, instant decision.',
+    amounts: [500, 1000, 2000, 3000, 5000],
+    amountMin: 100, amountMax: 5000,
+    aprMin: 5.99, aprMax: 35.99,
+    faqItems: [
+      { q: 'How much can I borrow?', a: 'You can request between $100 and $5,000 depending on your state and qualifications.' },
+      { q: 'Will this affect my credit score?', a: 'No! Checking your rate uses a soft pull that won\'t affect your credit score.' },
+      { q: 'How fast can I get funds?', a: 'If approved, funds can be deposited as soon as the next business day.' },
+      { q: 'What are the requirements?', a: 'You need to be 18+, a US resident, have a bank account and regular income.' },
+    ],
+  },
+  'pet-care': {
+    loanType: 'pet-care',
+    h1: 'Pet Care Financing',
+    h1span: 'Made Simple',
+    badge: '🐾 0% APR Options Available',
+    cta: 'Check My Options →',
+    sub: 'Affordable payment plans for your pet\'s health.',
+    metaTitle: '{brand} | Pet Care Financing — Affordable Payment Plans',
+    metaDesc: 'Finance your pet\'s veterinary care with flexible payment plans. 0% APR options available.',
+    amounts: [500, 1000, 2000, 3000, 5000],
+    amountMin: 200, amountMax: 10000,
+    aprMin: 0, aprMax: 29.99,
+    faqItems: [
+      { q: 'What veterinary services are covered?', a: 'Most veterinary procedures including surgery, dental, emergency care, and wellness visits.' },
+      { q: 'Is there a 0% APR option?', a: 'Yes! Qualifying applicants may receive 0% APR promotional financing.' },
+      { q: 'How do I use the financing?', a: 'Once approved, present your approval at any participating veterinary clinic.' },
+      { q: 'Will this affect my credit?', a: 'Checking your options uses a soft inquiry that won\'t impact your credit score.' },
+    ],
+  },
+  general: {
+    loanType: 'installment',
+    h1: 'Smart Financial Solutions',
+    h1span: 'For You',
+    badge: '✓ Fast & Secure',
+    cta: 'Get Started →',
+    sub: 'Simple application. Quick decision. Trusted by thousands.',
+    metaTitle: '{brand} | Apply Online Today',
+    metaDesc: 'Apply online in minutes. Fast approval, competitive rates, no hidden fees.',
+    amounts: [1000, 2000, 3000, 4000, 5000],
+    amountMin: 100, amountMax: 5000,
+    aprMin: 5.99, aprMax: 35.99,
+    faqItems: [
+      { q: 'How does it work?', a: 'Simply fill out our short online form. Get a decision in minutes.' },
+      { q: 'Is it safe?', a: 'Yes. We use 256-bit encryption to protect your personal information.' },
+      { q: 'How fast is approval?', a: 'Most applications receive a decision within minutes.' },
+      { q: 'Are there hidden fees?', a: 'No hidden fees. All terms are clearly disclosed before you accept.' },
+    ],
+  },
+};
+
+/**
+ * Generate source code string (JS module wrapper) — for reference/download only
+ */
 export function generateTemplateCode(state) {
-    const {
-        templateName = "My Template",
-        templateDescription = "My custom template",
-        hasHeroForm = true,
-        hasCalculator = false,
-        hasTestimonials = false,
-        hasFAQ = false,
-        hasTrustBadges = false,
-        hasDarkMode = false,
-        includeTracking = true
-    } = state;
+  const {
+    templateName = "My Template",
+    templateDescription = "Custom template",
+    category = "general",
+    heroStyle = "cards",
+    hasFAQ = true,
+    hasTrustBadges = true,
+    hasDarkMode = true,
+    colorId = "ocean",
+    fontId = "inter",
+  } = state;
 
-    // Simple template code
-    const code = `/**
- * ${templateName} Template
+  const niche = NICHE_PRESETS[category] || NICHE_PRESETS.general;
+
+  const code = `/**
+ * ${templateName}
  * ${templateDescription}
- * Auto-generated by Template Generator Wizard
+ * Auto-generated by FusionOps Template Wizard
+ * Base: bigpicture-v1 (worker-safe, variant support)
  */
 
-import { COLORS, FONTS } from '../../core/template-registry.js';
+import { generate as baseGenerate } from '../bigpicture-v1/index.js';
+
+const DEFAULTS = ${JSON.stringify({
+    loanType: niche.loanType,
+    h1: niche.h1,
+    h1span: niche.h1span,
+    badge: niche.badge,
+    cta: niche.cta,
+    sub: niche.sub,
+    metaTitle: niche.metaTitle,
+    metaDesc: niche.metaDesc,
+    amounts: niche.amounts,
+    amountMin: niche.amountMin,
+    amountMax: niche.amountMax,
+    aprMin: niche.aprMin,
+    aprMax: niche.aprMax,
+    colorId,
+    fontId,
+    heroVariant: heroStyle,
+    themeVariant: hasDarkMode ? 'dark' : 'dark',
+    stickyBar: true,
+    trustVariant: hasTrustBadges ? 'icons' : 'icons',
+    faqVariant: hasFAQ ? 'accordion' : 'accordion',
+  }, null, 2)};
 
 export function generate(site) {
-  const c = COLORS.find(x => x.id === site.colorId) || COLORS[0];
-  const f = FONTS.find(x => x.id === site.fontId) || FONTS[0];
-  const brand = site.brand || "${templateName}";
-  const domain = site.domain || "example.com";
-
-  const files = {};
-
-  // ─── package.json ────────────────────────────────────────
-  files["package.json"] = JSON.stringify({
-    name: brand.toLowerCase().replace(/[^a-z0-9]/g, "-"),
-    version: "1.0.0",
-    type: "module",
-    scripts: { dev: "astro dev", build: "astro build", preview: "astro preview" },
-    dependencies: { astro: "^5.2.0" },
-  }, null, 2);
-
-  // ─── astro.config.mjs ────────────────────────────────────
-  files["astro.config.mjs"] = \`import { defineConfig } from "astro/config";
-export default defineConfig({ output: "static", site: "https://" + domain });\`;
-
-  // ─── src/pages/index.astro ────────────────────────────────
-  const h1 = site.h1 || "Your Headline";
-  const sub = site.sub || "Your subheadline";
-  const cta = site.cta || "Get Started";
-
-  files["src/pages/index.astro"] = \`<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>\\\${brand}</title>
-    <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font-family: system-ui, sans-serif; line-height: 1.6; }
-      .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-      .hero { min-height: 80vh; display: flex; align-items: center; justify-content: center; }
-      .btn { padding: 16px 32px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
-    </style>
-    ${includeTracking ? '<script>window.dataLayer = window.dataLayer || [];</script>' : ''}
-  </head>
-  <body>
-    <section class="hero">
-      <div class="container" style="text-align: center;">
-        <h1>\\\${h1}</h1>
-        <p>\\\${sub}</p>
-        ${hasHeroForm ? `<form onsubmit="handleSubmit(event)"><input type="email" placeholder="Email" required style="padding: 12px; margin-right: 8px;" /><button type="submit" class="btn">\\\${cta}</button></form>` : `<a href="#apply" class="btn">\\\${cta}</a>`}
-      </div>
-    </section>
-    ${hasTrustBadges ? '<section style="padding: 60px 20px; text-align: center;"><div>🔒 Secure · ⚡ Fast · ✓ Trusted</div></section>' : ''}
-    ${hasFAQ ? '<section style="padding: 60px 20px;"><details><summary>FAQ</summary><p>Answer here</p></details></section>' : ''}
-    <footer style="padding: 40px 20px; text-align: center; background: #1a1a1a; color: white;">
-      <p>© \\\${new Date().getFullYear()} \\\${brand}</p>
-    </footer>
-    ${includeTracking ? '<script>function handleSubmit(e){e.preventDefault();window.dataLayer.push({event:"lead"});}</script>' : ''}
-  </body>
-</html>\`;
-
-  return files;
+  const merged = { ...DEFAULTS, ...site };
+  if (!site.metaTitle) merged.metaTitle = DEFAULTS.metaTitle.replace('{brand}', merged.brand || '');
+  if (!site.metaDesc) merged.metaDesc = DEFAULTS.metaDesc;
+  return baseGenerate(merged);
 }
-
-// Register in templates/index.js:
-// registerTemplate('${templateName.toLowerCase().replace(/[^a-z0-9]/g, "-")}', {
-//   name: '${templateName}',
-//   description: '${templateDescription}',
-//   badge: 'New',
-//   category: 'general',
-//   generate: generate,
-// });
 `;
 
-    return code;
+  return code;
 }
+
+/**
+ * Generate actual Astro project files by running bigpicture-v1 generator
+ * with niche defaults. These files are what gets saved to DB and used for
+ * preview + deploy.
+ */
+export function generateTemplateFiles(state) {
+  const category = state.category || 'general';
+  const niche = NICHE_PRESETS[category] || NICHE_PRESETS.general;
+
+  // Build config that bigpicture-v1 expects
+  const config = {
+    brand: state.templateName || 'Custom Brand',
+    domain: 'example.com',
+    email: 'support@example.com',
+    ...niche,
+    colorId: state.colorId || 'ocean',
+    fontId: state.fontId || 'inter',
+    heroVariant: state.heroStyle || 'cards',
+    themeVariant: state.hasDarkMode !== false ? 'dark' : 'dark',
+    stickyBar: true,
+    trustVariant: state.hasTrustBadges !== false ? 'icons' : 'icons',
+    faqVariant: state.hasFAQ !== false ? 'accordion' : 'accordion',
+    // Template variables that bigpicture-v1 needs
+    templateId: 'template-01',
+  };
+
+  try {
+    const result = moduleGenerate('template-01', config);
+    if (result?.ok && result.files) {
+      return { ok: true, files: result.files, errors: [] };
+    }
+    return { ok: false, files: null, errors: result?.errors || ['Generator returned no files'] };
+  } catch (e) {
+    console.error('[TemplateGen] Generate files failed:', e);
+    return { ok: false, files: null, errors: [e.message] };
+  }
+}
+
+/**
+ * Generate full template config for saving to DB
+ * Includes both source code (reference) and actual files (for rendering)
+ */
+export function generateTemplateConfig(state) {
+  const category = state.category || 'general';
+  const niche = NICHE_PRESETS[category] || NICHE_PRESETS.general;
+
+  // Generate actual files
+  const fileResult = generateTemplateFiles(state);
+
+  return {
+    templateId: (state.templateName || 'custom').toLowerCase().replace(/[^a-z0-9]/g, '-'),
+    name: state.templateName || 'Custom Template',
+    description: state.templateDescription || 'Auto-generated template',
+    category: category,
+    badge: state.badge || 'New',
+    niche: category,
+    defaults: {
+      ...niche,
+      colorId: state.colorId || 'ocean',
+      fontId: state.fontId || 'inter',
+      heroVariant: state.heroStyle || 'cards',
+      themeVariant: state.hasDarkMode !== false ? 'dark' : 'dark',
+      stickyBar: true,
+      __aiTemplateOnly: true,
+      __aiEditableFiles: TEMPLATE_AI_EDITABLE_FILES,
+    },
+    sourceCode: generateTemplateCode(state),
+    files: fileResult.ok ? fileResult.files : {},
+    fileErrors: fileResult.errors,
+  };
+}
+
+export { NICHE_PRESETS };

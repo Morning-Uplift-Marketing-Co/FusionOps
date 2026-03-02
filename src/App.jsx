@@ -22,8 +22,9 @@ import { OpsCenter } from "./components/OpsCenter";
 import { Settings } from "./components/Settings";
 import { DeployHistory } from "./components/DeployHistory";
 import { TemplateEditor } from "./components/TemplateEditor";
-import { TemplateGeneratorModal } from "./components/TemplateGenerator";
+import { TemplateGeneratorModal } from "./components/TemplateGenerator/TemplateGeneratorModal";
 import { ErrorLog, logError } from "./components/ErrorLog";
+import { ApiHealthCheck } from "./components/ApiHealthCheck";
 import { SpendDashboard } from "./components/SpendDashboard";
 import { AccountMap } from "./components/AccountMap";
 import { TrackingDashboard } from "./components/TrackingDashboard";
@@ -45,9 +46,27 @@ const ENV_DEFAULTS = {
   neonUrl:           NEON_URL,
 };
 
-export default function App() {
-  const asArray = (value) => Array.isArray(value) ? value : [];
+function normalizeCfProfiles(value) {
+  if (Array.isArray(value)) return value.filter((p) => p && typeof p === "object");
+  if (!value) return [];
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed.filter((p) => p && typeof p === "object");
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
 
+function normalizeSettingsShape(input) {
+  const out = { ...(input || {}) };
+  out.cfProfiles = normalizeCfProfiles(out.cfProfiles);
+  return out;
+}
+
+export default function App() {
   const [page, setPage] = useState("dashboard");
   const [sites, setSites] = useState([]);
   const [ops, setOps] = useState({ domains: [], accounts: [], cfAccounts: [], registrarAccounts: [], profiles: [], payments: [], logs: [], risks: [] });
@@ -59,7 +78,7 @@ export default function App() {
       Object.entries(ENV_DEFAULTS).filter(([, v]) => v)
     );
     const localSettings = { ...envSeed, ...rawLocal };
-    const sanitized = sanitizeSettings(localSettings);
+    const sanitized = normalizeSettingsShape(sanitizeSettings(localSettings));
     LS.set("settings", sanitized);
     return sanitized;
   });
@@ -149,7 +168,7 @@ useEffect(() => {
         // If critical legacy account detected, auto-fix immediately
         if (validation.errors.some(e => e.critical)) {
           console.warn('[CRITICAL] Auto-fixing critical account mismatch...');
-          const sanitized = sanitizeSettings(settings);
+          const sanitized = normalizeSettingsShape(sanitizeSettings(settings));
           if (JSON.stringify(sanitized) !== JSON.stringify(settings)) {
             setSettings(sanitized);
             LS.set("settings", sanitized);
@@ -180,7 +199,7 @@ useEffect(() => {
   // CRITICAL: Sync Cloudflare profiles from settings to ops.cfAccounts
   // This ensures DeploySection, DnsSection, OpsCenter can see all CF accounts
   useEffect(() => {
-    const profiles = asArray(settings?.cfProfiles);
+    const profiles = normalizeCfProfiles(settings?.cfProfiles);
     // Build accounts from profiles
     const profileAccounts = profiles.map(p => ({
       id: p.id,
@@ -207,12 +226,12 @@ useEffect(() => {
 
     setOps(prev => {
       // Merge: keep manually-added OpsCenter accounts, add/update profile-sourced ones
-      const manualAccounts = asArray(prev.cfAccounts).filter(a =>
+      const manualAccounts = (prev.cfAccounts || []).filter(a =>
         !profileAccounts.some(p => p.accountId === a.accountId || p.accountId === a.account_id)
       );
       const merged = [...profileAccounts, ...manualAccounts];
       // Only update if changed
-      const prevIds = asArray(prev.cfAccounts).map(a => a.id).sort().join(',');
+      const prevIds = (prev.cfAccounts || []).map(a => a.id).sort().join(',');
       const newIds = merged.map(a => a.id).sort().join(',');
       if (prevIds === newIds) return prev;
       console.log('[App] Syncing cfProfiles → ops.cfAccounts:', merged.length, 'accounts');
@@ -258,11 +277,11 @@ useEffect(() => {
               console.log('[boot] 🔄 Neon connected! Auto-recovering settings...');
 
               // Use auto-recovery to merge and sanitize
-              const recovered = autoRecoverSettings(neonSettings, localSettings);
+              const recovered = normalizeSettingsShape(autoRecoverSettings(neonSettings, localSettings));
 
               // Apply recovered settings
               setSettings(prev => {
-                const merged = { ...prev, ...recovered };
+                const merged = normalizeSettingsShape({ ...prev, ...recovered });
                 LS.set("settings", merged);
                 console.log('[boot] ✅ Settings recovered from Neon:', Object.keys(merged).filter(k =>
                   k !== 'cfApiToken' // Don't log token
@@ -330,15 +349,15 @@ useEffect(() => {
             ...prev,
             ...nextOps,
             // CRITICAL: Prefer already-synced domains over empty API data
-            domains: asArray(nextOps.domains).length > 0 ? asArray(nextOps.domains) : asArray(prev.domains),
-            accounts: asArray(nextOps.accounts).length > 0 ? asArray(nextOps.accounts) : asArray(prev.accounts),
-            profiles: asArray(nextOps.profiles).length > 0 ? asArray(nextOps.profiles) : asArray(prev.profiles),
-            payments: asArray(nextOps.payments).length > 0 ? asArray(nextOps.payments) : asArray(prev.payments),
-            logs: asArray(nextOps.logs).length > 0 ? asArray(nextOps.logs) : asArray(prev.logs),
-            risks: asArray(nextOps.risks).length > 0 ? asArray(nextOps.risks) : asArray(prev.risks),
-            deployments: asArray(nextOps.deployments).length > 0 ? asArray(nextOps.deployments) : asArray(prev.deployments),
-            cfAccounts: asArray(data.cfAccounts).length > 0 ? asArray(data.cfAccounts) : asArray(prev.cfAccounts),
-            registrarAccounts: asArray(data.registrarAccounts).length > 0 ? asArray(data.registrarAccounts) : asArray(prev.registrarAccounts),
+            domains: (nextOps.domains && nextOps.domains.length > 0) ? nextOps.domains : prev.domains || [],
+            accounts: nextOps.accounts || prev.accounts || [],
+            profiles: nextOps.profiles || prev.profiles || [],
+            payments: nextOps.payments || prev.payments || [],
+            logs: nextOps.logs || prev.logs || [],
+            risks: nextOps.risks || prev.risks || [],
+            deployments: nextOps.deployments || prev.deployments || [],
+            cfAccounts: data.cfAccounts || prev.cfAccounts || [],
+            registrarAccounts: data.registrarAccounts || prev.registrarAccounts || [],
           };
         });
 
@@ -356,7 +375,7 @@ useEffect(() => {
               // Load full data from Neon now that it's connected
               const [ns, nsi, nde] = await Promise.all([db.loadSettings(), db.loadSites(), db.loadDeploys()]);
               if (ns) {
-                const m = { ...localSettings, ...data.settings, ...ns };
+                const m = normalizeSettingsShape({ ...localSettings, ...data.settings, ...ns });
                 setSettings(m);
                 LS.set("settings", m);
               }
@@ -368,9 +387,9 @@ useEffect(() => {
 
         // Final fallback/merge if Neon still not ready
         if (!neonReady) {
-          if (Array.isArray(data.sites)) setSites(data.sites);
+          if (data.sites) setSites(data.sites);
           if (data.settings) {
-            const merged = { ...localSettings, ...data.settings };
+            const merged = normalizeSettingsShape({ ...localSettings, ...data.settings });
             setSettings(merged);
             LS.set("settings", merged);
           }
@@ -415,7 +434,7 @@ useEffect(() => {
           if (neonSettings) {
             // Auto-recover ALL settings from Neon
             console.log('[Neon Recovery] 🔄 Auto-recovering settings...');
-            const recovered = autoRecoverSettings(neonSettings, localSettings);
+            const recovered = normalizeSettingsShape(autoRecoverSettings(neonSettings, localSettings));
 
             // Check for incomplete settings
             const completenessCheck = detectIncompleteSettings(recovered);
@@ -462,7 +481,32 @@ useEffect(() => {
   };
 
   // Keep only plain serializable site fields — drops React event/DOM properties
-  const SITE_FIELDS = new Set(["id", "brand", "domain", "tagline", "email", "templateId", "loanType", "amountMin", "amountMax", "aprMin", "aprMax", "colorId", "fontId", "layout", "radius", "trustBadgeStyle", "trustBadgeIconTone", "h1", "h1span", "badge", "cta", "sub", "conversionId", "formStartLabel", "formSubmitLabel", "aid", "network", "redirectUrl", "voluumId", "voluumDomain", "lang", "faviconDataUrl", "ogImageDataUrl", "formEmbed", "status", "createdAt", "updatedAt", "cost"]);
+  const SITE_FIELDS = new Set([
+    // Core
+    "id", "brand", "domain", "tagline", "email", "lang", "status", "createdAt", "updatedAt", "cost",
+    // Template & Design
+    "templateId", "loanType", "amountMin", "amountMax", "aprMin", "aprMax",
+    "colorId", "fontId", "layout", "radius", "trustBadgeStyle", "trustBadgeIconTone",
+    // Copy
+    "h1", "h1span", "badge", "cta", "sub", "metaTitle", "metaDesc",
+    // Assets
+    "faviconDataUrl", "ogImageDataUrl",
+    // Google Ads tracking
+    "conversionId", "formStartLabel", "formSubmitLabel",
+    "gtagId", "gtagFormStartLabel", "gtagFormSubmitLabel",
+    // Tracking mode & pixel
+    "trackingMode", "pixelEndpoint",
+    // Voluum
+    "voluumCampaignId", "voluumCampaignName", "voluumTrackingDomain",
+    "voluumLanderScript", "voluumCfCname", "voluumAcmName", "voluumAcmValue",
+    "voluumId", "voluumDomain",
+    // Affiliate form
+    "aid", "network", "lgFormId", "formEmbed", "redirectUrl",
+    // Cloudflare
+    "cfProfileId",
+    // Deploy
+    "deployUrl", "deployId", "deployTarget",
+  ]);
   const sanitizeSite = (obj) => Object.fromEntries(
     Object.entries(obj).filter(([k, v]) => SITE_FIELDS.has(k) && typeof v !== "function")
   );
@@ -620,12 +664,12 @@ useEffect(() => {
     addBreadcrumb("settings", "Save settings", { keys: Object.keys(s) });
     // Use functional update to avoid stale closure
     setSettings(prev => {
-      const merged = { ...(prev || {}), ...s };
+      const merged = normalizeSettingsShape({ ...(prev || {}), ...s });
       return merged;
     });
     // Always persist to localStorage immediately
     // Read fresh from state in case other saves happened
-    const fresh = { ...(LS.get("settings") || {}), ...s };
+    const fresh = normalizeSettingsShape({ ...(LS.get("settings") || {}), ...s });
     LS.set("settings", fresh);
 
     // If neonUrl changed, re-init Neon
@@ -666,7 +710,7 @@ useEffect(() => {
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", fontFamily: "'Inter','DM Sans',system-ui,sans-serif", background: T.bg || '#0a0a0a' }}>
       <div style={{ textAlign: "center" }}>
         <div style={{ fontSize: 48, marginBottom: 12, animation: "pulse 1.5s infinite" }}>⚡</div>
-        <div style={{ fontSize: 18, fontWeight: 700, color: T.text }}>FusionOps V2</div>
+        <div style={{ fontSize: 18, fontWeight: 700, color: T.text }}>FusionOps V3</div>
         <div style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>
           Connecting... {neonOk ? '✅ Neon' : '⏳ Neon'} | {apiOk ? '✅ API' : '⏳ API'}
         </div>
@@ -713,12 +757,13 @@ useEffect(() => {
           {page === "account-map" && <AccountMap apiOk={apiOk} neonOk={neonOk} ops={ops} />}
           {page === "sites" && <Sites sites={sites} del={delSite} notify={notify} startCreate={startCreate} settings={settings} addDeploy={addDeploy} ops={ops} updateSite={updateSite} />}
           {page === "template-editor" && <TemplateEditor notify={notify} />}
-          {page === "create" && wizData && <Wizard config={wizData} setConfig={setWizData} addSite={addSite} addDeploy={addDeploy} setPage={setPage} settings={settings} notify={notify} />}
+          {page === "create" && wizData && <Wizard config={wizData} setConfig={setWizData} addSite={addSite} setPage={setPage} settings={settings} ops={ops} notify={notify} />}
           {page === "variant" && <VariantStudio notify={notify} sites={sites} addSite={addSite} registry={registry} setRegistry={setRegistry} apiOk={apiOk} />}
           {page === "ops" && <OpsCenter data={ops} add={opsAdd} del={opsDel} upd={opsUpd} settings={settings} />}
           {page === "deploys" && <DeployHistory deploys={deploys} />}
           {page === "tracking" && <TrackingDashboard settings={settings} sites={sites} />}
           {page === "error-log" && <ErrorLog />}
+          {page === "api-health" && <ApiHealthCheck settings={settings} />}
           {page === "settings" && <Settings settings={settings} setSettings={handleSaveSettings} stats={stats} apiOk={apiOk} neonOk={neonOk} />}
         </div>
       </main>
@@ -729,22 +774,42 @@ useEffect(() => {
         onClose={() => setTemplateGenOpen(false)}
         onSave={async (templateData) => {
           try {
+            // Generate template ID from name if not provided
+            const tplId = templateData.newFolderId || (templateData.templateName || 'custom').toLowerCase().replace(/[^a-z0-9]/g, '-');
+            const incomingDefaults = (templateData.defaults && typeof templateData.defaults === 'object') ? templateData.defaults : {};
+            const directTracking = (templateData.tracking && typeof templateData.tracking === 'object') ? templateData.tracking : {};
+            const incomingTracking = (incomingDefaults.tracking && typeof incomingDefaults.tracking === 'object')
+              ? incomingDefaults.tracking
+              : directTracking;
+            const defaultsWithTracking = {
+              ...incomingDefaults,
+              tracking: {
+                googleAdsId: String(incomingTracking.googleAdsId || "").trim(),
+                pixelEndpoint: String(incomingTracking.pixelEndpoint || "").trim(),
+                voluumDomain: String(incomingTracking.voluumDomain || "").trim(),
+              },
+            };
             // Save template to database via API
             const response = await api.post('/templates', {
-              templateId: templateData.newFolderId,
+              templateId: tplId,
               name: templateData.templateName,
               description: templateData.templateDescription,
               category: templateData.category || 'general',
               badge: templateData.badge || 'New',
               sourceCode: templateData.generatedCode,
               files: templateData.generatedFiles || {},
-            });
+              // Include niche defaults for runtime registration
+              defaults: defaultsWithTracking,
+            }, { timeout: 120000 });
 
             if (response.error) {
               const detail = response.detail ? (typeof response.detail === 'string' ? response.detail : JSON.stringify(response.detail)) : '';
-              notify(`Error saving template: ${response.error}${detail ? ' - ' + detail : ''}`, 'error');
+              const msg = `Error saving template: ${response.error}${detail ? ' - ' + detail : ''}`;
+              notify(msg, 'error');
+              return { ok: false, message: msg };
             } else {
-              notify(`Template "${templateData.templateName}" saved successfully!`, 'success');
+              const msg = `Template "${templateData.templateName}" saved successfully!`;
+              notify(msg, 'success');
               // Refresh both caches so new template appears in selector
               
 refreshCustomTemplates();
@@ -758,10 +823,13 @@ api.get("/templates")
               // Dispatch event for any listening components
               window.dispatchEvent(new CustomEvent(TEMPLATE_REFRESH_EVENT, { detail: templateData.newFolderId }));
               console.log("Template saved:", response);
+              return { ok: true, message: msg };
             }
           } catch (e) {
-            notify(`Failed to save template: ${e.message}`, 'error');
+            const msg = `Failed to save template: ${e.message}`;
+            notify(msg, 'error');
             console.error("Template save error:", e);
+            return { ok: false, message: msg };
           }
         }}
         templates={savedTemplates}
