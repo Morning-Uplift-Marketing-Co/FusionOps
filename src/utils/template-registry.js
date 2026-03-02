@@ -75,6 +75,27 @@ let customTemplatesLoading = false;
 
 let customTemplatesPromise = null;
 
+function parseTemplateFiles(raw) {
+  if (!raw) return {};
+  if (typeof raw === 'object') return raw;
+  if (typeof raw === 'string') {
+    try { return JSON.parse(raw); } catch { return {}; }
+  }
+  return {};
+}
+
+function detectTemplateHealth(files) {
+  const keys = Object.keys(files || {});
+  const hasAstroIndex = keys.some(k => k === 'src/pages/index.astro' || k.endsWith('/src/pages/index.astro') || k.endsWith('index.astro'));
+  const hasHtmlIndex = keys.some(k => k === 'index.html' || k.endsWith('/index.html'));
+  const usable = hasAstroIndex || hasHtmlIndex;
+  return {
+    usable,
+    entry: hasAstroIndex ? 'astro' : (hasHtmlIndex ? 'html' : 'none'),
+    reason: usable ? '' : 'Missing index entry (need src/pages/index.astro or index.html)',
+  };
+}
+
 /**
  * Fetch custom templates from API
  * @param {boolean} force - Force refetch even if cache exists
@@ -90,6 +111,13 @@ export async function fetchCustomTemplates(force = false) {
       console.log("[Registry] Custom Templates fetch complete:", response);
       if (response && Array.isArray(response)) {
         customTemplatesCache = response.map(t => ({
+          ...(() => {
+            const files = parseTemplateFiles(t.files);
+            return {
+              files,
+              health: detectTemplateHealth(files),
+            };
+          })(),
           id: t.template_id || t.id,
           dbId: t.id,
           name: t.name,
@@ -98,7 +126,6 @@ export async function fetchCustomTemplates(force = false) {
           category: t.category || 'custom',
           source: 'api',
           sourceCode: t.source_code,
-          files: t.files ? (typeof t.files === 'string' ? JSON.parse(t.files) : t.files) : {},
           createdAt: t.created_at,
         }));
         return customTemplatesCache;

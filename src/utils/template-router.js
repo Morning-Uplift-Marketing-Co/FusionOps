@@ -52,6 +52,13 @@ function astroToHtmlPreview(files, site) {
     const key = Object.keys(files).find(k => k.endsWith('/src/pages/index.astro') || k.endsWith('src/pages/index.astro') || k.endsWith('index.astro'));
     if (key) indexContent = files[key];
   }
+  // Support Vite/static templates that provide index.html instead of Astro entry
+  if (!indexContent) {
+    let htmlKey = Object.keys(files).find(k => k === 'index.html' || k.endsWith('/index.html'));
+    if (htmlKey && files[htmlKey]) {
+      return String(files[htmlKey]);
+    }
+  }
 
   if (!indexContent) {
     console.warn("[Router] No index.astro found in files keys:", Object.keys(files));
@@ -285,20 +292,12 @@ export function renderTemplateToAssets(template, site) {
   console.log('[Router] renderTemplateToAssets - looking for index.astro');
 
   // 1. Compile index.html
-  const html = astroToHtmlPreview(files, site);
+  let html = astroToHtmlPreview(files, site);
 
   // Validate HTML was generated
-  if (!html || html.length < 100) {
-    console.error('[Router] Generated HTML is too short or empty!');
-    console.error('[Router] HTML preview:', html?.substring(0, 500));
-    throw new Error('Failed to generate valid HTML from template');
-  }
-
-  // Check for error indicators
-  if (html.includes('Preview Error') || html.includes('No index.astro found')) {
-    console.error('[Router] Template rendering produced error message');
-    console.error('[Router] HTML content:', html.substring(0, 500));
-    throw new Error('Template missing required index.astro file');
+  if (!html || html.length < 100 || html.includes('Preview Error') || html.includes('No index.astro found')) {
+    console.error('[Router] Custom template entry invalid, fallback to classic HTML');
+    html = generateLP(site);
   }
 
   // Debug: check if HTML was generated
