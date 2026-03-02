@@ -4,7 +4,7 @@ import { Field } from "../ui/field";
 import { InputField as Inp } from "../ui/input-field";
 
 export function StepBrand({ c, u, settings }) {
-    const cfProfiles = settings?.cfProfiles || [];
+    const cfProfiles = Array.isArray(settings?.cfProfiles) ? settings.cfProfiles : [];
 
     return (
         <>

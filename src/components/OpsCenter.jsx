@@ -482,6 +482,18 @@ function D1DatabaseTab() {
    OpsCenter — Tasks 7, 8, 9, 11, 12
    ═══════════════════════════════════════════════════════════════════════ */
 export function OpsCenter({ data, add, del, upd, settings }) {
+    data = {
+        ...(data || {}),
+        domains: Array.isArray(data?.domains) ? data.domains : [],
+        accounts: Array.isArray(data?.accounts) ? data.accounts : [],
+        cfAccounts: Array.isArray(data?.cfAccounts) ? data.cfAccounts : [],
+        registrarAccounts: Array.isArray(data?.registrarAccounts) ? data.registrarAccounts : [],
+        profiles: Array.isArray(data?.profiles) ? data.profiles : [],
+        payments: Array.isArray(data?.payments) ? data.payments : [],
+        logs: Array.isArray(data?.logs) ? data.logs : [],
+        risks: Array.isArray(data?.risks) ? data.risks : [],
+    };
+
     /* ─── Core state ─────────────────────────────────────────────────── */
     const [tab, setTab] = useState("overview");
     const [modal, setModal] = useState(null);
