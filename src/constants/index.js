@@ -112,6 +112,8 @@ export const WIZARD_DEFAULTS = {
     gtagId: "", gtagFormStartLabel: "", gtagFormSubmitLabel: "",
     trackingMode: "minimal",
     voluumCampaignId: "", voluumCampaignName: "", voluumTrackingDomain: "",
+    deployOnBuild: true,
+    deployTarget: "cf-pages",
     aid: "14881", network: "LeadsGate",
     lang: "English",
 };

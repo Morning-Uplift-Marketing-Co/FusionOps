@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { THEME as T } from "../constants";
 import { uid, now } from "../utils";
-import { generateHtmlByTemplate } from "../utils/template-router";
+import { generateHtmlByTemplate, generateApplyPageByTemplate, generateDeployAssetsByTemplate } from "../utils/template-router";
 import { api } from "../services/api";
 import { getOrCreateZone, createDnsRecord, ensurePixelSubdomain } from "../services/cloudflare-dns";
+import { deployTo, getAvailableTargets } from "../utils/deployers";
 import { MockPhone } from "./ui/mock-phone";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
@@ -73,7 +74,7 @@ function validateStep(stepNum, config) {
 
 const steps = ["Brand", "Product", "Template", "Design", "Copy", "Tracking", "Review"];
 
-export function Wizard({ config, setConfig, addSite, setPage, settings, notify }) {
+export function Wizard({ config, setConfig, addSite, addDeploy, setPage, settings, notify }) {
     const [step, setStep] = useState(1);
     const [building, setBuilding] = useState(false);
     const [validationErrors, setValidationErrors] = useState([]);
@@ -81,6 +82,7 @@ export function Wizard({ config, setConfig, addSite, setPage, settings, notify }
     const [aiMetaLoading, setAiMetaLoading] = useState(false);
     const [initialConfig, setInitialConfig] = useState(null);
     const cardRef = useRef(null);
+    const deployTargets = useMemo(() => getAvailableTargets(settings), [settings]);
 
     const upd = (k, v) => setConfig(p => ({ ...p, [k]: v }));
 
@@ -239,11 +241,48 @@ export function Wizard({ config, setConfig, addSite, setPage, settings, notify }
         }
 
         await new Promise(r => setTimeout(r, 1000));
-        if (finalConfig._editMode) {
-            addSite({ ...finalConfig, status: "completed", updatedAt: now() });
-        } else {
-            addSite({ ...finalConfig, id: uid(), status: "completed", createdAt: now(), cost: 0.001 });
+
+        const siteId = finalConfig._editMode ? finalConfig.id : uid();
+        const sitePayload = finalConfig._editMode
+            ? { ...finalConfig, id: siteId, status: "completed", updatedAt: now() }
+            : { ...finalConfig, id: siteId, status: "completed", createdAt: now(), cost: 0.001 };
+
+        // One-flow mode: save + deploy + DNS in one click
+        if (finalConfig.deployOnBuild) {
+            try {
+                const target = finalConfig.deployTarget || "cf-pages";
+                const targetConfig = deployTargets.find(t => t.id === target);
+                if (!targetConfig?.configured) {
+                    notify(`Deploy target "${target}" is not configured in Settings`, "warning");
+                } else {
+                    const assets = generateDeployAssetsByTemplate(sitePayload);
+                    const applyHtml = generateApplyPageByTemplate(sitePayload);
+                    const deployContent = typeof assets === "string"
+                        ? { "index.html": assets, "apply.html": applyHtml }
+                        : { ...assets, "apply.html": applyHtml };
+
+                    const deployResult = await deployTo(target, deployContent, sitePayload, settings);
+                    if (deployResult.success) {
+                        addDeploy?.({
+                            id: uid(),
+                            siteId: sitePayload.id,
+                            brand: sitePayload.brand,
+                            url: deployResult.url,
+                            ts: now(),
+                            type: "deploy",
+                            target,
+                        });
+                        notify(`✅ Save + Deploy complete (${target})`);
+                    } else {
+                        notify(`Saved, but deploy failed: ${deployResult.error}`, "warning");
+                    }
+                }
+            } catch (e) {
+                notify(`Saved, but deploy error: ${e.message}`, "warning");
+            }
         }
+
+        await addSite(sitePayload);
 
         // ── Auto-provision DNS subdomains (t. + trk.) ──
         const domain = finalConfig.domain?.trim();
@@ -362,6 +401,33 @@ export function Wizard({ config, setConfig, addSite, setPage, settings, notify }
                         {step === 5 && <StepCopy c={config} u={upd} onAiGenerate={handleAiGenerate} aiLoading={aiLoading} onAiMeta={handleAiMeta} aiMetaLoading={aiMetaLoading} />}
                         {step === 6 && <StepTracking c={config} u={upd} />}
                         {step === 7 && <StepReview c={config} building={building} />}
+                        {step === 7 && (
+                            <div className="mt-4 p-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))/30]">
+                                <label className="flex items-center gap-2 text-sm font-medium mb-2">
+                                    <input
+                                        type="checkbox"
+                                        checked={!!config.deployOnBuild}
+                                        onChange={(e) => upd("deployOnBuild", e.target.checked)}
+                                    />
+                                    Save + Deploy + DNS in one flow
+                                </label>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs text-[hsl(var(--muted-foreground))]">Deploy target:</span>
+                                    <select
+                                        className="text-xs bg-[hsl(var(--input))] border border-[hsl(var(--border))] rounded px-2 py-1"
+                                        value={config.deployTarget || "cf-pages"}
+                                        onChange={(e) => upd("deployTarget", e.target.value)}
+                                        disabled={!config.deployOnBuild}
+                                    >
+                                        {deployTargets.map((t) => (
+                                            <option key={t.id} value={t.id}>
+                                                {t.label}{t.configured ? "" : " (not configured)"}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        )}
                     </Card>
                     <div className="sticky top-6">
                         <MockPhone>
@@ -378,6 +444,33 @@ export function Wizard({ config, setConfig, addSite, setPage, settings, notify }
                     {step === 5 && <StepCopy c={config} u={upd} onAiGenerate={handleAiGenerate} aiLoading={aiLoading} onAiMeta={handleAiMeta} aiMetaLoading={aiMetaLoading} />}
                     {step === 6 && <StepTracking c={config} u={upd} />}
                     {step === 7 && <StepReview c={config} building={building} />}
+                    {step === 7 && (
+                        <div className="mt-4 p-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))/30]">
+                            <label className="flex items-center gap-2 text-sm font-medium mb-2">
+                                <input
+                                    type="checkbox"
+                                    checked={!!config.deployOnBuild}
+                                    onChange={(e) => upd("deployOnBuild", e.target.checked)}
+                                />
+                                Save + Deploy + DNS in one flow
+                            </label>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs text-[hsl(var(--muted-foreground))]">Deploy target:</span>
+                                <select
+                                    className="text-xs bg-[hsl(var(--input))] border border-[hsl(var(--border))] rounded px-2 py-1"
+                                    value={config.deployTarget || "cf-pages"}
+                                    onChange={(e) => upd("deployTarget", e.target.value)}
+                                    disabled={!config.deployOnBuild}
+                                >
+                                    {deployTargets.map((t) => (
+                                        <option key={t.id} value={t.id}>
+                                            {t.label}{t.configured ? "" : " (not configured)"}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                    )}
                 </Card>
             )}
 
