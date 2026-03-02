@@ -75,6 +75,7 @@ function validateStep(stepNum, config) {
 const steps = ["Brand", "Product", "Template", "Design", "Copy", "Tracking", "Review"];
 
 export function Wizard({ config, setConfig, addSite, addDeploy, setPage, settings, notify }) {
+    const asArray = (v) => Array.isArray(v) ? v : [];
     const [step, setStep] = useState(1);
     const [building, setBuilding] = useState(false);
     const [validationErrors, setValidationErrors] = useState([]);
@@ -88,7 +89,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
 
     // Set helper flag for validation
     useEffect(() => {
-        const hasProfiles = (settings?.cfProfiles || []).length > 0;
+        const hasProfiles = asArray(settings?.cfProfiles).length > 0;
         if (hasProfiles !== config._cfProfilesExist) {
             setConfig(p => ({ ...p, _cfProfilesExist: hasProfiles }));
         }
@@ -287,7 +288,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
         // ── Auto-provision DNS subdomains (t. + trk.) ──
         const domain = finalConfig.domain?.trim();
         // Resolve CF credentials from selected profile, fallback to legacy settings
-        const cfProfile = (settings?.cfProfiles || []).find(p => p.id === finalConfig.cfProfileId);
+        const cfProfile = asArray(settings?.cfProfiles).find(p => p.id === finalConfig.cfProfileId);
         const cfAccountId = cfProfile?.accountId || settings?.cfAccountId;
         const cfApiToken = cfProfile?.apiToken || settings?.cfApiToken;
         if (domain && cfAccountId && cfApiToken) {

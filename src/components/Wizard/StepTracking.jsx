@@ -377,7 +377,8 @@ export function StepTracking({ c, u }) {
                     try {
                       const s = LS.get("settings") || {};
                       // Resolve CF credentials from profile or global
-                      const cfProfile = (s.cfProfiles || []).find(p => p.id === c.cfProfileId);
+                      const cfProfiles = Array.isArray(s.cfProfiles) ? s.cfProfiles : [];
+                      const cfProfile = cfProfiles.find(p => p.id === c.cfProfileId);
                       const cfAccountId = cfProfile?.accountId || s.cfAccountId;
                       const cfApiToken = cfProfile?.apiToken || s.cfApiToken;
                       if (!cfAccountId || !cfApiToken) throw new Error("Cloudflare credentials not found — configure in Settings");

@@ -9,6 +9,7 @@ import { getCfApiBase } from "../utils/api-proxy";
 import { detectIncompleteSettings } from "../services/account-lock";
 
 export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
+    const asArray = (v) => Array.isArray(v) ? v : [];
     const [neonUrl, setNeonUrl] = useState(settings.neonUrl || import.meta.env.VITE_NEON_URL || "");
     const [apiKey, setApiKey] = useState(settings.apiKey || "");
     const [geminiKey, setGeminiKey] = useState(settings.geminiKey || "");
@@ -30,7 +31,7 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
 
     // ── Cloudflare Profiles (multi-account) ──
     const [cfProfiles, setCfProfiles] = useState(() => {
-        const saved = settings.cfProfiles || [];
+        const saved = asArray(settings.cfProfiles);
         // Migrate legacy single-account into profiles if needed
         if (saved.length === 0 && (settings.cfAccountId || settings.cfApiToken)) {
             return [{ id: "legacy", name: "Default", accountId: settings.cfAccountId || "", apiToken: settings.cfApiToken || "" }];
