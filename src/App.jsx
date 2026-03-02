@@ -46,6 +46,8 @@ const ENV_DEFAULTS = {
 };
 
 export default function App() {
+  const asArray = (value) => Array.isArray(value) ? value : [];
+
   const [page, setPage] = useState("dashboard");
   const [sites, setSites] = useState([]);
   const [ops, setOps] = useState({ domains: [], accounts: [], cfAccounts: [], registrarAccounts: [], profiles: [], payments: [], logs: [], risks: [] });
@@ -178,7 +180,7 @@ useEffect(() => {
   // CRITICAL: Sync Cloudflare profiles from settings to ops.cfAccounts
   // This ensures DeploySection, DnsSection, OpsCenter can see all CF accounts
   useEffect(() => {
-    const profiles = settings?.cfProfiles || [];
+    const profiles = asArray(settings?.cfProfiles);
     // Build accounts from profiles
     const profileAccounts = profiles.map(p => ({
       id: p.id,
@@ -205,12 +207,12 @@ useEffect(() => {
 
     setOps(prev => {
       // Merge: keep manually-added OpsCenter accounts, add/update profile-sourced ones
-      const manualAccounts = (prev.cfAccounts || []).filter(a =>
+      const manualAccounts = asArray(prev.cfAccounts).filter(a =>
         !profileAccounts.some(p => p.accountId === a.accountId || p.accountId === a.account_id)
       );
       const merged = [...profileAccounts, ...manualAccounts];
       // Only update if changed
-      const prevIds = (prev.cfAccounts || []).map(a => a.id).sort().join(',');
+      const prevIds = asArray(prev.cfAccounts).map(a => a.id).sort().join(',');
       const newIds = merged.map(a => a.id).sort().join(',');
       if (prevIds === newIds) return prev;
       console.log('[App] Syncing cfProfiles → ops.cfAccounts:', merged.length, 'accounts');
@@ -328,15 +330,15 @@ useEffect(() => {
             ...prev,
             ...nextOps,
             // CRITICAL: Prefer already-synced domains over empty API data
-            domains: (nextOps.domains && nextOps.domains.length > 0) ? nextOps.domains : prev.domains || [],
-            accounts: nextOps.accounts || prev.accounts || [],
-            profiles: nextOps.profiles || prev.profiles || [],
-            payments: nextOps.payments || prev.payments || [],
-            logs: nextOps.logs || prev.logs || [],
-            risks: nextOps.risks || prev.risks || [],
-            deployments: nextOps.deployments || prev.deployments || [],
-            cfAccounts: data.cfAccounts || prev.cfAccounts || [],
-            registrarAccounts: data.registrarAccounts || prev.registrarAccounts || [],
+            domains: asArray(nextOps.domains).length > 0 ? asArray(nextOps.domains) : asArray(prev.domains),
+            accounts: asArray(nextOps.accounts).length > 0 ? asArray(nextOps.accounts) : asArray(prev.accounts),
+            profiles: asArray(nextOps.profiles).length > 0 ? asArray(nextOps.profiles) : asArray(prev.profiles),
+            payments: asArray(nextOps.payments).length > 0 ? asArray(nextOps.payments) : asArray(prev.payments),
+            logs: asArray(nextOps.logs).length > 0 ? asArray(nextOps.logs) : asArray(prev.logs),
+            risks: asArray(nextOps.risks).length > 0 ? asArray(nextOps.risks) : asArray(prev.risks),
+            deployments: asArray(nextOps.deployments).length > 0 ? asArray(nextOps.deployments) : asArray(prev.deployments),
+            cfAccounts: asArray(data.cfAccounts).length > 0 ? asArray(data.cfAccounts) : asArray(prev.cfAccounts),
+            registrarAccounts: asArray(data.registrarAccounts).length > 0 ? asArray(data.registrarAccounts) : asArray(prev.registrarAccounts),
           };
         });
 
@@ -366,7 +368,7 @@ useEffect(() => {
 
         // Final fallback/merge if Neon still not ready
         if (!neonReady) {
-          if (data.sites) setSites(data.sites);
+          if (Array.isArray(data.sites)) setSites(data.sites);
           if (data.settings) {
             const merged = { ...localSettings, ...data.settings };
             setSettings(merged);
