@@ -3,6 +3,7 @@ import { generateAstroProject } from "./astro-generator.jsx";
 import { getTemplateGenerator, resolveTemplateId as resolveId, clearCustomTemplatesCache, fetchCustomTemplates, getCustomTemplatesCache, registry } from "./template-registry.js";
 import { ADAPTER_RUNTIME_VERSION } from "../adapters/runtime-version.ts";
 import { TemplateRuntimeError } from "../adapters/template-runtime-error.ts";
+import { emitTemplateRuntimeEvent } from "../adapters/template-runtime-events.ts";
 
 // Ensure templates are registered (side-effect import)
 import "#lp-template-generator/templates";
@@ -405,7 +406,20 @@ export function generateHtmlByTemplate(site) {
   const entry = registry[templateId];
 
   if (entry?.adapter) {
+    emitTemplateRuntimeEvent('template_render_start', {
+      templateId: site?.templateId,
+      adapterId: entry.adapter.id,
+      adapterVersion: entry.adapter.version,
+    });
+
     if (entry.adapter.version !== ADAPTER_RUNTIME_VERSION) {
+      emitTemplateRuntimeEvent('template_version_mismatch', {
+        templateId: site?.templateId,
+        adapterId: entry.adapter.id,
+        expected: ADAPTER_RUNTIME_VERSION,
+        received: entry.adapter.version,
+      });
+
       throw new TemplateRuntimeError({
         code: 'TEMPLATE_ADAPTER_VERSION_MISMATCH',
         message: 'Adapter runtime version mismatch',
@@ -420,6 +434,12 @@ export function generateHtmlByTemplate(site) {
 
     const result = entry.adapter.validate(site);
     if (!result.valid) {
+      emitTemplateRuntimeEvent('template_validation_failed', {
+        templateId: site?.templateId,
+        adapterId: entry.adapter.id,
+        errors: result.errors,
+      });
+
       throw new TemplateRuntimeError({
         code: 'TEMPLATE_VALIDATION_FAILED',
         message: 'Adapter validation failed',
@@ -428,7 +448,13 @@ export function generateHtmlByTemplate(site) {
         details: result.errors,
       });
     }
-    return entry.adapter.render(site);
+    const rendered = entry.adapter.render(site);
+    emitTemplateRuntimeEvent('template_render_success', {
+      templateId: site?.templateId,
+      adapterId: entry.adapter.id,
+      adapterVersion: entry.adapter.version,
+    });
+    return rendered;
   }
 
   if (entry?.generate) {

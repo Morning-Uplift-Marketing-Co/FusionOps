@@ -73,28 +73,36 @@ const TEMPLATE_ALIASES = {
   'green-loan': 'template-green-01',
 };
 
-export const registry = {
-  'worker-safe-loan': {
+/** @typedef {import('../adapters/template-registry-types').TemplateRegistryEntry} TemplateRegistryEntry */
+
+/** @type {Record<string, TemplateRegistryEntry>} */
+export const registry = Object.freeze({
+  'worker-safe-loan': Object.freeze({
+    id: 'worker-safe-loan',
     adapter: workerSafeLoanAdapter,
     generate: generateWorkerSafeLoanPreview,
-  },
-  'pdl-loansv1': {
+  }),
+  'pdl-loansv1': Object.freeze({
+    id: 'pdl-loansv1',
     adapter: pdlLoansV1Adapter,
     generate: generatePDLLoansV1Preview,
-  },
-  'pdl-loans-v1': {
+  }),
+  'pdl-loans-v1': Object.freeze({
+    id: 'pdl-loans-v1',
     adapter: pdlLoansV1Adapter,
     generate: generatePDLLoansV1Preview,
-  },
-  'astrodeck-loan': {
+  }),
+  'astrodeck-loan': Object.freeze({
+    id: 'astrodeck-loan',
     adapter: astrodeckLoanAdapter,
     generate: generateAstrodeckLoanPreview,
-  },
-  'lander-core': {
+  }),
+  'lander-core': Object.freeze({
+    id: 'lander-core',
     adapter: landerCoreAdapter,
     generate: generateLanderCorePreview,
-  },
-};
+  }),
+});
 
 // Cache for custom templates from API
 let customTemplatesCache = null;

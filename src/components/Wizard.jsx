@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from "react";
 import { THEME as T } from "../constants";
 import { uid, now } from "../utils";
 import { generateHtmlByTemplate, generateApplyPageByTemplate, generateDeployAssetsByTemplate } from "../utils/template-router";
+import { registry } from "../utils/template-registry";
 import { api } from "../services/api";
 import { getOrCreateZone, createDnsRecord, ensurePixelSubdomain } from "../services/cloudflare-dns";
 import { deployTo, getAvailableTargets } from "../utils/deployers";
@@ -85,7 +86,33 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
     const cardRef = useRef(null);
     const deployTargets = useMemo(() => getAvailableTargets(settings), [settings]);
 
-    const upd = (k, v) => setConfig(p => ({ ...p, [k]: v }));
+    const templateEntry = registry[config.templateId];
+    const capabilities = templateEntry?.adapter?.capabilities || {};
+    const supportsCalculator = capabilities?.supportsCalculator ?? true;
+    const supportsSectionReorder = capabilities?.supportsSectionReorder ?? true;
+
+    const isUnsupportedCapabilityChange = (k, v) => {
+        const calculatorUnsupported =
+            supportsCalculator === false &&
+            (
+                (k === "features.calculator" && v === true) ||
+                (k === "features" && v && typeof v === "object" && v.calculator === true)
+            );
+
+        const sectionReorderUnsupported =
+            supportsSectionReorder === false &&
+            (
+                k === "layout.sectionOrder" ||
+                (k === "layout" && v && typeof v === "object" && Array.isArray(v.sectionOrder))
+            );
+
+        return calculatorUnsupported || sectionReorderUnsupported;
+    };
+
+    const upd = (k, v) => {
+        if (isUnsupportedCapabilityChange(k, v)) return;
+        setConfig(p => ({ ...p, [k]: v }));
+    };
 
     // Set helper flag for validation
     useEffect(() => {
@@ -378,6 +405,11 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                     <b>Step {step}/7</b>
                     <span className="text-[hsl(var(--muted-foreground))]">{steps[step - 1]}</span>
                 </div>
+                {(!supportsCalculator || !supportsSectionReorder) && (
+                    <div className="text-[10px] text-[hsl(var(--muted-foreground))] mb-1.5" title="Not supported by selected template">
+                        Not supported by selected template
+                    </div>
+                )}
                 <div className="h-1 bg-[hsl(var(--border))] rounded-sm">
                     <div className="h-full bg-[hsl(var(--primary))] rounded-sm transition-[width_.3s]" style={{ width: `${step / 7 * 100}%` }} />
                 </div>
@@ -395,13 +427,13 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
             {showPreview ? (
                 <div className="grid gap-6 items-start" style={{ gridTemplateColumns: "1fr 340px" }}>
                     <Card className="p-7 mb-4" ref={cardRef}>
-                        {step === 1 && <StepBrand c={config} u={upd} settings={settings} />}
-                        {step === 2 && <StepProduct c={config} u={upd} />}
-                        {step === 3 && <StepTemplate c={config} u={upd} />}
-                        {step === 4 && <StepDesign c={config} u={upd} notify={notify} />}
-                        {step === 5 && <StepCopy c={config} u={upd} onAiGenerate={handleAiGenerate} aiLoading={aiLoading} onAiMeta={handleAiMeta} aiMetaLoading={aiMetaLoading} />}
-                        {step === 6 && <StepTracking c={config} u={upd} />}
-                        {step === 7 && <StepReview c={config} building={building} />}
+                        {step === 1 && <StepBrand c={config} u={upd} settings={settings} capabilities={capabilities} />}
+                        {step === 2 && <StepProduct c={config} u={upd} capabilities={capabilities} />}
+                        {step === 3 && <StepTemplate c={config} u={upd} capabilities={capabilities} />}
+                        {step === 4 && <StepDesign c={config} u={upd} notify={notify} capabilities={capabilities} />}
+                        {step === 5 && <StepCopy c={config} u={upd} onAiGenerate={handleAiGenerate} aiLoading={aiLoading} onAiMeta={handleAiMeta} aiMetaLoading={aiMetaLoading} capabilities={capabilities} />}
+                        {step === 6 && <StepTracking c={config} u={upd} capabilities={capabilities} />}
+                        {step === 7 && <StepReview c={config} building={building} capabilities={capabilities} />}
                         {step === 7 && (
                             <div className="mt-4 p-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))/30]">
                                 <label className="flex items-center gap-2 text-sm font-medium mb-2">
@@ -438,13 +470,13 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                 </div>
             ) : (
                 <Card className="p-7 mb-4 max-w-[780px] mx-auto" ref={cardRef}>
-                    {step === 1 && <StepBrand c={config} u={upd} settings={settings} />}
-                    {step === 2 && <StepProduct c={config} u={upd} />}
-                    {step === 3 && <StepTemplate c={config} u={upd} />}
-                    {step === 4 && <StepDesign c={config} u={upd} notify={notify} />}
-                    {step === 5 && <StepCopy c={config} u={upd} onAiGenerate={handleAiGenerate} aiLoading={aiLoading} onAiMeta={handleAiMeta} aiMetaLoading={aiMetaLoading} />}
-                    {step === 6 && <StepTracking c={config} u={upd} />}
-                    {step === 7 && <StepReview c={config} building={building} />}
+                    {step === 1 && <StepBrand c={config} u={upd} settings={settings} capabilities={capabilities} />}
+                    {step === 2 && <StepProduct c={config} u={upd} capabilities={capabilities} />}
+                    {step === 3 && <StepTemplate c={config} u={upd} capabilities={capabilities} />}
+                    {step === 4 && <StepDesign c={config} u={upd} notify={notify} capabilities={capabilities} />}
+                    {step === 5 && <StepCopy c={config} u={upd} onAiGenerate={handleAiGenerate} aiLoading={aiLoading} onAiMeta={handleAiMeta} aiMetaLoading={aiMetaLoading} capabilities={capabilities} />}
+                    {step === 6 && <StepTracking c={config} u={upd} capabilities={capabilities} />}
+                    {step === 7 && <StepReview c={config} building={building} capabilities={capabilities} />}
                     {step === 7 && (
                         <div className="mt-4 p-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))/30]">
                             <label className="flex items-center gap-2 text-sm font-medium mb-2">
