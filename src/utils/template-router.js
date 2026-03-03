@@ -1,6 +1,7 @@
 import { generateApplyPage } from "./lp-generator.js";
 import { generateAstroProject } from "./astro-generator.jsx";
 import { getTemplateGenerator, resolveTemplateId as resolveId, clearCustomTemplatesCache, fetchCustomTemplates, getCustomTemplatesCache, registry } from "./template-registry.js";
+import { ADAPTER_RUNTIME_VERSION } from "../adapters/runtime-version.ts";
 
 // Ensure templates are registered (side-effect import)
 import "#lp-template-generator/templates";
@@ -403,6 +404,12 @@ export function generateHtmlByTemplate(site) {
   const entry = registry[templateId];
 
   if (entry?.adapter) {
+    if (entry.adapter.version !== ADAPTER_RUNTIME_VERSION) {
+      throw new Error(
+        `Adapter runtime version mismatch: template=${templateId}, adapter=${entry.adapter.version}, runtime=${ADAPTER_RUNTIME_VERSION}`
+      );
+    }
+
     const result = entry.adapter.validate(site);
     if (!result.valid) {
       throw new Error(result.errors?.join(', ') || 'Template validation failed');

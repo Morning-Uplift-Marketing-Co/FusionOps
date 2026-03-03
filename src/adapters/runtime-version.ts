@@ -1,0 +1,1 @@
+export const ADAPTER_RUNTIME_VERSION = 1
