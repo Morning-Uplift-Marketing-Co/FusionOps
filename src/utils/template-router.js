@@ -2,6 +2,7 @@ import { generateApplyPage } from "./lp-generator.js";
 import { generateAstroProject } from "./astro-generator.jsx";
 import { getTemplateGenerator, resolveTemplateId as resolveId, clearCustomTemplatesCache, fetchCustomTemplates, getCustomTemplatesCache, registry } from "./template-registry.js";
 import { ADAPTER_RUNTIME_VERSION } from "../adapters/runtime-version.ts";
+import { TemplateRuntimeError } from "../adapters/template-runtime-error.ts";
 
 // Ensure templates are registered (side-effect import)
 import "#lp-template-generator/templates";
@@ -405,14 +406,27 @@ export function generateHtmlByTemplate(site) {
 
   if (entry?.adapter) {
     if (entry.adapter.version !== ADAPTER_RUNTIME_VERSION) {
-      throw new Error(
-        `Adapter runtime version mismatch: template=${templateId}, adapter=${entry.adapter.version}, runtime=${ADAPTER_RUNTIME_VERSION}`
-      );
+      throw new TemplateRuntimeError({
+        code: 'TEMPLATE_ADAPTER_VERSION_MISMATCH',
+        message: 'Adapter runtime version mismatch',
+        templateId: site?.templateId,
+        adapterId: entry.adapter.id,
+        details: {
+          expected: ADAPTER_RUNTIME_VERSION,
+          received: entry.adapter.version,
+        },
+      });
     }
 
     const result = entry.adapter.validate(site);
     if (!result.valid) {
-      throw new Error(result.errors?.join(', ') || 'Template validation failed');
+      throw new TemplateRuntimeError({
+        code: 'TEMPLATE_VALIDATION_FAILED',
+        message: 'Adapter validation failed',
+        templateId: site?.templateId,
+        adapterId: entry.adapter.id,
+        details: result.errors,
+      });
     }
     return entry.adapter.render(site);
   }
