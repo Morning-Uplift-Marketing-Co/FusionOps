@@ -36,7 +36,10 @@ export const LS = {
     },
     set(k, v) {
         try {
-            localStorage.setItem(STORAGE_PREFIX + k, JSON.stringify(v));
+            const serialized = JSON.stringify(v);
+            // Keep both namespaced and legacy keys in sync for backward compatibility.
+            localStorage.setItem(STORAGE_PREFIX + k, serialized);
+            localStorage.setItem(LEGACY_PREFIX + k, serialized);
             return true;
         } catch (e) {
             // Log quota exceeded or other storage errors
