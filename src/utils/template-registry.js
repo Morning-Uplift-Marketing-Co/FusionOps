@@ -4,9 +4,13 @@
  * and legacy definitions.
  */
 
-import { generateLP, generateAstrodeckLoanPreview, generateLanderCorePreview } from './lp-generator.js';
+import { generateAstrodeckLoanPreview, generateLanderCorePreview, generatePDLLoansV1Preview, generateWorkerSafeLoanPreview } from './lp-generator.js';
 import { generateAstroProject as generateAstrodeckAstro, generateLanderCore as generateLanderCoreAstro, generateAstroProject as generateAstrodeckProject } from './astro-generator.jsx';
 import { api } from '../services/api';
+import astrodeckLoanAdapter from '../templates/astrodeck-loan/adapter.ts';
+import workerSafeLoanAdapter from '../templates/worker-safe-loan/adapter.ts';
+import pdlLoansV1Adapter from '../templates/pdl-loans-v1/adapter.ts';
+import landerCoreAdapter from '../templates/lander-core/adapter.ts';
 
 import { getTemplates as getModuleTemplates, getTemplate as getModuleTemplate } from '#lp-template-generator/core/template-registry.js';
 
@@ -68,6 +72,37 @@ const TEMPLATE_ALIASES = {
   'green-01': 'template-green-01',
   'green-loan': 'template-green-01',
 };
+
+/** @typedef {import('../adapters/template-registry-types').TemplateRegistryEntry} TemplateRegistryEntry */
+
+/** @type {Record<string, TemplateRegistryEntry>} */
+export const registry = Object.freeze({
+  'worker-safe-loan': Object.freeze({
+    id: 'worker-safe-loan',
+    adapter: workerSafeLoanAdapter,
+    generate: generateWorkerSafeLoanPreview,
+  }),
+  'pdl-loansv1': Object.freeze({
+    id: 'pdl-loansv1',
+    adapter: pdlLoansV1Adapter,
+    generate: generatePDLLoansV1Preview,
+  }),
+  'pdl-loans-v1': Object.freeze({
+    id: 'pdl-loans-v1',
+    adapter: pdlLoansV1Adapter,
+    generate: generatePDLLoansV1Preview,
+  }),
+  'astrodeck-loan': Object.freeze({
+    id: 'astrodeck-loan',
+    adapter: astrodeckLoanAdapter,
+    generate: generateAstrodeckLoanPreview,
+  }),
+  'lander-core': Object.freeze({
+    id: 'lander-core',
+    adapter: landerCoreAdapter,
+    generate: generateLanderCorePreview,
+  }),
+});
 
 // Cache for custom templates from API
 let customTemplatesCache = null;
