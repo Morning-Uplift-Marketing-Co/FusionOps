@@ -81,26 +81,61 @@ export const registry = Object.freeze({
     id: 'worker-safe-loan',
     adapter: workerSafeLoanAdapter,
     generate: generateWorkerSafeLoanPreview,
+    meta: Object.freeze({
+      title: 'Worker-Safe Loan',
+      category: 'general',
+      tags: Object.freeze(['worker-safe', 'stable']),
+      isPremium: false,
+      isExperimental: false,
+    }),
   }),
   'pdl-loansv1': Object.freeze({
     id: 'pdl-loansv1',
     adapter: pdlLoansV1Adapter,
     generate: generatePDLLoansV1Preview,
+    meta: Object.freeze({
+      title: 'PDL Loans V1',
+      category: 'pdl',
+      tags: Object.freeze(['payday', 'alias']),
+      isPremium: false,
+      isExperimental: false,
+    }),
   }),
   'pdl-loans-v1': Object.freeze({
     id: 'pdl-loans-v1',
     adapter: pdlLoansV1Adapter,
     generate: generatePDLLoansV1Preview,
+    meta: Object.freeze({
+      title: 'PDL Loans V1',
+      category: 'pdl',
+      tags: Object.freeze(['payday']),
+      isPremium: false,
+      isExperimental: false,
+    }),
   }),
   'astrodeck-loan': Object.freeze({
     id: 'astrodeck-loan',
     adapter: astrodeckLoanAdapter,
     generate: generateAstrodeckLoanPreview,
+    meta: Object.freeze({
+      title: 'AstroDeck Loan',
+      category: 'legacy',
+      tags: Object.freeze(['astrodeck', 'new']),
+      isPremium: false,
+      isExperimental: false,
+    }),
   }),
   'lander-core': Object.freeze({
     id: 'lander-core',
     adapter: landerCoreAdapter,
     generate: generateLanderCorePreview,
+    meta: Object.freeze({
+      title: 'Lander Core',
+      category: 'legacy',
+      tags: Object.freeze(['high-conversion', 'advanced']),
+      isPremium: false,
+      isExperimental: false,
+    }),
   }),
 });
 
