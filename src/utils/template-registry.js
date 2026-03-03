@@ -4,9 +4,10 @@
  * and legacy definitions.
  */
 
-import { generateLP, generateAstrodeckLoanPreview, generateLanderCorePreview } from './lp-generator.js';
+import { generateAstrodeckLoanPreview, generateLanderCorePreview, generatePDLLoansV1Preview, generateWorkerSafeLoanPreview } from './lp-generator.js';
 import { generateAstroProject as generateAstrodeckAstro, generateLanderCore as generateLanderCoreAstro, generateAstroProject as generateAstrodeckProject } from './astro-generator.jsx';
 import { api } from '../services/api';
+import astrodeckLoanAdapter from '../templates/astrodeck-loan/adapter.ts';
 
 import { getTemplates as getModuleTemplates, getTemplate as getModuleTemplate } from '#lp-template-generator/core/template-registry.js';
 
@@ -67,6 +68,25 @@ const TEMPLATE_ALIASES = {
   'template-green-01': 'template-green-01',
   'green-01': 'template-green-01',
   'green-loan': 'template-green-01',
+};
+
+export const registry = {
+  'worker-safe-loan': {
+    generate: generateWorkerSafeLoanPreview,
+  },
+  'pdl-loansv1': {
+    generate: generatePDLLoansV1Preview,
+  },
+  'pdl-loans-v1': {
+    generate: generatePDLLoansV1Preview,
+  },
+  'astrodeck-loan': {
+    adapter: astrodeckLoanAdapter,
+    generate: generateAstrodeckLoanPreview,
+  },
+  'lander-core': {
+    generate: generateLanderCorePreview,
+  },
 };
 
 // Cache for custom templates from API

@@ -1,6 +1,6 @@
-import { generateLP, generateAstrodeckLoanPreview, generateApplyPage, generatePDLLoansV1Preview, generateLanderCorePreview, generateWorkerSafeLoanPreview } from "./lp-generator.js";
+import { generateLP, generateApplyPage } from "./lp-generator.js";
 import { generateAstroProject } from "./astro-generator.jsx";
-import { getTemplateGenerator, resolveTemplateId as resolveId, clearCustomTemplatesCache, fetchCustomTemplates, getCustomTemplatesCache } from "./template-registry.js";
+import { getTemplateGenerator, resolveTemplateId as resolveId, clearCustomTemplatesCache, fetchCustomTemplates, getCustomTemplatesCache, registry } from "./template-registry.js";
 
 // Ensure templates are registered (side-effect import)
 import "#lp-template-generator/templates";
@@ -400,50 +400,41 @@ export function renderTemplateToAssets(template, site) {
 
 export function generateHtmlByTemplate(site) {
   const templateId = resolveTemplateId(site);
+  const entry = registry[templateId];
 
-  // Check legacy templates first
-  switch (templateId) {
-    case "worker-safe-loan":
-      return generateWorkerSafeLoanPreview(site);
-    case "pdl-loansv1":
-    case "pdl-loans-v1":
-      return generatePDLLoansV1Preview(site);
-    case "astrodeck-loan":
-      return generateAstrodeckLoanPreview(site);
-    case "lander-core":
-      return generateLanderCorePreview(site);
-    case "classic":
-      // Classic is also a module template now - use it for consistency
-      try {
-        const files = generateFromModule('classic', site);
-        return astroToHtmlPreview(files, site);
-      } catch (e) {
-        console.warn('Classic module template failed, using legacy:', e.message);
-        return generateLP(site);
-      }
-    default: {
-      // Check if it's a custom API template (synchronously from primary registry cache)
-      const customTemplatesCache = getCustomTemplatesCache();
-      if (customTemplatesCache) {
-        const customTemplate = customTemplatesCache.find(t => t.id === templateId || t.dbId === templateId);
-        if (customTemplate && customTemplate.files) {
-          return astroToHtmlPreview(customTemplate.files, site);
-        }
-      }
+  if (entry?.adapter) {
+    const result = entry.adapter.validate(site);
+    if (!result.valid) {
+      throw new Error(result.errors?.join(', ') || 'Template validation failed');
+    }
+    return entry.adapter.render(site);
+  }
 
-      // For module templates (pdl-loans-v3, simple-lp, etc.)
-      if (isModuleTemplate(templateId)) {
-        try {
-          const files = generateFromModule(templateId, site);
-          return astroToHtmlPreview(files, site);
-        } catch (e) {
-          console.warn('Module template generation failed for', templateId, e.message);
-        }
-      }
-      // Fallback to classic LP
-      return generateLP(site);
+  if (entry?.generate) {
+    return entry.generate(site);
+  }
+
+  // Check if it's a custom API template (synchronously from primary registry cache)
+  const customTemplatesCache = getCustomTemplatesCache();
+  if (customTemplatesCache) {
+    const customTemplate = customTemplatesCache.find(t => t.id === templateId || t.dbId === templateId);
+    if (customTemplate && customTemplate.files) {
+      return astroToHtmlPreview(customTemplate.files, site);
     }
   }
+
+  // For module templates (pdl-loans-v3, simple-lp, etc.)
+  if (isModuleTemplate(templateId)) {
+    try {
+      const files = generateFromModule(templateId, site);
+      return astroToHtmlPreview(files, site);
+    } catch (e) {
+      console.warn('Module template generation failed for', templateId, e.message);
+    }
+  }
+
+  // Fallback to classic LP
+  return generateLP(site);
 }
 
 // Export a function to refresh custom templates cache (both router and registry)
