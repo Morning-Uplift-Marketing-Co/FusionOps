@@ -1,4 +1,4 @@
-import { generateLP, generateApplyPage } from "./lp-generator.js";
+import { generateApplyPage } from "./lp-generator.js";
 import { generateAstroProject } from "./astro-generator.jsx";
 import { getTemplateGenerator, resolveTemplateId as resolveId, clearCustomTemplatesCache, fetchCustomTemplates, getCustomTemplatesCache, registry } from "./template-registry.js";
 
@@ -427,14 +427,16 @@ export function generateHtmlByTemplate(site) {
   if (isModuleTemplate(templateId)) {
     try {
       const files = generateFromModule(templateId, site);
-      return astroToHtmlPreview(files, site);
+      if (files) {
+        return astroToHtmlPreview(files, site);
+      }
     } catch (e) {
       console.warn('Module template generation failed for', templateId, e.message);
     }
   }
 
-  // Fallback to classic LP
-  return generateLP(site);
+  // Synchronous fallback HTML
+  return astroToHtmlPreview(generateAstroProject(site), site);
 }
 
 // Export a function to refresh custom templates cache (both router and registry)
@@ -461,7 +463,8 @@ export function generateAstroProjectByTemplate(site) {
   if (generatorInfo) {
     if (generatorInfo.type === 'module') {
       // Module template - use unified generator
-      return generateFromModule(generatorInfo.id, site);
+      const files = generateFromModule(generatorInfo.id, site);
+      return files || generateAstroProject(site);
     } else if (generatorInfo.type === 'legacy' && generatorInfo.generator) {
       // Legacy template - use specific generator
       return generatorInfo.generator(site);
