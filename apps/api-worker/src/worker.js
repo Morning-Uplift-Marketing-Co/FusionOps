@@ -7,7 +7,7 @@ import { neon } from '@neondatabase/serverless';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-api-key, anthropic-version, anthropic-dangerous-direct-browser-access',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-api-key, cwauth-token, anthropic-version, anthropic-dangerous-direct-browser-access',
   'Access-Control-Max-Age': '86400',
 };
 
@@ -20,6 +20,43 @@ function json(data, status = 200) {
 
 function uid() {
   return crypto.randomUUID().replace(/-/g, '').slice(0, 12);
+}
+
+function extractHost(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  try {
+    return new URL(raw).hostname.toLowerCase();
+  } catch (_e) {
+    return raw.replace(/^https?:\/\//i, '').split('/')[0].split(':')[0].toLowerCase();
+  }
+}
+
+function buildAllowedHosts(env, requestHost) {
+  const configured = String(env?.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map((v) => extractHost(v))
+    .filter(Boolean);
+  return new Set([
+    'localhost',
+    '127.0.0.1',
+    '::1',
+    'main.fusionops.pages.dev',
+    'fusionops.pages.dev',
+    extractHost(env?.APP_ORIGIN || ''),
+    extractHost(env?.PUBLIC_APP_ORIGIN || ''),
+    extractHost(requestHost || ''),
+    ...configured,
+  ].filter(Boolean));
+}
+
+function isTrustedOriginRequest(request, url, env) {
+  const allowed = buildAllowedHosts(env, url?.hostname || '');
+  const originHost = extractHost(request.headers.get('Origin') || '');
+  const refererHost = extractHost(request.headers.get('Referer') || '');
+  const sourceHost = originHost || refererHost;
+  if (!sourceHost) return false;
+  return allowed.has(sourceHost);
 }
 
 function getNeonSql(env) {
@@ -123,6 +160,384 @@ async function neonUpsertDeploy(sql, id, body) {
 async function neonDeleteDeploy(sql, id) {
   if (!sql) return;
   await sql`DELETE FROM deploys WHERE id = ${id}`;
+}
+
+async function createVersionSnapshot(db, siteId, config) {
+  try {
+    const json = JSON.stringify(config);
+
+    const { results } = await db.prepare(`
+      SELECT COALESCE(MAX(version_number), 0) as v
+      FROM site_versions
+      WHERE site_id = ?
+    `).bind(siteId).all();
+
+    const nextVersion = (results[0]?.v || 0) + 1;
+
+    const hashBuffer = await crypto.subtle.digest(
+      'SHA-256',
+      new TextEncoder().encode(json)
+    );
+
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+    await db.prepare(`
+      INSERT INTO site_versions
+      (id, site_id, version_number, config_json, config_hash)
+      VALUES (?, ?, ?, ?, ?)
+    `).bind(
+      crypto.randomUUID(),
+      siteId,
+      nextVersion,
+      json,
+      hashHex
+    ).run();
+  } catch (err) {
+    console.error('Version snapshot failed:', err);
+    // DO NOT throw
+  }
+}
+
+function normalizeNameservers(input) {
+  return (Array.isArray(input) ? input : [])
+    .map((ns) => String(ns || "").trim().toLowerCase().replace(/\.$/, ""))
+    .filter(Boolean);
+}
+
+function canonicalizeNameservers(input) {
+  return Array.from(new Set(normalizeNameservers(input))).sort();
+}
+
+function nameserversMatch(a, b) {
+  const left = canonicalizeNameservers(a);
+  const right = canonicalizeNameservers(b);
+  if (left.length !== right.length) return false;
+  return left.every((value, idx) => value === right[idx]);
+}
+
+function extractInternetBsNameservers(payload) {
+  const out = [];
+  const walk = (obj) => {
+    if (!obj || typeof obj !== "object") return;
+    for (const [rawKey, value] of Object.entries(obj)) {
+      const key = String(rawKey || "").toLowerCase();
+
+      if (key === "ns_list" && typeof value === "string") {
+        out.push(...value.split(","));
+      } else if (/^ns\d+$/.test(key) || key.includes("nameserver")) {
+        if (Array.isArray(value)) out.push(...value);
+        else out.push(value);
+      } else if (Array.isArray(value)) {
+        value.forEach((entry) => {
+          if (entry && typeof entry === "object") walk(entry);
+        });
+      } else if (value && typeof value === "object") {
+        walk(value);
+      }
+    }
+  };
+
+  walk(payload);
+  return canonicalizeNameservers(out);
+}
+
+async function fetchInternetBsCurrentNameservers(registrar, domain) {
+  const apiUrl = "https://api.internet.bs/Domain/Info";
+  const formData = new URLSearchParams({
+    ApiKey: registrar.api_key || "",
+    Password: registrar.secret_key || "",
+    responseformat: "JSON",
+    Domain: domain,
+  });
+
+  const res = await fetch(apiUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: formData.toString(),
+  });
+
+  const rawText = await res.text();
+  let data = null;
+  try {
+    data = JSON.parse(rawText);
+  } catch (_e) {
+    return {
+      success: false,
+      nameservers: [],
+      message: rawText?.slice(0, 800) || "Non-JSON response from registrar",
+    };
+  }
+
+  const statusText = String(data?.status || "").toLowerCase();
+  if (statusText === "failure") {
+    return {
+      success: false,
+      nameservers: [],
+      message: data?.message || data?.error || "Registrar Domain/Info failed",
+      raw: data,
+    };
+  }
+
+  const nameservers = extractInternetBsNameservers(data);
+  return {
+    success: true,
+    nameservers,
+    message: data?.message || "",
+    raw: data,
+  };
+}
+
+async function resolveCloudflareAccount(db, cfAccountRef) {
+  if (!cfAccountRef) return null;
+  const row = await db
+    .prepare("SELECT id, account_id, api_token FROM cf_accounts WHERE id = ? OR account_id = ? LIMIT 1")
+    .bind(cfAccountRef, cfAccountRef)
+    .first();
+  if (!row?.account_id || !row?.api_token) return null;
+  return row;
+}
+
+async function ensureCloudflareZoneAndNameservers(accountId, apiToken, domain) {
+  const headers = {
+    Authorization: `Bearer ${apiToken}`,
+    "Content-Type": "application/json",
+  };
+
+  let zone = null;
+
+  const checkRes = await fetch(
+    `https://api.cloudflare.com/client/v4/zones?name=${encodeURIComponent(domain)}&account.id=${encodeURIComponent(accountId)}`,
+    { headers }
+  );
+  const checkData = await checkRes.json();
+  if (checkData?.success && Array.isArray(checkData.result) && checkData.result.length > 0) {
+    zone = checkData.result[0];
+  } else {
+    const createRes = await fetch("https://api.cloudflare.com/client/v4/zones", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        account: { id: accountId },
+        name: domain,
+        jump_start: false,
+      }),
+    });
+    const createData = await createRes.json();
+    if (!createData?.success || !createData?.result?.id) {
+      return { success: false, error: createData?.errors?.[0]?.message || "Failed to create Cloudflare zone" };
+    }
+    zone = createData.result;
+  }
+
+  let nameservers = normalizeNameservers(zone?.name_servers || zone?.nameServers);
+  if (nameservers.length < 2 && zone?.id) {
+    const zoneRes = await fetch(`https://api.cloudflare.com/client/v4/zones/${zone.id}`, { headers });
+    const zoneData = await zoneRes.json();
+    nameservers = normalizeNameservers(zoneData?.result?.name_servers || zoneData?.result?.nameServers);
+  }
+
+  if (nameservers.length < 2) {
+    return { success: false, error: "Cloudflare nameservers are not ready yet. Retry in a few seconds." };
+  }
+
+  return { success: true, zoneId: zone.id, nameservers };
+}
+
+async function updateInternetBsNameservers(db, accountId, domain, nameservers) {
+  const registrar = await db.prepare("SELECT * FROM registrar_accounts WHERE id = ? LIMIT 1").bind(accountId).first();
+  if (!registrar) return { success: false, error: "Internet.bs account not found" };
+
+  const apiUrl = "https://api.internet.bs/Domain/Update";
+  const formData = new URLSearchParams({
+    ApiKey: registrar.api_key || "",
+    Password: registrar.secret_key || "",
+    responseformat: "JSON",
+    Domain: domain,
+    Ns_list: nameservers.join(","),
+  });
+
+  const res = await fetch(apiUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: formData.toString(),
+  });
+
+  const rawText = await res.text();
+  let data = null;
+  try {
+    data = JSON.parse(rawText);
+  } catch (_e) {
+    data = { status: "FAILURE", message: rawText?.slice(0, 800) || "Non-JSON response from registrar" };
+  }
+
+  const statusText = String(data?.status || "").toLowerCase();
+  const isSuccess = statusText === "success" || statusText === "ok";
+  return {
+    success: isSuccess,
+    message: data?.message || data?.error || data?.msg || "Unknown registrar response",
+    raw: data,
+  };
+}
+
+async function autoSyncInternetBsNameserversForSite(db, body) {
+  try {
+    const domain = String(body?.domain || "").trim().toLowerCase();
+    const registrarAccountId = body?.internetbsAccountId;
+    const cfAccountRef = body?.cfAccountId;
+
+    if (!domain || !registrarAccountId || !cfAccountRef) {
+      return { attempted: false, reason: "missing_domain_or_account_selection" };
+    }
+
+    const cfAccount = await resolveCloudflareAccount(db, cfAccountRef);
+    if (!cfAccount) {
+      return { attempted: true, success: false, reason: "cloudflare_account_not_found" };
+    }
+
+    const zoneResult = await ensureCloudflareZoneAndNameservers(cfAccount.account_id, cfAccount.api_token, domain);
+    if (!zoneResult.success) {
+      return { attempted: true, success: false, reason: "zone_prepare_failed", message: zoneResult.error };
+    }
+
+    const registrarResult = await updateInternetBsNameservers(db, registrarAccountId, domain, zoneResult.nameservers);
+    if (!registrarResult.success) {
+      return { attempted: true, success: false, reason: "registrar_update_failed", message: registrarResult.message };
+    }
+
+    return {
+      attempted: true,
+      success: true,
+      zoneId: zoneResult.zoneId,
+      nameservers: zoneResult.nameservers,
+      message: registrarResult.message,
+    };
+  } catch (e) {
+    return { attempted: true, success: false, reason: "exception", message: e?.message || "Unknown error" };
+  }
+}
+
+async function ensureTemplateManagerSchema(db) {
+  try { await db.prepare('ALTER TABLE templates ADD COLUMN is_deleted INTEGER DEFAULT 0').run(); } catch (_e) {}
+  try { await db.prepare("ALTER TABLE templates ADD COLUMN status TEXT DEFAULT 'draft'").run(); } catch (_e) {}
+  try { await db.prepare('ALTER TABLE templates ADD COLUMN updated_at TEXT').run(); } catch (_e) {}
+  try { await db.prepare('ALTER TABLE templates ADD COLUMN current_version INTEGER DEFAULT 1').run(); } catch (_e) {}
+  try { await db.prepare('ALTER TABLE templates ADD COLUMN archived_at TEXT').run(); } catch (_e) {}
+
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS template_versions (
+      id TEXT PRIMARY KEY,
+      template_db_id TEXT NOT NULL,
+      template_id TEXT NOT NULL,
+      version_number INTEGER NOT NULL,
+      name TEXT DEFAULT '',
+      description TEXT DEFAULT '',
+      category TEXT DEFAULT 'general',
+      badge TEXT DEFAULT 'New',
+      source_code TEXT DEFAULT '',
+      files TEXT DEFAULT '{}',
+      note TEXT DEFAULT '',
+      created_at TEXT DEFAULT (datetime('now'))
+    )
+  `).run();
+  await db.prepare('CREATE UNIQUE INDEX IF NOT EXISTS uniq_template_versions ON template_versions(template_db_id, version_number)').run();
+  await db.prepare('CREATE INDEX IF NOT EXISTS idx_template_versions_template_id ON template_versions(template_id)').run();
+}
+
+async function getTemplateUsageMap(db) {
+  try {
+    const { results } = await db.prepare(`
+      WITH latest AS (
+        SELECT site_id, MAX(version_number) AS max_v
+        FROM site_versions
+        GROUP BY site_id
+      )
+      SELECT
+        json_extract(sv.config_json, '$.templateId') AS template_id,
+        COUNT(*) AS usage_count
+      FROM latest l
+      JOIN site_versions sv
+        ON sv.site_id = l.site_id
+       AND sv.version_number = l.max_v
+      WHERE json_extract(sv.config_json, '$.templateId') IS NOT NULL
+      GROUP BY json_extract(sv.config_json, '$.templateId')
+    `).all();
+    const usage = {};
+    for (const row of (results || [])) {
+      const key = String(row.template_id || '').trim();
+      if (!key) continue;
+      usage[key] = Number(row.usage_count || 0);
+    }
+    return usage;
+  } catch (_e) {
+    return {};
+  }
+}
+
+function parseTemplateFiles(raw) {
+  if (!raw) return {};
+  if (typeof raw === 'object') return raw;
+  if (typeof raw === 'string') {
+    try { return JSON.parse(raw); } catch (_e) { return {}; }
+  }
+  return {};
+}
+
+async function createTemplateVersionSnapshot(db, templateRow, note = '') {
+  const { results } = await db
+    .prepare('SELECT COALESCE(MAX(version_number), 0) AS v FROM template_versions WHERE template_db_id = ?')
+    .bind(templateRow.id)
+    .all();
+  const nextVersion = Number(results?.[0]?.v || 0) + 1;
+  const vid = uid();
+
+  await db.prepare(`
+    INSERT INTO template_versions (
+      id, template_db_id, template_id, version_number,
+      name, description, category, badge, source_code, files, note
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    vid,
+    templateRow.id,
+    templateRow.template_id || '',
+    nextVersion,
+    templateRow.name || '',
+    templateRow.description || '',
+    templateRow.category || 'general',
+    templateRow.badge || 'New',
+    templateRow.source_code || '',
+    templateRow.files || '{}',
+    note || ''
+  ).run();
+
+  await db.prepare('UPDATE templates SET current_version = ?, updated_at = datetime(\'now\') WHERE id = ?')
+    .bind(nextVersion, templateRow.id).run();
+
+  return nextVersion;
+}
+
+const BUILTIN_TEMPLATE_IDS = new Set([
+  'classic',
+  'astrodeck-loan',
+  'lander-core',
+  'worker-safe-loan',
+  'pdl-loans-v1',
+  'pdl-loans-v3',
+  'simple-lp',
+  'pet-care-loans',
+  'elastic-credits-v3',
+  'scratchpay-bridge',
+  'pet-loans-v1',
+  'installment-loans-v1',
+  'installment-loans-v2',
+  'pet-care-v2',
+  'template-green-01',
+  'pdl-loansv1',
+]);
+
+function isValidTemplateId(value) {
+  const v = String(value || '').trim();
+  return /^[a-z0-9][a-z0-9-]{1,63}$/i.test(v);
 }
 
 async function getLcSettings(db) {
@@ -459,7 +874,8 @@ export default {
         }
 
         const id = uid();
-        const domain = hostname || payload.d || '';
+        // Prefer explicit domain from payload for direct API-worker calls.
+        const domain = String(payload.d || "").trim() || hostname || '';
         const sessionId = payload.sid || payload.session_id || '';
         const event = payload.e || payload.event || 'unknown';
         const data = typeof payload.data === 'object' ? JSON.stringify(payload.data) : (payload.data || '');
@@ -1144,11 +1560,18 @@ export default {
       return json(spec);
     }
 
-    // Auth check — if API_SECRET is set, require Bearer token
+    // Auth check:
+    // - Preferred: strict Bearer auth via API_SECRET.
+    // - Fallback (when API_SECRET missing): only allow trusted browser origins.
     if (env.API_SECRET) {
       const auth = request.headers.get('Authorization');
       if (!auth || auth !== `Bearer ${env.API_SECRET}`) {
         return json({ error: 'Unauthorized' }, 401);
+      }
+    } else if (path.startsWith('/api/')) {
+      const publicNoAuth = new Set(['/api/openapi.json']);
+      if (!publicNoAuth.has(path) && !isTrustedOriginRequest(request, url, env)) {
+        return json({ error: 'Unauthorized (untrusted origin, API_SECRET not configured)' }, 401);
       }
     }
 
@@ -1190,7 +1613,9 @@ export default {
         if (neonSql) {
           neonUpsertSite(neonSql, id, body).catch(() => {});
         }
-        return json({ id, success: true }, 201);
+        await createVersionSnapshot(db, id, body);
+        const internetBsSync = await autoSyncInternetBsNameserversForSite(db, body);
+        return json({ id, success: true, internetBsSync }, 201);
       }
 
       if (path.match(/^\/api\/sites\/[\w-]+$/) && method === 'DELETE') {
@@ -1257,7 +1682,9 @@ export default {
           const merged = { ...body, id };
           neonUpsertSite(neonSql, id, merged).catch(() => {});
         }
-        return json({ success: true });
+        await createVersionSnapshot(db, id, body);
+        const internetBsSync = await autoSyncInternetBsNameserversForSite(db, body);
+        return json({ success: true, internetBsSync });
       }
 
       // ═══ DEPLOYS ═══
@@ -1331,88 +1758,306 @@ export default {
 
       // ═══ TEMPLATES ═══
       if (path === '/api/templates' && method === 'GET') {
-        try {
-          const { results } = await db.prepare('SELECT * FROM templates WHERE is_deleted = 0 ORDER BY created_at DESC').all();
-          return json(results);
-        } catch (e) {
-          if (e.message?.includes("no such column")) {
-            await db.prepare('ALTER TABLE templates ADD COLUMN is_deleted INTEGER DEFAULT 0').run();
-            const { results } = await db.prepare('SELECT * FROM templates WHERE is_deleted = 0 ORDER BY created_at DESC').all();
-            return json(results);
-          }
-          const { results } = await db.prepare('SELECT * FROM templates ORDER BY created_at DESC').all();
-          return json(results);
-        }
+        await ensureTemplateManagerSchema(db);
+        const includeArchived = String(url.searchParams.get('includeArchived') || '') === '1';
+        const statusFilter = String(url.searchParams.get('status') || '').trim().toLowerCase();
+        const usageMap = await getTemplateUsageMap(db);
+        const baseSql = includeArchived
+          ? 'SELECT * FROM templates WHERE COALESCE(is_deleted, 0) = 0 ORDER BY created_at DESC'
+          : 'SELECT * FROM templates WHERE COALESCE(is_deleted, 0) = 0 AND COALESCE(status, "draft") != "archived" ORDER BY created_at DESC';
+        const { results } = await db.prepare(baseSql).all();
+        const rows = (results || [])
+          .filter((r) => !statusFilter || String(r.status || 'draft').toLowerCase() === statusFilter)
+          .map((row) => ({
+            ...row,
+            usage_count: Number(usageMap[String(row.template_id || '').trim()] || 0),
+            files: parseTemplateFiles(row.files),
+          }));
+        return json(rows);
       }
 
       if (path === '/api/templates' && method === 'POST') {
+        await ensureTemplateManagerSchema(db);
         const body = await request.json();
         const id = body.id || uid();
         const now = new Date().toISOString();
+        const templateId = String(body.templateId || '').trim();
+        const status = String(body.status || 'draft').toLowerCase();
+        const normalizedStatus = ['draft', 'active', 'deprecated', 'archived'].includes(status) ? status : 'draft';
+        if (!isValidTemplateId(templateId)) {
+          return json({ error: 'Invalid templateId. Use letters, numbers, and hyphens (2-64 chars).' }, 400);
+        }
 
         // Check if template_id already exists
-        const existing = await db.prepare('SELECT id FROM templates WHERE template_id = ?').bind(body.templateId || '').first();
+        const existing = await db.prepare('SELECT id FROM templates WHERE template_id = ? AND COALESCE(is_deleted, 0) = 0').bind(templateId).first();
         if (existing) {
           return json({ error: 'Template ID already exists' }, 400);
         }
 
-        try {
-          await db.prepare(`
-            INSERT INTO templates (id, template_id, name, description, category, badge, source_code, files, created_at, is_deleted)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
-            `).bind(
-            id, body.templateId || '', body.name || '', body.description || '', body.category || 'general',
-            body.badge || 'New', body.sourceCode || '', body.files ? JSON.stringify(body.files) : '{}', now
-          ).run();
-        } catch (e) {
-          if (e.message?.includes("no such column")) {
-            await db.prepare('ALTER TABLE templates ADD COLUMN is_deleted INTEGER DEFAULT 0').run();
-            await db.prepare(`
-                INSERT INTO templates (id, template_id, name, description, category, badge, source_code, files, created_at, is_deleted)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
-               `).bind(
-              id, body.templateId || '', body.name || '', body.description || '', body.category || 'general',
-              body.badge || 'New', body.sourceCode || '', body.files ? JSON.stringify(body.files) : '{}', now
-            ).run();
-          } else {
-            throw e;
-          }
+        const filesJson = body.files ? JSON.stringify(body.files) : '{}';
+        await db.prepare(`
+          INSERT INTO templates (
+            id, template_id, name, description, category, badge,
+            source_code, files, created_at, updated_at, is_deleted, status, current_version, archived_at
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, 1, ?)
+        `).bind(
+          id,
+          templateId,
+          body.name || '',
+          body.description || '',
+          body.category || 'general',
+          body.badge || 'New',
+          body.sourceCode || '',
+          filesJson,
+          now,
+          now,
+          normalizedStatus,
+          normalizedStatus === 'archived' ? now : null
+        ).run();
+
+        const templateRow = await db.prepare('SELECT * FROM templates WHERE id = ?').bind(id).first();
+        if (templateRow) {
+          await createTemplateVersionSnapshot(db, templateRow, body.note || 'Initial version');
         }
+
         return json({ id, success: true }, 201);
       }
 
-      if (path.match(/^\/api\/templates\/[\w-]+$/) && method === 'GET') {
+      if (path.match(/^\/api\/templates\/(?!default$)[\w-]+$/) && method === 'GET') {
+        await ensureTemplateManagerSchema(db);
         const id = path.split('/').pop();
-        const template = await db.prepare('SELECT * FROM templates WHERE id = ?').bind(id).first();
+        const template = await db.prepare('SELECT * FROM templates WHERE id = ? AND COALESCE(is_deleted, 0) = 0').bind(id).first();
         if (!template) return json({ error: 'Template not found' }, 404);
-        return json(template);
+        return json({ ...template, files: parseTemplateFiles(template.files) });
       }
 
-      if (path.match(/^\/api\/templates\/[\w-]+$/) && method === 'DELETE') {
+      if (path.match(/^\/api\/templates\/(?!default$)[\w-]+$/) && method === 'PUT') {
+        await ensureTemplateManagerSchema(db);
         const id = path.split('/').pop();
+        const body = await request.json();
+        const row = await db.prepare('SELECT * FROM templates WHERE id = ? AND COALESCE(is_deleted, 0) = 0').bind(id).first();
+        if (!row) return json({ error: 'Template not found' }, 404);
 
-        // Dependency Check - check the sites table to see if any site uses this ID
-        // The frontend saves templateId into 'template' or 'config' but we'll try matching 'template' = id
-        try {
-          const sites = await db.prepare('SELECT count(*) as c FROM sites WHERE template = ? OR template_id = ?').bind(id, id).first();
-          if (sites && sites.c > 0) {
-            return json({ error: `Cannot delete template. It is in use by ${sites.c} active site(s).` }, 400);
+        const fields = [];
+        const values = [];
+        const status = body.status ? String(body.status).toLowerCase() : '';
+
+        if (Object.prototype.hasOwnProperty.call(body, 'templateId')) {
+          const nextTemplateId = String(body.templateId || '').trim();
+          if (!isValidTemplateId(nextTemplateId)) {
+            return json({ error: 'Invalid templateId. Use letters, numbers, and hyphens (2-64 chars).' }, 400);
           }
-        } catch (e) {
-          // Ignore if sites table doesn't have template_id etc.
+          const duplicate = await db.prepare('SELECT id FROM templates WHERE template_id = ? AND id != ? AND COALESCE(is_deleted, 0) = 0')
+            .bind(nextTemplateId, id).first();
+          if (duplicate) {
+            return json({ error: 'Template ID already exists' }, 400);
+          }
+          fields.push('template_id = ?');
+          values.push(nextTemplateId);
         }
-
-        try {
-          await db.prepare('UPDATE templates SET is_deleted = 1 WHERE id = ?').bind(id).run();
-        } catch (e) {
-          if (e.message?.includes("no such column")) {
-            await db.prepare('ALTER TABLE templates ADD COLUMN is_deleted INTEGER DEFAULT 0').run();
-            await db.prepare('UPDATE templates SET is_deleted = 1 WHERE id = ?').bind(id).run();
+        if (Object.prototype.hasOwnProperty.call(body, 'name')) { fields.push('name = ?'); values.push(body.name || ''); }
+        if (Object.prototype.hasOwnProperty.call(body, 'description')) { fields.push('description = ?'); values.push(body.description || ''); }
+        if (Object.prototype.hasOwnProperty.call(body, 'category')) { fields.push('category = ?'); values.push(body.category || 'general'); }
+        if (Object.prototype.hasOwnProperty.call(body, 'badge')) { fields.push('badge = ?'); values.push(body.badge || 'New'); }
+        if (Object.prototype.hasOwnProperty.call(body, 'sourceCode')) { fields.push('source_code = ?'); values.push(body.sourceCode || ''); }
+        if (Object.prototype.hasOwnProperty.call(body, 'files')) { fields.push('files = ?'); values.push(JSON.stringify(body.files || {})); }
+        if (status && ['draft', 'active', 'deprecated', 'archived'].includes(status)) {
+          fields.push('status = ?');
+          values.push(status);
+          if (status === 'archived') {
+            fields.push('archived_at = datetime(\'now\')');
           } else {
-            throw e;
+            fields.push('archived_at = NULL');
           }
         }
+
+        if (fields.length > 0) {
+          fields.push('updated_at = datetime(\'now\')');
+          values.push(id);
+          await db.prepare(`UPDATE templates SET ${fields.join(', ')} WHERE id = ?`).bind(...values).run();
+        }
+
+        const updated = await db.prepare('SELECT * FROM templates WHERE id = ?').bind(id).first();
+        let versionNumber = updated?.current_version || 1;
+        if (body.createVersion === true && updated) {
+          versionNumber = await createTemplateVersionSnapshot(db, updated, body.note || 'Manual version');
+        }
+
+        return json({
+          success: true,
+          id,
+          versionNumber,
+          template: updated ? { ...updated, files: parseTemplateFiles(updated.files) } : null,
+        });
+      }
+
+      if (path.match(/^\/api\/templates\/(?!default$)[\w-]+$/) && method === 'DELETE') {
+        await ensureTemplateManagerSchema(db);
+        const id = path.split('/').pop();
+        const row = await db.prepare('SELECT id, template_id FROM templates WHERE id = ?').bind(id).first();
+        if (!row) return json({ error: 'Template not found' }, 404);
+
+        let inUseCount = 0;
+        try {
+          const usage = await db.prepare(`
+            WITH latest AS (
+              SELECT site_id, MAX(version_number) AS max_v
+              FROM site_versions
+              GROUP BY site_id
+            )
+            SELECT COUNT(*) AS c
+            FROM latest l
+            JOIN site_versions sv
+              ON sv.site_id = l.site_id
+             AND sv.version_number = l.max_v
+            WHERE json_extract(sv.config_json, '$.templateId') = ?
+          `).bind(row.template_id || '').first();
+          inUseCount = Number(usage?.c || 0);
+        } catch (_e) {
+          inUseCount = 0;
+        }
+        if (inUseCount > 0) {
+          return json({ error: `Cannot delete template. It is in use by ${inUseCount} active site(s).` }, 400);
+        }
+
+        await db.prepare('UPDATE templates SET is_deleted = 1, status = "archived", archived_at = datetime(\'now\'), updated_at = datetime(\'now\') WHERE id = ?')
+          .bind(id).run();
         return json({ success: true });
+      }
+
+      if (path.match(/^\/api\/templates\/[\w-]+\/usage$/) && method === 'GET') {
+        await ensureTemplateManagerSchema(db);
+        const id = path.split('/')[3];
+        const row = await db.prepare('SELECT id, template_id FROM templates WHERE id = ? AND COALESCE(is_deleted, 0) = 0').bind(id).first();
+        if (!row) return json({ error: 'Template not found' }, 404);
+        const tplId = row.template_id || '';
+
+        let sites = [];
+        try {
+          const { results } = await db.prepare(`
+            WITH latest AS (
+              SELECT site_id, MAX(version_number) AS max_v
+              FROM site_versions
+              GROUP BY site_id
+            )
+            SELECT
+              s.id AS site_id,
+              s.brand AS brand,
+              s.domain AS domain,
+              json_extract(sv.config_json, '$.templateId') AS template_id
+            FROM latest l
+            JOIN site_versions sv
+              ON sv.site_id = l.site_id
+             AND sv.version_number = l.max_v
+            LEFT JOIN sites s ON s.id = l.site_id
+            WHERE json_extract(sv.config_json, '$.templateId') = ?
+            ORDER BY s.created_at DESC
+          `).bind(tplId).all();
+          sites = (results || []).map((r) => ({
+            siteId: r.site_id || '',
+            brand: r.brand || '',
+            domain: r.domain || '',
+            templateId: r.template_id || '',
+          }));
+        } catch (_e) {
+          sites = [];
+        }
+
+        return json({ success: true, templateId: tplId, usageCount: sites.length, sites });
+      }
+
+      if (path.match(/^\/api\/templates\/[\w-]+\/versions$/) && method === 'GET') {
+        await ensureTemplateManagerSchema(db);
+        const id = path.split('/')[3];
+        const row = await db.prepare('SELECT id FROM templates WHERE id = ? AND COALESCE(is_deleted, 0) = 0').bind(id).first();
+        if (!row) return json({ error: 'Template not found' }, 404);
+        const { results } = await db
+          .prepare('SELECT id, template_db_id, template_id, version_number, note, created_at FROM template_versions WHERE template_db_id = ? ORDER BY version_number DESC')
+          .bind(id).all();
+        return json({ success: true, versions: results || [] });
+      }
+
+      if (path.match(/^\/api\/templates\/[\w-]+\/publish$/) && method === 'POST') {
+        await ensureTemplateManagerSchema(db);
+        const id = path.split('/')[3];
+        const body = await request.json().catch(() => ({}));
+        const requestedVersion = Number(body.version || 0);
+        const row = await db.prepare('SELECT * FROM templates WHERE id = ? AND COALESCE(is_deleted, 0) = 0').bind(id).first();
+        if (!row) return json({ error: 'Template not found' }, 404);
+
+        let version = null;
+        if (requestedVersion > 0) {
+          version = await db.prepare('SELECT * FROM template_versions WHERE template_db_id = ? AND version_number = ?')
+            .bind(id, requestedVersion).first();
+          if (!version) return json({ error: 'Version not found' }, 404);
+          await db.prepare(`
+            UPDATE templates
+            SET name = ?, description = ?, category = ?, badge = ?, source_code = ?, files = ?, current_version = ?, status = 'active', archived_at = NULL, updated_at = datetime('now')
+            WHERE id = ?
+          `).bind(
+            version.name || '',
+            version.description || '',
+            version.category || 'general',
+            version.badge || 'New',
+            version.source_code || '',
+            version.files || '{}',
+            requestedVersion,
+            id
+          ).run();
+        } else {
+          await db.prepare('UPDATE templates SET status = "active", archived_at = NULL, updated_at = datetime(\'now\') WHERE id = ?').bind(id).run();
+        }
+
+        return json({ success: true, id, publishedVersion: requestedVersion || row.current_version || 1 });
+      }
+
+      if (path.match(/^\/api\/templates\/[\w-]+\/rollback$/) && method === 'POST') {
+        await ensureTemplateManagerSchema(db);
+        const id = path.split('/')[3];
+        const body = await request.json().catch(() => ({}));
+        const targetVersion = Number(body.version || 0);
+        if (!targetVersion) return json({ error: 'Missing version' }, 400);
+
+        const version = await db.prepare('SELECT * FROM template_versions WHERE template_db_id = ? AND version_number = ?')
+          .bind(id, targetVersion).first();
+        if (!version) return json({ error: 'Version not found' }, 404);
+
+        await db.prepare(`
+          UPDATE templates
+          SET name = ?, description = ?, category = ?, badge = ?, source_code = ?, files = ?, current_version = ?, status = 'active', archived_at = NULL, updated_at = datetime('now')
+          WHERE id = ?
+        `).bind(
+          version.name || '',
+          version.description || '',
+          version.category || 'general',
+          version.badge || 'New',
+          version.source_code || '',
+          version.files || '{}',
+          targetVersion,
+          id
+        ).run();
+
+        return json({ success: true, id, rolledBackTo: targetVersion });
+      }
+
+      if (path === '/api/templates/default' && method === 'GET') {
+        const row = await db.prepare('SELECT value FROM settings WHERE key = ?').bind('defaultTemplateId').first();
+        return json({ success: true, templateId: row?.value || 'classic' });
+      }
+
+      if (path === '/api/templates/default' && method === 'PUT') {
+        const body = await request.json().catch(() => ({}));
+        const templateId = String(body.templateId || '').trim();
+        if (!templateId) return json({ error: 'Missing templateId' }, 400);
+        const existsInDb = await db.prepare('SELECT id FROM templates WHERE template_id = ? AND COALESCE(is_deleted, 0) = 0 AND COALESCE(status, "draft") != "archived" LIMIT 1')
+          .bind(templateId).first();
+        if (!existsInDb && !BUILTIN_TEMPLATE_IDS.has(templateId)) {
+          return json({ error: 'Template not found or archived' }, 400);
+        }
+        await db.prepare('INSERT INTO settings (key, value, updated_at) VALUES (?, ?, datetime(\'now\')) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime(\'now\')')
+          .bind('defaultTemplateId', templateId).run();
+        return json({ success: true, templateId });
       }
 
       // ═══ OPS: DOMAINS ═══
@@ -2434,6 +3079,46 @@ export default {
         return json(data, res.status);
       }
 
+      if (path === '/api/voluum/proxy' && method === 'POST') {
+        const body = await request.json().catch(() => ({}));
+        const token = String(body?.token || '').trim();
+        const proxyMethod = String(body?.method || 'GET').toUpperCase();
+        const proxyPath = String(body?.path || '').trim();
+        const proxyBody = body?.body;
+
+        if (!token) return json({ error: 'Missing Voluum token' }, 401);
+        if (!proxyPath || !proxyPath.startsWith('/')) {
+          return json({ error: 'Invalid Voluum path; expected path starting with "/"' }, 400);
+        }
+        if (proxyPath.includes('://') || proxyPath.includes('..')) {
+          return json({ error: 'Invalid Voluum path' }, 400);
+        }
+        if (!['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].includes(proxyMethod)) {
+          return json({ error: `Unsupported method: ${proxyMethod}` }, 400);
+        }
+
+        const targetUrl = `https://api.voluum.com${proxyPath}`;
+        const headers = {
+          'Accept': 'application/json',
+          'cwauth-token': token,
+        };
+        const init = { method: proxyMethod, headers };
+        if (proxyMethod !== 'GET' && proxyMethod !== 'DELETE' && proxyBody !== undefined) {
+          headers['Content-Type'] = 'application/json';
+          init.body = JSON.stringify(proxyBody);
+        }
+
+        const res = await fetch(targetUrl, init);
+        const text = await res.text();
+        let data;
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch (_e) {
+          data = { raw: text };
+        }
+        return json(data, res.status);
+      }
+
       // ═══════════════════════════════════════════════════════════════════════════════
       // AUTOMATION API — Structured endpoints for external automation tools
       // ═══════════════════════════════════════════════════════════════════════════════
@@ -2522,9 +3207,7 @@ export default {
         const { domain, nameservers, provider, accountId } = body;
         if (!domain || !nameservers || !Array.isArray(nameservers)) return json({ error: 'Missing domain or nameservers' }, 400);
 
-        const cleanedNameservers = nameservers
-          .map((ns) => String(ns || '').trim().toLowerCase().replace(/\.$/, ''))
-          .filter(Boolean);
+        const cleanedNameservers = canonicalizeNameservers(nameservers);
         if (cleanedNameservers.length < 2) {
           return json({ error: 'At least 2 valid nameservers are required' }, 400);
         }
@@ -2533,6 +3216,20 @@ export default {
           ? await db.prepare('SELECT * FROM registrar_accounts WHERE id = ?').bind(accountId).first()
           : await db.prepare('SELECT * FROM registrar_accounts WHERE provider = ? LIMIT 1').bind(provider).first();
         if (!acctRow) return json({ error: 'Registrar account not found' }, 404);
+
+        // Pre-check to avoid unnecessary registrar updates.
+        const beforeCheck = await fetchInternetBsCurrentNameservers(acctRow, domain);
+        if (beforeCheck.success && beforeCheck.nameservers.length >= 2 && nameserversMatch(beforeCheck.nameservers, cleanedNameservers)) {
+          return json({
+            success: true,
+            domain,
+            nameservers: cleanedNameservers,
+            currentNameservers: beforeCheck.nameservers,
+            alreadySynced: true,
+            verified: true,
+            message: 'Nameservers already match target. No update needed.',
+          });
+        }
 
         const apiUrl = `https://api.internet.bs/Domain/Update`;
         const formData = new URLSearchParams({
@@ -2563,13 +3260,25 @@ export default {
         const isSuccess = statusText === 'success' || statusText === 'ok';
         const message = data?.message || data?.error || data?.msg || 'Unknown registrar response';
 
+        const afterCheck = isSuccess ? await fetchInternetBsCurrentNameservers(acctRow, domain) : { success: false, nameservers: [] };
+        const verified = !!(afterCheck.success && nameserversMatch(afterCheck.nameservers, cleanedNameservers));
+
         return json({
           success: isSuccess,
           domain,
           nameservers: cleanedNameservers,
+          currentNameservers: afterCheck.success ? afterCheck.nameservers : beforeCheck.nameservers,
+          verified,
+          alreadySynced: false,
           status: data.status,
-          message,
+          message: verified ? 'Nameservers updated and verified.' : message,
           raw: data,
+          verify: {
+            before: beforeCheck.success ? beforeCheck.nameservers : [],
+            after: afterCheck.success ? afterCheck.nameservers : [],
+            beforeError: beforeCheck.success ? null : (beforeCheck.message || null),
+            afterError: afterCheck.success ? null : (afterCheck.message || null),
+          },
         });
       }
 
@@ -2737,7 +3446,7 @@ export default {
       if (path === '/api/automation/cf/dns' && method === 'GET') {
         const zoneId = url.searchParams.get('zoneId');
         const cfAccountId = url.searchParams.get('cfAccountId');
-        const apiToken = url.searchParams.get('apiToken') || '';
+        const apiToken = request.headers.get('x-cf-api-token') || url.searchParams.get('apiToken') || '';
         if (!zoneId || !cfAccountId) return json({ error: 'Missing zoneId or cfAccountId' }, 400);
 
         let token = apiToken;
@@ -2820,7 +3529,7 @@ export default {
         const dnsRecordId = url.searchParams.get('dnsRecordId');
         const zoneId = url.searchParams.get('zoneId');
         const cfAccountId = url.searchParams.get('cfAccountId');
-        const apiToken = url.searchParams.get('apiToken') || '';
+        const apiToken = request.headers.get('x-cf-api-token') || url.searchParams.get('apiToken') || '';
         if (!dnsRecordId || !zoneId || !cfAccountId) return json({ error: 'Missing dnsRecordId, zoneId, or cfAccountId' }, 400);
 
         let token = apiToken;

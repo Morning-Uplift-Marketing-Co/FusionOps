@@ -8,19 +8,78 @@
  */
 
 import { api } from "./api";
-
-const CF_API_BASE = "https://api.cloudflare.com/client/v4";
+import { getCfApiBase } from "../utils/api-proxy";
 
 /* ═════════════════════════════════════════════════════════════════════
    HELPER FUNCTIONS
 ══════════════════════════════════════════════════════════════════════ */
 
-/**
- * Get Cloudflare API base URL (supports proxy)
- */
-function getCfApiBase() {
-  // If proxy is configured, use it
-  return `${CF_API_BASE}`;
+async function cfProxyJson(path, { method = "GET", token, body } = {}) {
+  const proxyBase = getCfApiBase();
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  };
+  const res = await fetch(`${proxyBase}${path}`, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const json = await res.json().catch(() => ({}));
+  return { ok: res.ok, status: res.status, json };
+}
+
+function resolveApiBase() {
+  const fromWindow = typeof window !== "undefined" ? window.__LP_API__ : "";
+  const fromEnv = typeof import.meta !== "undefined" && import.meta.env ? import.meta.env.VITE_API_BASE : "";
+  const fallback = "https://lp-factory-api.misty-feather-556e.workers.dev/api";
+  return String(fromWindow || fromEnv || fallback).replace(/\/+$/, "");
+}
+
+async function upsertPixelWorkerRoute({ domain, cfAccountId, cfApiToken, pixelScriptName = "lp-factory-pixel" }) {
+  const zoneRes = await cfProxyJson(`/zones?name=${encodeURIComponent(domain)}&account.id=${encodeURIComponent(cfAccountId)}`, {
+    token: cfApiToken,
+  });
+  const zoneId = zoneRes?.json?.result?.[0]?.id;
+  if (!zoneId) {
+    throw new Error(`Zone not found for ${domain}`);
+  }
+
+  const listRes = await cfProxyJson(`/zones/${zoneId}/workers/routes`, { token: cfApiToken });
+  if (!listRes.ok) {
+    const msg = listRes?.json?.errors?.[0]?.message || `Route list failed (${listRes.status})`;
+    throw new Error(msg);
+  }
+  const pattern = `t.${domain}/*`;
+  const routes = Array.isArray(listRes?.json?.result) ? listRes.json.result : [];
+  const existing = routes.find((r) => r.pattern === pattern);
+
+  if (existing) {
+    if (existing.script === pixelScriptName) {
+      return { success: true, already: true };
+    }
+    const putRes = await cfProxyJson(`/zones/${zoneId}/workers/routes/${existing.id}`, {
+      method: "PUT",
+      token: cfApiToken,
+      body: { pattern, script: pixelScriptName },
+    });
+    if (!putRes.ok) {
+      const msg = putRes?.json?.errors?.[0]?.message || `Route update failed (${putRes.status})`;
+      throw new Error(msg);
+    }
+    return { success: true, updated: true };
+  }
+
+  const postRes = await cfProxyJson(`/zones/${zoneId}/workers/routes`, {
+    method: "POST",
+    token: cfApiToken,
+    body: { pattern, script: pixelScriptName },
+  });
+  if (!postRes.ok) {
+    const msg = postRes?.json?.errors?.[0]?.message || `Route create failed (${postRes.status})`;
+    throw new Error(msg);
+  }
+  return { success: true, created: true };
 }
 
 /* ═════════════════════════════════════════════════════════════════════
@@ -94,8 +153,16 @@ export async function getZoneByDomain(domain, cfApiToken, cfAccountId = "") {
  */
 export async function listDnsRecords(zoneId, cfAccountId, cfApiToken = "") {
   try {
-    const q = `zoneId=${encodeURIComponent(zoneId)}&cfAccountId=${encodeURIComponent(cfAccountId)}&apiToken=${encodeURIComponent(cfApiToken || "")}`;
-    const res = await api.get(`/automation/cf/dns?${q}`);
+    const apiBase = resolveApiBase();
+    const q = `zoneId=${encodeURIComponent(zoneId)}&cfAccountId=${encodeURIComponent(cfAccountId)}`;
+    const response = await fetch(`${apiBase}/automation/cf/dns?${q}`, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "x-cf-api-token": cfApiToken || "",
+      },
+    });
+    const res = await response.json().catch(() => ({}));
 
     return {
       success: res.success !== false,
@@ -187,8 +254,16 @@ export async function updateDnsRecord({ dnsRecordId, zoneId, cfAccountId, cfApiT
  */
 export async function deleteDnsRecord(dnsRecordId, zoneId, cfAccountId, cfApiToken = "") {
   try {
-    const q = `dnsRecordId=${encodeURIComponent(dnsRecordId)}&zoneId=${encodeURIComponent(zoneId)}&cfAccountId=${encodeURIComponent(cfAccountId)}&apiToken=${encodeURIComponent(cfApiToken || "")}`;
-    const res = await api.del(`/automation/cf/dns?${q}`);
+    const apiBase = resolveApiBase();
+    const q = `dnsRecordId=${encodeURIComponent(dnsRecordId)}&zoneId=${encodeURIComponent(zoneId)}&cfAccountId=${encodeURIComponent(cfAccountId)}`;
+    const response = await fetch(`${apiBase}/automation/cf/dns?${q}`, {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        "x-cf-api-token": cfApiToken || "",
+      },
+    });
+    const res = await response.json().catch(() => ({}));
 
     return { success: res.success !== false, error: res.error };
   } catch (e) {
@@ -271,8 +346,16 @@ export async function updateDnsAfterDeploy({
         break;
 
       case "netlify":
-        // Netlify uses CNAME to netlify.com
-        const netlifyHost = `${domain}.netlify.com`;
+        // Prefer actual Netlify host from deploy URL to avoid wrong CNAME target.
+        let netlifyHost = "";
+        try {
+          netlifyHost = deployUrl ? new URL(deployUrl).hostname : "";
+        } catch (_e) {
+          netlifyHost = "";
+        }
+        if (!netlifyHost) {
+          netlifyHost = `${domain}.netlify.com`;
+        }
         const netlifyCname = await upsertDnsRecord({
           zoneId,
           cfAccountId,
@@ -430,7 +513,7 @@ function normalizeRecordName(name, domain) {
   return cleanName.includes(".") ? cleanName : `${cleanName}.${cleanDomain}`;
 }
 
-async function upsertDnsRecord({ zoneId, cfAccountId, cfApiToken, domain, type, name, content, ttl = 3600, proxied = false }) {
+export async function upsertDnsRecord({ zoneId, cfAccountId, cfApiToken, domain, type, name, content, ttl = 3600, proxied = false }) {
   try {
     const normalizedName = normalizeRecordName(name, domain);
 
@@ -516,9 +599,54 @@ async function resolveIp(url) {
  *
  * Kept for backward compatibility; returns success immediately.
  */
-export async function ensurePixelSubdomain({ domain }) {
-  console.log(`[PixelDNS] t.${domain} provisioning now handled by deploy flow`);
-  return { success: true, pixelHost: `t.${domain}` };
+export async function ensurePixelSubdomain({ domain, cfAccountId, cfApiToken, pixelScriptName = "lp-factory-pixel" }) {
+  try {
+    const cleanDomain = String(domain || "").trim().toLowerCase();
+    if (!cleanDomain) {
+      return { success: false, error: "Domain is required" };
+    }
+
+    if (!cfAccountId || !cfApiToken) {
+      return { success: false, error: "Cloudflare credentials not found for pixel provisioning" };
+    }
+
+    const zone = await getOrCreateZone(cleanDomain, cfAccountId, cfApiToken);
+    if (!zone.success || !zone.zoneId) {
+      return { success: false, error: zone.error || "Failed to resolve Cloudflare zone" };
+    }
+
+    const dns = await upsertDnsRecord({
+      zoneId: zone.zoneId,
+      cfAccountId,
+      cfApiToken,
+      domain: cleanDomain,
+      type: "A",
+      name: "t",
+      content: "192.0.2.1",
+      proxied: true,
+      ttl: 1, // auto
+    });
+
+    if (!dns.success) {
+      return { success: false, error: dns.error || "Failed to upsert pixel DNS record" };
+    }
+
+    const route = await upsertPixelWorkerRoute({
+      domain: cleanDomain,
+      cfAccountId,
+      cfApiToken,
+      pixelScriptName,
+    });
+
+    return {
+      success: true,
+      pixelHost: `t.${cleanDomain}`,
+      record: dns.record || null,
+      route,
+    };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
 }
 
 /* ═════════════════════════════════════════════════════════════════════
@@ -533,6 +661,7 @@ const cloudflareDns = {
   // DNS record management
   listDnsRecords,
   createDnsRecord,
+  upsertDnsRecord,
   updateDnsRecord,
   deleteDnsRecord,
 

@@ -177,6 +177,26 @@ function scoreChecks(checks) {
   return { groups, total, passed, pct: Math.round((passed / total) * 100) };
 }
 
+function normalizeTargetUrl(input) {
+  const raw = String(input || "").trim();
+  if (!raw) return "";
+
+  let candidate = raw;
+  if (candidate.startsWith("//")) {
+    candidate = `https:${candidate}`;
+  } else if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(candidate)) {
+    candidate = `https://${candidate}`;
+  }
+
+  try {
+    const parsed = new URL(candidate);
+    if (!parsed.hostname) return "";
+    return parsed.toString();
+  } catch {
+    return "";
+  }
+}
+
 // ─── Main Component ───
 export function TrackingDashboard({ settings, sites }) {
   const [tab, setTab] = useState("overview");
@@ -192,19 +212,28 @@ export function TrackingDashboard({ settings, sites }) {
 
   // Fetch and analyze LP
   const analyze = useCallback(async (targetUrl) => {
-    if (!targetUrl) return;
+    const normalizedUrl = normalizeTargetUrl(targetUrl);
+    if (!normalizedUrl) {
+      addEvent("error", "Invalid URL. Please enter a valid domain or URL.");
+      return;
+    }
+
+    if (normalizedUrl !== targetUrl) {
+      setUrl(normalizedUrl);
+    }
+
     setLoading(true);
     setEvents([]);
     try {
       // Try fetching via API proxy to avoid CORS
       let fetchedHtml = null;
       try {
-        const res = await fetch(targetUrl);
+        const res = await fetch(normalizedUrl);
         fetchedHtml = await res.text();
       } catch {
         // Try via proxy
         try {
-          const proxyRes = await fetch(`/api/proxy?url=${encodeURIComponent(targetUrl)}`);
+          const proxyRes = await fetch(`/api/proxy?url=${encodeURIComponent(normalizedUrl)}`);
           fetchedHtml = await proxyRes.text();
         } catch {
           // Try web_fetch style
@@ -217,7 +246,7 @@ export function TrackingDashboard({ settings, sites }) {
         const c = analyzeHtml(fetchedHtml);
         setChecks(c);
         setScore(scoreChecks(c));
-        addEvent("info", `Analyzed ${targetUrl} — ${fetchedHtml.length.toLocaleString()} bytes`);
+        addEvent("info", `Analyzed ${normalizedUrl} — ${fetchedHtml.length.toLocaleString()} bytes`);
       }
     } catch (e) {
       addEvent("error", `Analysis failed: ${e.message}`);
@@ -253,10 +282,15 @@ export function TrackingDashboard({ settings, sites }) {
 
   // Open live monitor
   const openLiveMonitor = () => {
-    if (!url) return;
-    setLiveUrl(url);
+    const normalizedUrl = normalizeTargetUrl(url);
+    if (!normalizedUrl) {
+      addEvent("error", "Live monitor requires a valid URL.");
+      return;
+    }
+    if (normalizedUrl !== url) setUrl(normalizedUrl);
+    setLiveUrl(normalizedUrl);
     setTab("monitor");
-    addEvent("info", `Live monitor opened: ${url}`);
+    addEvent("info", `Live monitor opened: ${normalizedUrl}`);
   };
 
   // Tabs
@@ -446,6 +480,22 @@ function EventsTab({ events }) {
 // ─── Live Monitor Tab ───
 function MonitorTab({ url, iframeRef, addEvent }) {
   const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [frameBlocked, setFrameBlocked] = useState(false);
+
+  useEffect(() => {
+    if (!url) return;
+    setIframeLoaded(false);
+    setFrameBlocked(false);
+
+    // Many production LPs block framing via X-Frame-Options/CSP.
+    // If iframe never loads, show actionable fallback instead of a confusing blank/404 view.
+    const timer = setTimeout(() => {
+      setFrameBlocked(true);
+      addEvent("error", "Live monitor iframe blocked by site security headers (X-Frame-Options/CSP). Use 'Open in new tab'.");
+    }, 4500);
+
+    return () => clearTimeout(timer);
+  }, [url, addEvent]);
 
   if (!url) {
     return (
@@ -477,16 +527,31 @@ function MonitorTab({ url, iframeRef, addEvent }) {
         background: T.card2, border: `1px solid ${T.border}`, borderRadius: 12,
         overflow: "hidden", height: 600,
       }}>
-        <iframe
-          ref={iframeRef}
-          src={url}
-          style={{ width: "100%", height: "100%", border: "none" }}
-          onLoad={() => {
-            setIframeLoaded(true);
-            addEvent("info", "iframe loaded successfully");
-          }}
-          sandbox="allow-scripts allow-same-origin allow-forms"
-        />
+        {frameBlocked ? (
+          <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, textAlign: "center" }}>
+            <div>
+              <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>This site blocks iframe embedding</div>
+              <div style={{ fontSize: 13, color: T.muted, marginBottom: 12 }}>
+                Security headers like <code>X-Frame-Options</code> or <code>CSP frame-ancestors</code> prevent in-app preview.
+              </div>
+              <a href={url} target="_blank" rel="noopener" style={{ ...S.btn(), display: "inline-block", textDecoration: "none" }}>
+                Open Live Monitor In New Tab ↗
+              </a>
+            </div>
+          </div>
+        ) : (
+          <iframe
+            ref={iframeRef}
+            src={url}
+            style={{ width: "100%", height: "100%", border: "none" }}
+            onLoad={() => {
+              setIframeLoaded(true);
+              setFrameBlocked(false);
+              addEvent("info", "iframe loaded successfully");
+            }}
+            sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
+          />
+        )}
       </div>
       <div style={{ marginTop: 10, fontSize: 11, color: T.dim }}>
         ⚠️ Note: Cross-origin restrictions may limit event capture. For full monitoring, use browser DevTools on the actual page.

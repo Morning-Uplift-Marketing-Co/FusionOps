@@ -11,14 +11,13 @@
 import { api } from "./api";
 
 const API_BASE = "/voluum";
+const DEFAULT_API_BASE = "https://lp-factory-api.misty-feather-556e.workers.dev/api";
 
 /** Resolve the Worker API base URL (shared logic) */
 function resolveApiBase() {
     const fromWindow = typeof window !== "undefined" ? window.__LP_API__ : "";
     const fromEnv = typeof import.meta !== "undefined" && import.meta.env ? import.meta.env.VITE_API_BASE : "";
-    const isLocalDev = typeof window !== "undefined" && /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname);
-    const PROD = import.meta.env?.VITE_API_BASE || "https://lp-factory-api.misty-feather-556e.workers.dev/api";
-    return String(fromWindow || fromEnv || (isLocalDev ? "/api" : PROD)).replace(/\/+$/, "");
+    return String(fromWindow || fromEnv || DEFAULT_API_BASE).replace(/\/+$/, "");
 }
 
 export async function fetchVoluumSession(accessId, accessKey) {
@@ -28,12 +27,7 @@ export async function fetchVoluumSession(accessId, accessKey) {
 
     try {
         // Call directly via fetch to avoid api.js swallowing error body on non-200
-        const fromWindow = typeof window !== "undefined" ? window.__LP_API__ : "";
-        const fromEnv = typeof import.meta !== "undefined" && import.meta.env ? import.meta.env.VITE_API_BASE : "";
-        const isLocalDev = typeof window !== "undefined" && /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname);
-        const PROD_API_BASE = import.meta.env?.VITE_API_BASE || "https://lp-factory-api.misty-feather-556e.workers.dev/api";
-        const fallback = isLocalDev ? "/api" : PROD_API_BASE;
-        const apiBase = String(fromWindow || fromEnv || fallback).replace(/\/+$/, "");
+        const apiBase = resolveApiBase();
 
         const fullUrl = `${apiBase}${API_BASE}/session`;
         console.log("[voluum] auth →", fullUrl);
@@ -83,13 +77,7 @@ export async function fetchVoluumReport(token, fromDate, toDate, tz = "UTC", gro
     try {
         // api.js doesn't allow passing custom headers easily via its wrapper methods.
         // We will call fetch directly but using the resolved API base.
-        const fromWindow = typeof window !== "undefined" ? window.__LP_API__ : "";
-        const fromEnv = typeof import.meta !== "undefined" && import.meta.env ? import.meta.env.VITE_API_BASE : "";
-        const isLocalDev = typeof window !== "undefined" && /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname);
-
-        const PROD_API_BASE = import.meta.env?.VITE_API_BASE || "https://lp-factory-api.misty-feather-556e.workers.dev/api";
-        const fallback = isLocalDev ? "/api" : PROD_API_BASE;
-        const apiBase = String(fromWindow || fromEnv || fallback).replace(/\/+$/, "");
+        const apiBase = resolveApiBase();
 
         const fullUrl = `${apiBase}${url}`;
 
@@ -138,9 +126,10 @@ async function voluumProxy(token, method, path, body) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, method: method || "GET", path, body }),
     });
-    const data = await res.json();
-    if (data._status && data._status >= 400) {
-        throw new Error(typeof data.message === "string" ? data.message : typeof data.error === "string" ? data.error : JSON.stringify(data.error || data.message || `Voluum API ${data._status}`));
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || (data._status && data._status >= 400)) {
+        const status = data._status || res.status;
+        throw new Error(typeof data.message === "string" ? data.message : typeof data.error === "string" ? data.error : JSON.stringify(data.error || data.message || `Voluum API ${status}`));
     }
     return data;
 }

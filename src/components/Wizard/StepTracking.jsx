@@ -7,7 +7,7 @@ import { cn } from "../../lib/utils";
 import { NETWORKS_AFF } from "../../constants";
 import { fetchVoluumSession, createCampaign as createVoluumCampaign } from "../../services/voluum";
 import { LS } from "../../utils";
-import { getOrCreateZone, createDnsRecord } from "../../services/cloudflare-dns";
+import { getOrCreateZone, upsertDnsRecord } from "../../services/cloudflare-dns";
 
 // ─── Voluum API via worker proxy ───
 const VOLUUM_API = (() => {
@@ -71,6 +71,40 @@ export function clearVoluumCache() {
   _campaignCacheToken = null;
 }
 
+function buildVoluumLanderScript(domain) {
+  if (!domain) return "";
+  const host = `vls.${domain}`;
+  return `<meta http-equiv="delegate-ch" content="sec-ch-ua https://${host}; sec-ch-ua-mobile https://${host}; sec-ch-ua-arch https://${host}; sec-ch-ua-model https://${host}; sec-ch-ua-platform https://${host}; sec-ch-ua-platform-version https://${host}; sec-ch-ua-bitness https://${host}; sec-ch-ua-full-version-list https://${host}; sec-ch-ua-full-version https://${host}"><style>.dtpcnt{opacity: 0;}</style>
+<script>
+    (function(e,d,k,n,u,v,g,w,C,f,p,x,D,c,q,r,h,t,y,G,z){function A(){for(var a=d.querySelectorAll(".dtpcnt"),b=0,l=a.length;b<l;b++)a[b][w]=a[b][w].replace(/(^|\\s+)dtpcnt($|\\s+)/g,"")}function E(a,b,l,F){var m=new Date;m.setTime(m.getTime()+(F||864E5));d.cookie=a+"="+b+"; "+l+"samesite=Strict; expires="+m.toGMTString()+"; path=/";k.setItem(a,b);k.setItem(a+"-expires",m.getTime())}function B(a){var b=d.cookie.match(new RegExp("(^| )"+a+"=([^;]+)"));return b?b.pop():k.getItem(a+"-expires")&&+k.getItem(a+"-expires")>(new Date).getTime()?k.getItem(a):null}z="https:"===e.location.protocol?"secure; ":"";e[f]||(e[f]=function(){(e[f].q=e[f].q||[]).push(arguments)},r=d[u],d[u]=function(){r&&r.apply(this,arguments);if(e[f]&&!e[f].hasOwnProperty("params")&&/loaded|interactive|complete/.test(d.readyState))for(;c=d[v][p++];)/\\/?click\\/?($|(\\/[0-9]+)?$)/.test(c.pathname)&&(c[g]="javascrip"+e.postMessage.toString().slice(4,5)+":"+f+'.l="'+c[g]+'",void 0')},setTimeout(function(){(t=RegExp("[?&]cpid(=([^&#]*)|&|#|$)").exec(e.location.href))&&t[2]&&(h=t[2],y=B("vl-"+h));var a=B("vl-cep"),b=location[g];if("savedCep"===D&&a&&(!h||"undefined"===typeof h)&&0>b.indexOf("cep=")){var l=-1<b.indexOf("?")?"&":"?";b+=l+a}c=d.createElement("script");q=d.scripts[0];c.defer=1;c.src=x+(-1===x.indexOf("?")?"?":"&")+"lpref="+n(d.referrer)+"&lpurl="+n(b)+"&lpt="+n(d.title)+"&vtm="+(new Date).getTime()+(y?"&uw=no":"");c[C]=function(){for(p=0;c=d[v][p++];)/dtpCallback\\.l/.test(c[g])&&(c[g]=decodeURIComponent(c[g]).match(/dtpCallback\\.l="([^"]+)/)[1]);A()};q.parentNode.insertBefore(c,q);h&&E("vl-"+h,"1",z)},0),setTimeout(A,7E3))})(window,document,localStorage,encodeURIComponent,"onreadystatechange","links","href","className","onerror","dtpCallback",0,"https://${host}/d/.js","savedCep");
+</script>
+<noscript><link href="https://${host}/d/.js?noscript=true&lpurl=" rel="stylesheet"/></noscript>`;
+}
+
+function normalizeVoluumScriptHost(script = "", domain = "") {
+  const value = String(script || "");
+  if (!value) return value;
+
+  // Generic normalize: any https://trk.xxx -> https://vls.xxx
+  let normalized = value.replace(/https:\/\/trk\./gi, "https://vls.");
+
+  // If domain is known, enforce vls.{domain} for this lander
+  const cleanDomain = String(domain || "").trim();
+  if (cleanDomain) {
+    normalized = normalized
+      .replace(/https:\/\/vls\.[^/\s"']+/gi, `https://vls.${cleanDomain}`)
+      .replace(/https:\/\/trk\.[^/\s"']+/gi, `https://vls.${cleanDomain}`);
+  }
+
+  return normalized;
+}
+
+function normalizeTrackingDomain(rawTrackingDomain = "", domain = "") {
+  const cleanDomain = String(domain || "").trim();
+  if (cleanDomain) return `vls.${cleanDomain}`;
+  return String(rawTrackingDomain || "").trim().replace(/^trk\./i, "vls.");
+}
+
 // ─── Component ───
 export function StepTracking({ c, u }) {
   const [campaigns, setCampaigns] = useState([]);
@@ -89,6 +123,26 @@ export function StepTracking({ c, u }) {
 
   const mode = c.trackingMode || "minimal";
   const isVoluum = mode === "voluum";
+
+  useEffect(() => {
+    if (!isVoluum) return;
+    const normalizedTrackingDomain = normalizeTrackingDomain(c.voluumTrackingDomain, c.domain);
+    if (normalizedTrackingDomain && normalizedTrackingDomain !== c.voluumTrackingDomain) {
+      u("voluumTrackingDomain", normalizedTrackingDomain);
+    }
+
+    if (c.voluumLanderScript) {
+      const normalized = normalizeVoluumScriptHost(c.voluumLanderScript, c.domain);
+      if (normalized !== c.voluumLanderScript) {
+        u("voluumLanderScript", normalized);
+      }
+      return;
+    }
+    const defaultScript = buildVoluumLanderScript((c.domain || "").trim());
+    if (defaultScript) {
+      u("voluumLanderScript", defaultScript);
+    }
+  }, [isVoluum, c.voluumTrackingDomain, c.voluumLanderScript, c.domain, u]);
 
   // ─── Voluum credentials from settings (stored in localStorage by Settings page) ───
   const getCredentials = useCallback(() => {
@@ -148,6 +202,7 @@ export function StepTracking({ c, u }) {
       u("voluumCampaignId", "");
       u("voluumCampaignName", "");
       u("voluumTrackingDomain", "");
+      u("voluumLanderScript", "");
     }
   };
 
@@ -164,7 +219,7 @@ export function StepTracking({ c, u }) {
       setCampaigns(prev => [{ ...created, trafficSourceName: "" }, ...prev]);
       u("voluumCampaignId", created.id);
       u("voluumCampaignName", created.name);
-      u("voluumTrackingDomain", created.trackingDomain || (c.domain ? `trk.${c.domain}` : ""));
+      u("voluumTrackingDomain", normalizeTrackingDomain(created.trackingDomain || "", c.domain));
       setShowCreate(false);
       setNewCamp({ name: "", country: "US", costModel: "CPC", costValue: 0, trafficSourceId: "" });
       clearVoluumCache();
@@ -180,7 +235,7 @@ export function StepTracking({ c, u }) {
     const camp = campaigns.find(c => c.id === campaignId);
     u("voluumCampaignId", campaignId);
     u("voluumCampaignName", camp?.name || "");
-    u("voluumTrackingDomain", camp?.trackingDomain || (c.domain ? `trk.${c.domain}` : ""));
+    u("voluumTrackingDomain", normalizeTrackingDomain(camp?.trackingDomain || "", c.domain));
   };
 
   return (
@@ -293,7 +348,7 @@ export function StepTracking({ c, u }) {
               <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-3 mt-1 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Tracking Domain</span>
-                  <span className="text-[11px] font-mono text-[hsl(var(--foreground))]">{c.voluumTrackingDomain || (c.domain ? `trk.${c.domain}` : "—")}</span>
+                  <span className="text-[11px] font-mono text-[hsl(var(--foreground))]">{c.voluumTrackingDomain || (c.domain ? `vls.${c.domain}` : "—")}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Campaign ID</span>
@@ -310,8 +365,8 @@ export function StepTracking({ c, u }) {
                 <div className="pt-1">
                   <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider block mb-1.5">Postback URL</span>
                   <div className="flex items-center gap-2">
-                    <code className="flex-1 text-[9px] font-mono bg-[hsl(var(--input))] border border-[hsl(var(--border))] rounded px-2 py-1.5 text-purple-400 break-all cursor-pointer" onClick={() => navigator.clipboard?.writeText(`https://${c.voluumTrackingDomain || (c.domain ? `trk.${c.domain}` : 'TRACKING_DOMAIN')}/postback?cid={click_id}&payout={price}`)}>
-                      https://{c.voluumTrackingDomain || (c.domain ? `trk.${c.domain}` : 'TRACKING_DOMAIN')}/postback?cid={'{click_id}'}&payout={'{price}'}
+                    <code className="flex-1 text-[9px] font-mono bg-[hsl(var(--input))] border border-[hsl(var(--border))] rounded px-2 py-1.5 text-purple-400 break-all cursor-pointer" onClick={() => navigator.clipboard?.writeText(`https://${c.voluumTrackingDomain || (c.domain ? `vls.${c.domain}` : 'TRACKING_DOMAIN')}/postback?cid={click_id}&payout={price}`)}>
+                      https://{c.voluumTrackingDomain || (c.domain ? `vls.${c.domain}` : 'TRACKING_DOMAIN')}/postback?cid={'{click_id}'}&payout={'{price}'}
                     </code>
                   </div>
                 </div>
@@ -387,11 +442,12 @@ export function StepTracking({ c, u }) {
                       if (!zone.success || !zone.zoneId) throw new Error(zone.error || "Failed to get zone");
 
                       const results = [];
-                      const trkSub = (c.voluumTrackingDomain || `trk.${c.domain}`).split(".")[0];
+                      const trkSub = (c.voluumTrackingDomain || `vls.${c.domain}`).split(".")[0];
 
                       // 1. Tracking CNAME: trk.domain → CloudFront
-                      const r1 = await createDnsRecord({
+                      const r1 = await upsertDnsRecord({
                         zoneId: zone.zoneId, cfAccountId, cfApiToken,
+                        domain: c.domain,
                         type: "CNAME", name: `${trkSub}.${c.domain}`,
                         content: c.voluumCfCname, proxied: false,
                       });
@@ -399,8 +455,9 @@ export function StepTracking({ c, u }) {
 
                       // 2. ACM Certificate CNAME (if provided)
                       if (c.voluumAcmName && c.voluumAcmValue) {
-                        const r2 = await createDnsRecord({
+                        const r2 = await upsertDnsRecord({
                           zoneId: zone.zoneId, cfAccountId, cfApiToken,
+                          domain: c.domain,
                           type: "CNAME", name: c.voluumAcmName,
                           content: c.voluumAcmValue, proxied: false,
                         });
@@ -543,13 +600,45 @@ export function StepTracking({ c, u }) {
         </CardHeader>
         <CardContent>
           <p className="text-[11px] text-[hsl(var(--muted-foreground))] leading-relaxed">
-            Sends events to <code className="text-[10px] font-mono bg-[hsl(var(--muted))/30] px-1 py-0.5 rounded">t.{"{domain}"}/e</code> via
+            Sends events to <code className="text-[10px] font-mono bg-[hsl(var(--muted))/30] px-1 py-0.5 rounded">https://t.{c.domain || "domain.com"}/e</code> via
             sendBeacon. No setup needed — auto-configured at build time.
           </p>
         </CardContent>
       </Card>
 
-      {/* ═══ 5. Affiliate Form ═══ */}
+      {/* ═══ 5. Voluum Lander Script (Voluum only) ═══ */}
+      {isVoluum && (
+        <Card className="mb-3.5">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2">
+              <span>🏃</span> Voluum Lander Script
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-[12px] font-semibold mb-2">Install Lander Tracking Script</div>
+            <p className="text-[11px] text-[hsl(var(--muted-foreground))] leading-relaxed mb-2">
+              Paste your Voluum Lander Tracking Script into your lander page&apos;s HTML. Place it at the bottom of the <code className="text-[10px] font-mono bg-[hsl(var(--muted))/30] px-1 py-0.5 rounded">&lt;head&gt;</code> tag section.
+            </p>
+            <textarea
+              value={c.voluumLanderScript || ""}
+              onChange={(e) => u("voluumLanderScript", normalizeVoluumScriptHost(e.target.value, c.domain))}
+              rows={9}
+              placeholder={buildVoluumLanderScript((c.domain || "").trim()) || "<script>/* Voluum Lander Tracking Script */</script>"}
+              className="w-full rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--input))] px-3 py-2 text-[11px] font-mono text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]/50 resize-y"
+            />
+            <div className="mt-3 space-y-2">
+              <div className="text-[12px] text-[hsl(var(--muted-foreground))]">
+                Add click URLs to CTA buttons:
+              </div>
+              <code className="block w-full text-[13px] font-mono bg-[hsl(var(--muted))/35] border border-[hsl(var(--border))] px-3 py-2 rounded">
+                https://vls.{c.domain || "domain.com"}/click
+              </code>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ═══ 6. Affiliate Form ═══ */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2">

@@ -35,6 +35,7 @@ const createAuthHeaders = (netlifyToken, netlifyTeamSlug) => {
 
 export async function deploy(content, site, settings) {
   const { netlifyToken, netlifyTeamSlug, cfAccountId, cfApiToken } = settings;
+  const pixelScriptName = (settings.pixelWorkerScriptName || settings.cfPixelWorkerScriptName || "lp-factory-pixel").trim();
   if (!netlifyToken) {
     return { success: false, error: "Missing Netlify token. Configure in Settings." };
   }
@@ -179,7 +180,16 @@ export async function deploy(content, site, settings) {
     let dnsError = null;
     if (site.domain && cfAccountId && cfApiToken) {
       try {
-        dnsUpdated = await updateDnsAfterDeploy(site.domain, siteData.ssl_url || siteData.url, cfAccountId, cfApiToken);
+        const dnsResult = await updateDnsAfterDeploy({
+          domain: site.domain,
+          cfAccountId,
+          cfApiToken,
+          deployTarget: "netlify",
+          deployUrl: siteData.ssl_url || siteData.url,
+          proxied: true,
+        });
+        dnsUpdated = dnsResult.success;
+        dnsError = dnsResult.error || null;
       } catch (dnsErr) {
         dnsError = dnsErr.message;
         console.warn(`[Netlify] DNS update failed: ${dnsErr.message}`);
@@ -191,7 +201,7 @@ export async function deploy(content, site, settings) {
     let pixelError = null;
     if (site.domain && cfAccountId && cfApiToken) {
       try {
-        const pixelResult = await ensurePixelSubdomain({ domain: site.domain, cfAccountId, cfApiToken });
+        const pixelResult = await ensurePixelSubdomain({ domain: site.domain, cfAccountId, cfApiToken, pixelScriptName });
         pixelProvisioned = pixelResult.success;
         pixelError = pixelResult.error;
       } catch (e) {
