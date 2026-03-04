@@ -19,7 +19,8 @@
     "test:report": "playwright show-report",
     "deploy:org": "node scripts/deploy-org.js",
     "pack-template": "node scripts/pack-template.mjs",
-    "convert-template": "node scripts/convert-template.mjs"
+    "convert-template": "node scripts/convert-template.mjs",
+    "release": "standard-version"
   },
   "dependencies": {
     "@astrojs/react": "^4.4.2",
@@ -57,6 +58,7 @@
     "globals": "^16.5.0",
     "happy-dom": "^20.6.2",
     "jsdom": "^28.1.0",
+    "standard-version": "^9.5.0",
     "tailwindcss": "^4.2.0",
     "typescript": "^5.7.0",
     "vitest": "^4.0.18",
