@@ -96,6 +96,70 @@ async function cfFetch(url, opts = {}) {
   return { ok: res.ok, status: res.status, json };
 }
 
+function buildPagesProjectName(site) {
+  const slug = (site.domain || site.brand || "lp")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 40);
+  return `lp-${slug}-${String(site.id || "x").slice(0, 6)}`;
+}
+
+function inferContentType(filePath) {
+  const p = String(filePath || "").toLowerCase();
+  if (p.endsWith(".html") || p.endsWith(".htm")) return "text/html; charset=utf-8";
+  if (p.endsWith(".js") || p.endsWith(".mjs")) return "application/javascript; charset=utf-8";
+  if (p.endsWith(".css")) return "text/css; charset=utf-8";
+  if (p.endsWith(".json")) return "application/json; charset=utf-8";
+  if (p.endsWith(".svg")) return "image/svg+xml";
+  if (p.endsWith(".png")) return "image/png";
+  if (p.endsWith(".jpg") || p.endsWith(".jpeg")) return "image/jpeg";
+  if (p.endsWith(".webp")) return "image/webp";
+  if (p.endsWith(".gif")) return "image/gif";
+  if (p.endsWith(".ico")) return "image/x-icon";
+  if (p.endsWith(".txt")) return "text/plain; charset=utf-8";
+  return "application/octet-stream";
+}
+
+async function upsertWorkerRoute({ cfBase, apiAuth, zoneId, pattern, scriptName }) {
+  const listRes = await fetchWithRateLimitRetry(`${cfBase}/zones/${zoneId}/workers/routes`, {
+    headers: { ...apiAuth, "Content-Type": "application/json" },
+  });
+  if (!listRes.ok) {
+    const errText = await listRes.text().catch(() => "");
+    throw new Error(`Route list failed (${listRes.status}): ${errText.slice(0, 200)}`);
+  }
+  const listData = await listRes.json().catch(() => ({}));
+  const routes = Array.isArray(listData.result) ? listData.result : [];
+  const existing = routes.find((r) => r.pattern === pattern);
+
+  if (existing) {
+    if (existing.script === scriptName) return { created: false, updated: false };
+    const updateRes = await fetchWithRateLimitRetry(`${cfBase}/zones/${zoneId}/workers/routes/${existing.id}`, {
+      method: "PUT",
+      headers: { ...apiAuth, "Content-Type": "application/json" },
+      body: JSON.stringify({ pattern, script: scriptName }),
+    });
+    if (!updateRes.ok) {
+      const errText = await updateRes.text().catch(() => "");
+      throw new Error(`Route update failed for ${pattern} (${updateRes.status}): ${errText.slice(0, 200)}`);
+    }
+    return { created: false, updated: true };
+  }
+
+  const createRes = await fetchWithRateLimitRetry(`${cfBase}/zones/${zoneId}/workers/routes`, {
+    method: "POST",
+    headers: { ...apiAuth, "Content-Type": "application/json" },
+    body: JSON.stringify({ pattern, script: scriptName }),
+  });
+  if (!createRes.ok) {
+    const errText = await createRes.text().catch(() => "");
+    throw new Error(`Route create failed for ${pattern} (${createRes.status}): ${errText.slice(0, 200)}`);
+  }
+  return { created: true, updated: false };
+}
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -132,6 +196,7 @@ async function cfFetchWithRateLimitRetry(url, opts = {}, maxAttempts = 4) {
 export async function deploy(content, site, settings) {
   const cfApiToken = (settings.cfApiToken || "").trim();
   const cfAccountId = (settings.cfAccountId || "").trim();
+  const pixelScriptName = (settings.pixelWorkerScriptName || settings.cfPixelWorkerScriptName || "lp-factory-pixel").trim();
   if (!cfApiToken || !cfAccountId) {
     return { success: false, error: "Missing Cloudflare API Token or Account ID. Configure in Settings." };
   }
@@ -146,9 +211,7 @@ export async function deploy(content, site, settings) {
         Object.entries(content).map(([k, v]) => [k.startsWith("/") ? k : `/${k}`, v])
       );
 
-  const slug = (site.domain || site.brand || "lp")
-    .toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").slice(0, 40);
-  const projectName = `lp-${slug}-${(site.id || "x").slice(0, 6)}`;
+  const projectName = buildPagesProjectName(site);
   const apiAuth = { Authorization: `Bearer ${cfApiToken}` };
   const cfBase = getCfApiBase();
   const projectsUrl = `${cfBase}/accounts/${cfAccountId}/pages/projects`;
@@ -204,7 +267,7 @@ export async function deploy(content, site, settings) {
     // ── Step 5: Upload missing files ───────────────────────────────
     if (missingHashes.length > 0) {
       const uploadPayload = [];
-      for (const [, file] of Object.entries(fileDataMap)) {
+      for (const [filePath, file] of Object.entries(fileDataMap)) {
         if (!missingHashes.includes(file.hash)) continue;
         // Convert file content to base64 safely (spread operator fails > 65KB)
         let b64 = "";
@@ -216,7 +279,7 @@ export async function deploy(content, site, settings) {
         uploadPayload.push({
           key: file.hash,
           value: b64,
-          metadata: { contentType: "text/html" },
+          metadata: { contentType: inferContentType(filePath) },
           base64: true,
         });
       }
@@ -308,11 +371,47 @@ export async function deploy(content, site, settings) {
           domain: site.domain,
           cfAccountId,
           cfApiToken,
+          pixelScriptName,
         });
         pixelProvisioned = pixelResult.success;
         pixelError = pixelResult.error;
       } catch (e) {
         pixelError = e.message;
+      }
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    // Step 10: Ensure pixel Workers Route (t.{domain}/* -> pixel worker)
+    // ═════════════════════════════════════════════════════════════════════
+    let pixelRouteCreated = false;
+    let pixelRouteError = null;
+    if (!pixelProvisioned && site.domain && cfAccountId && cfApiToken && pixelScriptName) {
+      try {
+        const zonesRes = await fetchWithRateLimitRetry(
+          `${cfBase}/zones?name=${encodeURIComponent(site.domain)}&account.id=${encodeURIComponent(cfAccountId)}`,
+          { headers: { ...apiAuth, "Content-Type": "application/json" } }
+        );
+        if (!zonesRes.ok) {
+          const errText = await zonesRes.text().catch(() => "");
+          throw new Error(`Zone lookup failed (${zonesRes.status}): ${errText.slice(0, 200)}`);
+        }
+        const zonesData = await zonesRes.json().catch(() => ({}));
+        const zoneId = zonesData?.result?.[0]?.id;
+        if (!zoneId) {
+          throw new Error(`Zone not found for ${site.domain}`);
+        }
+
+        const routePattern = `t.${site.domain}/*`;
+        await upsertWorkerRoute({
+          cfBase,
+          apiAuth,
+          zoneId,
+          pattern: routePattern,
+          scriptName: pixelScriptName,
+        });
+        pixelRouteCreated = true;
+      } catch (e) {
+        pixelRouteError = e.message;
       }
     }
 
@@ -325,6 +424,8 @@ export async function deploy(content, site, settings) {
       dnsError,
       pixelProvisioned,
       pixelError,
+      pixelRouteCreated,
+      pixelRouteError,
     };
   } catch (e) {
     return { success: false, error: e.message };
@@ -335,12 +436,7 @@ export async function checkDeployStatus(site, settings) {
   const { cfApiToken, cfAccountId } = settings;
   if (!cfApiToken || !cfAccountId) return { success: false, error: "Missing CF credentials" };
 
-  const projectName = (site.domain || site.brand || "lp")
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 28) + "-" + String(site.id || "x").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 8);
+  const projectName = buildPagesProjectName(site);
 
   const cfBase = getCfApiBase();
   const authH = { Authorization: `Bearer ${cfApiToken}` };

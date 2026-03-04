@@ -11,6 +11,7 @@
  */
 
 import { getCfApiBase } from "../api-proxy.js";
+import { updateDnsAfterDeploy } from "../../services/cloudflare-dns.js";
 
 function buildWorkerScript(assets) {
   // assets is { "/index.html": "content", "/style.css": "content", ... }
@@ -134,6 +135,7 @@ export async function deploy(assets, site, settings) {
   const slug = (site.domain || site.brand || "lp")
     .toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").slice(0, 40);
   const scriptName = `lp-worker-${slug}-${(site.id || "x").slice(0, 6)}`;
+  const pixelScriptName = (settings.pixelWorkerScriptName || settings.cfPixelWorkerScriptName || "lp-factory-pixel").trim();
   const auth = { Authorization: `Bearer ${cfApiToken}` };
   const cfBase = getCfApiBase();
 
@@ -237,6 +239,30 @@ export async function deploy(assets, site, settings) {
       }
     ).catch(() => { }); // Best-effort; deploy already succeeded
 
+    // ── Step: Ensure DNS records for Workers custom domain ──────────
+    // Creates/updates:
+    //   - A @ -> 192.0.2.1 (proxied)
+    //   - A t -> 192.0.2.1 (proxied)
+    //   - CNAME trk -> track.voluum.com (dns only)
+    let dnsUpdated = false;
+    let dnsError = null;
+    if (site.domain && cfAccountId && cfApiToken) {
+      try {
+        const dnsResult = await updateDnsAfterDeploy({
+          domain: site.domain,
+          cfAccountId,
+          cfApiToken,
+          deployTarget: "cf-workers",
+          deployUrl: url,
+          proxied: true,
+        });
+        dnsUpdated = dnsResult.success;
+        dnsError = dnsResult.error || null;
+      } catch (e) {
+        dnsError = e.message;
+      }
+    }
+
     // ── Step: Create Workers Routes for custom domain ──────────────
     // The A record (192.0.2.1 proxied) created by updateDnsAfterDeploy
     // only works when a Workers Route maps the domain to this script.
@@ -246,9 +272,13 @@ export async function deploy(assets, site, settings) {
       try {
         // 1. Resolve zone ID for the domain
         const zonesRes = await fetch(
-          `${cfBase}/zones?name=${encodeURIComponent(site.domain)}&status=active`,
+          `${cfBase}/zones?name=${encodeURIComponent(site.domain)}`,
           { headers: { ...auth, "Content-Type": "application/json" } }
         );
+        if (!zonesRes.ok) {
+          const errText = await zonesRes.text().catch(() => "");
+          throw new Error(`Zone lookup failed (${zonesRes.status}): ${errText.slice(0, 200)}`);
+        }
         const zonesData = await zonesRes.json();
         const zoneId = zonesData.result?.[0]?.id;
 
@@ -258,64 +288,54 @@ export async function deploy(assets, site, settings) {
             `${cfBase}/zones/${zoneId}/workers/routes`,
             { headers: { ...auth, "Content-Type": "application/json" } }
           );
+          if (!existingRoutesRes.ok) {
+            const errText = await existingRoutesRes.text().catch(() => "");
+            throw new Error(`Route list failed (${existingRoutesRes.status}): ${errText.slice(0, 200)}`);
+          }
           const existingRoutes = await existingRoutesRes.json();
           const routes = existingRoutes.result || [];
+          const upsertRoute = async (pattern, targetScript) => {
+            const existing = routes.find(r => r.pattern === pattern);
+            if (existing) {
+              if (existing.script === targetScript) return;
+              const updateRes = await fetch(
+                `${cfBase}/zones/${zoneId}/workers/routes/${existing.id}`,
+                {
+                  method: "PUT",
+                  headers: { ...auth, "Content-Type": "application/json" },
+                  body: JSON.stringify({ pattern, script: targetScript }),
+                }
+              );
+              if (!updateRes.ok) {
+                const errText = await updateRes.text().catch(() => "");
+                throw new Error(`Route update failed for ${pattern} (${updateRes.status}): ${errText.slice(0, 200)}`);
+              }
+              console.log(`[CFWorkers] Updated route ${pattern} → ${targetScript}`);
+              return;
+            }
+
+            const createRes = await fetch(
+              `${cfBase}/zones/${zoneId}/workers/routes`,
+              {
+                method: "POST",
+                headers: { ...auth, "Content-Type": "application/json" },
+                body: JSON.stringify({ pattern, script: targetScript }),
+              }
+            );
+            if (!createRes.ok) {
+              const errText = await createRes.text().catch(() => "");
+              throw new Error(`Route create failed for ${pattern} (${createRes.status}): ${errText.slice(0, 200)}`);
+            }
+            console.log(`[CFWorkers] Created route ${pattern} → ${targetScript}`);
+          };
 
           // 3. Upsert route for root domain: {domain}/*
           const rootPattern = `${site.domain}/*`;
-          const existingRoot = routes.find(r => r.pattern === rootPattern);
-          if (existingRoot) {
-            // Update existing route to point to current script
-            if (existingRoot.script !== scriptName) {
-              await fetch(
-                `${cfBase}/zones/${zoneId}/workers/routes/${existingRoot.id}`,
-                {
-                  method: "PUT",
-                  headers: { ...auth, "Content-Type": "application/json" },
-                  body: JSON.stringify({ pattern: rootPattern, script: scriptName }),
-                }
-              );
-              console.log(`[CFWorkers] Updated route ${rootPattern} → ${scriptName}`);
-            }
-          } else {
-            // Create new route
-            await fetch(
-              `${cfBase}/zones/${zoneId}/workers/routes`,
-              {
-                method: "POST",
-                headers: { ...auth, "Content-Type": "application/json" },
-                body: JSON.stringify({ pattern: rootPattern, script: scriptName }),
-              }
-            );
-            console.log(`[CFWorkers] Created route ${rootPattern} → ${scriptName}`);
-          }
+          await upsertRoute(rootPattern, scriptName);
 
-          // 4. Upsert route for tracking subdomain: t.{domain}/*
+          // 4. Upsert route for tracking subdomain: t.{domain}/* -> pixel worker
           const pixelPattern = `t.${site.domain}/*`;
-          const existingPixel = routes.find(r => r.pattern === pixelPattern);
-          if (existingPixel) {
-            if (existingPixel.script !== scriptName) {
-              await fetch(
-                `${cfBase}/zones/${zoneId}/workers/routes/${existingPixel.id}`,
-                {
-                  method: "PUT",
-                  headers: { ...auth, "Content-Type": "application/json" },
-                  body: JSON.stringify({ pattern: pixelPattern, script: scriptName }),
-                }
-              );
-              console.log(`[CFWorkers] Updated route ${pixelPattern} → ${scriptName}`);
-            }
-          } else {
-            await fetch(
-              `${cfBase}/zones/${zoneId}/workers/routes`,
-              {
-                method: "POST",
-                headers: { ...auth, "Content-Type": "application/json" },
-                body: JSON.stringify({ pattern: pixelPattern, script: scriptName }),
-              }
-            );
-            console.log(`[CFWorkers] Created route ${pixelPattern} → ${scriptName}`);
-          }
+          await upsertRoute(pixelPattern, pixelScriptName);
 
           routeCreated = true;
           console.log(`[CFWorkers] ✅ Workers Routes configured for ${site.domain}`);
@@ -329,7 +349,7 @@ export async function deploy(assets, site, settings) {
       }
     }
 
-    return { success: true, url, deployId: scriptName, target: "cf-workers", routeCreated, routeError };
+    return { success: true, url, deployId: scriptName, target: "cf-workers", dnsUpdated, dnsError, routeCreated, routeError };
   } catch (e) {
     return { success: false, error: e.message };
   }

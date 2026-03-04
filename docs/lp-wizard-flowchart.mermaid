@@ -1,0 +1,179 @@
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#6366f1', 'primaryTextColor': '#fff', 'primaryBorderColor': '#818cf8', 'lineColor': '#6b7280', 'secondaryColor': '#1e1b4b', 'tertiaryColor': '#0f172a', 'noteTextColor': '#e2e8f0', 'noteBkgColor': '#1e293b', 'noteBorderColor': '#475569', 'fontSize': '13px'}}}%%
+
+flowchart TD
+    %% ENTRY POINTS
+    START([🚀 LP Wizard เริ่มต้น]) --> INIT
+    EDIT([✏️ Edit Site จาก My Sites]) --> INIT_EDIT
+
+    INIT[/"config = default values\nstep = 1\nvalidationErrors = []\nbuilding = false"/] --> S1
+    INIT_EDIT[/"config = existing site data\n_editMode = true\nstep = 1"/] --> S1
+
+    %% STEP 1: BRAND
+    subgraph S1_BOX["Step 1 — 🏢 Brand Information"]
+        S1[Step 1: Brand]
+        S1 --> S1_BRAND["กรอก Brand Name ⭐"]
+        S1 --> S1_DOMAIN["กรอก Domain ⭐\ne.g. bearloannow.com"]
+        S1 --> S1_TAGLINE["กรอก Brand Tagline\nFast. Simple. Trusted."]
+        S1 --> S1_EMAIL["กรอก Compliance Email\nsupport@brand.com"]
+        S1 --> S1_CF{"มี CF Profiles\nหลายอัน?"}
+        S1_CF -->|ใช่| S1_CF_SELECT["เลือก CF Profile ⭐\ndropdown: name + accountId"]
+        S1_CF -->|ไม่| S1_CF_SKIP["ใช้ default/legacy"]
+    end
+
+    S1_BOX --> V1{{"✅ Validate Step 1\n• brand ไม่ว่าง\n• domain ไม่ว่าง\n• domain format valid\n• CF Profile selected\n  (ถ้ามีหลายอัน)"}}
+    V1 -->|❌ Fail| V1_ERR["แสดง Validation Errors\n⚠️ กรอบแดง"] --> S1
+    V1 -->|✅ Pass| S2_BOX
+
+    %% STEP 2: PRODUCT
+    subgraph S2_BOX["Step 2 — 💳 Loan Product"]
+        S2[Step 2: Product]
+        S2 --> S2_TYPE["เลือก Loan Type ⭐\n🏦 Installment | 🐾 Pet Care\n🚗 Auto | 🏠 Home | 💳 Credit"]
+        S2 --> S2_PRESET["เลือก Amount Preset\n$100-5K | $500-10K | $1K-25K\n$1K-50K | $5K-100K"]
+        S2_PRESET --> S2_AMT["amountMin + amountMax\nauto-fill จาก preset"]
+        S2 --> S2_AMT_CUSTOM["หรือกรอก custom\nMin ($) + Max ($) ⭐"]
+        S2 --> S2_APR["กรอก APR Range\nMin (%) + Max (%) ⭐"]
+    end
+
+    S2_BOX --> V2{{"✅ Validate Step 2\n• loanType selected\n• amountMin >= 0\n• amountMax > amountMin\n• aprMin >= 0\n• aprMax > aprMin"}}
+    V2 -->|❌ Fail| V2_ERR["⚠️ Validation Errors"] --> S2
+    V2 -->|✅ Pass| S3_BOX
+
+    %% STEP 3: TEMPLATE
+    subgraph S3_BOX["Step 3 — 🗂️ Template Selection"]
+        S3[Step 3: Template]
+        S3 --> S3_LOAD["โหลด Templates\nbuilt-in + custom จาก DB"]
+        S3_LOAD --> S3_FILTER["กรอง Category\nAll | Loan | Pet Finance | Custom"]
+        S3_FILTER --> S3_GALLERY["แสดง Gallery\nthumbnail + name + health"]
+        S3_GALLERY --> S3_SELECT["คลิกเลือก Template ⭐\ndefault: BigPicture V1"]
+        S3_GALLERY --> S3_DELETE["🗑️ ลบ custom template\n(confirm dialog)"]
+    end
+
+    S3_BOX --> V3{{"✅ Validate Step 3\n• templateId selected"}}
+    V3 -->|❌ Fail| V3_ERR["⚠️ No template"] --> S3
+    V3 -->|✅ Pass| S4_BOX
+
+    %% STEP 4: DESIGN
+    subgraph S4_BOX["Step 4 — 🎨 Design  +  📱 Live Preview"]
+        S4[Step 4: Design]
+        S4 --> S4_COLOR["เลือก Color Scheme ⭐\nocean | sunset | forest\nemerald | amber | rose\nviolet | slate"]
+        S4 --> S4_FONT["เลือก Font\nInter | DM Sans\nPlus Jakarta | Space Grotesk"]
+        S4 --> S4_LAYOUT["เลือก Layout\nstandard | compact | wide"]
+        S4 --> S4_RADIUS["เลือก Border Radius\nsharp | rounded | pill"]
+        S4 --> S4_BADGE["เลือก Trust Badge Style\nminimal | outlined | filled"]
+        S4 --> S4_ICON["เลือก Icon Tone\nsubtle | vibrant"]
+        S4_COLOR --> S4_AUTOGEN["🔄 Auto-Generate\nFavicon + OG Image\n(canvas-based)"]
+        S4 --> S4_PREVIEW["📱 Mock Phone Preview\niframe srcDoc = generated HTML\nreal-time update"]
+    end
+
+    S4_BOX --> V4{{"✅ Validate Step 4\n• colorId selected"}}
+    V4 -->|❌ Fail| V4_ERR["⚠️ No color"] --> S4
+    V4 -->|✅ Pass| S5_BOX
+
+    %% STEP 5: COPY
+    subgraph S5_BOX["Step 5 — ✍️ Copy & CTA  +  📱 Live Preview"]
+        S5[Step 5: Copy & CTA]
+        S5 --> S5_QUICK["Quick-Start Templates\n4 presets: click to fill"]
+        S5 --> S5_AI["✨ Generate AI Copy\n(23 Pillars)\nGemini 2.5-flash → H1, badge, CTA, sub"]
+        S5 --> S5_H1["กรอก H1 Headline\nGet Cash Fast — Apply In Minutes"]
+        S5 --> S5_BADGE_CTA["กรอก Badge + CTA\nNo Credit Check | Check Your Rate →"]
+        S5 --> S5_SUB["กรอก Sub-headline"]
+        S5 --> S5_META_SECTION["🔍 SEO Meta Tags"]
+        S5_META_SECTION --> S5_META_AUTO["Auto-fill จาก brand + amount"]
+        S5_META_SECTION --> S5_META_AI["✨ AI Gen Meta\nGemini 2.5-flash"]
+        S5_META_SECTION --> S5_META_TITLE["Meta Title (0-60 chars)"]
+        S5_META_SECTION --> S5_META_DESC["Meta Description (0-160 chars)"]
+    end
+
+    S5_BOX --> S6_BOX
+
+    %% STEP 6: TRACKING
+    subgraph S6_BOX["Step 6 — 📡 Tracking & Conversion"]
+        S6[Step 6: Tracking]
+        S6 --> S6_MODE{"เลือก Tracking Mode"}
+        S6_MODE -->|Minimal| S6_MIN["gtag.js + Pixel\nไม่ต้องตั้ง Voluum"]
+        S6_MODE -->|Voluum Stack| S6_VOL["gtag.js + Pixel + Voluum\nfull stack"]
+
+        S6 --> S6_GTAG["Google Ads Settings"]
+        S6_GTAG --> S6_CONV_ID["Conversion ID ⭐\nAW-XXXXXXXXX"]
+        S6_GTAG --> S6_LABELS["form_start label\nform_submit label"]
+
+        S6 --> S6_PIXEL["First-Party Pixel"]
+        S6_PIXEL --> S6_PIXEL_EP["Pixel Endpoint\n🔄 Auto-fill: https://t.{domain}/e"]
+
+        S6_VOL --> S6_VOLUUM_SECTION["Voluum Settings"]
+        S6_VOLUUM_SECTION --> S6_VOL_AUTH["🔑 Auth: Voluum API\nAccess Key ID + Secret\n(จาก Settings)"]
+        S6_VOL_AUTH --> S6_VOL_CAMPS["📋 Load Campaigns\ndropdown list"]
+        S6_VOL_CAMPS --> S6_VOL_SELECT["เลือก Campaign\nauto-detect trackingDomain"]
+        S6_VOL_CAMPS --> S6_VOL_CREATE["➕ สร้าง Campaign ใหม่\nname, country, cost model\ntraffic source"]
+        S6_VOL_SELECT --> S6_DTP["🔄 Auto-Generate\nVoluum Lander Script (DTP)\nfrom tracking domain"]
+
+        S6_VOLUUM_SECTION --> S6_DNS_SECTION["DNS Provisioning"]
+        S6_DNS_SECTION --> S6_DNS_MODE{"DNS Mode"}
+        S6_DNS_MODE -->|Default| S6_DNS_DEFAULT["CNAME trk.{domain}\n→ track.voluum.com"]
+        S6_DNS_MODE -->|Custom CloudFront| S6_DNS_CF["Paste:\n• CloudFront CNAME\n• ACM Certificate CNAME"]
+        S6_DNS_DEFAULT --> S6_DNS_BTN["🌐 Provision DNS\n(one-click)"]
+        S6_DNS_CF --> S6_DNS_BTN
+
+        S6 --> S6_LG["LeadsGate Form"]
+        S6_LG --> S6_AID["AID (Affiliate ID)"]
+        S6_LG --> S6_FORM_ID["Form Template ID"]
+    end
+
+    S6_BOX --> V6{{"✅ Validate Step 6\n• conversionId ไม่ว่าง\n• (Voluum) campaign selected\n• (Voluum) trackingDomain"}}
+    V6 -->|❌ Fail| V6_ERR["⚠️ Missing tracking config"] --> S6
+    V6 -->|✅ Pass| S7_BOX
+
+    %% STEP 7: REVIEW
+    subgraph S7_BOX["Step 7 — 🔍 Review & Build  +  📱 Preview"]
+        S7[Step 7: Review]
+        S7 --> S7_TABLE["📋 Config Summary Table\nBrand, Domain, Type, Template\nRange, APR, Colors, Ads ID, AID"]
+        S7 --> S7_COLORS["🎨 Color Swatches\nP/S/A preview"]
+        S7 --> S7_TREE["🚀 Astro Project Tree\nexpandable file list\n(index.astro, layout, styles...)"]
+        S7 --> S7_DEPLOY_OPT["☐ Save + Deploy + DNS\nin one flow"]
+        S7_DEPLOY_OPT --> S7_TARGET["Deploy Target:\ncf-workers | cf-pages\nnetlify | vercel"]
+    end
+
+    S7_BOX --> BUILD_BTN{{"🚀 Build & Save\n(หรือ ✅ Update & Save\nถ้า editMode)"}}
+
+    %% BUILD PIPELINE
+    BUILD_BTN --> BUILD_START["building = true\n⚡ AI is crafting your site..."]
+
+    BUILD_START --> BUILD_AI{"copy ครบไหม?\nh1, badge, cta, sub"}
+    BUILD_AI -->|ไม่ครบ| BUILD_AI_GEN["🤖 Auto AI Generate\nPOST /ai/generate-copy\n→ fill missing fields"]
+    BUILD_AI -->|ครบแล้ว| BUILD_SAVE
+    BUILD_AI_GEN --> BUILD_SAVE
+
+    BUILD_SAVE["💾 Save Site\naddSite(payload)\n→ Neon + localStorage"]
+
+    BUILD_SAVE --> BUILD_DEPLOY_CHECK{"deployOnBuild\nenabled?"}
+    BUILD_DEPLOY_CHECK -->|❌ No| BUILD_DNS
+    BUILD_DEPLOY_CHECK -->|✅ Yes| BUILD_DEPLOY
+
+    subgraph DEPLOY_FLOW["🚀 Deploy Pipeline"]
+        BUILD_DEPLOY["Generate HTML Assets\n• index.html\n• apply.html\n(template engine)"]
+        BUILD_DEPLOY --> DEPLOY_EXEC["deployTo(target, assets)\n→ CF Workers API\nPUT script + routes"]
+        DEPLOY_EXEC --> DEPLOY_RESULT{"Deploy\nสำเร็จ?"}
+        DEPLOY_RESULT -->|✅| DEPLOY_OK["addDeploy()\n✅ Save + Deploy complete"]
+        DEPLOY_RESULT -->|❌| DEPLOY_FAIL["⚠️ Saved, but deploy failed"]
+    end
+
+    BUILD_DEPLOY --> DEPLOY_EXEC
+    DEPLOY_OK --> BUILD_DNS
+    DEPLOY_FAIL --> BUILD_DNS
+
+    subgraph DNS_FLOW["🌐 Auto DNS Provisioning"]
+        BUILD_DNS{"มี domain +\nCF credentials?"}
+        BUILD_DNS -->|❌ No| BUILD_DONE
+        BUILD_DNS -->|✅ Yes| DNS_PIXEL["1. ensurePixelSubdomain\nA record: t.{domain}\n→ 192.0.2.1 (Proxied)\n+ Workers Route: t.{domain}/*"]
+        DNS_PIXEL --> DNS_VOL_CHECK{"Voluum mode\n+ trackingDomain?"}
+        DNS_VOL_CHECK -->|❌| BUILD_DONE
+        DNS_VOL_CHECK -->|✅| DNS_ALREADY{"DNS already\nprovisioned\nvia Step 6 btn?"}
+        DNS_ALREADY -->|✅ Skip| BUILD_DONE
+        DNS_ALREADY -->|❌ Create| DNS_TRK["2. CNAME trk.{domain}\n→ track.voluum.com\n(or CloudFront)"]
+        DNS_TRK --> DNS_ACM{"ACM cert\nCNAME provided?"}
+        DNS_ACM -->|❌| BUILD_DONE
+        DNS_ACM -->|✅| DNS_ACM_CREATE["3. CNAME cert record\n→ ACM validation"]
+        DNS_ACM_CREATE --> BUILD_DONE
+    end
+
+    BUILD_DONE(["✅ Complete!\n→ กลับหน้า My Sites"])

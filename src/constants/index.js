@@ -1,4 +1,4 @@
-export const APP_VERSION = "V3-1.1";
+export const APP_VERSION = "V3-1.2";
 
 export const LOAN_TYPES = [
     { id: "personal", label: "Personal Loans", icon: "💳" },
@@ -110,6 +110,7 @@ export const WIZARD_DEFAULTS = {
     h1: "", badge: "", cta: "", sub: "",
     conversionId: "", formStartLabel: "", formSubmitLabel: "",
     gtagId: "", gtagFormStartLabel: "", gtagFormSubmitLabel: "",
+    domainProvider: "", domainProviderAccountId: "",
     trackingMode: "minimal",
     voluumCampaignId: "", voluumCampaignName: "", voluumTrackingDomain: "",
     deployOnBuild: true,

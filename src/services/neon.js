@@ -51,6 +51,31 @@ export async function ensureTables() {
         created_at TIMESTAMPTZ DEFAULT now()
       )
     `;
+    // Cloudflare Accounts table
+    await sql`
+      CREATE TABLE IF NOT EXISTS cf_accounts (
+        id TEXT PRIMARY KEY,
+        email TEXT,
+        api_key TEXT,
+        api_token TEXT,
+        account_id TEXT,
+        label TEXT,
+        created_at TIMESTAMPTZ DEFAULT now(),
+        updated_at TIMESTAMPTZ DEFAULT now()
+      )
+    `;
+    // Registrar Accounts table (Internet.bs, etc.)
+    await sql`
+      CREATE TABLE IF NOT EXISTS registrar_accounts (
+        id TEXT PRIMARY KEY,
+        provider TEXT,
+        label TEXT,
+        api_key TEXT,
+        secret_key TEXT,
+        created_at TIMESTAMPTZ DEFAULT now(),
+        updated_at TIMESTAMPTZ DEFAULT now()
+      )
+    `;
     // DAILY SPEND & ROI table
     await sql`
       CREATE TABLE IF NOT EXISTS daily_spend (
@@ -195,6 +220,146 @@ export async function saveSettings(obj) {
     }
     return true;
   } catch (e) {
+    return false;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// CLOUDFLARE ACCOUNTS (Ops)
+// ═══════════════════════════════════════════════════════
+
+/** Load Cloudflare accounts from Neon */
+export async function loadCfAccounts() {
+  if (!ensureConnection()) return null;
+  try {
+    const rows = await sql`
+      SELECT id, email, api_key, api_token, account_id, label, created_at, updated_at
+      FROM cf_accounts
+      ORDER BY label ASC
+    `;
+    return rows.map((r) => ({
+      id: r.id,
+      email: r.email || "",
+      api_key: r.api_key || "",
+      api_token: r.api_token || "",
+      account_id: r.account_id || "",
+      label: r.label || "",
+      apiKey: r.api_key || "",
+      apiToken: r.api_token || "",
+      accountId: r.account_id || "",
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+    }));
+  } catch (_e) {
+    return null;
+  }
+}
+
+/** Upsert one Cloudflare account in Neon */
+export async function saveCfAccount(account) {
+  if (!ensureConnection() || !account?.id) return false;
+  try {
+    await sql`
+      INSERT INTO cf_accounts (id, email, api_key, api_token, account_id, label, created_at, updated_at)
+      VALUES (
+        ${account.id},
+        ${account.email || ""},
+        ${account.apiKey || account.api_key || ""},
+        ${account.apiToken || account.api_token || ""},
+        ${account.accountId || account.account_id || ""},
+        ${account.label || ""},
+        now(),
+        now()
+      )
+      ON CONFLICT (id) DO UPDATE SET
+        email = EXCLUDED.email,
+        api_key = EXCLUDED.api_key,
+        api_token = EXCLUDED.api_token,
+        account_id = EXCLUDED.account_id,
+        label = EXCLUDED.label,
+        updated_at = now()
+    `;
+    return true;
+  } catch (_e) {
+    return false;
+  }
+}
+
+/** Delete Cloudflare account in Neon */
+export async function deleteCfAccount(id) {
+  if (!ensureConnection() || !id) return false;
+  try {
+    await sql`DELETE FROM cf_accounts WHERE id = ${id}`;
+    return true;
+  } catch (_e) {
+    return false;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// REGISTRAR ACCOUNTS (Ops)
+// ═══════════════════════════════════════════════════════
+
+/** Load registrar accounts from Neon */
+export async function loadRegistrarAccounts() {
+  if (!ensureConnection()) return null;
+  try {
+    const rows = await sql`
+      SELECT id, provider, label, api_key, secret_key, created_at, updated_at
+      FROM registrar_accounts
+      ORDER BY provider ASC, label ASC
+    `;
+    return rows.map((r) => ({
+      id: r.id,
+      provider: r.provider || "internetbs",
+      label: r.label || "",
+      api_key: r.api_key || "",
+      secret_key: r.secret_key || "",
+      apiKey: r.api_key || "",
+      secretKey: r.secret_key || "",
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+    }));
+  } catch (_e) {
+    return null;
+  }
+}
+
+/** Upsert one registrar account in Neon */
+export async function saveRegistrarAccount(account) {
+  if (!ensureConnection() || !account?.id) return false;
+  try {
+    await sql`
+      INSERT INTO registrar_accounts (id, provider, label, api_key, secret_key, created_at, updated_at)
+      VALUES (
+        ${account.id},
+        ${account.provider || "internetbs"},
+        ${account.label || ""},
+        ${account.apiKey || account.api_key || ""},
+        ${account.secretKey || account.secret_key || ""},
+        now(),
+        now()
+      )
+      ON CONFLICT (id) DO UPDATE SET
+        provider = EXCLUDED.provider,
+        label = EXCLUDED.label,
+        api_key = EXCLUDED.api_key,
+        secret_key = EXCLUDED.secret_key,
+        updated_at = now()
+    `;
+    return true;
+  } catch (_e) {
+    return false;
+  }
+}
+
+/** Delete registrar account in Neon */
+export async function deleteRegistrarAccount(id) {
+  if (!ensureConnection() || !id) return false;
+  try {
+    await sql`DELETE FROM registrar_accounts WHERE id = ${id}`;
+    return true;
+  } catch (_e) {
     return false;
   }
 }

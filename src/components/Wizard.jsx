@@ -4,7 +4,7 @@ import { uid, now } from "../utils";
 import { generateHtmlByTemplate, generateApplyPageByTemplate, generateDeployAssetsByTemplate } from "../utils/template-router";
 import { registry } from "../utils/template-registry";
 import { api } from "../services/api";
-import { getOrCreateZone, createDnsRecord, ensurePixelSubdomain } from "../services/cloudflare-dns";
+import { getOrCreateZone, upsertDnsRecord, ensurePixelSubdomain } from "../services/cloudflare-dns";
 import { deployTo, getAvailableTargets } from "../utils/deployers";
 import { MockPhone } from "./ui/mock-phone";
 import { Card } from "./ui/card";
@@ -38,6 +38,12 @@ function validateStep(stepNum, config) {
         // Require CF profile if profiles exist (passed via config._cfProfilesExist)
         if (config._cfProfilesExist && !config.cfProfileId) {
             errors.push("Cloudflare Profile is required for DNS & deploy");
+        }
+        if (config.domainProvider && !(config.domainProviderAccountId || config.internetbsAccountId)) {
+            errors.push("Provider account is required when Domain Provider is selected");
+        }
+        if (config.domainProvider && !config.cfAccountId) {
+            errors.push("Cloudflare Account is required when Domain Provider is selected");
         }
     }
 
@@ -75,13 +81,14 @@ function validateStep(stepNum, config) {
 
 const steps = ["Brand", "Product", "Template", "Design", "Copy", "Tracking", "Review"];
 
-export function Wizard({ config, setConfig, addSite, addDeploy, setPage, settings, notify }) {
+export function Wizard({ config, setConfig, addSite, addDeploy, setPage, settings, notify, cfAccounts = [], registrarAccounts = [] }) {
     const asArray = (v) => Array.isArray(v) ? v : [];
     const [step, setStep] = useState(1);
     const [building, setBuilding] = useState(false);
     const [validationErrors, setValidationErrors] = useState([]);
     const [aiLoading, setAiLoading] = useState(false);
     const [aiMetaLoading, setAiMetaLoading] = useState(false);
+    const [nextLoading, setNextLoading] = useState(false);
     const [initialConfig, setInitialConfig] = useState(null);
     const cardRef = useRef(null);
     const deployTargets = useMemo(() => getAvailableTargets(settings), [settings]);
@@ -155,13 +162,80 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
         return () => window.removeEventListener("beforeunload", handleBeforeUnload);
     }, [isDirty]);
 
-    const handleNext = () => {
+    const resolveCfCredentials = (selectedCfAccountId, selectedCfProfileId) => {
+        const cfAccountEntry = asArray(cfAccounts).find(a => (a.id || a.accountId || a.account_id) === selectedCfAccountId);
+        const cfProfile = asArray(settings?.cfProfiles).find(p => p.id === selectedCfProfileId);
+        return {
+            cfAccountId: cfAccountEntry?.accountId || cfAccountEntry?.account_id || cfProfile?.accountId || settings?.cfAccountId,
+            cfApiToken: cfAccountEntry?.apiToken || cfAccountEntry?.api_key || cfAccountEntry?.apiKey || cfProfile?.apiToken || settings?.cfApiToken,
+        };
+    };
+
+    const handleNext = async () => {
         const { valid, errors } = validateStep(step, config);
         if (!valid) {
             setValidationErrors(errors);
             cardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
             return;
         }
+
+        if (step === 1 && config.domainProvider) {
+            const provider = String(config.domainProvider || "").toLowerCase();
+            const domain = String(config.domain || "").trim().toLowerCase();
+            const providerAccountId = String(config.domainProviderAccountId || config.internetbsAccountId || "").trim();
+            const { cfAccountId, cfApiToken } = resolveCfCredentials(config.cfAccountId, config.cfProfileId);
+            const syncKey = `${domain}|${provider}|${providerAccountId}|${String(config.cfAccountId || "")}`;
+
+            if (!domain || !providerAccountId || !cfAccountId || !cfApiToken) {
+                setValidationErrors(["Domain / Provider account / Cloudflare account is incomplete"]);
+                cardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                return;
+            }
+
+            if (config._step1DnsSyncKey !== syncKey) {
+                setNextLoading(true);
+                try {
+                    const zone = await getOrCreateZone(domain, cfAccountId, cfApiToken);
+                    if (!zone?.success || !Array.isArray(zone.nameservers) || zone.nameservers.length < 2) {
+                        throw new Error(zone?.error || "Cloudflare nameservers not ready yet");
+                    }
+
+                    const res = await api.put("/automation/registrar/nameservers", {
+                        domain,
+                        nameservers: zone.nameservers,
+                        provider,
+                        accountId: providerAccountId,
+                    });
+
+                    if (!res?.success) {
+                        throw new Error(res?.message || res?.error || "Failed to sync nameservers");
+                    }
+
+                    setConfig((p) => ({
+                        ...p,
+                        _step1DnsSyncKey: syncKey,
+                        _step1DnsSyncedAt: new Date().toLocaleString(),
+                        _step1DnsNameservers: zone.nameservers,
+                    }));
+                    if (res?.alreadySynced) {
+                        notify(`✅ DNS already matched: ${zone.nameservers.join(", ")}`);
+                    } else if (res?.verified) {
+                        notify(`✅ DNS synced & verified: ${zone.nameservers.join(", ")}`);
+                    } else {
+                        notify(`✅ DNS sync sent: ${zone.nameservers.join(", ")}`);
+                    }
+                } catch (e) {
+                    const msg = e?.message || "DNS sync failed";
+                    setValidationErrors([`DNS sync failed: ${msg}`]);
+                    notify(`⚠️ ${msg}`, "warning");
+                    cardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    setNextLoading(false);
+                    return;
+                }
+                setNextLoading(false);
+            }
+        }
+
         setValidationErrors([]);
         if (step < 7) setStep(s => s + 1);
     };
@@ -314,10 +388,11 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
 
         // ── Auto-provision DNS subdomains (t. + trk.) ──
         const domain = finalConfig.domain?.trim();
-        // Resolve CF credentials from selected profile, fallback to legacy settings
+        // Resolve CF credentials from selected account/profile, fallback to legacy settings
+        const cfAccountEntry = asArray(cfAccounts).find(a => (a.id || a.accountId || a.account_id) === finalConfig.cfAccountId);
         const cfProfile = asArray(settings?.cfProfiles).find(p => p.id === finalConfig.cfProfileId);
-        const cfAccountId = cfProfile?.accountId || settings?.cfAccountId;
-        const cfApiToken = cfProfile?.apiToken || settings?.cfApiToken;
+        const cfAccountId = cfAccountEntry?.accountId || cfAccountEntry?.account_id || cfProfile?.accountId || settings?.cfAccountId;
+        const cfApiToken = cfAccountEntry?.apiToken || cfAccountEntry?.apiKey || cfAccountEntry?.api_key || cfProfile?.apiToken || settings?.cfApiToken;
         if (domain && cfAccountId && cfApiToken) {
             try {
                 // 1. Ensure t.{domain} pixel subdomain
@@ -336,10 +411,11 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                     if (!finalConfig._trkDnsProvisioned) {
                         getOrCreateZone(domain, cfAccountId, cfApiToken).then(zone => {
                             if (!zone.success || !zone.zoneId) return;
-                            createDnsRecord({
+                            upsertDnsRecord({
                                 zoneId: zone.zoneId,
                                 cfAccountId,
                                 cfApiToken,
+                                domain,
                                 type: "CNAME",
                                 name: `${trkSub}.${domain}`,
                                 content: trkTarget,
@@ -351,10 +427,11 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
 
                             // Also create ACM cert CNAME if provided
                             if (finalConfig.voluumAcmName && finalConfig.voluumAcmValue) {
-                                createDnsRecord({
+                                upsertDnsRecord({
                                     zoneId: zone.zoneId,
                                     cfAccountId,
                                     cfApiToken,
+                                    domain,
                                     type: "CNAME",
                                     name: finalConfig.voluumAcmName,
                                     content: finalConfig.voluumAcmValue,
@@ -369,6 +446,41 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                         console.log("[DNS] trk DNS already provisioned via StepTracking, skipping");
                     }
                 }
+
+                // 3. Sync provider nameservers to Cloudflare zone NS (optional, best-effort).
+                // Skip if already synced in Step 1.
+                const provider = String(finalConfig.domainProvider || "internetbs").toLowerCase();
+                const providerAccountId = String(finalConfig.domainProviderAccountId || finalConfig.internetbsAccountId || "");
+                const step1SyncKey = `${String(domain || "").toLowerCase()}|${provider}|${providerAccountId}|${String(finalConfig.cfAccountId || "")}`;
+                if (providerAccountId && finalConfig._step1DnsSyncKey !== step1SyncKey) {
+                    getOrCreateZone(domain, cfAccountId, cfApiToken).then(async zone => {
+                        if (!zone.success || !Array.isArray(zone.nameservers) || zone.nameservers.length < 2) {
+                            notify?.("⚠️ Provider sync skipped: Cloudflare nameservers not ready yet", "warning");
+                            return;
+                        }
+
+                        const res = await api.put("/automation/registrar/nameservers", {
+                            domain,
+                            nameservers: zone.nameservers,
+                            provider,
+                            accountId: providerAccountId,
+                        });
+
+                        if (res?.success) {
+                            if (res?.alreadySynced) {
+                                notify?.(`✅ Provider NS already matched`);
+                            } else if (res?.verified) {
+                                notify?.(`✅ Provider NS synced & verified`);
+                            } else {
+                                notify?.(`✅ Provider NS sync sent`);
+                            }
+                        } else {
+                            notify?.(`⚠️ Provider NS sync failed: ${res?.message || res?.error || "unknown error"}`, "warning");
+                        }
+                    }).catch((e) => {
+                        notify?.(`⚠️ Provider NS sync error: ${e?.message || e}`, "warning");
+                    });
+                }
             } catch (e) {
                 console.warn("[DNS] auto-provision failed:", e.message);
             }
@@ -378,7 +490,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
     };
 
     // Enter key navigation (skip if target is textarea)
-    const handleKeyDown = (e) => {
+        const handleKeyDown = (e) => {
         if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") {
             e.preventDefault();
             if (step < 7) handleNext();
@@ -427,7 +539,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
             {showPreview ? (
                 <div className="grid gap-6 items-start" style={{ gridTemplateColumns: "1fr 340px" }}>
                     <Card className="p-7 mb-4" ref={cardRef}>
-                        {step === 1 && <StepBrand c={config} u={upd} settings={settings} capabilities={capabilities} />}
+                        {step === 1 && <StepBrand c={config} u={upd} settings={settings} cfAccounts={cfAccounts} registrarAccounts={registrarAccounts} capabilities={capabilities} />}
                         {step === 2 && <StepProduct c={config} u={upd} capabilities={capabilities} />}
                         {step === 3 && <StepTemplate c={config} u={upd} capabilities={capabilities} />}
                         {step === 4 && <StepDesign c={config} u={upd} notify={notify} capabilities={capabilities} />}
@@ -470,7 +582,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                 </div>
             ) : (
                 <Card className="p-7 mb-4 max-w-[780px] mx-auto" ref={cardRef}>
-                    {step === 1 && <StepBrand c={config} u={upd} settings={settings} capabilities={capabilities} />}
+                    {step === 1 && <StepBrand c={config} u={upd} settings={settings} cfAccounts={cfAccounts} registrarAccounts={registrarAccounts} capabilities={capabilities} />}
                     {step === 2 && <StepProduct c={config} u={upd} capabilities={capabilities} />}
                     {step === 3 && <StepTemplate c={config} u={upd} capabilities={capabilities} />}
                     {step === 4 && <StepDesign c={config} u={upd} notify={notify} capabilities={capabilities} />}
@@ -512,7 +624,9 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                     ← {step === 1 ? "Cancel" : "Back"}
                 </Button>
                 {step < 7 ? (
-                    <Button onClick={handleNext}>Next →</Button>
+                    <Button onClick={handleNext} disabled={nextLoading}>
+                        {nextLoading ? "⏳ Syncing DNS..." : "Next →"}
+                    </Button>
                 ) : (
                     <Button onClick={handleBuild} disabled={building} className="px-6 py-2.5">
                         {building ? "⏳ Saving..." : config._editMode ? "✅ Update & Save" : "🚀 Build & Save"}

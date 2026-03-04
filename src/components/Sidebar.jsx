@@ -5,6 +5,16 @@ import { cn } from "../lib/utils";
 
 const CHANGELOG = [
     {
+        version: "V3-1.2",
+        date: "2026-03-04",
+        changes: [
+            "🗂️ Template Manager — new inventory page with filters, lifecycle controls, version history, publish/rollback, usage impact, and default-template selection",
+            "🧪 Tracking Monitor UX — live monitor now normalizes URLs and shows explicit fallback when iframe is blocked by X-Frame-Options/CSP",
+            "🔐 Security hardening — removed secret VITE token fallbacks from frontend boot defaults",
+            "🛡️ API guardrail — tightened worker auth behavior when API_SECRET is not configured to reduce accidental public exposure",
+        ],
+    },
+    {
         version: "V3-1.1",
         date: "2026-02-28",
         changes: [
@@ -85,7 +95,7 @@ export function Sidebar({ page, setPage, siteCount, startCreate, startTemplateGe
         { id: "voluum", icon: "🎯", label: "Voluum Explorer" },
         { id: "account-map", icon: "🗺️", label: "Account Map" },
         { id: "sites", icon: "🌐", label: "My Sites", badge: siteCount },
-        { id: "template-editor", icon: "🎨", label: "Template Editor" },
+        { id: "template-manager", icon: "🗂️", label: "Template Manager" },
         { id: "template-gen", icon: "🧙", label: "Template Wizard", action: startTemplateGen },
         { id: "create", icon: "⚡", label: "LP Wizard", action: startCreate },
         { id: "variant", icon: "🧪", label: "Variant Studio" },
@@ -93,6 +103,7 @@ export function Sidebar({ page, setPage, siteCount, startCreate, startTemplateGe
         { id: "deploys", icon: "🚀", label: "Deploys" },
         { id: "tracking", icon: "🔬", label: "Tracking Test" },
         { id: "error-log", icon: "🐛", label: "Error Log" },
+        { id: "api-health", icon: "🩺", label: "API Health" },
         { id: "docs", icon: "📚", label: "API Docs", external: true, href: "/docs" },
         { id: "settings", icon: "⚙️", label: "Settings" },
     ];

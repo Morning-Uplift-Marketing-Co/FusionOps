@@ -21,7 +21,6 @@ import { VariantStudio } from "./components/VariantStudio";
 import { OpsCenter } from "./components/OpsCenter";
 import { Settings } from "./components/Settings";
 import { DeployHistory } from "./components/DeployHistory";
-import { TemplateEditor } from "./components/TemplateEditor";
 import { TemplateGeneratorModal } from "./components/TemplateGenerator";
 import { ErrorLog, logError } from "./components/ErrorLog";
 import { SpendDashboard } from "./components/SpendDashboard";
@@ -29,6 +28,8 @@ import { AccountMap } from "./components/AccountMap";
 import { TrackingDashboard } from "./components/TrackingDashboard";
 import { VoluumExplorer } from "./components/VoluumExplorer";
 import { AccountVerificationBanner } from "./components/ui/AccountVerificationBanner";
+import { ApiHealthCheck } from "./components/ApiHealthCheck";
+import { TemplateManager } from "./components/TemplateManager";
 
 // Neon connection string — stored in settings or hardcoded for now
 const NEON_URL = import.meta.env.VITE_NEON_URL || "";
@@ -36,12 +37,10 @@ const NEON_URL = import.meta.env.VITE_NEON_URL || "";
 // ── ENV FALLBACK DEFAULTS ──────────────────────────────────────────
 // When localStorage is cleared, these env vars act as seed defaults
 // so the app can self-heal without manual re-entry.
+// IMPORTANT: Never seed secret/API token values from VITE_* here.
+// VITE variables are bundled client-side and must be treated as public.
 const ENV_DEFAULTS = {
-  cfApiToken:        import.meta.env.VITE_CF_API_TOKEN        || "",
   cfAccountId:       import.meta.env.VITE_CF_ACCOUNT_ID       || "",
-  voluumAccessKeyId: import.meta.env.VITE_VOLUUM_ACCESS_KEY_ID || "",
-  voluumAccessKey:   import.meta.env.VITE_VOLUUM_ACCESS_KEY    || "",
-  lcToken:           import.meta.env.VITE_LENDINGCARD_TOKEN    || "",
   neonUrl:           NEON_URL,
 };
 
@@ -247,10 +246,12 @@ useEffect(() => {
             api.post("/settings", { neonUrl: neonConnStr }).catch(() => { });
 
             // Load from Neon
-            const [neonSettings, neonSites, neonDeploys] = await Promise.all([
+            const [neonSettings, neonSites, neonDeploys, neonRegistrarAccounts, neonCfAccounts] = await Promise.all([
               db.loadSettings(),
               db.loadSites(),
               db.loadDeploys(),
+              db.loadRegistrarAccounts(),
+              db.loadCfAccounts(),
             ]);
 
             if (neonSettings && Object.keys(neonSettings).length > 0) {
@@ -304,6 +305,20 @@ useEffect(() => {
               setDeploys(neonDeploys);
             }
 
+            // Registrar accounts from Neon (used when API/D1 is unavailable)
+            if (Array.isArray(neonRegistrarAccounts) && neonRegistrarAccounts.length > 0) {
+              setOps(prev => ({
+                ...prev,
+                registrarAccounts: neonRegistrarAccounts,
+              }));
+            }
+            if (Array.isArray(neonCfAccounts) && neonCfAccounts.length > 0) {
+              setOps(prev => ({
+                ...prev,
+                cfAccounts: neonCfAccounts,
+              }));
+            }
+
             // Stats
             const siteList = neonSites?.length ? neonSites : [];
             setStats({
@@ -342,6 +357,16 @@ useEffect(() => {
           };
         });
 
+        // Keep Neon copy in sync for API account settings (fallback when API is unavailable).
+        if (neonReady) {
+          if (Array.isArray(data.registrarAccounts) && data.registrarAccounts.length > 0) {
+            Promise.all(data.registrarAccounts.map((acc) => db.saveRegistrarAccount(acc))).catch(() => { });
+          }
+          if (Array.isArray(data.cfAccounts) && data.cfAccounts.length > 0) {
+            Promise.all(data.cfAccounts.map((acc) => db.saveCfAccount(acc))).catch(() => { });
+          }
+        }
+
         // When Neon is not ready, check if API has a Neon URL we can use
         if (!neonReady) {
           const apiNeonUrl = data.settings?.neonUrl;
@@ -354,7 +379,13 @@ useEffect(() => {
               neonReady = true;
 
               // Load full data from Neon now that it's connected
-              const [ns, nsi, nde] = await Promise.all([db.loadSettings(), db.loadSites(), db.loadDeploys()]);
+              const [ns, nsi, nde, nra, nca] = await Promise.all([
+                db.loadSettings(),
+                db.loadSites(),
+                db.loadDeploys(),
+                db.loadRegistrarAccounts(),
+                db.loadCfAccounts(),
+              ]);
               if (ns) {
                 const m = { ...localSettings, ...data.settings, ...ns };
                 setSettings(m);
@@ -362,6 +393,12 @@ useEffect(() => {
               }
               if (nsi?.length) setSites(nsi);
               if (nde?.length) setDeploys(nde);
+              if (Array.isArray(nra) && nra.length > 0) {
+                setOps(prev => ({ ...prev, registrarAccounts: nra }));
+              }
+              if (Array.isArray(nca) && nca.length > 0) {
+                setOps(prev => ({ ...prev, cfAccounts: nca }));
+              }
             }
           }
         }
@@ -406,10 +443,12 @@ useEffect(() => {
         const pong = await db.ping();
         setNeonOk(pong);
         if (pong) {
-          const [neonSettings, neonSites, neonDeploys] = await Promise.all([
+          const [neonSettings, neonSites, neonDeploys, neonRegistrarAccounts, neonCfAccounts] = await Promise.all([
             db.loadSettings(),
             db.loadSites(),
             db.loadDeploys(),
+            db.loadRegistrarAccounts(),
+            db.loadCfAccounts(),
           ]);
 
           if (neonSettings) {
@@ -436,6 +475,13 @@ useEffect(() => {
             setDeploys(neonDeploys);
           }
 
+          if (Array.isArray(neonRegistrarAccounts) && neonRegistrarAccounts.length > 0) {
+            setOps(prev => ({ ...prev, registrarAccounts: neonRegistrarAccounts }));
+          }
+          if (Array.isArray(neonCfAccounts) && neonCfAccounts.length > 0) {
+            setOps(prev => ({ ...prev, cfAccounts: neonCfAccounts }));
+          }
+
           notify("Neon connection restored!");
           return true;
         }
@@ -456,13 +502,14 @@ useEffect(() => {
       // Edit mode: keep original ID for update/redeploy
       setWizData({ ...WIZARD_DEFAULTS, ...existingSite, _editMode: true });
     } else {
-      setWizData({ ...WIZARD_DEFAULTS });
+      const defaultTemplateId = settings?.defaultTemplateId || WIZARD_DEFAULTS.templateId;
+      setWizData({ ...WIZARD_DEFAULTS, templateId: defaultTemplateId });
     }
     setPage("create");
   };
 
   // Keep only plain serializable site fields — drops React event/DOM properties
-  const SITE_FIELDS = new Set(["id", "brand", "domain", "tagline", "email", "templateId", "loanType", "amountMin", "amountMax", "aprMin", "aprMax", "colorId", "fontId", "layout", "radius", "trustBadgeStyle", "trustBadgeIconTone", "h1", "h1span", "badge", "cta", "sub", "conversionId", "formStartLabel", "formSubmitLabel", "aid", "network", "redirectUrl", "voluumId", "voluumDomain", "lang", "faviconDataUrl", "ogImageDataUrl", "formEmbed", "status", "createdAt", "updatedAt", "cost"]);
+  const SITE_FIELDS = new Set(["id", "brand", "domain", "tagline", "email", "templateId", "loanType", "amountMin", "amountMax", "aprMin", "aprMax", "colorId", "fontId", "layout", "radius", "trustBadgeStyle", "trustBadgeIconTone", "h1", "h1span", "badge", "cta", "sub", "conversionId", "formStartLabel", "formSubmitLabel", "aid", "network", "redirectUrl", "voluumId", "voluumDomain", "lang", "faviconDataUrl", "ogImageDataUrl", "formEmbed", "cfProfileId", "cfAccountId", "internetbsAccountId", "domainProvider", "domainProviderAccountId", "status", "createdAt", "updatedAt", "cost"]);
   const sanitizeSite = (obj) => Object.fromEntries(
     Object.entries(obj).filter(([k, v]) => SITE_FIELDS.has(k) && typeof v !== "function")
   );
@@ -579,6 +626,12 @@ useEffect(() => {
     }));
     if (opts.persist !== false) {
       const endpoint = toOpsEndpoint(coll);
+      if (coll === "cf-accounts" && neonOk) {
+        db.saveCfAccount(item).catch(() => { });
+      }
+      if (coll === "registrar-accounts" && neonOk) {
+        db.saveRegistrarAccount(item).catch(() => { });
+      }
       return api.post(endpoint, apiPayload).then((res) => {
         if (res?.error) {
           throw new Error(res.detail || res.error || "Failed to save");
@@ -597,6 +650,12 @@ useEffect(() => {
       logs: [{ id: uid(), msg: `Deleted: ${item?.label || item?.domain || id}`, ts: now() }, ...p.logs].slice(0, 200),
     }));
     const endpoint = toOpsEndpoint(coll, id);
+    if (coll === "cf-accounts" && neonOk) {
+      db.deleteCfAccount(id).catch(() => { });
+    }
+    if (coll === "registrar-accounts" && neonOk) {
+      db.deleteRegistrarAccount(id).catch(() => { });
+    }
     api.del(endpoint).catch(() => { });
   };
 
@@ -611,6 +670,14 @@ useEffect(() => {
     // Persist to API
     if (opts.persist !== false) {
       const endpoint = toOpsEndpoint(coll, id);
+      if (coll === "cf-accounts" && neonOk) {
+        const existing = (ops[stateKey] || []).find((i) => i.id === id) || {};
+        db.saveCfAccount({ ...existing, ...u, id }).catch(() => { });
+      }
+      if (coll === "registrar-accounts" && neonOk) {
+        const existing = (ops[stateKey] || []).find((i) => i.id === id) || {};
+        db.saveRegistrarAccount({ ...existing, ...u, id }).catch(() => { });
+      }
       return api.put(endpoint, apiPayload);
     }
     return Promise.resolve({ success: true, skipped: true });
@@ -712,13 +779,26 @@ useEffect(() => {
           {page === "voluum" && <VoluumExplorer />}
           {page === "account-map" && <AccountMap apiOk={apiOk} neonOk={neonOk} ops={ops} />}
           {page === "sites" && <Sites sites={sites} del={delSite} notify={notify} startCreate={startCreate} settings={settings} addDeploy={addDeploy} ops={ops} updateSite={updateSite} />}
-          {page === "template-editor" && <TemplateEditor notify={notify} />}
-          {page === "create" && wizData && <Wizard config={wizData} setConfig={setWizData} addSite={addSite} addDeploy={addDeploy} setPage={setPage} settings={settings} notify={notify} />}
+          {page === "create" && wizData && <Wizard config={wizData} setConfig={setWizData} addSite={addSite} addDeploy={addDeploy} setPage={setPage} settings={settings} notify={notify} cfAccounts={ops.cfAccounts} registrarAccounts={ops.registrarAccounts} />}
           {page === "variant" && <VariantStudio notify={notify} sites={sites} addSite={addSite} registry={registry} setRegistry={setRegistry} apiOk={apiOk} />}
           {page === "ops" && <OpsCenter data={ops} add={opsAdd} del={opsDel} upd={opsUpd} settings={settings} />}
           {page === "deploys" && <DeployHistory deploys={deploys} />}
           {page === "tracking" && <TrackingDashboard settings={settings} sites={sites} />}
+          {page === "template-manager" && (
+            <TemplateManager
+              sites={sites}
+              notify={notify}
+              onDefaultTemplateChange={(templateId) => {
+                setSettings((prev) => {
+                  const next = { ...(prev || {}), defaultTemplateId: templateId };
+                  LS.set("settings", next);
+                  return next;
+                });
+              }}
+            />
+          )}
           {page === "error-log" && <ErrorLog />}
+          {page === "api-health" && <ApiHealthCheck />}
           {page === "settings" && <Settings settings={settings} setSettings={handleSaveSettings} stats={stats} apiOk={apiOk} neonOk={neonOk} />}
         </div>
       </main>
