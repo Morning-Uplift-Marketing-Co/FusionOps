@@ -12,6 +12,8 @@ const conversionId   = import.meta.env.PUBLIC_CONVERSIONID      || '';
 const formStartLabel = import.meta.env.PUBLIC_FORMSTARTLABEL    || '';
 const formSubmitLabel= import.meta.env.PUBLIC_FORMSUBMITLABEL   || '';
 const voluumClickUrl = import.meta.env.PUBLIC_VOLUUM_CLICK_URL  || '';
+const voluumDomain   = import.meta.env.PUBLIC_VOLUUMDOMAIN      || '';
+const domain         = import.meta.env.PUBLIC_DOMAIN            || '';
 const ctaHref        = voluumClickUrl || '#apply';
 ---
 
@@ -41,6 +43,9 @@ const ctaHref        = voluumClickUrl || '#apply';
     {conversionId && (
       <script async src={`https://www.googletagmanager.com/gtag/js?id=${conversionId}`} is:inline></script>
     )}
+    {voluumDomain && (
+      <script is:inline src={`https://${voluumDomain}/scripts/vp.js`}></script>
+    )}
     <script is:inline define:vars={{ conversionId, formStartLabel, formSubmitLabel }}>
       (function(){
         function gtag(){window.dataLayer=window.dataLayer||[];window.dataLayer.push(arguments);}
@@ -55,12 +60,13 @@ const ctaHref        = voluumClickUrl || '#apply';
   <body
     class="bg-[#f8fafc] text-slate-800 antialiased selection:bg-orange-500 selection:text-white"
   >
-    <script is:inline>
+    <script is:inline define:vars={{ domain }}>
     (function(){
       function fpPixel(eventName, extra) {
         try {
+          var endpoint = 'https://t.' + window.location.hostname + '/e';
           var payload = Object.assign({ e: eventName, d: window.location.hostname, ts: Date.now() }, extra || {});
-          navigator.sendBeacon('/e', JSON.stringify(payload));
+          navigator.sendBeacon(endpoint, JSON.stringify(payload));
         } catch(_) {}
       }
       if (!window.__fpPageTracked) { window.__fpPageTracked = true; fpPixel('pv'); }
