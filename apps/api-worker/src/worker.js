@@ -3234,6 +3234,27 @@ export default {
           : await db.prepare('SELECT * FROM registrar_accounts WHERE provider = ? LIMIT 1').bind(provider).first();
         if (!acctRow) return json({ error: 'Registrar account not found' }, 404);
 
+        // Auto-whitelist this worker's outbound IP before calling InternetBS
+        // (Worker IPs are dynamic/ephemeral — whitelist on every request)
+        try {
+          const myIpRes = await fetch('https://api.ipify.org?format=json');
+          const myIpData = await myIpRes.json();
+          const myIp = myIpData?.ip;
+          if (myIp) {
+            const whitelistForm = new URLSearchParams({
+              ApiKey: acctRow.api_key,
+              Password: acctRow.secret_key,
+              responseformat: 'JSON',
+              Ip: myIp,
+            });
+            await fetch('https://api.internet.bs/Account/Access/AddIp', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: whitelistForm.toString(),
+            }).catch(() => {});
+          }
+        } catch (_e) { /* non-fatal */ }
+
         // Pre-check to avoid unnecessary registrar updates.
         const beforeCheck = await fetchInternetBsCurrentNameservers(acctRow, domain);
         if (beforeCheck.success && beforeCheck.nameservers.length >= 2 && nameserversMatch(beforeCheck.nameservers, cleanedNameservers)) {
