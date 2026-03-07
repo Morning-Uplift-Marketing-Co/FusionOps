@@ -119,6 +119,16 @@ const defaultAmt   = String(Math.round((Number(amountMinRaw) + Number(amountMaxR
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push({ event: 'generate_lead_start', conversion_value: amount, currency: 'USD' });
     window.dataLayer.push({ event: 'form_start', value: amount, currency: 'USD' });
+    // Google Ads conversion — form_start label
+    try {
+      var cid = window.__gtagConversionId;
+      var lbl = window.__formStartLabel;
+      if (cid && lbl && typeof gtag === 'function') {
+        gtag('event', 'conversion', { send_to: cid + '/' + lbl, value: amount, currency: 'USD' });
+      }
+    } catch(_) {}
+    // First-party pixel
+    if (typeof window.__fpPixel === 'function') { window.__fpPixel('form_start', { amount: amount, zip: zip }); }
     var p = new URLSearchParams(window.location.search);
     p.set('amount', amount);
     p.set('zip', zip);
