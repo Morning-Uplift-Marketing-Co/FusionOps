@@ -845,59 +845,50 @@ useEffect(() => {
       <TemplateGeneratorModal
         open={templateGenOpen}
         onClose={() => setTemplateGenOpen(false)}
-        onSave={async (templateData) => {
-          try {
-            // Save template to database via API
-            const response = await api.post('/templates', {
-              templateId: templateData.newFolderId,
-              name: templateData.templateName,
-              description: templateData.templateDescription,
-              category: templateData.category || 'general',
-              badge: templateData.badge || 'New',
-              sourceCode: templateData.generatedCode,
-              files: templateData.generatedFiles || {},
-            });
+        onSave={async (templateData, setStatus) => {
+          const st = (msg) => setStatus && setStatus({ step: 'saving', message: msg });
 
-            if (response.error) {
-              const detail = response.detail ? (typeof response.detail === 'string' ? response.detail : JSON.stringify(response.detail)) : '';
-              notify(`Error saving template: ${response.error}${detail ? ' - ' + detail : ''}`, 'error');
-            } else {
-              notify(`Template "${templateData.templateName}" saved successfully!`, 'success');
+          // 1. Save to DB
+          st('Saving template to database...');
+          const response = await api.post('/templates', {
+            templateId: templateData.newFolderId,
+            name: templateData.templateName,
+            description: templateData.templateDescription,
+            category: templateData.category || 'general',
+            badge: templateData.badge || 'New',
+            sourceCode: templateData.generatedCode,
+            files: templateData.generatedFiles || {},
+          });
 
-              // If it's an Astro project from ZIP, push files to GitHub repo
-              const files = templateData.generatedFiles;
-              const isAstro = templateData.templateFormat === 'astro' || (files && Object.keys(files).some(f => f.endsWith('.astro')));
-              const ghToken = settings?.githubToken;
-              const ghOwner = settings?.githubRepoOwner;
-              const ghRepo = settings?.githubRepoName;
-              const templateId = templateData.newFolderId;
-
-              if (isAstro && files && ghToken && ghOwner && ghRepo && templateId) {
-                notify(`Pushing template files to GitHub (${Object.keys(files).length} files)...`, 'info');
-                try {
-                  await pushAstroTemplateToGitHub({ token: ghToken, owner: ghOwner, repo: ghRepo, templateId, files });
-                  notify(`✅ Template pushed to GitHub: templates/${templateId}/`, 'success');
-                } catch (ghErr) {
-                  notify(`⚠️ Template saved to DB but GitHub push failed: ${ghErr.message}`, 'error');
-                }
-              }
-              // Refresh both caches so new template appears in selector
-              setTimeout(async () => {
-                refreshCustomTemplates();
-                const res = await api.get("/templates").catch(() => null);
-                if (Array.isArray(res)) setSavedTemplates(res);
-                else if (res?.templates) setSavedTemplates(res.templates);
-                window.dispatchEvent(new CustomEvent('lp-template-refresh', { detail: templateData.newFolderId }));
-              }, 500);
-
-              // Dispatch event for any listening components
-              window.dispatchEvent(new CustomEvent(TEMPLATE_REFRESH_EVENT, { detail: templateData.newFolderId }));
-              console.log("Template saved:", response);
-            }
-          } catch (e) {
-            notify(`Failed to save template: ${e.message}`, 'error');
-            console.error("Template save error:", e);
+          if (response.error) {
+            const detail = response.detail ? (typeof response.detail === 'string' ? response.detail : JSON.stringify(response.detail)) : '';
+            throw new Error(`${response.error}${detail ? ' — ' + detail : ''}`);
           }
+
+          notify(`Template "${templateData.templateName}" saved!`, 'success');
+
+          // 2. Push to GitHub if Astro project
+          const files = templateData.generatedFiles;
+          const isAstro = templateData.templateFormat === 'astro' || (files && Object.keys(files).some(f => f.endsWith('.astro')));
+          const ghToken = settings?.githubToken;
+          const ghOwner = settings?.githubRepoOwner;
+          const ghRepo = settings?.githubRepoName;
+          const templateId = templateData.newFolderId;
+
+          if (isAstro && files && Object.keys(files).length > 0 && ghToken && ghOwner && ghRepo && templateId) {
+            st(`Pushing ${Object.keys(files).length} files to GitHub (templates/${templateId}/)...`);
+            await pushAstroTemplateToGitHub({ token: ghToken, owner: ghOwner, repo: ghRepo, templateId, files });
+          }
+
+          // 3. Refresh cache
+          st('Refreshing template list...');
+          setTimeout(async () => {
+            refreshCustomTemplates();
+            const res = await api.get("/templates").catch(() => null);
+            if (Array.isArray(res)) setSavedTemplates(res);
+            else if (res?.templates) setSavedTemplates(res.templates);
+            window.dispatchEvent(new CustomEvent('lp-template-refresh', { detail: templateId }));
+          }, 400);
         }}
         templates={savedTemplates}
       />
