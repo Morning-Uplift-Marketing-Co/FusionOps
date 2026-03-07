@@ -51,12 +51,12 @@ async function pushAstroTemplateToGitHub({ token, owner, repo, templateId, files
     return btoa(binary);
   };
 
-  for (const [filePath, content] of Object.entries(files)) {
+  const pushFile = async ([filePath, content]) => {
     const url = `${base}/templates/${templateId}/${filePath}`;
-    // Get SHA if exists
     let sha;
-    const ex = await fetch(`${url}?ref=${branch}`, { headers });
-    if (ex.ok) sha = (await ex.json()).sha;
+    // Intentional: 404 is expected for new files — suppress noise
+    const ex = await fetch(`${url}?ref=${branch}`, { headers }).catch(() => null);
+    if (ex?.ok) sha = (await ex.json().catch(() => ({}))).sha;
 
     const body = {
       message: `feat: import template ${templateId} — ${filePath}`,
@@ -69,6 +69,12 @@ async function pushAstroTemplateToGitHub({ token, owner, repo, templateId, files
       const err = await res.text().catch(() => '');
       throw new Error(`Failed to push ${filePath}: ${res.status} ${err.slice(0, 200)}`);
     }
+  };
+
+  // Push files with concurrency limit of 3 to avoid GitHub rate limits
+  const entries = Object.entries(files);
+  for (let i = 0; i < entries.length; i += 3) {
+    await Promise.all(entries.slice(i, i + 3).map(pushFile));
   }
 }
 
