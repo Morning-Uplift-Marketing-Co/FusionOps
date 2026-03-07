@@ -34,6 +34,44 @@ import { TemplateManager } from "./components/TemplateManager";
 // Neon connection string — stored in settings or hardcoded for now
 const NEON_URL = import.meta.env.VITE_NEON_URL || "";
 
+async function pushAstroTemplateToGitHub({ token, owner, repo, templateId, files }) {
+  const base = `https://api.github.com/repos/${owner}/${repo}/contents`;
+  const branch = 'main';
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    Accept: 'application/vnd.github+json',
+    'Content-Type': 'application/json',
+    'X-GitHub-Api-Version': '2022-11-28',
+  };
+
+  const encode = (str) => {
+    const bytes = new TextEncoder().encode(str);
+    let binary = '';
+    bytes.forEach(b => { binary += String.fromCharCode(b); });
+    return btoa(binary);
+  };
+
+  for (const [filePath, content] of Object.entries(files)) {
+    const url = `${base}/templates/${templateId}/${filePath}`;
+    // Get SHA if exists
+    let sha;
+    const ex = await fetch(`${url}?ref=${branch}`, { headers });
+    if (ex.ok) sha = (await ex.json()).sha;
+
+    const body = {
+      message: `feat: import template ${templateId} — ${filePath}`,
+      content: encode(content),
+      branch,
+      ...(sha ? { sha } : {}),
+    };
+    const res = await fetch(url, { method: 'PUT', headers, body: JSON.stringify(body) });
+    if (!res.ok) {
+      const err = await res.text().catch(() => '');
+      throw new Error(`Failed to push ${filePath}: ${res.status} ${err.slice(0, 200)}`);
+    }
+  }
+}
+
 // ── ENV FALLBACK DEFAULTS ──────────────────────────────────────────
 // When localStorage is cleared, these env vars act as seed defaults
 // so the app can self-heal without manual re-entry.
@@ -825,6 +863,24 @@ useEffect(() => {
               notify(`Error saving template: ${response.error}${detail ? ' - ' + detail : ''}`, 'error');
             } else {
               notify(`Template "${templateData.templateName}" saved successfully!`, 'success');
+
+              // If it's an Astro project from ZIP, push files to GitHub repo
+              const files = templateData.generatedFiles;
+              const isAstro = templateData.templateFormat === 'astro' || (files && Object.keys(files).some(f => f.endsWith('.astro')));
+              const ghToken = settings?.githubToken;
+              const ghOwner = settings?.githubRepoOwner;
+              const ghRepo = settings?.githubRepoName;
+              const templateId = templateData.newFolderId;
+
+              if (isAstro && files && ghToken && ghOwner && ghRepo && templateId) {
+                notify(`Pushing template files to GitHub (${Object.keys(files).length} files)...`, 'info');
+                try {
+                  await pushAstroTemplateToGitHub({ token: ghToken, owner: ghOwner, repo: ghRepo, templateId, files });
+                  notify(`✅ Template pushed to GitHub: templates/${templateId}/`, 'success');
+                } catch (ghErr) {
+                  notify(`⚠️ Template saved to DB but GitHub push failed: ${ghErr.message}`, 'error');
+                }
+              }
               // Refresh both caches so new template appears in selector
               
 refreshCustomTemplates();
