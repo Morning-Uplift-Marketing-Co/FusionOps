@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.0] - 2026-03-08
+### Added
+- **`pet-orange-white` LeadsGate integration**: `apply.astro` rebuilt as standalone HTML page (no Layout) with full `_lg_form_init_` config — `SafeStorage`, `getVoluumClickId()`, and dataLayer callbacks (`onFormLoad`, `onStepChange`, `onSubmit`, `onSuccess`) with `soldLead`/`rejectLead`/`newLead` event handling.
+- **LeadsGate dataLayer events**: `leadsgate_form_start`, `leadsgate_form_progress`, `leadsgate_form_submit`, `lead_conversion_all`, `lead_conversion_approved`, `lead_declined`, `lead_pending` — wired to `PUBLIC_AID` env var.
+
+### Fixed
+- **`deploy-lp.yml` template resolution**: Replaced bash function with direct `if [ -d "templates/$TEMPLATE_ID" ]` check — eliminates double-echo bug from subshell that caused `pet-orange-white` to build as `pet_loans_v1`.
+- **`scratchpaypet.tech` serving old site**: Deleted stale Cloudflare Worker route `scratchpaypet.tech/* → lp-worker-scratchpaypet-tech-92d470` that intercepted all traffic before reaching Cloudflare Pages project.
+- **Wizard Step 4 Gen Images button disabled**: `StepDesign.jsx` — removed `!c.brand?.trim()` disabled condition, use fallback `'Brand'` in `handleGenImages` instead.
+- **`App.jsx` template update flow**: PUT request on duplicate `templateId` instead of retrying POST with timestamp suffix.
+- **Cloudflare Rocket Loader breaking all scripts**: Added `data-cfasync="false"` to every `<script is:inline>` tag in `pet-orange-white` — `Layout.astro`, `BaseLayout.astro`, `index.astro`, `StickyMobileCta.astro`, `LegalModal.astro`, `LoanCalculator.astro`, `apply.astro`.
+- **`apply.astro` Astro IIFE wrapping**: Used `Fragment set:html` with template literal to output raw HTML — eliminates `(function(){...})()` wrapper and `data-astro-cid-*` attributes that broke `_lg_form_init_` global scope.
+
+### Changed
+- **`pet-orange-white` performance**: Removed render-blocking Google Fonts (system font fallback), async Voluum `vp.js`, reduced blur effects, added `X-Robots-Tag: index, follow`.
+- **`pet-orange-white` `_headers`**: Added `Cache-Control: no-cache` for HTML routes to prevent Cloudflare edge cache serving stale deployments.
+
 ## [2.5.2] - 2026-03-07
 ### Fixed
 - **`installment-loans-101` tracking parity**: Added `/e` Astro API route, `sendBeacon` fpPixel, `PUBLIC_FORMSTARTLABEL`/`PUBLIC_FORMSUBMITLABEL` env vars, `window.__gtagConversionId`/`__formStartLabel`/`__formSubmitLabel` globals — matching `astro-test002` v2.5.1 fixes.
