@@ -3234,22 +3234,28 @@ export default {
           : await db.prepare('SELECT * FROM registrar_accounts WHERE provider = ? LIMIT 1').bind(provider).first();
         if (!acctRow) return json({ error: 'Registrar account not found' }, 404);
 
-        // Disable IP restriction on InternetBS account so any IP can call the API
-        // (Cloudflare Worker IPs are ephemeral — whitelisting individual IPs doesn't work)
+        // Whitelist worker's current outbound IP(s) in InternetBS before calling Domain/Update
+        // Worker IPs are ephemeral — we must whitelist on every request
+        const ibsWhitelist = async (ip) => {
+          if (!ip) return;
+          const f = new URLSearchParams({ ApiKey: acctRow.api_key, Password: acctRow.secret_key, responseformat: 'JSON', Ip: ip });
+          const r = await fetch('https://api.internet.bs/Account/Access/AddIp', {
+            method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: f.toString(),
+          }).catch(() => null);
+          const d = await r?.json().catch(() => ({}));
+          console.log(`[IBS] AddIp ${ip}:`, d?.status, d?.message);
+        };
         try {
-          const disableForm = new URLSearchParams({
-            ApiKey: acctRow.api_key,
-            Password: acctRow.secret_key,
-            responseformat: 'JSON',
-          });
-          const disableRes = await fetch('https://api.internet.bs/Account/Access/Disable', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: disableForm.toString(),
-          });
-          const disableData = await disableRes.json().catch(() => ({}));
-          console.log('[IBS] IP restriction disable result:', disableData?.status, disableData?.message);
-        } catch (_e) { console.warn('[IBS] Could not disable IP restriction:', _e?.message); }
+          // Try both ipify (IPv4) and CF's own connecting IP header
+          const ipifyRes = await fetch('https://api64.cloudflare.com/cdn-cgi/trace').catch(() => null);
+          const traceText = await ipifyRes?.text().catch(() => '');
+          const ipv4Match = traceText.match(/ip=([^\n]+)/);
+          const workerIp = ipv4Match?.[1]?.trim();
+          if (workerIp) await ibsWhitelist(workerIp);
+          // Also try ipify as backup
+          const ipifyV4 = await fetch('https://api.ipify.org?format=json').then(r => r.json()).catch(() => ({}));
+          if (ipifyV4?.ip && ipifyV4.ip !== workerIp) await ibsWhitelist(ipifyV4.ip);
+        } catch (_e) { console.warn('[IBS] IP whitelist failed:', _e?.message); }
 
         // Pre-check to avoid unnecessary registrar updates.
         const beforeCheck = await fetchInternetBsCurrentNameservers(acctRow, domain);
