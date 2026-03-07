@@ -65,6 +65,10 @@ export function StepBrand({ c, u, settings, cfAccounts = [], registrarAccounts =
             </div>
             <Field label="Brand Tagline" help="Sub headline or trust message"><Inp value={c.tagline} onChange={v => u("tagline", v)} placeholder="Fast. Simple. Trusted." /></Field>
             <Field label="Compliance Email" help="Used in footer and privacy policy"><Inp value={c.email} onChange={v => u("email", v)} placeholder="support@loanbridge.com" /></Field>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <Field label="Phone" help="Contact number for footer/compliance"><Inp value={c.phone || ""} onChange={v => u("phone", v)} placeholder="(800) 123-4567" /></Field>
+                <Field label="Business Address" help="Used in footer disclosure"><Inp value={c.address || ""} onChange={v => u("address", v)} placeholder="123 Main St, New York, NY 10001" /></Field>
+            </div>
 
             {/* Cloudflare Profile Selection */}
             {cfProfiles.length > 0 && (
