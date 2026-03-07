@@ -138,6 +138,13 @@ export function clearCustomTemplatesCache() {
 }
 
 /**
+ * Manually set custom templates cache (for deploy scripts that fetch API externally)
+ */
+export function setCustomTemplatesCache(templates) {
+  customTemplatesCache = templates;
+}
+
+/**
  * Get the current custom templates cache
  */
 export function getCustomTemplatesCache() {

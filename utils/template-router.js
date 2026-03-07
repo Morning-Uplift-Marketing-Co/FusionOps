@@ -22,15 +22,15 @@ function resolveTemplateId(site) {
 // Module template IDs for quick lookup
 const MODULE_TEMPLATE_IDS = ['classic', 'pdl-loans-v1', 'pdl-loans-v3', 'simple-lp', 'pet-care-loans', 'elastic-credits-v3', 'scratchpay-bridge', 'pet-loans-v1', 'installment-loans-v1'];
 
+// Get color object for template substitution
+function getColorObj(colorId) {
+  return ALL_COLORS.find(c => c.id === colorId) || ALL_COLORS[3] || ALL_COLORS[0];
+}
+
 // Check if a template ID is a module template
 function isModuleTemplate(templateId) {
   return MODULE_TEMPLATE_IDS.includes(templateId) ||
     templateId === 'pdl-loansv1'; // alias
-}
-
-// Get color object for template substitution
-function getColorObj(colorId) {
-  return ALL_COLORS.find(c => c.id === colorId) || ALL_COLORS[3] || ALL_COLORS[0];
 }
 
 // Convert Astro files to HTML preview with actual site data
@@ -80,11 +80,15 @@ function astroToHtmlPreview(files, site) {
     formSubmitLabel: site.formSubmitLabel || '',
     aid: site.aid || '',
     voluumDomain: site.voluumDomain || '',
-    amountMin: site.amountMin || 100,
-    amountMax: site.amountMax || 5000,
+    amountMin: String(Number(site.amountMin) || 100),
+    amountMax: String(Number(site.amountMax) || 5000),
     aprMin: site.aprMin || 5.99,
     aprMax: site.aprMax || 35.99,
-    loanLabel: site.loanType || 'Personal Loans'
+    loanLabel: site.loanType || 'Personal Loans',
+    phone: site.phone || '',
+    headline: site.h1 || site.brand || 'Your Headline',
+    subheadline: site.sub || site.tagline || 'Your subheadline here',
+    leadsGateFormId: site.leadsGateFormId || site.aid || ''
   };
 
   // Basic Astro to HTML conversion for preview
@@ -127,6 +131,17 @@ function astroToHtmlPreview(files, site) {
     html = resolveComponents(html, files);
     if (prev === html) break;
   }
+
+  // Pre-process ${} variables inside <style> blocks before protecting them
+  // This ensures CSS custom properties like --color-primary: ${primaryColor} get resolved
+  const _colorObj2 = getColorObj(site.colorId);
+  const _primaryColor = _colorObj2.p ? `hsl(${_colorObj2.p[0]}, ${_colorObj2.p[1]}%, ${_colorObj2.p[2]}%)` : '#3b82f6';
+  const _accentColor = _colorObj2.a ? `hsl(${_colorObj2.a[0]}, ${_colorObj2.a[1]}%, ${_colorObj2.a[2]}%)` : '#f97316';
+  html = html.replace(/(<style\b[^>]*>)([\s\S]*?)(<\/style>)/gi, (m, open, body, close) => {
+    const resolved = body.replace(/\$\{primaryColor\}/g, _primaryColor)
+                         .replace(/\$\{accentColor\}/g, _accentColor);
+    return open + resolved + close;
+  });
 
   // Protect script blocks (except JSON-LD) from our string transforms
   const scriptBlocks = [];
@@ -199,6 +214,33 @@ function astroToHtmlPreview(files, site) {
     const email = evaluateSiteProp('email', 'support@example.com');
     if (email !== null) return email;
 
+    const phone = evaluateSiteProp('phone', '');
+    if (phone !== null) return phone;
+
+    const amountMin = evaluateSiteProp('amountMin', '100');
+    if (amountMin !== null) return amountMin;
+
+    const amountMax = evaluateSiteProp('amountMax', '5000');
+    if (amountMax !== null) return amountMax;
+
+    const aprMin = evaluateSiteProp('aprMin', '5.99');
+    if (aprMin !== null) return String(aprMin);
+
+    const aprMax = evaluateSiteProp('aprMax', '35.99');
+    if (aprMax !== null) return String(aprMax);
+
+    const loanLabel = evaluateSiteProp('loanLabel', 'Personal Loans');
+    if (loanLabel !== null) return loanLabel;
+
+    const leadsGateFormId = evaluateSiteProp('leadsGateFormId', '');
+    if (leadsGateFormId !== null) return leadsGateFormId;
+
+    const primaryColor = evaluateSiteProp('primaryColor', '#3b82f6');
+    if (primaryColor !== null) return primaryColor;
+
+    const accentColor = evaluateSiteProp('accentColor', '#f97316');
+    if (accentColor !== null) return accentColor;
+
     // Color variables - c.primary, c.bg, etc.
     if (expr.includes('c.primary') || expr === 'c?.primary') return colorObj.p ? `hsl(${colorObj.p[0]} ${colorObj.p[1]}% ${colorObj.p[2]}%)` : '#3b82f6';
     if (expr.includes('c.bg') || expr === 'c?.bg') return colorObj.bg || '#ffffff';
@@ -244,12 +286,25 @@ function astroToHtmlPreview(files, site) {
   // Inject fallback variable definitions before </head> to prevent ReferenceErrors
   const fallbackVars = `<script>var conversionId='';var formStartLabel='';var formSubmitLabel='';var voluumDomain='';var id='preview';var defaultValue=0;var leadsGateFormId='';</script>`;
 
-  // Inject Tailwind CDN for custom templates that rely on Tailwind
-  // which won't be compiled by our simple previewer.
-  const tailwindConfigScript = `<script>window.tailwind = window.tailwind || {}; window.tailwind.config = {theme: {extend: {colors: {primary: '${colorObj.p ? `hsl(${colorObj.p[0]} ${colorObj.p[1]}% ${colorObj.p[2]}%)` : '#2563EB'}', accent: '${colorObj.a ? `hsl(${colorObj.a[0]} ${colorObj.a[1]}% ${colorObj.a[2]}%)` : '#F97316'}', secondary: '${colorObj.s ? `hsl(${colorObj.s[0]} ${colorObj.s[1]}% ${colorObj.s[2]}%)` : '#10B981'}', background: 'hsl(var(--background))', foreground: 'hsl(var(--foreground))', card: 'hsl(var(--card))', 'card-foreground': 'hsl(var(--card-foreground))', muted: 'hsl(var(--muted))', 'muted-foreground': 'hsl(var(--muted-foreground))', border: 'hsl(var(--border))', input: 'hsl(var(--input))', ring: 'hsl(var(--ring))', destructive: 'hsl(var(--destructive))', 'destructive-foreground': 'hsl(var(--destructive-foreground))'}, ringColor: {ring: 'hsl(var(--ring))'}, boxShadow: {cta: '0 4px 14px 0 hsl(40 90% 55% / 0.4)', card: '0 10px 15px -3px hsl(350 75% 38% / 0.08), 0 4px 6px -4px hsl(350 75% 38% / 0.06)'} } } } };</script>`;
+  // Strip Tailwind CDN early if template has substantial inline CSS
+  const earlyStyleMatch2 = html.match(/<style[\s\S]*?>([\s\S]*?)<\/style>/gi) || [];
+  const earlyStyleContent2 = earlyStyleMatch2.join('');
+  const hasSubstantialInlineCss2 = earlyStyleContent2.length > 200;
+  if (hasSubstantialInlineCss2) {
+    html = html.replace(/<script\b[^>]*src=["'][^"']*cdn\.tailwindcss\.com[^"']*["'][^>]*><\/script>/gi, '');
+    html = html.replace(/<script\b[^>]*>\s*window\.tailwind\s*=[\s\S]*?<\/script>/g, '');
+  }
+
+  const _p = colorObj.p ? `hsl(${colorObj.p[0]} ${colorObj.p[1]}% ${colorObj.p[2]}%)` : '#2563EB';
+  const _a = colorObj.a ? `hsl(${colorObj.a[0]} ${colorObj.a[1]}% ${colorObj.a[2]}%)` : '#F97316';
+  const _s = colorObj.s ? `hsl(${colorObj.s[0]} ${colorObj.s[1]}% ${colorObj.s[2]}%)` : '#10B981';
+  const tailwindConfigScript = `<script>window.tailwind = window.tailwind || {}; window.tailwind.config = {theme: {extend: {colors: {primary: '${_p}', accent: '${_a}', secondary: '${_s}'}, boxShadow: {cta: '0 4px 14px 0 hsl(40 90% 55% / 0.4)', card: '0 10px 15px -3px hsl(350 75% 38% / 0.08), 0 4px 6px -4px hsl(350 75% 38% / 0.06)'}} } } };</script>`;
   const tailwindCdnScript = `<script src="https://cdn.tailwindcss.com"></script>`;
   const tailwindFallbackCss = `<style>\n.shadow-cta{box-shadow:0 4px 14px 0 hsl(40 90% 55% / 0.4)}\n.shadow-card{box-shadow:0 10px 15px -3px hsl(350 75% 38% / 0.08),0 4px 6px -4px hsl(350 75% 38% / 0.06)}\n</style>`;
-  const tailwindCdn = `${tailwindConfigScript}\n${tailwindCdnScript}\n${tailwindFallbackCss}`;
+
+  // Only inject Tailwind CDN if template uses Tailwind classes (not when it has full inline CSS)
+  const usesTailwindClasses2 = !hasSubstantialInlineCss2 && /class="[^"]*\b(bg-(?:blue|red|green|gray|slate|zinc)-\d|text-(?:xs|sm|base|lg|xl|2xl|3xl)|p-\d+\b|px-\d+\b|py-\d+\b|m-\d+\b|mx-\d+\b|my-\d+\b|gap-\d+\b|flex-col\b|flex-row\b|grid-cols-|items-center\b|justify-center\b|rounded-(?:sm|md|lg|xl|full)\b|font-bold\b|font-semibold\b)\b/.test(html);
+  const tailwindCdn = usesTailwindClasses2 ? `${tailwindConfigScript}\n${tailwindCdnScript}\n${tailwindFallbackCss}` : '';
 
   const headInjections = fallbackVars + '\n' + tailwindCdn;
 
@@ -263,6 +318,9 @@ function astroToHtmlPreview(files, site) {
   if (scriptBlocks.length) {
     html = html.replace(/__LP_SCRIPT_BLOCK_(\d+)__/g, (_m, idx) => scriptBlocks[Number(idx)] || '');
   }
+
+  // Strip CSS variable references from window.tailwind.config — Tailwind CDN cannot parse them
+  html = stripTailwindCssVars(html);
 
   return html;
 }
@@ -445,6 +503,16 @@ export function generateAstroProjectByTemplate(site) {
 
 export function generateApplyPageByTemplate(site) {
   return generateApplyPage(site);
+}
+
+// Strip hsl(var(--...)) CSS variable references from window.tailwind.config scripts.
+// Tailwind CDN cannot parse CSS variables in config and throws "Unexpected token '}'".
+function stripTailwindCssVars(html) {
+  if (!html || !html.includes('window.tailwind')) return html;
+  return html.replace(
+    /(<script[^>]*>)(window\.tailwind\s*=[\s\S]*?<\/script>)/gi,
+    (match, open, body) => open + body.replace(/hsl\(var\([^)]+\)\)/g, '#000000')
+  );
 }
 
 // Generates the full asset map needed by Edge deployment targets 
