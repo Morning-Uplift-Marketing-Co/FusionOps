@@ -1,0 +1,93 @@
+---
+import '../styles/global.css';
+
+const brand      = import.meta.env.PUBLIC_BRAND      || 'ElasticCredits';
+const domain     = import.meta.env.PUBLIC_DOMAIN     || 'elasticcredits.com';
+const amountMin  = import.meta.env.PUBLIC_AMOUNTMIN  || '100';
+const amountMax  = import.meta.env.PUBLIC_AMOUNTMAX  || '5000';
+const aprMin     = import.meta.env.PUBLIC_APRMIN     || '5.99';
+const aprMax     = import.meta.env.PUBLIC_APRMAX     || '35.99';
+
+interface Props {
+  title?: string;
+  description?: string;
+  canonicalUrl?: string;
+}
+
+const {
+  title = `${brand} – Personal Loans $${amountMin}-$${amountMax} | Fast Approval`,
+  description = `Get personal loans from $${amountMin} to $${amountMax} with flexible repayment. All credit types welcome. Apply online in 2 minutes.`,
+  canonicalUrl = `https://${domain}`,
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href={canonicalUrl} />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:site_name" content={brand} />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700&display=swap" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+    <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700&display=swap" rel="stylesheet" /></noscript>
+
+    <!-- GTM dataLayer -->
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+    </script>
+
+    <!-- Critical inline font fallback -->
+    <style is:inline>
+      body { font-family: 'DM Sans', system-ui, -apple-system, sans-serif; }
+    </style>
+
+    <!-- Schema.org FinancialProduct -->
+    <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FinancialProduct",
+      "name": `${brand} Personal Loan`,
+      "description": `Personal loans from $${amountMin} to $${amountMax} with fast approval`,
+      "provider": {
+        "@type": "FinancialService",
+        "name": brand,
+        "url": `https://${domain}`
+      },
+      "annualPercentageRate": {
+        "@type": "QuantitativeValue",
+        "minValue": parseFloat(aprMin),
+        "maxValue": parseFloat(aprMax),
+        "unitCode": "P1"
+      },
+      "amount": {
+        "@type": "MonetaryAmount",
+        "minValue": parseInt(amountMin.replace(/[^0-9]/g,'')),
+        "maxValue": parseInt(amountMax.replace(/[^0-9]/g,'')),
+        "currency": "USD"
+      },
+      "feesAndCommissionsSpecification": "No hidden fees. APR varies based on creditworthiness."
+    })}
+    </script>
+  </head>
+  <body class="min-h-screen bg-background text-foreground antialiased">
+    <slot />
+  </body>
+</html>
