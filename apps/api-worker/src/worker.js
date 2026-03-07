@@ -7,7 +7,7 @@ import { neon } from '@neondatabase/serverless';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-api-key, cwauth-token, anthropic-version, anthropic-dangerous-direct-browser-access',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-api-key, cwauth-token, x-csrf-token, x-cf-api-token, anthropic-version, anthropic-dangerous-direct-browser-access',
   'Access-Control-Max-Age': '86400',
 };
 
@@ -483,6 +483,48 @@ function parseTemplateFiles(raw) {
   return {};
 }
 
+function getTemplateQualityGateReport({ files = {}, sourceCode = '', category = '' } = {}) {
+  const fileMap = files && typeof files === 'object' ? files : {};
+  const source = String(sourceCode || '');
+  const categoryLower = String(category || '').toLowerCase();
+  const keys = Object.keys(fileMap);
+  const combined = source + JSON.stringify(fileMap);
+  const hasEntry = keys.some((k) => k.endsWith('index.astro') || k.endsWith('index.html')) || /<html|<!doctype html/i.test(source);
+  const hasPixelMarker = /sendBeacon|t\.[^"' ]+\/e|window\.__fusionopsTrack|window\.pixel/i.test(combined);
+  const hasAstroLeak = /\{title\}|\{description\}|\{\s*noindex\s*\?|\{\s*[a-zA-Z_$][\w$]*\s*&&\s*\(/.test(combined);
+  const hasViewport = /<meta[^>]+name=["']viewport["']/i.test(combined);
+  const hasCta = /<button|href=["']#apply["']|type=["']submit["']/i.test(combined);
+  const hasCalculator = /calculator|monthly payment|calcMonthly|loanAmount|payment estimate/i.test(combined);
+  const hasAprCompare = /representative apr|apr range|<table[\s\S]*apr|term[\s\S]*apr/i.test(combined);
+  const bannedPatterns = [
+    /guaranteed approval/i,
+    /guaranteed loan/i,
+    /100%\s*approval/i,
+    /everyone approved/i,
+    /instant cash now/i,
+    /free money/i,
+    /zero risk/i,
+  ];
+  const matchedBanned = bannedPatterns.filter((p) => p.test(combined)).map((p) => p.toString());
+  const blocking = [];
+  const warnings = [];
+  if (!hasEntry) blocking.push('Missing template entry (index.astro or index.html).');
+  if (!hasPixelMarker) blocking.push('Missing first-party pixel marker (sendBeacon / t.domain/e).');
+  if (hasAstroLeak) blocking.push('Potential Astro expression leak detected.');
+  if (matchedBanned.length > 0) blocking.push(`Policy-risk copy detected: ${matchedBanned.join(', ')}`);
+  if (/(installment|loan|pdl|pet-care)/i.test(categoryLower)) {
+    if (!hasCalculator) blocking.push('Missing Payment Calculator section for loan template.');
+    if (!hasAprCompare) blocking.push('Missing APR Compare/Representative APR section for loan template.');
+  }
+  if (!hasViewport) warnings.push('Viewport meta not detected (mobile UX risk).');
+  if (!hasCta) warnings.push('Primary CTA marker not detected.');
+  return {
+    pass: blocking.length === 0,
+    blocking,
+    warnings,
+  };
+}
+
 async function createTemplateVersionSnapshot(db, templateRow, note = '') {
   const { results } = await db
     .prepare('SELECT COALESCE(MAX(version_number), 0) AS v FROM template_versions WHERE template_db_id = ?')
@@ -530,7 +572,11 @@ const BUILTIN_TEMPLATE_IDS = new Set([
   'pet-loans-v1',
   'installment-loans-v1',
   'installment-loans-v2',
+  'bear-loan-modern',
   'pet-care-v2',
+  'installment-golden',
+  'pet-care-golden',
+  'leadgen-golden',
   'template-green-01',
   'pdl-loansv1',
 ]);
@@ -1991,6 +2037,14 @@ export default {
           version = await db.prepare('SELECT * FROM template_versions WHERE template_db_id = ? AND version_number = ?')
             .bind(id, requestedVersion).first();
           if (!version) return json({ error: 'Version not found' }, 404);
+          const quality = getTemplateQualityGateReport({
+            files: parseTemplateFiles(version.files),
+            sourceCode: version.source_code || '',
+            category: version.category || row.category || '',
+          });
+          if (!quality.pass) {
+            return json({ error: 'Publish blocked by quality gate', quality }, 400);
+          }
           await db.prepare(`
             UPDATE templates
             SET name = ?, description = ?, category = ?, badge = ?, source_code = ?, files = ?, current_version = ?, status = 'active', archived_at = NULL, updated_at = datetime('now')
@@ -2006,6 +2060,14 @@ export default {
             id
           ).run();
         } else {
+          const quality = getTemplateQualityGateReport({
+            files: parseTemplateFiles(row.files),
+            sourceCode: row.source_code || '',
+            category: row.category || '',
+          });
+          if (!quality.pass) {
+            return json({ error: 'Publish blocked by quality gate', quality }, 400);
+          }
           await db.prepare('UPDATE templates SET status = "active", archived_at = NULL, updated_at = datetime(\'now\') WHERE id = ?').bind(id).run();
         }
 
@@ -2231,7 +2293,7 @@ export default {
       // Returns settings + sites + deploys + ops for the app to hydrate on load.
       // IMPORTANT: Returns neonUrl in plain text so the frontend can auto-connect Neon
       // on new devices/browsers where localStorage is empty.
-      if (path === '/api/init' && method === 'GET') {
+      if (path === '/api/init-legacy' && method === 'GET') {
         const [settingsRows, sitesRows, deploysRows] = await Promise.all([
           db.prepare('SELECT key, value FROM settings').all(),
           db.prepare('SELECT * FROM sites ORDER BY updated_at DESC').all(),
@@ -3634,6 +3696,78 @@ export default {
         });
       }
 
+      if (path === '/api/automation/tracking/verify' && method === 'POST') {
+        const body = await request.json();
+        const domain = String(body?.domain || '').trim().toLowerCase();
+        const workerUrl = String(body?.workerUrl || '').trim();
+        if (!domain || !/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(domain)) {
+          return json({ error: 'Valid domain is required' }, 400);
+        }
+
+        const checks = {};
+        let allPassed = true;
+
+        if (workerUrl) {
+          try {
+            const healthUrl = `${workerUrl.replace(/\/+$/, '')}/__health`;
+            const healthRes = await fetch(healthUrl, { method: 'GET' });
+            const bodyText = await healthRes.text().catch(() => '');
+            checks.workerHealth = {
+              ok: healthRes.ok,
+              status: healthRes.status,
+              url: healthUrl,
+              body: bodyText.slice(0, 120),
+            };
+            if (!healthRes.ok) allPassed = false;
+          } catch (e) {
+            checks.workerHealth = {
+              ok: false,
+              status: 0,
+              url: workerUrl,
+              error: e?.message || 'worker health request failed',
+            };
+            allPassed = false;
+          }
+        }
+
+        const pixelUrl = `https://t.${domain}/e`;
+        try {
+          const payload = {
+            e: 'deploy_verify',
+            d: domain,
+            ts: Date.now(),
+            source: 'automation-tracking-verify',
+          };
+          const pixelRes = await fetch(pixelUrl, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const pixelBody = await pixelRes.text().catch(() => '');
+          checks.pixelEndpoint = {
+            ok: pixelRes.ok,
+            status: pixelRes.status,
+            url: pixelUrl,
+            body: pixelBody.slice(0, 120),
+          };
+          if (!pixelRes.ok) allPassed = false;
+        } catch (e) {
+          checks.pixelEndpoint = {
+            ok: false,
+            status: 0,
+            url: pixelUrl,
+            error: e?.message || 'pixel endpoint request failed',
+          };
+          allPassed = false;
+        }
+
+        return json({
+          success: allPassed,
+          checks,
+          verifiedAt: new Date().toISOString(),
+        });
+      }
+
       // ═══ LEADINGCARDS AUTOMATION ═══
       if (path === '/api/automation/lc/create' && method === 'POST') {
         const lc = await getLcSettings(db);
@@ -3986,6 +4120,100 @@ export default {
             success: false,
             error: e.message,
           }, 500);
+        }
+      }
+
+      // ═══ AI GENERATE COPY ═══
+      if (path === '/api/ai/generate-copy' && method === 'POST') {
+        const apiKey = env.ANTHROPIC_API_KEY;
+        if (!apiKey) return json({ error: 'ANTHROPIC_API_KEY not configured' }, 500);
+        try {
+          const body = await request.json();
+          const { brand = '', loanType = 'personal loan', amountMin = 100, amountMax = 5000, lang = 'English' } = body;
+          const prompt = `You are a direct-response copywriter specializing in loan landing pages.
+Generate copy for a loan landing page. Respond ONLY with valid JSON, no explanation.
+
+Brand: ${brand}
+Loan type: ${loanType}
+Amount range: $${amountMin} – $${amountMax}
+Language: ${lang}
+
+Return this exact JSON shape:
+{
+  "h1": "hero headline (max 8 words, mention amount or speed)",
+  "sub": "sub-headline (max 15 words, reassuring, no jargon)",
+  "cta": "CTA button text (2-4 words, action verb)",
+  "badge": "trust badge text (e.g. 'No Hard Credit Check')",
+  "tagline": "short tagline (max 6 words)"
+}`;
+
+          const res = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'x-api-key': apiKey,
+              'anthropic-version': '2023-06-01',
+              'content-type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'claude-3-haiku-20240307',
+              max_tokens: 512,
+              messages: [{ role: 'user', content: prompt }],
+            }),
+          });
+          const data = await res.json();
+          const text = data?.content?.[0]?.text || '';
+          const match = text.match(/\{[\s\S]*\}/);
+          if (!match) return json({ error: 'AI returned unexpected format' }, 500);
+          return json(JSON.parse(match[0]));
+        } catch (e) {
+          return json({ error: e.message }, 500);
+        }
+      }
+
+      // ═══ AI GENERATE META ═══
+      if (path === '/api/ai/generate-meta' && method === 'POST') {
+        const apiKey = env.ANTHROPIC_API_KEY;
+        if (!apiKey) return json({ error: 'ANTHROPIC_API_KEY not configured' }, 500);
+        try {
+          const body = await request.json();
+          const { brand = '', domain = '', loanType = 'personal loan', amountMin = 100, amountMax = 5000, h1 = '', cta = '', lang = 'English' } = body;
+          const prompt = `You are an SEO copywriter for loan landing pages.
+Generate meta title and description. Respond ONLY with valid JSON.
+
+Brand: ${brand}
+Domain: ${domain}
+Loan type: ${loanType}
+Amount range: $${amountMin} – $${amountMax}
+Hero H1: ${h1}
+CTA: ${cta}
+Language: ${lang}
+
+Return this exact JSON shape:
+{
+  "metaTitle": "SEO title (50-60 chars, include brand and amount)",
+  "metaDesc": "Meta description (140-160 chars, include CTA and amount)"
+}`;
+
+          const res = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'x-api-key': apiKey,
+              'anthropic-version': '2023-06-01',
+              'content-type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'claude-3-haiku-20240307',
+              max_tokens: 256,
+              messages: [{ role: 'user', content: prompt }],
+            }),
+          });
+          const data = await res.json();
+          const text = data?.content?.[0]?.text || '';
+          const match = text.match(/\{[\s\S]*\}/);
+          if (!match) return json({ error: 'AI returned unexpected format' }, 500);
+          return json(JSON.parse(match[0]));
+        } catch (e) {
+          return json({ error: e.message }, 500);
         }
       }
 
