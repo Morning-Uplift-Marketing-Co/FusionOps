@@ -169,7 +169,7 @@ const amountMaxRaw = String(Number((amountMax).replace(/[^0-9.]/g,'')) || 5000);
     </div>
 </section>
 
-<script is:inline>
+<script data-cfasync="false" is:inline>
     document.addEventListener("DOMContentLoaded", () => {
         // Inputs
         const amtInput = document.getElementById("calc-amount");
