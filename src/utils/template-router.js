@@ -1,6 +1,8 @@
 import { generateApplyPage } from "./lp-generator.js";
 import { generateAstroProject } from "./astro-generator.jsx";
 import { getTemplateGenerator, resolveTemplateId as resolveId, clearCustomTemplatesCache, fetchCustomTemplates, getCustomTemplatesCache, registry } from "./template-registry.js";
+import { detectTemplateFormat } from "./template-standard.js";
+import { generatePhone } from "./phone-gen.js";
 import { ADAPTER_RUNTIME_VERSION } from "../adapters/runtime-version.ts";
 import { TemplateRuntimeError } from "../adapters/template-runtime-error.ts";
 import { emitTemplateRuntimeEvent } from "../adapters/template-runtime-events.ts";
@@ -33,7 +35,7 @@ function resolveTemplateId(site) {
 }
 
 // Module template IDs for quick lookup
-const MODULE_TEMPLATE_IDS = ['classic', 'pdl-loans-v1', 'pdl-loans-v3', 'simple-lp', 'pet-care-loans', 'elastic-credits-v3', 'scratchpay-bridge', 'pet-loans-v1', 'installment-loans-v1', 'installment-loans-v2', 'pet-care-v2'];
+const MODULE_TEMPLATE_IDS = ['classic', 'pdl-loans-v1', 'pdl-loans-v3', 'simple-lp', 'pet-care-loans', 'elastic-credits-v3', 'scratchpay-bridge', 'pet-loans-v1', 'installment-loans-v1', 'installment-loans-v2', 'pet-care-v2', 'installment-golden', 'pet-care-golden', 'leadgen-golden', 'flowbite-loan', 'hyperui-loan'];
 
 // Check if a template ID is a module template
 function isModuleTemplate(templateId) {
@@ -44,6 +46,80 @@ function isModuleTemplate(templateId) {
 // Get color object for template substitution
 function getColorObj(colorId) {
   return ALL_COLORS.find(c => c.id === colorId) || ALL_COLORS[3] || ALL_COLORS[0];
+}
+
+function ensureTrackingBaselineHtml(html, site) {
+  let content = String(html || '');
+  if (!content) return content;
+
+  // Strip hsl(var(--...)) CSS variable references from window.tailwind.config script.
+  // Tailwind CDN cannot parse CSS variables in config and throws "Unexpected token '}'".
+  content = content.replace(
+    /(<script[^>]*>)(window\.tailwind\s*=[\s\S]*?<\/script>)/gi,
+    (match, open, body) => {
+      const cleaned = body.replace(/hsl\(var\([^)]+\)\)/g, '#000000');
+      return open + cleaned;
+    }
+  );
+
+  const domain = String(site?.domain || '').trim();
+  const conversionId = String(site?.conversionId || site?.gtagId || '').trim();
+  const hasPixel = /sendBeacon|__fusionopsTrack|window\.__pixel/i.test(content);
+  const hasEventMarkers = /form_start|form_submit|gtag\(/i.test(content);
+
+  let next = content;
+  const pixelScript = !hasPixel ? `
+<script>
+(function(){
+  try {
+    var endpoint = '/e';
+    window.__fusionopsTrack = window.__fusionopsTrack || function(eventName, extra){
+      var payload = Object.assign({ e: eventName, d: ${domain ? `'${domain}'` : "window.location.hostname"}, ts: Date.now() }, extra || {});
+      try { navigator.sendBeacon(endpoint, JSON.stringify(payload)); } catch (_e) {}
+    };
+    if (!window.__fusionopsPageTracked) {
+      window.__fusionopsPageTracked = true;
+      window.__fusionopsTrack('pv');
+    }
+  } catch (_e) {}
+})();
+</script>` : '';
+
+  const gtagScript = !hasEventMarkers ? `
+<script>
+(function(){
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = window.gtag || function(){ window.dataLayer.push(arguments); };
+  if (${conversionId ? "true" : "false"}) {
+    try { gtag('js', new Date()); gtag('config', '${conversionId}'); } catch (_e) {}
+  }
+  window.__fusionopsTrackStart = function(){
+    try { gtag('event', 'form_start'); } catch (_e) {}
+    try { window.__fusionopsTrack && window.__fusionopsTrack('form_start'); } catch (_e) {}
+  };
+  window.__fusionopsTrackSubmit = function(){
+    try { gtag('event', 'form_submit'); } catch (_e) {}
+    try { window.__fusionopsTrack && window.__fusionopsTrack('form_submit'); } catch (_e) {}
+  };
+})();
+</script>` : '';
+
+  const injection = `${pixelScript}${gtagScript}`;
+  if (!injection.trim()) return next;
+  if (next.includes('</body>')) return next.replace('</body>', `${injection}\n</body>`);
+  return `${next}\n${injection}`;
+}
+
+// Format loan amount — return plain number string (no $ prefix)
+// Templates that want $ should write $${amountMax} in their HTML
+function formatAmount(val, fallback) {
+  if (val === undefined || val === null || val === '') return Number(fallback).toLocaleString();
+  if (typeof val === 'number') return val.toLocaleString();
+  const s = String(val).trim();
+  if (s.startsWith('$')) return s.slice(1); // strip existing $ if present
+  const n = Number(s.replace(/[^0-9.]/g, ''));
+  if (!isNaN(n) && s !== '') return n.toLocaleString();
+  return s;
 }
 
 // Convert Astro files to HTML preview with actual site data
@@ -95,6 +171,10 @@ function astroToHtmlPreview(files, site, options = {}) {
 
   // Build normalized site object with all expected properties
   // Map wizard fields to template variable names
+  //
+  // phone: auto-generated from domain+brand — display only, no tel: href
+  // Same domain always generates the same number (deterministic)
+  const autoPhone = generatePhone(site.domain || '', site.brand || '');
   const normalizedSite = {
     brand: site.brand || '',
     title: site.h1 || site.brand || 'Your Title',
@@ -106,16 +186,33 @@ function astroToHtmlPreview(files, site, options = {}) {
     cta: site.cta || 'Get Started',
     badge: site.badge || 'Featured',
     email: site.email || `support@${site.domain || 'example.com'}`,
+    phone: site.phone || autoPhone,
     conversionId: site.conversionId || '',
     formStartLabel: site.formStartLabel || '',
     formSubmitLabel: site.formSubmitLabel || '',
     aid: site.aid || '',
     voluumDomain: site.voluumDomain || '',
-    amountMin: site.amountMin || 100,
-    amountMax: site.amountMax || 5000,
+    amountMin: formatAmount(site.amountMin, 100),
+    amountMax: formatAmount(site.amountMax, 5000),
+    amountMinRaw: String(Math.round(Number(String(site.amountMin || 100).replace(/[^0-9.]/g, '')) || 100)),
+    amountMaxRaw: String(Math.round(Number(String(site.amountMax || 5000).replace(/[^0-9.]/g, '')) || 5000)),
     aprMin: site.aprMin || 5.99,
     aprMax: site.aprMax || 35.99,
-    loanLabel: site.loanType || 'Personal Loans'
+    loanLabel: site.loanLabel || site.loanType || 'Personal Loans',
+    address: site.address || '',
+    network: site.network || 'LeadsGate',
+    redirectUrl: site.redirectUrl || '#',
+    primaryColor: colorObj.p ? `hsl(${colorObj.p[0]}, ${colorObj.p[1]}%, ${colorObj.p[2]}%)` : '#3b82f6',
+    accentColor: colorObj.a ? `hsl(${colorObj.a[0]}, ${colorObj.a[1]}%, ${colorObj.a[2]}%)` : '#f97316',
+    bgColor: colorObj.bg || '#ffffff',
+    textColor: colorObj.text || '#1a1a1a',
+  };
+
+  const localVars = {
+    title: normalizedSite.title,
+    description: normalizedSite.description,
+    canonicalUrl: `https://${normalizedSite.domain}`,
+    canonical: `https://${normalizedSite.domain}`,
   };
 
   // Basic Astro to HTML conversion for preview
@@ -123,6 +220,18 @@ function astroToHtmlPreview(files, site, options = {}) {
 
   // Remove frontmatter if present from index content
   html = html.replace(/^---[\s\S]*?---/m, '');
+
+  // Early strip: if source HTML has substantial inline CSS, remove any Tailwind CDN tags now
+  // before any other processing — prevents CDN from conflicting with inline styles
+  const earlyStyleMatch = html.match(/<style[\s\S]*?>([\s\S]*?)<\/style>/gi) || [];
+  const earlyStyleContent = earlyStyleMatch.join('');
+  if (earlyStyleContent.length > 200) {
+    html = html.replace(/<script\b[^>]*src=["'][^"']*cdn\.tailwindcss\.com[^"']*["'][^>]*><\/script>/gi, '');
+    html = html.replace(/<script\b[^>]*>\s*window\.tailwind\s*=[\s\S]*?<\/script>/g, '');
+  }
+
+  // Collect <style> blocks from component files to merge into index later
+  const componentStyles = [];
 
   const resolveComponents = (content, filesMap) => {
     let resolved = content;
@@ -137,7 +246,15 @@ function astroToHtmlPreview(files, site, options = {}) {
     for (const comp of comps) {
       if (!comp.name || !comp.content) continue;
 
-      let compBody = comp.content.replace(/^---[\s\S]*?---/m, '').trim();
+      let compRaw = comp.content.replace(/^---[\s\S]*?---/m, '').trim();
+
+      // Extract <style> blocks from component and collect them
+      compRaw = compRaw.replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gi, (styleMatch, styleContent) => {
+        if (styleContent.trim()) componentStyles.push(styleContent);
+        return '';
+      });
+
+      let compBody = compRaw;
 
       // Handling <Comp>children</Comp> first
       const wrapRegex = new RegExp(`<${comp.name}[^>]*>([\\s\\S]*?)<\\/${comp.name}>`, 'g');
@@ -158,6 +275,27 @@ function astroToHtmlPreview(files, site, options = {}) {
     html = resolveComponents(html, files);
     if (prev === html) break;
   }
+
+  // Pre-process ${} variables inside <style> blocks before protecting them
+  // This ensures CSS custom properties like --color-primary: ${primaryColor} get resolved
+  const colorObj2 = getColorObj(site.colorId);
+  const _primaryColor = colorObj2.p ? `hsl(${colorObj2.p[0]}, ${colorObj2.p[1]}%, ${colorObj2.p[2]}%)` : '#3b82f6';
+  const _accentColor = colorObj2.a ? `hsl(${colorObj2.a[0]}, ${colorObj2.a[1]}%, ${colorObj2.a[2]}%)` : '#f97316';
+  const _bgColor = colorObj2.bg || '#ffffff';
+  html = html.replace(/(<style\b[^>]*>)([\s\S]*?)(<\/style>)/gi, (m, open, body, close) => {
+    const resolved = body.replace(/\$\{primaryColor\}/g, _primaryColor)
+                         .replace(/\$\{accentColor\}/g, _accentColor)
+                         .replace(/\$\{bgColor\}/g, _bgColor);
+    return open + resolved + close;
+  });
+
+  // Protect <style> blocks from Astro expression stripper — must happen before ${} replacement
+  const styleBlocks = [];
+  html = html.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, (m) => {
+    const token = `__LP_STYLE_BLOCK_${styleBlocks.length}__`;
+    styleBlocks.push(m);
+    return token;
+  });
 
   // Protect script blocks (except JSON-LD) from our string transforms
   const scriptBlocks = [];
@@ -230,6 +368,46 @@ function astroToHtmlPreview(files, site, options = {}) {
     const email = evaluateSiteProp('email', 'support@example.com');
     if (email !== null) return email;
 
+    const phone = evaluateSiteProp('phone', '');
+    if (phone !== null) return phone;
+
+    // Numeric / amount variables
+    const amountMin = evaluateSiteProp('amountMin', '100');
+    if (amountMin !== null) return String(amountMin);
+
+    const amountMax = evaluateSiteProp('amountMax', '5000');
+    if (amountMax !== null) return String(amountMax);
+
+    const amountMinRaw = evaluateSiteProp('amountMinRaw', '100');
+    if (amountMinRaw !== null) return String(amountMinRaw);
+
+    const amountMaxRaw = evaluateSiteProp('amountMaxRaw', '5000');
+    if (amountMaxRaw !== null) return String(amountMaxRaw);
+
+    const aprMin = evaluateSiteProp('aprMin', '5.99');
+    if (aprMin !== null) return String(aprMin);
+
+    const aprMax = evaluateSiteProp('aprMax', '35.99');
+    if (aprMax !== null) return String(aprMax);
+
+    const loanLabel = evaluateSiteProp('loanLabel', 'Personal Loans');
+    if (loanLabel !== null) return loanLabel;
+
+    const address = evaluateSiteProp('address', '');
+    if (address !== null) return address;
+
+    const network = evaluateSiteProp('network', 'LeadsGate');
+    if (network !== null) return network;
+
+    const redirectUrl = evaluateSiteProp('redirectUrl', '#');
+    if (redirectUrl !== null) return redirectUrl;
+
+    const primaryColor = evaluateSiteProp('primaryColor', '#3b82f6');
+    if (primaryColor !== null) return primaryColor;
+
+    const accentColor = evaluateSiteProp('accentColor', '#f97316');
+    if (accentColor !== null) return accentColor;
+
     // Color variables - c.primary, c.bg, etc.
     if (expr.includes('c.primary') || expr === 'c?.primary') return colorObj.p ? `hsl(${colorObj.p[0]} ${colorObj.p[1]}% ${colorObj.p[2]}%)` : '#3b82f6';
     if (expr.includes('c.bg') || expr === 'c?.bg') return colorObj.bg || '#ffffff';
@@ -244,7 +422,7 @@ function astroToHtmlPreview(files, site, options = {}) {
     const sitePropMatch = expr.match(/site\.(\w+)/);
     if (sitePropMatch) {
       const propName = sitePropMatch[1];
-      return normalizedSite[propName] || '';
+      return String(normalizedSite[propName] ?? '');
     }
 
     // Log unmatched expressions for debugging
@@ -260,10 +438,151 @@ function astroToHtmlPreview(files, site, options = {}) {
   // We do this AFTER ${...} replacements, and only outside <script> blocks.
   const year = String(new Date().getFullYear());
   html = html.replace(/\{\s*year\s*\}/g, year);
-  // Remove map-based render loops that would otherwise leak raw code
-  html = html.replace(/\{[^{}]*?\.map\([^{}]*?\)\s*=>\s*\([\s\S]*?\)\s*\}\s*\}?/g, '');
-  // Remove simple interpolations like {t.name} or {f.a}
+  // Replace bare local variables commonly used in <head>.
+  html = html.replace(/\{\s*(title|description|canonicalUrl|canonical)\s*\}/g, (_m, key) => localVars[key] || '');
+
+  // ── Astro JSX array map evaluator ──────────────────────────────────────────
+  // Handles: {items.map((item, i) => (<Tag ...>{item.prop}</Tag>))}
+  // Strategy: extract the array literal from the frontmatter/component scope,
+  // then render each item by substituting {item.X} / {i} placeholders.
+  //
+  // We scan all .astro files in the template for const/let array declarations,
+  // build a lookup map, then evaluate each {varName.map(...)} block.
+  const arrayScope = {};
+  for (const [fpath, fcontent] of Object.entries(files)) {
+    if (!fpath.endsWith('.astro') && !fpath.endsWith('.ts') && !fpath.endsWith('.js')) continue;
+    // Match: const steps = [ ... ] or const steps = [\n...\n];
+    const arrRe = /(?:const|let|var)\s+(\w+)\s*=\s*(\[(?:[\s\S]*?)\]);/g;
+    let m;
+    while ((m = arrRe.exec(fcontent)) !== null) {
+      const varName = m[1];
+      const arrText = m[2];
+      try {
+        // Safe eval using Function with no global access — only parses object literals
+        // eslint-disable-next-line no-new-func
+        const parsed = Function('"use strict"; return (' + arrText + ')')();
+        if (Array.isArray(parsed)) arrayScope[varName] = parsed;
+      } catch (_) { /* skip unparseable arrays */ }
+    }
+  }
+
+  // Evaluate {varName.map((item[, idx]) => (JSX))} blocks
+  // We use a bracket-depth counter to correctly extract the full map() call
+  function extractMapBlock(src, startIdx) {
+    let depth = 0, i = startIdx;
+    while (i < src.length) {
+      if (src[i] === '{') depth++;
+      else if (src[i] === '}') { depth--; if (depth === 0) return src.slice(startIdx, i + 1); }
+      i++;
+    }
+    return null;
+  }
+
+  // Replace all {X.map(...)} occurrences
+  let safeHtml = '';
+  let cursor = 0;
+  const mapTrigger = /\{\s*(\w+)\.map\s*\(/g;
+  let mt;
+  while ((mt = mapTrigger.exec(html)) !== null) {
+    const varName = mt[1];
+    const blockStart = mt.index;
+    const block = extractMapBlock(html, blockStart);
+    if (!block) continue;
+
+    safeHtml += html.slice(cursor, blockStart);
+    cursor = blockStart + block.length;
+
+    const arr = arrayScope[varName];
+    if (!arr || !Array.isArray(arr)) {
+      // Array not found in scope — drop the block silently
+      continue;
+    }
+
+    // Extract the arrow function body (the JSX template for each item)
+    // Pattern: (item, i) => (JSX) or item => (JSX) or (item) => JSX
+    const arrowMatch = block.match(/\.map\s*\(\s*(?:\(([^)]+)\)|([\w$]+))\s*=>\s*/);
+    if (!arrowMatch) continue;
+
+    const paramStr = (arrowMatch[1] || arrowMatch[2] || 'item').trim();
+    const params = paramStr.split(',').map(p => p.trim());
+    const itemParam = params[0] || 'item';
+    const idxParam = params[1] || '__idx__';
+
+    // Find JSX body after the =>
+    const arrowPos = block.indexOf('=>');
+    if (arrowPos === -1) continue;
+    let jsxBody = block.slice(arrowPos + 2).trim();
+    // Strip outer parens if present: ( ... ) or just start JSX directly
+    if (jsxBody.startsWith('(')) {
+      // Remove matching outer parens
+      let pd = 0, end = 0;
+      for (let ci = 0; ci < jsxBody.length; ci++) {
+        if (jsxBody[ci] === '(') pd++;
+        else if (jsxBody[ci] === ')') { pd--; if (pd === 0) { end = ci; break; } }
+      }
+      jsxBody = jsxBody.slice(1, end);
+    }
+    // Remove trailing }) that closes the .map() call
+    jsxBody = jsxBody.replace(/\s*\)\s*\}?\s*$/, '').trim();
+
+    // Render each array item
+    let rendered = '';
+    arr.forEach((item, idx) => {
+      let itemHtml = jsxBody;
+      // Replace {idx} / {i} / {index} style index references
+      itemHtml = itemHtml.replace(new RegExp('\\{\\s*' + idxParam + '\\s*\\}', 'g'), String(idx));
+      // Replace {item.prop} style access
+      if (typeof item === 'object' && item !== null) {
+        for (const [key, val] of Object.entries(item)) {
+          const escaped = String(val ?? '');
+          // {item.key}, {itemParam.key}
+          itemHtml = itemHtml.replace(new RegExp('\\{\\s*' + itemParam + '\\.' + key + '\\s*\\}', 'g'), escaped);
+          // {key} bare (sometimes templates omit the prefix inside JSX)
+          itemHtml = itemHtml.replace(new RegExp('(?<!\\.)\\{\\s*' + key + '\\s*\\}', 'g'), escaped);
+        }
+        // {item} itself as a string
+        itemHtml = itemHtml.replace(new RegExp('\\{\\s*' + itemParam + '\\s*\\}', 'g'), JSON.stringify(item));
+      } else {
+        // Primitive array
+        itemHtml = itemHtml.replace(new RegExp('\\{\\s*' + itemParam + '\\s*\\}', 'g'), String(item ?? ''));
+      }
+      rendered += itemHtml + '\n';
+    });
+    safeHtml += rendered;
+    // Reset lastIndex since we modified cursor manually
+    mapTrigger.lastIndex = cursor;
+  }
+  safeHtml += html.slice(cursor);
+  html = safeHtml;
+  // ── end map evaluator ───────────────────────────────────────────────────────
+
+  // Remove simple interpolations like {t.name} or {f.a} (leftovers after map eval)
   html = html.replace(/\{\s*[a-zA-Z_$][\w$]*\.[\w$]+\s*\}/g, '');
+  // Remove conditional expression blocks that cannot be rendered in plain HTML.
+  html = html.replace(/\{\s*[a-zA-Z_$][\w$]*\s*&&\s*\([\s\S]*?\)\s*\}/g, '');
+  html = html.replace(/\{\s*[a-zA-Z_$][\w$]*\s*\?[\s\S]*?:[\s\S]*?\}/g, '');
+  // Final pass: strip any remaining non-placeholder Astro expression blocks.
+  html = html.replace(/\{[^{}]+\}/g, (m) => (/^\{[A-Za-z0-9_$\s.-]+\}$/.test(m) ? m : ''));
+
+  // Restore protected style blocks
+  if (styleBlocks.length) {
+    html = html.replace(/__LP_STYLE_BLOCK_(\d+)__/g, (_m, idx) => styleBlocks[Number(idx)] || '');
+  }
+
+  // If template has substantial inline CSS (> 200 chars in <style> blocks), strip any Tailwind CDN
+  // that was baked into the source — it overrides/resets inline CSS and breaks layout.
+  const inlineStyleContent = styleBlocks.concat(componentStyles).join('');
+  const hasSubstantialInlineCss = inlineStyleContent.length > 200;
+  if (hasSubstantialInlineCss) {
+    // Remove <script> tags that load Tailwind CDN from the source HTML
+    html = html.replace(/<script\b[^>]*src=["'][^"']*cdn\.tailwindcss\.com[^"']*["'][^>]*><\/script>/gi, '');
+    // Remove tailwind config script that was injected previously
+    html = html.replace(/<script>window\.tailwind\s*=[\s\S]*?<\/script>/g, '');
+    // Restore scriptBlocks without Tailwind CDN
+    for (let i = 0; i < scriptBlocks.length; i++) {
+      if (scriptBlocks[i].includes('cdn.tailwindcss.com')) scriptBlocks[i] = '';
+    }
+  }
 
   // Clean up Astro-specific attributes that cause browser errors
   html = html.replace(/<!doctype html>/gi, '<!DOCTYPE html>');
@@ -275,14 +594,32 @@ function astroToHtmlPreview(files, site, options = {}) {
   // Inject fallback variable definitions before </head> to prevent ReferenceErrors
   const fallbackVars = `<script>var conversionId='';var formStartLabel='';var formSubmitLabel='';var voluumDomain='';var id='preview';var defaultValue=0;var leadsGateFormId='';</script>`;
 
-  // Inject Tailwind CDN for custom templates that rely on Tailwind
-  // which won't be compiled by our simple previewer.
-  const tailwindConfigScript = `<script>window.tailwind = window.tailwind || {}; window.tailwind.config = {theme: {extend: {colors: {primary: '${colorObj.p ? `hsl(${colorObj.p[0]} ${colorObj.p[1]}% ${colorObj.p[2]}%)` : '#2563EB'}', accent: '${colorObj.a ? `hsl(${colorObj.a[0]} ${colorObj.a[1]}% ${colorObj.a[2]}%)` : '#F97316'}', secondary: '${colorObj.s ? `hsl(${colorObj.s[0]} ${colorObj.s[1]}% ${colorObj.s[2]}%)` : '#10B981'}', background: 'hsl(var(--background))', foreground: 'hsl(var(--foreground))', card: 'hsl(var(--card))', 'card-foreground': 'hsl(var(--card-foreground))', muted: 'hsl(var(--muted))', 'muted-foreground': 'hsl(var(--muted-foreground))', border: 'hsl(var(--border))', input: 'hsl(var(--input))', ring: 'hsl(var(--ring))', destructive: 'hsl(var(--destructive))', 'destructive-foreground': 'hsl(var(--destructive-foreground))'}, ringColor: {ring: 'hsl(var(--ring))'}, boxShadow: {cta: '0 4px 14px 0 hsl(40 90% 55% / 0.4)', card: '0 10px 15px -3px hsl(350 75% 38% / 0.08), 0 4px 6px -4px hsl(350 75% 38% / 0.06)'} } } } };</script>`;
+  // Inject Tailwind CDN only if template uses Tailwind utility classes AND has no substantial inline CSS.
+  const hasTailwindCdn = !hasSubstantialInlineCss && (
+    html.includes('cdn.tailwindcss.com') ||
+    scriptBlocks.some(b => b.includes('cdn.tailwindcss.com'))
+  );
+  // Only inject Tailwind if HTML uses unambiguous Tailwind utility class patterns
+  // e.g. bg-blue-500, text-xl, p-4, flex, gap-4 — NOT generic names like container/section/hero
+  // Tailwind compound utility patterns only — standalone 'flex'/'grid'/'hidden' are too common
+  // in vanilla CSS class names like "flex-wrapper", "grid-layout", "hero", "badges-grid"
+  const usesTailwindClasses = /class="[^"]*\b(bg-(?:blue|red|green|gray|white|black|slate|zinc|orange|yellow|purple|pink|indigo|teal|cyan|lime|emerald|violet|fuchsia|rose|amber|sky|neutral|stone|warm|cool|dark|light)-\d|text-(?:xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl)|text-(?:blue|red|green|gray|white|black|slate)-\d|p-\d+\b|px-\d+\b|py-\d+\b|pt-\d+\b|pb-\d+\b|pl-\d+\b|pr-\d+\b|m-\d+\b|mx-\d+\b|my-\d+\b|mt-\d+\b|mb-\d+\b|ml-\d+\b|mr-\d+\b|gap-\d+\b|w-\d+\b|h-\d+\b|flex-col\b|flex-row\b|flex-wrap\b|grid-cols-|items-center\b|items-start\b|items-end\b|justify-center\b|justify-between\b|justify-start\b|rounded-(?:sm|md|lg|xl|full)\b|border-\d+\b|font-bold\b|font-semibold\b|font-medium\b|leading-\d|tracking-wide|space-x-|space-y-|overflow-hidden\b|overflow-auto\b|z-\d+\b|min-h-|max-w-)\b/.test(html);
+  const needsTailwind = hasTailwindCdn || usesTailwindClasses;
+
+  const primaryHsl = colorObj.p ? `hsl(${colorObj.p[0]} ${colorObj.p[1]}% ${colorObj.p[2]}%)` : '#2563EB';
+  const accentHsl = colorObj.a ? `hsl(${colorObj.a[0]} ${colorObj.a[1]}% ${colorObj.a[2]}%)` : '#F97316';
+  const secondaryHsl = colorObj.s ? `hsl(${colorObj.s[0]} ${colorObj.s[1]}% ${colorObj.s[2]}%)` : '#10B981';
+  const tailwindConfigScript = `<script>window.tailwind = window.tailwind || {}; window.tailwind.config = {theme: {extend: {colors: {primary: '${primaryHsl}', accent: '${accentHsl}', secondary: '${secondaryHsl}'}, boxShadow: {cta: '0 4px 14px 0 hsl(40 90% 55% / 0.4)', card: '0 10px 15px -3px hsl(350 75% 38% / 0.08), 0 4px 6px -4px hsl(350 75% 38% / 0.06)'}} } } };</script>`;
   const tailwindCdnScript = `<script src="https://cdn.tailwindcss.com"></script>`;
   const tailwindFallbackCss = `<style>\n.shadow-cta{box-shadow:0 4px 14px 0 hsl(40 90% 55% / 0.4)}\n.shadow-card{box-shadow:0 10px 15px -3px hsl(350 75% 38% / 0.08),0 4px 6px -4px hsl(350 75% 38% / 0.06)}\n</style>`;
-  const tailwindCdn = `${tailwindConfigScript}\n${tailwindCdnScript}\n${tailwindFallbackCss}`;
+  const tailwindCdn = needsTailwind && !hasTailwindCdn ? `${tailwindConfigScript}\n${tailwindCdnScript}\n${tailwindFallbackCss}` : '';
 
-  const headInjections = fallbackVars + '\n' + tailwindCdn;
+  // Merge component styles collected during resolveComponents
+  const componentStylesBlock = componentStyles.length > 0
+    ? `<style>\n/* Merged from component files */\n${componentStyles.join('\n')}\n</style>`
+    : '';
+
+  const headInjections = fallbackVars + '\n' + tailwindCdn + (componentStylesBlock ? '\n' + componentStylesBlock : '');
 
   if (html.includes('</head>')) {
     html = html.replace('</head>', headInjections + '\n</head>');
@@ -290,13 +627,18 @@ function astroToHtmlPreview(files, site, options = {}) {
     html = headInjections + '\n' + html;
   }
 
-  // Restore protected script blocks
+  // Restore protected script blocks (strip Tailwind CDN scripts if template has inline CSS)
   if (scriptBlocks.length) {
-    html = html.replace(/__LP_SCRIPT_BLOCK_(\d+)__/g, (_m, idx) => scriptBlocks[Number(idx)] || '');
+    html = html.replace(/__LP_SCRIPT_BLOCK_(\d+)__/g, (_m, idx) => {
+      let block = scriptBlocks[Number(idx)] || '';
+      if (hasSubstantialInlineCss && block.includes('cdn.tailwindcss.com')) return '';
+      return block;
+    });
   }
 
   return html;
 }
+
 
 export function renderTemplateToAssets(template, site) {
   const assets = {};
@@ -320,8 +662,9 @@ export function renderTemplateToAssets(template, site) {
   // Debug: check if HTML was generated
   console.log('[Router] astroToHtmlPreview result length:', html?.length);
 
-  assets["/index.html"] = html;
-  assets["/"] = html;
+  const trackedIndexHtml = ensureTrackingBaselineHtml(html, site);
+  assets["/index.html"] = trackedIndexHtml;
+  assets["/"] = trackedIndexHtml;
 
   // Compile optional apply page into /apply.html for one-flow runtime parity
   const applyHtml = astroToHtmlPreview(files, site, {
@@ -334,8 +677,9 @@ export function renderTemplateToAssets(template, site) {
     !applyHtml.includes('Preview Error') &&
     !applyHtml.includes('No index.astro found')
   ) {
-    assets["/apply.html"] = applyHtml;
-    assets["/apply"] = applyHtml;
+    const trackedApplyHtml = ensureTrackingBaselineHtml(applyHtml, site);
+    assets["/apply.html"] = trackedApplyHtml;
+    assets["/apply"] = trackedApplyHtml;
   }
 
   // 2. Map all other files into assets
@@ -393,7 +737,7 @@ export function renderTemplateToAssets(template, site) {
 
       const styleTagOpen = isTailwindSourceCss ? '<style type="text/tailwindcss">' : '<style>';
       const styleInjection = `${styleTagOpen}\n/* Injected from custom template CSS */\n${combinedCss}</style>\n</head>`;
-      assets["/index.html"] = assets["/index.html"].replace('</head>', styleInjection);
+      assets["/index.html"] = ensureTrackingBaselineHtml(assets["/index.html"].replace('</head>', styleInjection), site);
       assets["/"] = assets["/index.html"];
     }
   }
@@ -454,11 +798,11 @@ export function generateHtmlByTemplate(site) {
       adapterId: entry.adapter.id,
       adapterVersion: entry.adapter.version,
     });
-    return rendered;
+    return ensureTrackingBaselineHtml(rendered, site);
   }
 
   if (entry?.generate) {
-    return entry.generate(site);
+    return ensureTrackingBaselineHtml(entry.generate(site), site);
   }
 
   // Check if it's a custom API template (synchronously from primary registry cache)
@@ -466,7 +810,16 @@ export function generateHtmlByTemplate(site) {
   if (customTemplatesCache) {
     const customTemplate = customTemplatesCache.find(t => t.id === templateId || t.dbId === templateId);
     if (customTemplate && customTemplate.files) {
-      return astroToHtmlPreview(customTemplate.files, site);
+      // HTML-first templates (Bolt/Lovable): serve index.html directly, skip Astro parser
+      const fmt = customTemplate.format || detectTemplateFormat(customTemplate.files);
+      if (fmt === 'html') {
+        const keys = Object.keys(customTemplate.files);
+        const htmlKey = keys.find(k => k === 'index.html') || keys.find(k => k.endsWith('/index.html'));
+        if (htmlKey) {
+          return ensureTrackingBaselineHtml(String(customTemplate.files[htmlKey]), site);
+        }
+      }
+      return ensureTrackingBaselineHtml(astroToHtmlPreview(customTemplate.files, site), site);
     }
   }
 
@@ -475,7 +828,7 @@ export function generateHtmlByTemplate(site) {
     try {
       const files = generateFromModule(templateId, site);
       if (files) {
-        return astroToHtmlPreview(files, site);
+        return ensureTrackingBaselineHtml(astroToHtmlPreview(files, site), site);
       }
     } catch (e) {
       console.warn('Module template generation failed for', templateId, e.message);
@@ -483,7 +836,7 @@ export function generateHtmlByTemplate(site) {
   }
 
   // Synchronous fallback HTML
-  return astroToHtmlPreview(generateAstroProject(site), site);
+  return ensureTrackingBaselineHtml(astroToHtmlPreview(generateAstroProject(site), site), site);
 }
 
 // Export a function to refresh custom templates cache (both router and registry)
@@ -536,6 +889,22 @@ export function generateDeployAssetsByTemplate(site) {
   if (customTemplatesCache) {
     const customTemplate = customTemplatesCache.find(t => t.id === templateId || t.dbId === templateId);
     if (customTemplate && customTemplate.files) {
+      // HTML-first (Bolt/Lovable): deploy files as-is, no Astro compilation
+      const fmt = customTemplate.format || detectTemplateFormat(customTemplate.files);
+      if (fmt === 'html') {
+        const assets = {};
+        for (const [path, content] of Object.entries(customTemplate.files)) {
+          const deployPath = path.startsWith('/') ? path : '/' + path;
+          assets[deployPath] = content;
+        }
+        // Ensure tracking is injected into index.html
+        const indexKey = Object.keys(assets).find(k => k === '/index.html');
+        if (indexKey) {
+          assets['/index.html'] = ensureTrackingBaselineHtml(String(assets[indexKey]), site);
+          assets['/'] = assets['/index.html'];
+        }
+        return assets;
+      }
       return renderTemplateToAssets(customTemplate, site);
     }
   }

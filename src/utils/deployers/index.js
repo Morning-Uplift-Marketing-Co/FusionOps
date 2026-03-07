@@ -11,6 +11,7 @@ import * as cfWorkers from "./cf-workers.js";
 import * as s3Cloudfront from "./s3-cloudfront.js";
 import * as vpsSsh from "./vps-ssh.js";
 import * as gitPush from "./git-push.js";
+import * as githubActions from "./github-actions.js";
 import { LS } from "../index.js";
 
 const DEPLOYERS = {
@@ -21,6 +22,7 @@ const DEPLOYERS = {
   "s3-cloudfront": s3Cloudfront,
   "vps-ssh": vpsSsh,
   "git-push": gitPush,
+  "github-actions": githubActions,
 };
 
 const DEPLOY_HISTORY_KEY = "lpf2-deploy-history";
@@ -61,6 +63,7 @@ export const DEPLOY_TARGETS = [
   { id: "s3-cloudfront", label: "S3 + CloudFront", icon: "🪣", priority: 5, description: "AWS — US-focused, low latency" },
   { id: "vps-ssh", label: "VPS (SSH)", icon: "🖥️", priority: 6, description: "Self-managed server, full control" },
   { id: "git-push", label: "Git Push Pipeline", icon: "🧬", priority: 7, description: "Commit artifacts to repo and let CI deploy" },
+  { id: "github-actions", label: "GitHub Actions (Astro Build)", icon: "⚙️", priority: 8, description: "Trigger CI — Astro builds correctly, no regex injection bugs" },
 ];
 
 /**
@@ -259,6 +262,8 @@ function isTargetConfigured(target, settings) {
       return !!(settings.vpsHost && settings.vpsUser && settings.vpsPath && (settings.vpsWorkerUrl || settings.workerBaseUrl));
     case "git-push":
       return !!(settings.githubRepoOwner && settings.githubRepoName);
+    case "github-actions":
+      return !!(settings.githubToken && settings.githubRepoOwner && settings.githubRepoName);
     default:
       return false;
   }

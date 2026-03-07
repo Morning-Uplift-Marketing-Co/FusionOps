@@ -59,7 +59,7 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
     const [githubRepoOwner, setGithubRepoOwner] = useState(settings.githubRepoOwner || "");
     const [githubRepoName, setGithubRepoName] = useState(settings.githubRepoName || "");
     const [githubRepoBranch, setGithubRepoBranch] = useState(settings.githubRepoBranch || "main");
-    const [githubDeployWorkflow, setGithubDeployWorkflow] = useState(settings.githubDeployWorkflow || "deploy-sites.yml");
+    const [githubDeployWorkflow, setGithubDeployWorkflow] = useState(settings.githubDeployWorkflow || "deploy-lp.yml");
 
     // D1 Database credentials
     const [d1AccountId, setD1AccountId] = useState(settings.d1AccountId || "");
@@ -653,7 +653,7 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                         <Card className="mb-4">
                             <CardHeader><CardTitle>🧬 Git Push Pipeline</CardTitle></CardHeader>
                             <CardContent className="flex flex-col gap-2">
-                                <p className="text-[10px] text-[hsl(var(--muted-foreground))] -mt-2">Deploy via GitHub Actions Pipeline</p>
+                                <p className="text-[10px] text-[hsl(var(--muted-foreground))] -mt-2">Used by <strong>GitHub Actions (Astro Build)</strong> deploy target — builds Astro templates correctly via CI</p>
                                 <Inp type="password" value={githubToken} onChange={setGithubToken} placeholder="GitHub Token" />
                                 <div className="grid grid-cols-2 gap-2">
                                     <div><Lbl>Repo Owner</Lbl><Inp value={githubRepoOwner} onChange={setGithubRepoOwner} placeholder="my-user" /></div>
@@ -661,7 +661,7 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
                                     <div><Lbl>Branch</Lbl><Inp value={githubRepoBranch} onChange={setGithubRepoBranch} placeholder="main" /></div>
-                                    <div><Lbl>Workflow File</Lbl><Inp value={githubDeployWorkflow} onChange={setGithubDeployWorkflow} placeholder="deploy-sites.yml" /></div>
+                                    <div><Lbl>Workflow File</Lbl><Inp value={githubDeployWorkflow} onChange={setGithubDeployWorkflow} placeholder="deploy-lp.yml" /></div>
                                 </div>
                                 {testResult.github && (
                                     <div className={`text-[11px] rounded px-2.5 py-1.5 ${testResult.github === "ok" ? "bg-[rgba(16,185,129,0.08)] text-[hsl(var(--success))] border border-[rgba(16,185,129,0.15)]" : "bg-[rgba(239,68,68,0.06)] text-[hsl(var(--destructive))] border border-[rgba(239,68,68,0.12)]"}`}>
