@@ -32,6 +32,7 @@ export const logError = (error, context = {}) => {
     
     LS.set(ERROR_LOG_KEY, existingLog);
     console.error('[Error Log]', errorEntry);
+    window.dispatchEvent(new CustomEvent('lpf2:error-logged'));
   } catch (e) {
     console.error('Failed to log error:', e);
   }
@@ -52,9 +53,14 @@ export function ErrorLog() {
 
   useEffect(() => {
     loadErrors();
-    // Refresh when tab regains focus
     window.addEventListener('focus', loadErrors);
-    return () => window.removeEventListener('focus', loadErrors);
+    window.addEventListener('lpf2:error-logged', loadErrors);
+    window.addEventListener('storage', loadErrors);
+    return () => {
+      window.removeEventListener('focus', loadErrors);
+      window.removeEventListener('lpf2:error-logged', loadErrors);
+      window.removeEventListener('storage', loadErrors);
+    };
   }, []);
 
   const filteredErrors = errors.filter(error => {
