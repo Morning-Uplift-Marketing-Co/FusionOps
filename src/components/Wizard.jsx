@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from "react";
 import { THEME as T } from "../constants";
 import { uid, now } from "../utils";
 import { generateHtmlByTemplate, generateApplyPageByTemplate, generateDeployAssetsByTemplate } from "../utils/template-router";
-import { registry } from "../utils/template-registry";
+import { fetchCustomTemplates, getCustomTemplatesCache, registry } from "../utils/template-registry";
 import { api } from "../services/api";
 import { getOrCreateZone, upsertDnsRecord, ensurePixelSubdomain } from "../services/cloudflare-dns";
 import { deployTo, getAvailableTargets } from "../utils/deployers";
@@ -258,7 +258,9 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                 loanType: config.loanType,
                 amountMin: config.amountMin,
                 amountMax: config.amountMax,
-                lang: config.lang || "English"
+                lang: config.lang || "English",
+                geminiKey: settings?.geminiKey || "",
+                anthropicKey: settings?.anthropicKey || "",
             });
 
             if (p && !p.error) {
@@ -293,7 +295,9 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                 h1: config.h1,
                 cta: config.cta,
                 sub: config.sub,
-                lang: config.lang || "English"
+                lang: config.lang || "English",
+                geminiKey: settings?.geminiKey || "",
+                anthropicKey: settings?.anthropicKey || "",
             });
             if (p && !p.error) {
                 if (p.metaTitle) upd("metaTitle", p.metaTitle);
@@ -498,10 +502,17 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
     };
 
     // Live preview HTML for steps 4(Design), 5(Copy), 7(Review)
-    const previewHtml = useMemo(
-        () => generateHtmlByTemplate(config),
-        [config.templateId, config.brand, config.domain, config.loanType, config.colorId, config.fontId, config.layout, config.radius, config.trustBadgeStyle, config.trustBadgeIconTone, config.h1, config.badge, config.cta, config.sub, config.amountMin, config.amountMax, config.redirectUrl, config.conversionId]
-    );
+    const [previewHtml, setPreviewHtml] = useState(() => generateHtmlByTemplate(config));
+    useEffect(() => {
+        let cancelled = false;
+        const run = async () => {
+            // Ensure custom template cache is loaded before generating preview
+            if (!getCustomTemplatesCache()) await fetchCustomTemplates();
+            if (!cancelled) setPreviewHtml(generateHtmlByTemplate(config));
+        };
+        run();
+        return () => { cancelled = true; };
+    }, [config.templateId, config.brand, config.domain, config.loanType, config.colorId, config.fontId, config.layout, config.radius, config.trustBadgeStyle, config.trustBadgeIconTone, config.h1, config.badge, config.cta, config.sub, config.amountMin, config.amountMax, config.redirectUrl, config.conversionId]);
 
     // Two-column layout for steps 4(Design), 5(Copy), 7(Review)
     const showPreview = step === 4 || step === 5 || step === 7;
