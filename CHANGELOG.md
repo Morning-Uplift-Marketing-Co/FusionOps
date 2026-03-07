@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.1] - 2026-03-08
+### Changed
+- **`convert-astro-template.md` workflow (Step 4c)**: Replaced wrong `vp.js` Voluum loader with correct `dtpCallback` script. Added Rocket Loader warnings, `data-cfasync="false"` checklist, `voluumDomain` default `''`, and `Fragment set:html` head limitation note.
+- **Step 4c-ii added**: Form submit CTA redirect must use `define:vars={{ ctaHref }}` and redirect to Voluum URL, not hardcoded `/apply`.
+- **Memory updated**: Astro Full Tracking memory now includes dtpCallback pattern, Rocket Loader fix for all components, Fragment set:html limitation, and form CTA redirect pattern.
+
 ## [2.6.0] - 2026-03-08
 ### Added
 - **`pet-orange-white` LeadsGate integration**: `apply.astro` rebuilt as standalone HTML page (no Layout) with full `_lg_form_init_` config — `SafeStorage`, `getVoluumClickId()`, and dataLayer callbacks (`onFormLoad`, `onStepChange`, `onSubmit`, `onSuccess`) with `soldLead`/`rejectLead`/`newLead` event handling.
