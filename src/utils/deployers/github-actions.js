@@ -59,7 +59,9 @@ async function pushFile({ githubToken, repo, branch, path, content, message }) {
     let nextSha;
     try {
       const errText = await res.text();
-      const match = errText.match(/"([0-9a-f]{40})"/);
+      // GitHub 409 body: {"message":"...does not match <sha>","status":"409"}
+      // SHA appears unquoted inside the message string — match any 40-char hex
+      const match = errText.match(/\b([0-9a-f]{40})\b/);
       nextSha = match ? match[1] : null;
     } catch (_) { nextSha = null; }
 
