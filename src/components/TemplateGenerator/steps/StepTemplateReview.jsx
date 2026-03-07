@@ -2,7 +2,7 @@ import { THEME as T } from "../../../constants";
 import { Button } from "../../ui/button";
 import { COLORS, FONTS } from "../../../constants";
 
-export function StepTemplateReview({ c, u }) {
+export function StepTemplateReview({ c, u, onGenDesc, descLoading }) {
     const isCloneMode = !!c.sourceTemplate || (!c.colorId && !!c.generatedFiles);
     const selectedColor = COLORS.find((x) => x.id === c.colorId);
     const selectedFont = FONTS.find((x) => x.id === c.fontId);
@@ -88,9 +88,35 @@ export function StepTemplateReview({ c, u }) {
                                 fontWeight: 600,
                             }}>{c.badge}</span>
                         </div>
-                        <p style={{ fontSize: 12, color: T.muted, margin: "0 0 8px" }}>
-                            {c.templateDescription || "No description"}
-                        </p>
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, margin: "0 0 8px" }}>
+                            <textarea
+                                value={c.templateDescription || ""}
+                                onChange={(e) => u("templateDescription", e.target.value)}
+                                placeholder="No description — click ✨ to generate"
+                                rows={2}
+                                style={{
+                                    flex: 1, fontSize: 12, color: T.muted, background: T.input,
+                                    border: "1px solid " + T.border, borderRadius: 6,
+                                    padding: "6px 8px", resize: "vertical", fontFamily: "inherit",
+                                }}
+                            />
+                            {onGenDesc && (
+                                <button
+                                    onClick={onGenDesc}
+                                    disabled={descLoading}
+                                    title="Generate description with AI"
+                                    style={{
+                                        padding: "6px 10px", fontSize: 11, fontWeight: 700,
+                                        background: descLoading ? T.card2 : `${T.primary}20`,
+                                        border: `1px solid ${T.primary}40`,
+                                        borderRadius: 6, color: T.primary, cursor: descLoading ? "not-allowed" : "pointer",
+                                        whiteSpace: "nowrap", flexShrink: 0,
+                                    }}
+                                >
+                                    {descLoading ? "..." : "✨ Gen"}
+                                </button>
+                            )}
+                        </div>
                         <div style={{ display: "flex", gap: 8, fontSize: 11, flexWrap: "wrap" }}>
                             <span style={{ padding: "4px 8px", background: T.card2, borderRadius: 6 }}>
                                 📁 {c.category || 'general'}

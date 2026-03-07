@@ -4248,6 +4248,29 @@ Return this exact JSON shape:
         }
       }
 
+      // ═══ AI GENERATE TEMPLATE DESCRIPTION ═══
+      if (path === '/api/ai/generate-description' && method === 'POST') {
+        try {
+          const body = await request.json();
+          const d1GeminiRow = await db.prepare("SELECT value FROM settings WHERE key = 'geminiKey'").first().catch(() => null);
+          const d1AnthropicRow = await db.prepare("SELECT value FROM settings WHERE key = 'anthropicKey'").first().catch(() => null);
+          const resolvedGeminiKey = body.geminiKey || env.GEMINI_API_KEY || (d1GeminiRow?.value || '');
+          const resolvedAnthropicKey = body.anthropicKey || env.ANTHROPIC_API_KEY || (d1AnthropicRow?.value || '');
+          if (!resolvedGeminiKey && !resolvedAnthropicKey) {
+            return json({ error: 'No AI API key configured. Add Gemini API Key in Settings.' }, 400);
+          }
+          const { templateName = '', format = 'astro', files = [] } = body;
+          const fileList = Array.isArray(files) ? files.slice(0, 20).join(', ') : '';
+          const prompt = `You are a UI component library documenter. Write a single short description (1–2 sentences, max 120 chars) for a landing page template.\n\nTemplate name: "${templateName}"\nFormat: ${format}\nKey files: ${fileList}\n\nRespond ONLY with a plain string — no JSON, no quotes, no markdown.`;
+          const enrichedBody = { ...body, geminiKey: resolvedGeminiKey, anthropicKey: resolvedAnthropicKey };
+          const text = await callAI(env, enrichedBody, prompt, 150);
+          const desc = text.replace(/^["'\s]+|["'\s]+$/g, '').split('\n')[0].trim();
+          return json({ description: desc });
+        } catch (e) {
+          return json({ error: e.message }, 500);
+        }
+      }
+
       // ═══ AI GENERATE REVIEWS ═══
       if (path === '/api/ai/generate-reviews' && method === 'POST') {
         try {

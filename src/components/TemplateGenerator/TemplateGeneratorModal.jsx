@@ -2,6 +2,8 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { THEME as T } from "../../constants";
 import { Button } from "../ui/button";
+import { api } from "../../services/api";
+import { LS } from "../../utils";
 
 // Steps
 import { StepTemplateInfo } from "./steps/StepTemplateInfo";
@@ -66,6 +68,7 @@ export function TemplateGeneratorModal({ open, onClose, onSave, templates }) {
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [saveStatus, setSaveStatus] = useState(null); // { step, message, ok, error }
+    const [descLoading, setDescLoading] = useState(false);
 
     if (!open) return null;
 
@@ -128,6 +131,26 @@ export function TemplateGeneratorModal({ open, onClose, onSave, templates }) {
         onClose();
     };
 
+    const handleGenDesc = async () => {
+        setDescLoading(true);
+        try {
+            const s = LS.get("settings") || {};
+            const files = state.generatedFiles ? Object.keys(state.generatedFiles) : [];
+            const res = await api.post("/ai/generate-description", {
+                templateName: state.templateName,
+                format: state.templateFormat || "astro",
+                files,
+                geminiKey: s.geminiKey || "",
+                anthropicKey: s.anthropicKey || "",
+            });
+            if (res?.description) {
+                update("templateDescription", res.description);
+            }
+        } catch (_) { /* noop */ } finally {
+            setDescLoading(false);
+        }
+    };
+
     const handleGenerateResult = (result) => {
         if (typeof result === 'string') {
             setState(prev => ({ ...prev, generatedCode: result, step: 1 }));
@@ -141,14 +164,14 @@ export function TemplateGeneratorModal({ open, onClose, onSave, templates }) {
             if (state.step === 0) {
                 return <StepTemplateFromDir c={state} u={update} onGenerate={handleGenerateResult} isGenerating={isGenerating} />;
             }
-            return <StepTemplateReview c={state} u={update} />;
+            return <StepTemplateReview c={state} u={update} onGenDesc={handleGenDesc} descLoading={descLoading} />;
         }
 
         if (state.mode === MODE_FROM_ZIP) {
             if (state.step === 0) {
                 return <StepTemplateFromZip c={state} u={update} onGenerate={handleGenerateResult} />;
             }
-            return <StepTemplateReview c={state} u={update} />;
+            return <StepTemplateReview c={state} u={update} onGenDesc={handleGenDesc} descLoading={descLoading} />;
         }
         // Blank mode
         switch (state.step) {
