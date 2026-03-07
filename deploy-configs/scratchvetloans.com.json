@@ -1,5 +1,5 @@
 {
-  "templateId": "test-astro-001",
+  "templateId": "astro-test002",
   "cfPagesProject": "lp-scratchvetloans-com",
   "cfApiToken": "***CF_TOKEN_REMOVED***",
   "cfAccountId": "***CF_ACCOUNT_ID_REMOVED***",
@@ -20,5 +20,5 @@
   "accentColor": "",
   "conversionId": "AW-11234",
   "voluumDomain": "",
-  "deployedAt": "2026-03-07T01:39:47.524Z"
+  "deployedAt": "2026-03-07T02:43:26.261Z"
 }
