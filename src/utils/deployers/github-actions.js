@@ -124,10 +124,12 @@ export async function deploy(assets, site, settings) {
     }
   } catch (_) { /* new site — no existing config */ }
 
-  // Voluum fields: preserve existing values if current deploy doesn't provide them
-  const voluumId       = site.voluumId       || existing.voluumId       || '';
-  const voluumDomain   = site.voluumDomain   || existing.voluumDomain   || '';
-  const voluumClickUrl = site.voluumClickUrl || existing.voluumClickUrl || '';
+  // Voluum fields: Wizard saves voluumCampaignId/voluumTrackingDomain — map to deploy config keys
+  // Preserve existing values if current deploy doesn't provide them
+  const voluumId       = site.voluumCampaignId    || site.voluumId       || existing.voluumId       || '';
+  const voluumDomain   = site.voluumTrackingDomain || site.voluumDomain   || existing.voluumDomain   || '';
+  const voluumClickUrl = site.voluumClickUrl       || existing.voluumClickUrl || '';
+  const conversionId   = site.gtagId || site.conversionId || existing.conversionId || '';
 
   // Build deploy config — written as JSON file, read by workflow
   const config = {
@@ -150,7 +152,7 @@ export async function deploy(assets, site, settings) {
     aprMax:          site.aprMax       || 35.99,
     primaryColor:    site.primaryColor || '',
     accentColor:     site.accentColor  || '',
-    conversionId:    site.conversionId || '',
+    conversionId,
     voluumId,
     voluumDomain,
     voluumClickUrl,
