@@ -485,23 +485,21 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                             return;
                         }
 
-                        const res = await api.put("/automation/registrar/nameservers", {
-                            domain,
-                            nameservers: zone.nameservers,
-                            provider,
-                            accountId: providerAccountId,
-                        });
+                        // Client-side call — avoids Cloudflare Worker IP block
+                        const credRes = await api.post("/automation/registrar/credentials", { provider, accountId: providerAccountId });
+                        if (!credRes?.apiKey) { notify?.(`⚠️ Provider NS sync skipped: ${credRes?.error || "credentials not found"}`, "warning"); return; }
 
-                        if (res?.success) {
-                            if (res?.alreadySynced) {
-                                notify?.(`✅ Provider NS already matched`);
-                            } else if (res?.verified) {
-                                notify?.(`✅ Provider NS synced & verified`);
-                            } else {
-                                notify?.(`✅ Provider NS sync sent`);
-                            }
+                        const nsPayload = new URLSearchParams({ ApiKey: credRes.apiKey, Password: credRes.secretKey, responseformat: "JSON", Domain: domain });
+                        zone.nameservers.forEach((ns, i) => nsPayload.append(`Ns${i + 1}`, ns));
+                        const ibsData = await fetch(`${getIbsApiBase()}/Domain/Update`, {
+                            method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: nsPayload.toString(),
+                        }).then(r => r.json()).catch(() => ({}));
+
+                        const ok = ibsData.status?.toLowerCase() === "success" || ibsData.status?.toLowerCase() === "pending";
+                        if (ok) {
+                            notify?.(`✅ Provider NS sync sent`);
                         } else {
-                            notify?.(`⚠️ Provider NS sync failed: ${res?.message || res?.error || "unknown error"}`, "warning");
+                            notify?.(`⚠️ Provider NS sync failed: ${ibsData.message || "unknown error"}`, "warning");
                         }
                     }).catch((e) => {
                         notify?.(`⚠️ Provider NS sync error: ${e?.message || e}`, "warning");
