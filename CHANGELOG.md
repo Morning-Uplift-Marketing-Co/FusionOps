@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.2] - 2026-03-07
+### Fixed
+- **`installment-loans-101` tracking parity**: Added `/e` Astro API route, `sendBeacon` fpPixel, `PUBLIC_FORMSTARTLABEL`/`PUBLIC_FORMSUBMITLABEL` env vars, `window.__gtagConversionId`/`__formStartLabel`/`__formSubmitLabel` globals — matching `astro-test002` v2.5.1 fixes.
+- **`installment-loans-101` Voluum Click URL in CTA**: `index.astro` Final CTA button now uses `ctaHref = voluumClickUrl || '#apply'` from `PUBLIC_VOLUUM_CLICK_URL`.
+
 ## [2.5.1] - 2026-03-07
 ### Added
 - **First-Party Pixel `/e` endpoint**: New Astro API route `templates/astro-test002/src/pages/e.ts` — accepts `POST`/`GET`, returns `204`. Used by `sendBeacon` for zero-GTM first-party event tracking.
