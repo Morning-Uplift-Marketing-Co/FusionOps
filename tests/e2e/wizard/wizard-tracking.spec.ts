@@ -167,7 +167,7 @@ test.describe('LP Wizard - Step 6: Tracking & Conversion', () => {
     });
 
     test('should display information about pixel endpoint', async ({ page }) => {
-      await expect(page.getByText(/t\\."\\{domain\\}"\\/e/i)).toBeVisible();
+      await expect(page.getByText(/\{domain\}/i)).toBeVisible();
     });
   });
 
@@ -182,14 +182,14 @@ test.describe('LP Wizard - Step 6: Tracking & Conversion', () => {
       await page.waitForTimeout(300);
 
       // AID input should appear
-      await expect(page.getByPlaceholderText(/14881/i)).toBeVisible();
+      await expect(page.getByPlaceholder(/14881/i)).toBeVisible();
     });
 
     test('should accept AID value for LeadsGate', async ({ page }) => {
       const leadsGateBtn = page.locator('button').filter({ hasText: /LeadsGate/i });
       await leadsGateBtn.click();
 
-      const aidInput = page.getByPlaceholderText(/14881/i);
+      const aidInput = page.getByPlaceholder(/14881/i);
       if (await aidInput.isVisible()) {
         await aidInput.fill('99999');
         await expect(aidInput).toHaveValue('99999');
@@ -200,7 +200,7 @@ test.describe('LP Wizard - Step 6: Tracking & Conversion', () => {
       const leadsGateBtn = page.locator('button').filter({ hasText: /LeadsGate/i });
       await leadsGateBtn.click();
 
-      const aidInput = page.getByPlaceholderText(/14881/i);
+      const aidInput = page.getByPlaceholder(/14881/i);
       if (await aidInput.isVisible()) {
         await aidInput.fill('99999');
         await page.waitForTimeout(300);
@@ -237,7 +237,7 @@ test.describe('LP Wizard - Step 6: Tracking & Conversion', () => {
         await page.waitForTimeout(300);
 
         // Redirect URL field should appear
-        await expect(page.getByPlaceholderText(/https/i)).toBeVisible();
+        await expect(page.getByPlaceholder(/https/i)).toBeVisible();
       }
     });
 
@@ -264,7 +264,7 @@ test.describe('LP Wizard - Step 6: Tracking & Conversion', () => {
         await zeroParallelBtn.click();
         await page.waitForTimeout(300);
 
-        const redirectInput = page.getByPlaceholderText(/https/i);
+        const redirectInput = page.getByPlaceholder(/https/i);
         if (await redirectInput.isVisible()) {
           await redirectInput.fill('https://offers.example.com/click?pid=123');
           await expect(redirectInput).toHaveValue(/https:/);
@@ -346,7 +346,7 @@ test.describe('LP Wizard - Step 6: Tracking & Conversion', () => {
       await createBtn.click();
       await page.waitForTimeout(300);
 
-      const nameInput = page.getByPlaceholderText(/US-Loan/i);
+      const nameInput = page.getByPlaceholder(/US-Loan/i);
       await expect(nameInput).toBeVisible();
     });
 

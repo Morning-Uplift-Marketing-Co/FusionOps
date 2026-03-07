@@ -538,6 +538,16 @@ if (args.upload) {
 
 ---
 
+## Checklist ที่ใช้จริงก่อน Deploy
+
+- ใช้คู่กับเอกสารนี้: `docs/template-worker-deploy-checklist.md`
+- แนะนำให้รันทุกครั้งก่อน publish/redeploy template เพื่อกันปัญหา
+  - Astro expression หลุดเป็นข้อความ
+  - สี/สไตล์เพี้ยนใน worker deploy path
+  - tracking script fail ตอน runtime
+
+---
+
 ### โครงสร้าง JSON ที่ได้
 
 ```json
