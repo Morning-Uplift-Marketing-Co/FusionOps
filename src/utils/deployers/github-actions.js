@@ -44,15 +44,33 @@ async function pushFile({ githubToken, repo, branch, path, content, message }) {
     return fetch(url, { method: 'PUT', headers, body: JSON.stringify(body) });
   };
 
-  // Get current SHA and retry up to 5 times on 409 (stale SHA)
-  // Always re-fetch SHA from API — parsing from error body is unreliable
-  let sha = await getFileSha(url, branch, headers);
-  let res = await tryPush(sha);
+  // Fetch SHA fresh immediately before each push to minimize race window
+  // On 409: parse correct SHA from error body (GitHub always includes it),
+  // then push immediately without delay to beat other concurrent writes.
+  const pushWithFreshSha = async () => {
+    const freshSha = await getFileSha(url, branch, headers);
+    return { res: await tryPush(freshSha), sha: freshSha };
+  };
+
+  let { res } = await pushWithFreshSha();
 
   for (let attempt = 0; attempt < 5 && res.status === 409; attempt++) {
-    await new Promise(r => setTimeout(r, 600 * (attempt + 1)));
-    sha = await getFileSha(url, branch, headers);
-    res = await tryPush(sha);
+    // Read body once — extract SHA GitHub says is current
+    let nextSha;
+    try {
+      const errText = await res.text();
+      const match = errText.match(/"([0-9a-f]{40})"/);
+      nextSha = match ? match[1] : null;
+    } catch (_) { nextSha = null; }
+
+    if (nextSha) {
+      // Use SHA from error body — closest to real-time, no extra round trip
+      res = await tryPush(nextSha);
+    } else {
+      // Fallback: re-fetch (adds latency but still correct)
+      await new Promise(r => setTimeout(r, 400));
+      ({ res } = await pushWithFreshSha());
+    }
   }
 
   if (!res.ok) {
