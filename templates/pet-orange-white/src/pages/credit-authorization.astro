@@ -1,0 +1,50 @@
+---
+export const prerender = true;
+
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Credit Authorization" description="Understand how your credit information may be accessed when you submit a loan request.">
+  <main class="mx-auto w-full max-w-4xl px-4 py-16">
+    <article class="glass-card p-8 prose prose-slate max-w-none text-sm leading-relaxed">
+      <h1 class="text-2xl font-bold text-slate-900 mb-1">Credit Authorization</h1>
+      <p class="text-slate-500 text-xs mb-6">Last Updated: March 1, 2025</p>
+
+      <p>By submitting a loan request through SecureLoan, you authorize us and the lenders in our network to access certain credit-related information as described below. Please read this carefully before proceeding.</p>
+
+      <h2 class="text-lg font-bold text-slate-800 mt-6 mb-2">Soft Credit Inquiry (Pre-Qualification)</h2>
+      <p>To match you with potential lenders, we and/or participating lenders may perform a <strong>soft credit inquiry</strong>. A soft pull:</p>
+      <ul>
+        <li>Does <strong>not</strong> affect your credit score.</li>
+        <li>Is not visible to other lenders on your credit report.</li>
+        <li>May be used to determine initial eligibility for loan offers.</li>
+      </ul>
+
+      <h2 class="text-lg font-bold text-slate-800 mt-6 mb-2">Hard Credit Inquiry (Loan Application)</h2>
+      <p>If you choose to formally apply with a specific lender, that lender may perform a <strong>hard credit inquiry</strong>. A hard pull:</p>
+      <ul>
+        <li><strong>May affect your credit score</strong> by a few points temporarily.</li>
+        <li>Will appear on your credit report and may be visible to other lenders.</li>
+        <li>Will only occur after you have reviewed and chosen to proceed with a lender's offer.</li>
+        <li>You will be notified by the lender prior to any hard inquiry being made.</li>
+      </ul>
+
+      <h2 class="text-lg font-bold text-slate-800 mt-6 mb-2">Your FCRA Rights</h2>
+      <p>Under the Fair Credit Reporting Act (FCRA), you have the right to:</p>
+      <ul>
+        <li>Know what is in your credit file.</li>
+        <li>Dispute inaccurate information with the credit bureaus.</li>
+        <li>Obtain a free credit report once every 12 months from each of the three major bureaus at <strong>annualcreditreport.com</strong> or by calling <strong>1-877-322-8228</strong>.</li>
+        <li>Seek damages from violators of the FCRA.</li>
+      </ul>
+
+      <h2 class="text-lg font-bold text-slate-800 mt-6 mb-2">Data Sharing</h2>
+      <p>The information you provide in your loan request form may be shared with multiple lenders simultaneously. Each lender will handle your data according to their own privacy policy. We recommend reviewing the privacy policy of any lender before accepting their offer.</p>
+
+      <h2 class="text-lg font-bold text-slate-800 mt-6 mb-2">Contact</h2>
+      <p><strong>SecureLoan</strong><br/>
+      123 Financial District Ave, Suite 400, New York, NY 10005<br/>
+      Email: compliance@secureloan.example.com</p>
+    </article>
+  </main>
+</BaseLayout>
