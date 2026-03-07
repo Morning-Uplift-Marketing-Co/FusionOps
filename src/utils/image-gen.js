@@ -37,7 +37,7 @@ export async function generateOgImage(site) {
   const c = COLORS.find(x => x.id === site.colorId) || COLORS[0];
   const brand = site.brand || "LoanBridge";
   const tagline = site.sub || site.tagline || "Fast, Simple, Trusted.";
-  const loanLabel = site.loanType === "installment" ? "Installment Loans" : site.loanType === "personal" ? "Personal Loans" : "Loans";
+  const loanLabel = site.loanType === "installment" ? "Installment Loans" : site.loanType === "personal" ? "Personal Finance" : "Loans";
 
   const W = 1200, H = 630;
   const canvas = document.createElement("canvas");

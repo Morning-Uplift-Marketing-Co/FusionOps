@@ -1,7 +1,7 @@
 export const APP_VERSION = "V3-1.2";
 
 export const LOAN_TYPES = [
-    { id: "personal", label: "Personal Loans", icon: "💳" },
+    { id: "personal", label: "Personal Finance", icon: "💳" },
     { id: "installment", label: "Installment Loans", icon: "📋" },
     { id: "pet", label: "Pet Care Financing", icon: "🐾" },
     { id: "medical", label: "Medical Financing", icon: "🏥" },

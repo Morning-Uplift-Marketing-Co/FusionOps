@@ -4182,6 +4182,7 @@ export default {
           const { brand = '', loanType = 'personal loan', amountMin = 100, amountMax = 5000, lang = 'English' } = body;
           const prompt = `You are a direct-response copywriter specializing in loan landing pages.
 Generate copy for a loan landing page. Respond ONLY with valid JSON, no explanation.
+IMPORTANT: Never use the exact phrase "Personal Loans" in your output. Use alternatives like "personal finance", "quick funding", or "fast cash" instead.
 
 Brand: ${brand}
 Loan type: ${loanType}
@@ -4221,6 +4222,7 @@ Return this exact JSON shape:
           const { brand = '', domain = '', loanType = 'personal loan', amountMin = 100, amountMax = 5000, h1 = '', cta = '', lang = 'English' } = body;
           const prompt = `You are an SEO copywriter for loan landing pages.
 Generate meta title and description. Respond ONLY with valid JSON.
+IMPORTANT: Never use the exact phrase "Personal Loans" in your output. Use alternatives like "personal finance", "quick funding", or "fast cash" instead.
 
 Brand: ${brand}
 Domain: ${domain}

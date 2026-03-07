@@ -18,7 +18,7 @@ export function generateAstroProject(site) {
   const f = FONTS.find(x => x.id === site.fontId) || FONTS[0];
   const r = RADIUS.find(x => x.id === site.radius) || RADIUS[2];
   const brand = site.brand || "LoanBridge";
-  const loanLabel = LOAN_TYPES.find(l => l.id === site.loanType)?.label || "Personal Loans";
+  const loanLabel = LOAN_TYPES.find(l => l.id === site.loanType)?.label || "Personal Finance";
   const h1 = site.h1 || `Fast ${loanLabel} Up To $${(site.amountMax || 5000).toLocaleString()}`;
   const cta = site.cta || "Check Your Rate";
   const sub = site.sub || "Get approved in minutes. Funds as fast as next business day.";
@@ -685,14 +685,14 @@ const siteName = import.meta.env.PUBLIC_SITE_NAME || '${brand}';
   <script is:inline define:vars={{ conversionId, formStartLabel, formSubmitLabel }}>
     window.__CONVERSION_ID__=conversionId;window.__FORM_START_LABEL__=formStartLabel;window.__FORM_SUBMIT_LABEL__=formSubmitLabel;
   </script>
-  <main id="main-content" class="flex flex-col items-center px-4 py-8 sm:py-12">
+  <main id="main-content" class="flex flex-col items-center px-4 py-8 sm:py-12 bg-gradient-to-b from-blue-50/70 via-white to-orange-50/70">
 
     <!-- Hero -->
     <section class="w-full max-w-lg text-center mb-8" aria-labelledby="hero-heading">
-      <h1 id="hero-heading" class="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 leading-tight" style="text-wrap:balance">
+      <h1 id="hero-heading" class="text-2xl sm:text-3xl font-bold text-[var(--color-primary)] mb-3 leading-tight" style="text-wrap:balance">
         ${h1}
       </h1>
-      <p class="text-base sm:text-lg text-gray-600 leading-relaxed" style="text-wrap:pretty">
+      <p class="text-base sm:text-lg text-gray-700 leading-relaxed" style="text-wrap:pretty">
         ${sub}
       </p>
     </section>
@@ -701,26 +701,26 @@ const siteName = import.meta.env.PUBLIC_SITE_NAME || '${brand}';
     <section class="w-full max-w-md mb-8" aria-label="Trust indicators">
       <ul class="flex justify-center gap-6 text-center text-sm text-gray-500 list-none p-0 m-0" role="list">
         <li class="flex flex-col items-center">
-          <svg class="w-6 h-6 mb-1 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" loading="lazy"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+          <svg class="w-6 h-6 mb-1 text-[var(--color-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" loading="lazy"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
           <span>256-bit SSL</span>
         </li>
         <li class="flex flex-col items-center">
-          <svg class="w-6 h-6 mb-1 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" loading="lazy"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <svg class="w-6 h-6 mb-1 text-[var(--color-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" loading="lazy"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           <span>2-Min Process</span>
         </li>
         <li class="flex flex-col items-center">
-          <svg class="w-6 h-6 mb-1 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" loading="lazy"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <svg class="w-6 h-6 mb-1 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" loading="lazy"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           <span>No Credit Impact</span>
         </li>
       </ul>
     </section>
 
     <!-- Form Card -->
-    <section class="w-full max-w-md bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden mb-8" aria-labelledby="form-heading" role="form">
+    <section class="w-full max-w-md bg-gradient-to-br from-white to-blue-50/40 rounded-xl shadow-lg border border-blue-100 overflow-hidden mb-8" aria-labelledby="form-heading" role="form">
       <div class="h-1 w-full" style="background:linear-gradient(90deg,var(--color-primary),var(--color-secondary),var(--color-accent))"></div>
       <div class="p-6 sm:p-8">
         <div class="text-center mb-5">
-          <h2 id="form-heading" class="text-lg font-bold text-gray-900">Check Your Eligibility</h2>
+          <h2 id="form-heading" class="text-lg font-bold text-[var(--color-primary)]">Check Your Eligibility</h2>
           <p class="text-xs text-gray-400 mt-1">Takes less than 3 minutes — no credit impact</p>
         </div>
 
@@ -746,7 +746,7 @@ const siteName = import.meta.env.PUBLIC_SITE_NAME || '${brand}';
               id="zip-submit"
               type="button"
               class="px-5 py-3 rounded-lg text-white font-bold text-sm whitespace-nowrap hover:opacity-90 active:scale-95 transition-all"
-              style="background:#f97316"
+              style="background:var(--color-accent)"
               aria-label="Check eligibility"
             >
               Check Eligibility &rarr;
@@ -794,9 +794,9 @@ const siteName = import.meta.env.PUBLIC_SITE_NAME || '${brand}';
 
     <!-- Trust Badges -->
     <section class="w-full max-w-md mb-8" aria-label="Trust and security badges">
-      <div style="margin-top:4px;text-align:center;padding:16px 12px;border-top:1px dashed #e5e7eb;">
-        <p style="font-size:11px;color:#9ca3af;margin-bottom:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;">Trusted by American Consumers</p>
-        <div style="display:flex;justify-content:center;align-items:center;gap:20px;flex-wrap:wrap;filter:grayscale(100%);opacity:0.65;">
+      <div style="margin-top:4px;text-align:center;padding:16px 12px;border-top:1px dashed #dbeafe;">
+        <p style="font-size:11px;color:var(--color-primary);margin-bottom:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;">Trusted by American Consumers</p>
+        <div style="display:flex;justify-content:center;align-items:center;gap:20px;flex-wrap:wrap;opacity:0.9;">
           <div style="display:flex;align-items:center;font-size:11px;color:#374151;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="#16a34a" aria-hidden="true"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zM9 8V6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9z"/></svg>
             <span style="margin-left:5px;font-weight:600;">256-BIT SSL ENCRYPTED</span>
@@ -1013,7 +1013,7 @@ export function generatePDLLoansV1(site) {
   const c = COLORS.find(x => x.id === site.colorId) || COLORS[3];
   const f = FONTS.find(x => x.id === site.fontId) || FONTS.find(x => x.id === 'dm-sans') || FONTS[0];
   const brand = site.brand || "ElasticCredits";
-  const loanLabel = LOAN_TYPES.find(l => l.id === site.loanType)?.label || "Personal Loans";
+  const loanLabel = LOAN_TYPES.find(l => l.id === site.loanType)?.label || "Personal Finance";
   const h1 = site.h1 || "A Smarter Way";
   const h1span = site.h1span || "to Borrow";
   const sub = site.sub || "Get approved in minutes. Funds as fast as next business day.";

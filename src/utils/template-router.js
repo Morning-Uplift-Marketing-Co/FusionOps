@@ -198,7 +198,7 @@ function astroToHtmlPreview(files, site, options = {}) {
     amountMaxRaw: String(Math.round(Number(String(site.amountMax || 5000).replace(/[^0-9.]/g, '')) || 5000)),
     aprMin: site.aprMin || 5.99,
     aprMax: site.aprMax || 35.99,
-    loanLabel: site.loanLabel || site.loanType || 'Personal Loans',
+    loanLabel: site.loanLabel || site.loanType || 'Personal Finance',
     address: site.address || '',
     network: site.network || 'LeadsGate',
     redirectUrl: site.redirectUrl || '#',
@@ -390,7 +390,7 @@ function astroToHtmlPreview(files, site, options = {}) {
     const aprMax = evaluateSiteProp('aprMax', '35.99');
     if (aprMax !== null) return String(aprMax);
 
-    const loanLabel = evaluateSiteProp('loanLabel', 'Personal Loans');
+    const loanLabel = evaluateSiteProp('loanLabel', 'Personal Finance');
     if (loanLabel !== null) return loanLabel;
 
     const address = evaluateSiteProp('address', '');
