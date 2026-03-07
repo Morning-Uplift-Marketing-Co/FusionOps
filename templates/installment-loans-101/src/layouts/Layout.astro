@@ -7,8 +7,11 @@ const amountMin    = import.meta.env.PUBLIC_AMOUNTMIN    || '100';
 const amountMax    = import.meta.env.PUBLIC_AMOUNTMAX    || '5000';
 const aprMin       = import.meta.env.PUBLIC_APRMIN       || '5.99';
 const aprMax       = import.meta.env.PUBLIC_APRMAX       || '35.99';
-const primaryColor = import.meta.env.PUBLIC_PRIMARYCOLOR || '';
-const accentColor  = import.meta.env.PUBLIC_ACCENTCOLOR  || '';
+const primaryColor   = import.meta.env.PUBLIC_PRIMARYCOLOR      || '';
+const accentColor    = import.meta.env.PUBLIC_ACCENTCOLOR       || '';
+const conversionId   = import.meta.env.PUBLIC_CONVERSIONID      || '';
+const voluumId       = import.meta.env.PUBLIC_VOLUUMID          || '';
+const voluumDomain   = import.meta.env.PUBLIC_VOLUUMDOMAIN      || 'track.vlm.icu';
 
 interface Props {
   title?: string;
@@ -51,10 +54,44 @@ const {
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
     <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700&display=swap" rel="stylesheet" /></noscript>
 
+    <!-- GCLID + Click ID Capture -->
+    <script is:inline>
+      (function() {
+        var p = new URLSearchParams(window.location.search);
+        var gclid = p.get('gclid');
+        var cid = p.get('cid') || p.get('click_id');
+        try {
+          if (gclid) sessionStorage.setItem('google_gclid', gclid);
+          if (cid) sessionStorage.setItem('voluum_cid', cid);
+        } catch(e) {}
+      })();
+    </script>
+
     <!-- GTM dataLayer -->
     <script is:inline>
       window.dataLayer = window.dataLayer || [];
     </script>
+
+    <!-- Google Ads Conversion Tracking -->
+    {conversionId && (
+      <>
+        <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${conversionId}`}></script>
+        <script is:inline define:vars={{ conversionId }}>
+          function gtag(){window.dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', conversionId);
+        </script>
+      </>
+    )}
+
+    <!-- Voluum Pixel -->
+    {voluumId && (
+      <script is:inline define:vars={{ voluumId, voluumDomain }}>
+        var vpv = document.createElement('script');
+        vpv.src = 'https://' + voluumDomain + '/scripts/' + voluumId + '/vp.js';
+        document.head.appendChild(vpv);
+      </script>
+    )}
 
     <!-- Critical inline font fallback -->
     <style is:inline>

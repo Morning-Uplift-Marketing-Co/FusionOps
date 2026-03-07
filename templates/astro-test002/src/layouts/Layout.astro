@@ -94,6 +94,19 @@ const {
     <link href={`https://fonts.googleapis.com/css2?family=${font.import}&display=swap`} rel="stylesheet" media="print" onload="this.media='all'" />
     <noscript><link href={`https://fonts.googleapis.com/css2?family=${font.import}&display=swap`} rel="stylesheet" /></noscript>
 
+    <!-- GCLID + Click ID Capture -->
+    <script is:inline>
+      (function() {
+        var p = new URLSearchParams(window.location.search);
+        var gclid = p.get('gclid');
+        var cid = p.get('cid') || p.get('click_id');
+        try {
+          if (gclid) sessionStorage.setItem('google_gclid', gclid);
+          if (cid) sessionStorage.setItem('voluum_cid', cid);
+        } catch(e) {}
+      })();
+    </script>
+
     <!-- GTM dataLayer -->
     <script is:inline>
       window.dataLayer = window.dataLayer || [];
