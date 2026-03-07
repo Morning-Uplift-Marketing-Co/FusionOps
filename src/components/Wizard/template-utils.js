@@ -1,4 +1,10 @@
-import { getAllTemplates as fetchAllTemplates, getTemplateById as fetchTemplateById, resolveTemplateId } from "../../utils/template-registry.js";
+import {
+    getAllTemplates as fetchAllTemplates,
+    getTemplateById as fetchTemplateById,
+    resolveTemplateId,
+    getTemplateDiagnostics as fetchTemplateDiagnostics,
+    resolveWizardCategory as fetchWizardCategory,
+} from "../../utils/template-registry.js";
 
 export const DEFAULT_TEMPLATE_ID = "classic";
 
@@ -15,4 +21,12 @@ export function getTemplateById(templateId) {
  */
 export function getAllTemplates() {
     return fetchAllTemplates();
+}
+
+export function getTemplateDiagnostics(templates, options) {
+    return fetchTemplateDiagnostics(templates, options);
+}
+
+export function resolveWizardCategory(template) {
+    return fetchWizardCategory(template);
 }

@@ -12,6 +12,7 @@
 
 import { getCfApiBase } from "../api-proxy.js";
 import { updateDnsAfterDeploy } from "../../services/cloudflare-dns.js";
+import { api } from "../../services/api.js";
 
 function buildWorkerScript(assets) {
   // assets is { "/index.html": "content", "/style.css": "content", ... }
@@ -44,12 +45,36 @@ function buildWorkerScript(assets) {
   // DEBUG: Log the asset map keys
   console.log('[CF Workers] Building worker with assets keys:', Object.keys(assetMap));
 
-  // Create JS object string for embedding
-  const assetString = JSON.stringify(assetMap);
+  // Base64 encode each asset to avoid JS injection / escaping issues
+  // (HTML with </script>, backticks, or unicode would break inline JSON)
+  // Use browser btoa with UTF-8 safe encoding
+  const b64encode = (str) => {
+    try {
+      // browser environment
+      return btoa(unescape(encodeURIComponent(str)));
+    } catch {
+      // fallback: strip non-latin1 chars
+      return btoa(str.replace(/[\u0080-\uFFFF]/g, '?'));
+    }
+  };
+  const encodedMap = {};
+  for (const [k, v] of Object.entries(assetMap)) {
+    encodedMap[k] = b64encode(String(v));
+  }
+  const assetString = JSON.stringify(encodedMap);
 
   return `
 // Auto-generated Worker — serves LP with edge logic
-const ASSETS = ${assetString};
+// Assets are base64-encoded to prevent JS injection from HTML content
+const ASSETS_B64 = ${assetString};
+
+function decodeAsset(b64) {
+  try {
+    return decodeURIComponent(escape(atob(b64)));
+  } catch {
+    return atob(b64);
+  }
+}
 
 export default {
   async fetch(request) {
@@ -61,33 +86,31 @@ export default {
       return new Response("ok", { status: 200 });
     }
 
-    // DEBUG: Log the requested path
-    console.log('[CF Workers] Requested path:', path, 'Available keys:', Object.keys(ASSETS));
-
     // Normalize root path to index.html
     if (path === "/" || path === "") {
       path = "/index.html";
     }
 
-    // Lookup asset
-    let content = ASSETS[path];
+    // Lookup asset (b64 encoded)
+    let encoded = ASSETS_B64[path];
 
     // Fallback: try without .html extension
-    if (!content && path.endsWith(".html")) {
+    if (!encoded && path.endsWith(".html")) {
       const basePath = path.slice(0, -5);
-      content = ASSETS[basePath] || ASSETS[basePath + "/index.html"];
+      encoded = ASSETS_B64[basePath] || ASSETS_B64[basePath + "/index.html"];
     }
 
     // Fallback: if path is directory-like, try appending index.html
-    if (!content && path.endsWith("/")) {
-      content = ASSETS[path + "index.html"];
+    if (!encoded && path.endsWith("/")) {
+      encoded = ASSETS_B64[path + "index.html"];
     }
 
     // Fallback: 404
-    if (!content) {
-      console.error('[CF Workers] Asset not found for path:', path);
+    if (!encoded) {
       return new Response("Not Found", { status: 404 });
     }
+
+    const content = decodeAsset(encoded);
 
     // Determine content type
     let contentType = "text/html;charset=UTF-8";
@@ -349,7 +372,29 @@ export async function deploy(assets, site, settings) {
       }
     }
 
-    return { success: true, url, deployId: scriptName, target: "cf-workers", dnsUpdated, dnsError, routeCreated, routeError };
+    let trackingVerification = null;
+    if (site?.domain) {
+      try {
+        trackingVerification = await api.post("/automation/tracking/verify", {
+          domain: site.domain,
+          workerUrl: url,
+        });
+      } catch (e) {
+        trackingVerification = { success: false, error: e?.message || "Tracking verification call failed" };
+      }
+    }
+
+    return {
+      success: true,
+      url,
+      deployId: scriptName,
+      target: "cf-workers",
+      dnsUpdated,
+      dnsError,
+      routeCreated,
+      routeError,
+      trackingVerification,
+    };
   } catch (e) {
     return { success: false, error: e.message };
   }

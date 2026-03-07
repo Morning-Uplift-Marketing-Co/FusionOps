@@ -154,13 +154,10 @@ export async function getZoneByDomain(domain, cfApiToken, cfAccountId = "") {
 export async function listDnsRecords(zoneId, cfAccountId, cfApiToken = "") {
   try {
     const apiBase = resolveApiBase();
-    const q = `zoneId=${encodeURIComponent(zoneId)}&cfAccountId=${encodeURIComponent(cfAccountId)}`;
+    const q = `zoneId=${encodeURIComponent(zoneId)}&cfAccountId=${encodeURIComponent(cfAccountId)}&apiToken=${encodeURIComponent(cfApiToken || "")}`;
     const response = await fetch(`${apiBase}/automation/cf/dns?${q}`, {
       method: "GET",
-      headers: {
-        Accept: "application/json",
-        "x-cf-api-token": cfApiToken || "",
-      },
+      headers: { Accept: "application/json" },
     });
     const res = await response.json().catch(() => ({}));
 
@@ -255,13 +252,10 @@ export async function updateDnsRecord({ dnsRecordId, zoneId, cfAccountId, cfApiT
 export async function deleteDnsRecord(dnsRecordId, zoneId, cfAccountId, cfApiToken = "") {
   try {
     const apiBase = resolveApiBase();
-    const q = `dnsRecordId=${encodeURIComponent(dnsRecordId)}&zoneId=${encodeURIComponent(zoneId)}&cfAccountId=${encodeURIComponent(cfAccountId)}`;
+    const q = `dnsRecordId=${encodeURIComponent(dnsRecordId)}&zoneId=${encodeURIComponent(zoneId)}&cfAccountId=${encodeURIComponent(cfAccountId)}&apiToken=${encodeURIComponent(cfApiToken || "")}`;
     const response = await fetch(`${apiBase}/automation/cf/dns?${q}`, {
       method: "DELETE",
-      headers: {
-        Accept: "application/json",
-        "x-cf-api-token": cfApiToken || "",
-      },
+      headers: { Accept: "application/json" },
     });
     const res = await response.json().catch(() => ({}));
 
