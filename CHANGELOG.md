@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.1] - 2026-03-07
+### Added
+- **First-Party Pixel `/e` endpoint**: New Astro API route `templates/astro-test002/src/pages/e.ts` — accepts `POST`/`GET`, returns `204`. Used by `sendBeacon` for zero-GTM first-party event tracking.
+- **`sendBeacon` fpPixel function**: Injected in `Layout.astro` body — fires `pv` on load, exposes `window.__fpPixel(eventName, extra)` for downstream events (form_start, etc.).
+- **`formStartLabel` / `formSubmitLabel` env vars**: `Layout.astro` now reads `PUBLIC_FORMSTARTLABEL` / `PUBLIC_FORMSUBMITLABEL` and exposes them as `window.__formStartLabel` / `window.__formSubmitLabel` for gtag conversion label firing.
+- **`deploy-lp.yml`**: Added `PUBLIC_FORMSTARTLABEL` and `PUBLIC_FORMSUBMITLABEL` to build-time `.env` injection (reads from `c.gtagFormStartLabel` / `c.gtagFormSubmitLabel`).
+
+### Fixed
+- **form_start Label Present** (Tracking Test ❌): `HeroFormStatic.astro` form submit now fires `gtag('event','conversion', { send_to: conversionId/formStartLabel })` when both values are set.
+- **First-Party Pixel Endpoint: Not Found** (Tracking Test ❌): `/e` route now exists and returns `204`, resolving `sendBeacon` failures.
+
 ## [2.5.0] - 2026-03-07
 ### Added
 - **6 New Templates**: `bear-loan-modern`, `installment-golden`, `pet-care-golden`, `leadgen-golden`, `flowbite-loan`, `hyperui-loan` — registered in `packages/lp-template-generator/src/templates/index.js`.
