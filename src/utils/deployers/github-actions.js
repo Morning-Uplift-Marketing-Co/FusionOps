@@ -44,25 +44,14 @@ async function pushFile({ githubToken, repo, branch, path, content, message }) {
     return fetch(url, { method: 'PUT', headers, body: JSON.stringify(body) });
   };
 
-  // Get current SHA and retry up to 3 times on 409 (stale SHA)
+  // Get current SHA and retry up to 5 times on 409 (stale SHA)
+  // Always re-fetch SHA from API — parsing from error body is unreliable
   let sha = await getFileSha(url, branch, headers);
   let res = await tryPush(sha);
 
-  for (let attempt = 0; attempt < 3 && res.status === 409; attempt++) {
-    await new Promise(r => setTimeout(r, 400 * (attempt + 1)));
-    // GitHub 409 body contains the correct SHA — parse it directly
-    // e.g. {"message":"... does not match <sha>","status":"409"}
-    try {
-      const errBody = await res.clone().json().catch(() => null);
-      const match = errBody?.message?.match(/[0-9a-f]{40}/);
-      if (match) {
-        sha = match[0];
-      } else {
-        sha = await getFileSha(url, branch, headers);
-      }
-    } catch (_) {
-      sha = await getFileSha(url, branch, headers);
-    }
+  for (let attempt = 0; attempt < 5 && res.status === 409; attempt++) {
+    await new Promise(r => setTimeout(r, 600 * (attempt + 1)));
+    sha = await getFileSha(url, branch, headers);
     res = await tryPush(sha);
   }
 
