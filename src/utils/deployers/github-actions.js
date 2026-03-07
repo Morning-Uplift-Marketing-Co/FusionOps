@@ -103,6 +103,32 @@ export async function deploy(assets, site, settings) {
   if (!githubToken) return { success: false, error: 'Missing GitHub Token. Add it in Settings → Git Push Pipeline.' };
   if (!githubRepo)  return { success: false, error: 'Missing GitHub Repo. Add Repo Owner + Repo Name in Settings.' };
 
+  // Fetch existing deploy config to preserve Voluum fields that were previously set
+  // This prevents redeploying from wiping out voluumId/voluumDomain/voluumClickUrl
+  const domain = (site.domain || site.brand || 'site').replace(/[^a-z0-9.-]/gi, '-').toLowerCase();
+  const filePath = `deploy-configs/${domain}.json`;
+  let existing = {};
+  try {
+    const headers = {
+      Authorization: `Bearer ${githubToken}`,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+    };
+    const res = await fetch(`https://api.github.com/repos/${githubRepo}/contents/${filePath}?ref=${branch}`, { headers });
+    if (res.ok) {
+      const data = await res.json();
+      const decoded = typeof atob !== 'undefined'
+        ? atob(data.content.replace(/\n/g, ''))
+        : Buffer.from(data.content.replace(/\n/g, ''), 'base64').toString('utf8');
+      existing = JSON.parse(decoded);
+    }
+  } catch (_) { /* new site — no existing config */ }
+
+  // Voluum fields: preserve existing values if current deploy doesn't provide them
+  const voluumId       = site.voluumId       || existing.voluumId       || '';
+  const voluumDomain   = site.voluumDomain   || existing.voluumDomain   || '';
+  const voluumClickUrl = site.voluumClickUrl || existing.voluumClickUrl || '';
+
   // Build deploy config — written as JSON file, read by workflow
   const config = {
     templateId:      site.templateId    || 'installment-bear',
@@ -125,9 +151,9 @@ export async function deploy(assets, site, settings) {
     primaryColor:    site.primaryColor || '',
     accentColor:     site.accentColor  || '',
     conversionId:    site.conversionId || '',
-    voluumId:        site.voluumId        || '',
-    voluumDomain:    site.voluumDomain    || '',
-    voluumClickUrl:  site.voluumClickUrl  || '',
+    voluumId,
+    voluumDomain,
+    voluumClickUrl,
     colorId:         site.colorId      || '',
     fontId:          site.fontId       || '',
     layout:          site.layout       || '',
@@ -137,8 +163,6 @@ export async function deploy(assets, site, settings) {
     deployedAt:      new Date().toISOString(),
   };
 
-  const domain = (site.domain || site.brand || 'site').replace(/[^a-z0-9.-]/gi, '-').toLowerCase();
-  const filePath = `deploy-configs/${domain}.json`;
   const commitMsg = `deploy: ${domain} via GitHub Actions (Astro Build)`;
 
   try {
