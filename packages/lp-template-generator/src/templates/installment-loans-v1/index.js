@@ -557,25 +557,25 @@ ${voluumId ? `    <!-- Voluum -->
             <span style="font-size:14px;color:var(--muted)">Loan Amount</span>
             <span class="calc-amount" id="calcAmount">$5,000</span>
           </div>
-          <input type="range" class="form-slider" id="calcSlider" min="${Math.max(amountMin, 500)}" max="${amountMax}" step="100" value="5000" />
+          <input type="range" class="form-slider" id="calcSlider" min="${Math.max(amountMin, 500)}" max="${amountMax}" step="100" value="${amountMax}" />
           <div class="slider-labels">
             <span>$${Math.max(amountMin, 500).toLocaleString()}</span>
             <span>$${amountMax.toLocaleString()}</span>
           </div>
           <div class="calc-tiers">
-            <div class="tier featured">
+            <div class="tier featured active" id="calc-tier-6" onclick="selectCalcTier(6)">
               <span class="tier-badge">Best Value</span>
-              <div class="tier-label">6 Months</div>
+              <div class="tier-label">Pay in 6</div>
               <div class="tier-amount">$<span id="t6">856</span><small>/mo</small></div>
               <div class="tier-apr">${aprMin}% APR</div>
             </div>
-            <div class="tier">
-              <div class="tier-label">12 Months</div>
+            <div class="tier" id="calc-tier-12" onclick="selectCalcTier(12)">
+              <div class="tier-label">Pay in 12</div>
               <div class="tier-amount">$<span id="t12">440</span><small>/mo</small></div>
               <div class="tier-apr">15% APR</div>
             </div>
-            <div class="tier">
-              <div class="tier-label">24 Months</div>
+            <div class="tier" id="calc-tier-24" onclick="selectCalcTier(24)">
+              <div class="tier-label">Pay in 24</div>
               <div class="tier-amount">$<span id="t24">240</span><small>/mo</small></div>
               <div class="tier-apr">${aprMax}% APR</div>
             </div>
@@ -853,9 +853,18 @@ ${conversionId && formStartLabel ? `          if(typeof gtag==='function') gtag(
           t24.textContent = calc(a, 24, ${aprMax}).toLocaleString();
         }
 
-        slider.addEventListener('input', update);
+        slider.addEventListener('input', function() { update(); selectCalcTier(6); });
         update();
       })();
+
+      window.selectCalcTier = function(months) {
+        [6, 12, 24].forEach(function(m) {
+          var el = document.getElementById('calc-tier-' + m);
+          if (el) el.classList.remove('active');
+        });
+        var active = document.getElementById('calc-tier-' + months);
+        if (active) active.classList.add('active');
+      };
 
       // ── Page View Tracking ──────────────────
       window.dataLayer.push({ event:'page_view', page:'${brand}', aid:window.aid, network:window.network });

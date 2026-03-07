@@ -209,8 +209,7 @@ export function leadsGateEmbed(c) {
   }
 
   return `
-  <script src="https://forms.leadsgate.com/form/embed/${c.aid}"></script>
-  <div id="leadsgate-form-container"></div>
+  <div id="_lg_form_"></div>
   <script>
   (function(){
     var t = window.__TRK || {};
@@ -219,6 +218,7 @@ export function leadsGateEmbed(c) {
     var _lg_form_init_ = {
       aid: "${c.aid}",
       template: "fresh",
+      ref: window.location.hostname,
       click_id: clickid,
 
       onFormLoad: function() {
@@ -243,7 +243,11 @@ export function leadsGateEmbed(c) {
       }
     };
 
-    window._lg_form_init_ = _lg_form_init_;
+    var script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.async = true;
+    script.src = 'https://apikeep.com/form/applicationInit.js';
+    document.body.appendChild(script);
   })();
   </script>`;
 }
