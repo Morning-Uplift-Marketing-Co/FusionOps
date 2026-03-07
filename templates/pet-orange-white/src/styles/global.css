@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Inter', sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6, .font-heading {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+}
+
+:root {
+  --brand: #2563eb;
+  --cta: #f97316;
+  --cta-hover: #ea580c;
+  --cta-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.4);
+}
+
+.page-reveal {
+  animation: fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.section-stagger {
+  animation: fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: var(--delay, 0ms);
+}
+
+.cta-button {
+  @apply inline-flex cursor-pointer items-center justify-center rounded-2xl px-8 py-4 font-bold text-white transition-all duration-300;
+  background-color: var(--cta);
+  box-shadow: var(--cta-shadow);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.cta-button:hover {
+  background-color: var(--cta-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px -5px rgba(249, 115, 22, 0.45);
+}
+
+.cta-button:active {
+  transform: translateY(0);
+}
+
+.cta-button:focus-visible,
+input:focus-visible,
+a:focus-visible {
+  outline: 3px solid rgba(249, 115, 22, 0.5);
+  outline-offset: 2px;
+}
+
+.glass-card {
+  @apply bg-white/70 backdrop-blur-xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[2rem];
+}
+
+@keyframes fade-up {
+  from {
+    transform: translateY(16px);
+    opacity: 0.01;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-reveal,
+  .section-stagger {
+    animation: none;
+    opacity: 1;
+  }
+
+  .cta-button {
+    transform: none;
+  }
+}
