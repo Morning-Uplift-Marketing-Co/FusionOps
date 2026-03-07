@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Trash2 } from "lucide-react";
 import { THEME as T } from "../../constants";
 import { Field } from "../ui/field";
-import { getTemplateById, DEFAULT_TEMPLATE_ID, getAllTemplates } from "./template-utils";
+import { getTemplateById, DEFAULT_TEMPLATE_ID, getAllTemplates, getTemplateDiagnostics, resolveWizardCategory } from "./template-utils";
 import { getAllTemplatesAsync, deleteTemplate } from "../../utils/template-registry";
 
 const CATEGORIES = [
@@ -16,7 +16,9 @@ export function StepTemplate({ c, u }) {
     const selectedTemplate = getTemplateById(c.templateId || DEFAULT_TEMPLATE_ID);
     const [templates, setTemplates] = useState(getAllTemplates());
     const [deletingId, setDeletingId] = useState(null);
+    const [clearingBroken, setClearingBroken] = useState(false);
     const [filter, setFilter] = useState("all");
+    const [showDebug, setShowDebug] = useState(false);
 
     useEffect(() => {
         let active = true;
@@ -57,20 +59,40 @@ export function StepTemplate({ c, u }) {
         }
     };
 
+    const handleClearAllBroken = async () => {
+        const brokenCustom = templates.filter(t => t.source === 'api' && t.health && t.health.usable === false);
+        const allCustom = templates.filter(t => t.source === 'api');
+        const targets = brokenCustom.length > 0 ? brokenCustom : allCustom;
+        if (targets.length === 0) { alert('No custom templates to clear.'); return; }
+        const label = brokenCustom.length > 0 ? `${brokenCustom.length} broken custom template(s)` : `all ${allCustom.length} custom template(s)`;
+        if (!confirm(`Delete ${label}? This cannot be undone.`)) return;
+        setClearingBroken(true);
+        let failed = 0;
+        for (const tpl of targets) {
+            try { await deleteTemplate(tpl.dbId); } catch { failed++; }
+        }
+        const updated = await getAllTemplatesAsync();
+        setTemplates(updated);
+        if (targets.some(t => t.id === c.templateId)) u('templateId', DEFAULT_TEMPLATE_ID);
+        setClearingBroken(false);
+        if (failed > 0) alert(`Done. ${failed} template(s) failed to delete.`);
+    };
+
     // Categorize templates
-    const categorized = templates.map(tpl => {
-        if (tpl.source === 'api') return { ...tpl, _cat: 'custom' };
-        const catGuess = tpl.category || (tpl.id.includes('pet') || tpl.id.includes('scratch') ? 'pet' : 'loan');
-        return { ...tpl, _cat: catGuess };
-    });
+    const categorized = templates.map(tpl => ({ ...tpl, _cat: resolveWizardCategory(tpl) }));
     const filtered = filter === "all" ? categorized : categorized.filter(t => t._cat === filter);
+    const diagnostics = getTemplateDiagnostics(categorized, { filterId: filter });
+    const filterHiddenCount = diagnostics.hidden.filter((h) => h.reasons.some((r) => r.includes('Filtered out by category'))).length;
+    const brokenCount = diagnostics.hidden.filter((h) => h.reasons.some((r) => !r.includes('Filtered out by category'))).length;
 
     return (
         <>
             <div style={{ textAlign: "center", marginBottom: 24 }}>
                 <div style={{ fontSize: 28, marginBottom: 8 }}>🧩</div>
                 <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Template Selection</h2>
-                <p style={{ fontSize: 12, color: T.muted }}>Choose from {templates.length} registered LP templates</p>
+                <p style={{ fontSize: 12, color: T.muted }}>
+                    Runtime templates loaded: {templates.length} ({diagnostics.bySource.module} module, {diagnostics.bySource.legacy} legacy, {diagnostics.bySource.api} custom)
+                </p>
             </div>
 
             {/* Category Filter */}
@@ -90,6 +112,11 @@ export function StepTemplate({ c, u }) {
                         </button>
                     );
                 })}
+            </div>
+            <div style={{ fontSize: 11, color: T.muted, marginBottom: 14 }}>
+                {filter === "all"
+                    ? `Visible ${filtered.length}/${categorized.length} templates. ${brokenCount > 0 ? `${brokenCount} broken.` : 'No broken templates detected.'}`
+                    : `Filter "${filter}" hides ${filterHiddenCount} template(s). Showing ${filtered.length}.`}
             </div>
 
             {/* Template Cards Grid */}
@@ -195,6 +222,77 @@ export function StepTemplate({ c, u }) {
                     );
                 })}
             </div>
+
+            <div style={{ marginBottom: 14, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button
+                    onClick={() => setShowDebug((p) => !p)}
+                    style={{
+                        padding: "7px 12px",
+                        fontSize: 11,
+                        borderRadius: 8,
+                        border: `1px solid ${T.border}`,
+                        background: T.card2,
+                        color: T.text,
+                        cursor: "pointer",
+                    }}
+                >
+                    {showDebug ? "Hide Template Debug" : "Show Template Debug"}
+                </button>
+                {templates.some(t => t.source === 'api') && (
+                    <button
+                        onClick={handleClearAllBroken}
+                        disabled={clearingBroken}
+                        style={{
+                            padding: "7px 12px",
+                            fontSize: 11,
+                            borderRadius: 8,
+                            border: `1px solid ${T.danger}50`,
+                            background: clearingBroken ? T.card2 : `${T.danger}15`,
+                            color: clearingBroken ? T.muted : T.danger,
+                            cursor: clearingBroken ? 'wait' : 'pointer',
+                            display: 'flex', alignItems: 'center', gap: 4,
+                        }}
+                    >
+                        <Trash2 size={11} />
+                        {clearingBroken ? 'Clearing...' : (
+                            templates.filter(t => t.source === 'api' && t.health?.usable === false).length > 0
+                                ? `Clear Broken (${templates.filter(t => t.source === 'api' && t.health?.usable === false).length})`
+                                : 'Clear All Custom'
+                        )}
+                    </button>
+                )}
+            </div>
+
+            {showDebug && (
+                <div style={{
+                    background: T.card2,
+                    border: `1px solid ${T.border}`,
+                    borderRadius: 10,
+                    padding: 12,
+                    marginBottom: 20,
+                    fontSize: 11,
+                }}>
+                    <div style={{ fontWeight: 700, marginBottom: 8 }}>Template Diagnostics</div>
+                    <div style={{ color: T.muted, marginBottom: 8 }}>
+                        Total {diagnostics.total} · Visible {diagnostics.visibleCount} · Excluded/Non-selectable {diagnostics.hiddenCount}
+                    </div>
+                    <div style={{ marginBottom: 8, color: T.muted }}>
+                        Sources: module {diagnostics.bySource.module}, legacy {diagnostics.bySource.legacy}, custom {diagnostics.bySource.api}
+                    </div>
+                    <div style={{ maxHeight: 160, overflowY: "auto", borderTop: `1px solid ${T.border}`, paddingTop: 8 }}>
+                        {diagnostics.hidden.length === 0 && <div style={{ color: T.success }}>No excluded templates.</div>}
+                        {diagnostics.hidden.map((item) => (
+                            <div key={item.id} style={{ padding: "5px 0", borderBottom: `1px dashed ${T.border}` }}>
+                                <div style={{ fontWeight: 600 }}>{item.name} <span style={{ color: T.dim }}>({item.id})</span></div>
+                                <div style={{ color: T.muted }}>source={item.source}, category={item.wizardCategory}</div>
+                                <div style={{ color: T.warning }}>
+                                    {item.reasons.join(" | ")}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Selected Summary */}
             <div style={{

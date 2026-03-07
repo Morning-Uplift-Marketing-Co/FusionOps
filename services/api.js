@@ -51,10 +51,19 @@ async function request(path, opts = {}) {
     // Add CSRF token to headers for state-changing operations
     const method = (opts.method || "GET").toUpperCase();
     const isMutation = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
+    let isSameOrigin = true;
+    if (typeof window !== "undefined") {
+        try {
+            const targetOrigin = new URL(url, window.location.origin).origin;
+            isSameOrigin = targetOrigin === window.location.origin;
+        } catch (_e) {
+            isSameOrigin = true;
+        }
+    }
 
     const headers = {
         ...opts.headers,
-        ...(isMutation && { "X-CSRF-Token": getCsrfToken() }),
+        ...(isMutation && isSameOrigin && { "X-CSRF-Token": getCsrfToken() }),
     };
 
     // Add timeout to prevent hanging requests
