@@ -4158,19 +4158,22 @@ export default {
         return data?.content?.[0]?.text || '';
       }
 
-      async function callAI(env, prompt, maxTokens = 512) {
+      async function callAI(env, body, prompt, maxTokens = 512) {
+        // Key priority: request body → env secret
+        const geminiKey = body.geminiKey || env.GEMINI_API_KEY || '';
+        const anthropicKey = body.anthropicKey || env.ANTHROPIC_API_KEY || '';
         // Primary: Gemini
-        if (env.GEMINI_API_KEY) {
+        if (geminiKey) {
           try {
-            const text = await callGemini(env.GEMINI_API_KEY, prompt, maxTokens);
+            const text = await callGemini(geminiKey, prompt, maxTokens);
             if (text) return text;
           } catch (_e) { /* fallthrough to backup */ }
         }
         // Backup: Anthropic
-        if (env.ANTHROPIC_API_KEY) {
-          return callAnthropic(env.ANTHROPIC_API_KEY, prompt, maxTokens);
+        if (anthropicKey) {
+          return callAnthropic(anthropicKey, prompt, maxTokens);
         }
-        throw new Error('No AI API key configured. Add GEMINI_API_KEY (primary) or ANTHROPIC_API_KEY (backup) in Worker secrets.');
+        throw new Error('No AI API key configured. Add Gemini API Key or Anthropic API Key in Settings.');
       }
 
       // ═══ AI GENERATE COPY ═══
@@ -4194,7 +4197,7 @@ Return this exact JSON shape:
   "badge": "trust badge text (e.g. 'No Hard Credit Check')",
   "tagline": "short tagline (max 6 words)"
 }`;
-          const text = await callAI(env, prompt, 512);
+          const text = await callAI(env, body, prompt, 512);
           const match = text.match(/\{[\s\S]*\}/);
           if (!match) return json({ error: 'AI returned unexpected format', raw: text.slice(0, 200) }, 500);
           return json(JSON.parse(match[0]));
@@ -4224,7 +4227,7 @@ Return this exact JSON shape:
   "metaTitle": "SEO title (50-60 chars, include brand and amount)",
   "metaDesc": "Meta description (140-160 chars, include CTA and amount)"
 }`;
-          const text = await callAI(env, prompt, 256);
+          const text = await callAI(env, body, prompt, 256);
           const match = text.match(/\{[\s\S]*\}/);
           if (!match) return json({ error: 'AI returned unexpected format', raw: text.slice(0, 200) }, 500);
           return json(JSON.parse(match[0]));
