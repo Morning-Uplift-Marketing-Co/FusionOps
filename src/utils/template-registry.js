@@ -15,7 +15,7 @@ import landerCoreAdapter from '../templates/lander-core/adapter.ts';
 import { getTemplates as getModuleTemplates, getTemplate as getModuleTemplate } from '#lp-template-generator/core/template-registry.js';
 
 // Static import achieved, maintain variables
-let moduleLoaded = true;
+let moduleLoaded = false;
 
 // Module natively loaded
 
@@ -61,8 +61,14 @@ const MODULE_TEMPLATES_FALLBACK = [
   { id: 'pet-loans-v1', name: 'Pet Loans V1', badge: 'New', description: 'Pet care financing LP with hero form, calculator, FAQ', category: 'pet-care', source: 'module' },
   { id: 'installment-loans-v1', name: 'Installment Loans V1', badge: 'New', description: 'Standard installment loan LP with payment calculator', category: 'installment', source: 'module' },
   { id: 'installment-loans-v2', name: 'Installment Loans V2', badge: 'V2 Stable', description: 'V2 stable — inline CSS, shared compliance, guaranteed no white pages', category: 'installment', source: 'module' },
+  { id: 'bear-loan-modern', name: 'Bear Loan Modern', badge: 'New', description: 'Modern dark fintech LP with social proof and payment calculator', category: 'installment', source: 'module' },
   { id: 'pet-care-v2', name: 'Pet Care V2', badge: 'V2 Stable', description: 'V2 stable pet financing LP with vet services grid', category: 'pet-care', source: 'module' },
+  { id: 'installment-golden', name: 'Installment Golden', badge: 'Golden', description: 'Golden installment LP with production-safe tracking baseline', category: 'installment', source: 'module' },
+  { id: 'pet-care-golden', name: 'Pet Care Golden', badge: 'Golden', description: 'Golden pet financing LP with mobile-first trust and FAQ flow', category: 'pet-care', source: 'module' },
+  { id: 'leadgen-golden', name: 'LeadGen Golden', badge: 'Golden', description: 'Golden generic lead-gen LP for cross-vertical campaigns', category: 'general', source: 'module' },
   { id: 'template-green-01', name: 'Template Green 01', badge: 'Premium', description: 'Teal/green premium finance LP with amber CTAs. Mobile-first, clean design with calculator, FAQ, and trust elements.', category: 'installment', source: 'module' },
+  { id: 'flowbite-loan', name: 'Flowbite Loan', badge: 'New', description: 'Modern loan LP — Flowbite CDN components, trust-heavy design, slider form, testimonials, FAQ. Mobile-first.', category: 'installment', source: 'module' },
+  { id: 'hyperui-loan', name: 'HyperUI Loan', badge: 'New', description: 'Bold dark-hero loan LP — HyperUI style, green accents, stats strip, benefit grid, dark testimonials section.', category: 'installment', source: 'module' },
 ];
 
 // Template ID aliases for backward compatibility
@@ -72,6 +78,105 @@ const TEMPLATE_ALIASES = {
   'green-01': 'template-green-01',
   'green-loan': 'template-green-01',
 };
+
+export const PAID_COMPONENT_SOURCE = Object.freeze({
+  id: 'tailwind-ui',
+  label: 'Tailwind UI',
+  vendor: 'Tailwind Labs',
+  tier: 'paid',
+});
+
+const PAID_SOURCE_TEMPLATE_IDS = new Set([
+  'bear-loan-modern',
+  'installment-golden',
+  'pet-care-golden',
+  'leadgen-golden',
+]);
+
+function resolveComponentSource(templateId, source) {
+  const id = String(templateId || '').trim().toLowerCase();
+  if (PAID_SOURCE_TEMPLATE_IDS.has(id)) return PAID_COMPONENT_SOURCE;
+  if (source === 'api') {
+    return Object.freeze({
+      id: 'custom-import',
+      label: 'Custom Import',
+      vendor: 'Project',
+      tier: 'mixed',
+    });
+  }
+  return Object.freeze({
+    id: 'internal',
+    label: 'Internal',
+    vendor: 'Project',
+    tier: 'free',
+  });
+}
+
+export function resolveWizardCategory(template) {
+  const id = String(template?.id || '').toLowerCase();
+  if (template?.source === 'api') return 'custom';
+  const rawCategory = String(template?.category || '').toLowerCase();
+  if (rawCategory === 'pet' || rawCategory === 'pet-care') return 'pet';
+  if (rawCategory === 'custom') return 'custom';
+  if (rawCategory === 'loan' || rawCategory === 'installment' || rawCategory === 'pdl' || rawCategory === 'general') return 'loan';
+  return id.includes('pet') || id.includes('scratch') ? 'pet' : 'loan';
+}
+
+function normalizeTemplateRecord(template, { sourceHint = 'unknown', registryPath = 'unknown', collisionReason = '' } = {}) {
+  const id = String(template?.id || '').trim();
+  const source = String(template?.source || sourceHint || 'unknown');
+  const componentSource = resolveComponentSource(id, source);
+  return {
+    ...template,
+    id,
+    source,
+    componentSource,
+    sourceResolved: source,
+    registryPath,
+    collisionReason: collisionReason || '',
+    visibilityFlags: {
+      hasHealthIssue: !!(template?.health && template.health.usable === false),
+      hasCategory: !!template?.category,
+      wizardCategory: resolveWizardCategory(template),
+    },
+  };
+}
+
+function mergeTemplateCollections(sources) {
+  const byId = new Map();
+  const collisions = [];
+
+  for (const source of sources) {
+    const templates = Array.isArray(source?.templates) ? source.templates : [];
+    for (const raw of templates) {
+      const normalized = normalizeTemplateRecord(raw, {
+        sourceHint: source?.sourceHint,
+        registryPath: source?.registryPath,
+      });
+      if (!normalized.id) continue;
+      const key = normalized.id.toLowerCase();
+      const existing = byId.get(key);
+      if (existing) {
+        collisions.push({
+          id: normalized.id,
+          kept: normalized.registryPath,
+          replaced: existing.registryPath,
+        });
+        byId.set(key, {
+          ...normalized,
+          collisionReason: `override:${existing.registryPath}->${normalized.registryPath}`,
+        });
+      } else {
+        byId.set(key, normalized);
+      }
+    }
+  }
+
+  return {
+    templates: Array.from(byId.values()),
+    collisions,
+  };
+}
 
 /** @typedef {import('../adapters/template-registry-types').TemplateRegistryEntry} TemplateRegistryEntry */
 
@@ -156,6 +261,8 @@ function parseTemplateFiles(raw) {
 
 function detectTemplateHealth(files) {
   const keys = Object.keys(files || {});
+  // Empty files = GitHub Actions template (built on CI, not stored locally) — mark usable
+  if (keys.length === 0) return { usable: true, entry: 'ci', reason: '' };
   const hasAstroIndex = keys.some(k => k === 'src/pages/index.astro' || k.endsWith('/src/pages/index.astro') || k.endsWith('index.astro'));
   const hasHtmlIndex = keys.some(k => k === 'index.html' || k.endsWith('/index.html'));
   const usable = hasAstroIndex || hasHtmlIndex;
@@ -180,24 +287,25 @@ export async function fetchCustomTemplates(force = false) {
       const response = await api.get('/templates');
       console.log("[Registry] Custom Templates fetch complete:", response);
       if (response && Array.isArray(response)) {
-        customTemplatesCache = response.map(t => ({
-          ...(() => {
-            const files = parseTemplateFiles(t.files);
-            return {
-              files,
-              health: detectTemplateHealth(files),
-            };
-          })(),
-          id: t.template_id || t.id,
-          dbId: t.id,
-          name: t.name,
-          description: t.description,
-          badge: t.badge || 'Custom',
-          category: t.category || 'custom',
-          source: 'api',
-          sourceCode: t.source_code,
-          createdAt: t.created_at,
-        }));
+        customTemplatesCache = response.map((t) => {
+          const files = parseTemplateFiles(t.files);
+          return normalizeTemplateRecord({
+            files,
+            health: detectTemplateHealth(files),
+            id: t.template_id || t.id,
+            dbId: t.id,
+            name: t.name,
+            description: t.description,
+            badge: t.badge || 'Custom',
+            category: t.category || 'custom',
+            source: 'api',
+            sourceCode: t.source_code,
+            createdAt: t.created_at,
+          }, {
+            sourceHint: 'api',
+            registryPath: 'api-custom',
+          });
+        });
         return customTemplatesCache;
       }
       return [];
@@ -253,30 +361,125 @@ export function getCustomTemplatesCache() {
 export async function getAllTemplatesAsync() {
   const [builtin, custom] = await Promise.all([
     Promise.resolve(getAllTemplates()),
-    fetchCustomTemplates()
+    fetchCustomTemplates(),
   ]);
-  return [...builtin, ...custom];
+
+  const { templates, collisions } = mergeTemplateCollections([
+    { templates: builtin, sourceHint: 'builtin', registryPath: 'builtin-merged' },
+    { templates: custom, sourceHint: 'api', registryPath: 'api-custom' },
+  ]);
+  const collidedIds = new Set(collisions.map((c) => c.id.toLowerCase()));
+
+  return templates.map((t) => ({
+    ...t,
+    visibilityFlags: {
+      ...(t.visibilityFlags || {}),
+      hasCollision: collidedIds.has(t.id.toLowerCase()),
+    },
+  }));
 }
 
 /**
  * Get all available templates (module + legacy) - synchronous version
  */
 export function getAllTemplates() {
-  let moduleTemplates = MODULE_TEMPLATES_FALLBACK;
+  let runtimeModuleTemplates = [];
+  let runtimeError = '';
 
   if (getModuleTemplates) {
     try {
-      moduleTemplates = getModuleTemplates().map(t => ({
+      runtimeModuleTemplates = getModuleTemplates().map((t) => ({
         ...t,
         source: 'module',
         badge: t.badge || (t.id === 'classic' ? 'Stable' : ''),
       }));
+      moduleLoaded = true;
     } catch (e) {
+      moduleLoaded = false;
+      runtimeError = e?.message || 'unknown module error';
       console.warn('Module templates error, using fallback');
     }
   }
 
-  return [...moduleTemplates, ...LEGACY_TEMPLATES];
+  const fallbackTemplates = MODULE_TEMPLATES_FALLBACK.map((t) => normalizeTemplateRecord(t, {
+    sourceHint: t.source || 'module',
+    registryPath: 'module-fallback',
+  }));
+  const moduleRuntimeTemplates = runtimeModuleTemplates.map((t) => normalizeTemplateRecord(t, {
+    sourceHint: 'module',
+    registryPath: 'module-runtime',
+  }));
+  const legacyTemplates = LEGACY_TEMPLATES.map((t) => normalizeTemplateRecord(t, {
+    sourceHint: 'legacy',
+    registryPath: 'legacy-static',
+  }));
+
+  // Deterministic merge order:
+  // 1) fallback baseline, 2) runtime module overrides, 3) legacy overlays.
+  const { templates, collisions } = mergeTemplateCollections([
+    { templates: fallbackTemplates, sourceHint: 'module', registryPath: 'module-fallback' },
+    { templates: moduleRuntimeTemplates, sourceHint: 'module', registryPath: 'module-runtime' },
+    { templates: legacyTemplates, sourceHint: 'legacy', registryPath: 'legacy-static' },
+  ]);
+  const collidedIds = new Set(collisions.map((c) => c.id.toLowerCase()));
+
+  return templates.map((t) => ({
+    ...t,
+    visibilityFlags: {
+      ...(t.visibilityFlags || {}),
+      runtimeModuleLoaded: runtimeModuleTemplates.length > 0 || moduleLoaded,
+      runtimeModuleError: runtimeError,
+      runtimeHasId: moduleRuntimeTemplates.some((m) => m.id === t.id),
+      fallbackHasId: fallbackTemplates.some((f) => f.id === t.id),
+      hasCollision: collidedIds.has(t.id.toLowerCase()),
+    },
+  }));
+}
+
+export function getTemplateDiagnostics(templates, options = {}) {
+  const list = Array.isArray(templates) ? templates : getAllTemplates();
+  const filterId = String(options.filterId || 'all');
+  const hidden = [];
+  const bySource = { module: 0, legacy: 0, api: 0, unknown: 0 };
+  const byCategory = { loan: 0, pet: 0, custom: 0, other: 0 };
+  const health = { usable: 0, broken: 0, unknown: 0 };
+
+  for (const tpl of list) {
+    const source = tpl.sourceResolved || tpl.source || 'unknown';
+    if (source in bySource) bySource[source] += 1;
+    else bySource.unknown += 1;
+
+    const cat = tpl?.visibilityFlags?.wizardCategory || resolveWizardCategory(tpl);
+    if (cat === 'loan' || cat === 'pet' || cat === 'custom') byCategory[cat] += 1;
+    else byCategory.other += 1;
+
+    if (tpl?.health?.usable === true) health.usable += 1;
+    else if (tpl?.health?.usable === false) health.broken += 1;
+    else health.unknown += 1;
+
+    const reasons = [];
+    if (tpl?.health?.usable === false) reasons.push(tpl?.health?.reason || 'Template health failed');
+    if (filterId !== 'all' && cat !== filterId) reasons.push(`Filtered out by category "${filterId}"`);
+    if (reasons.length > 0) {
+      hidden.push({
+        id: tpl.id,
+        name: tpl.name || tpl.id,
+        reasons,
+        source,
+        wizardCategory: cat || 'other',
+      });
+    }
+  }
+
+  return {
+    total: list.length,
+    bySource,
+    byCategory,
+    health,
+    hidden,
+    hiddenCount: hidden.length,
+    visibleCount: list.length - hidden.length,
+  };
 }
 
 /**

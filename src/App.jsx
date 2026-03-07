@@ -882,14 +882,13 @@ useEffect(() => {
                 }
               }
               // Refresh both caches so new template appears in selector
-              
-refreshCustomTemplates();
-api.get("/templates")
-  .then(res => {
-    if (Array.isArray(res)) setSavedTemplates(res);
-    else if (res?.templates) setSavedTemplates(res.templates);
-  })
-  .catch(() => {});
+              setTimeout(async () => {
+                refreshCustomTemplates();
+                const res = await api.get("/templates").catch(() => null);
+                if (Array.isArray(res)) setSavedTemplates(res);
+                else if (res?.templates) setSavedTemplates(res.templates);
+                window.dispatchEvent(new CustomEvent('lp-template-refresh', { detail: templateData.newFolderId }));
+              }, 500);
 
               // Dispatch event for any listening components
               window.dispatchEvent(new CustomEvent(TEMPLATE_REFRESH_EVENT, { detail: templateData.newFolderId }));
