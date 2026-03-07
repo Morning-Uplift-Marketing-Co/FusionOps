@@ -1,0 +1,49 @@
+---
+export const prerender = true;
+
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Do Not Sell My Personal Information" description="Exercise your right to opt out of the sale of your personal information under the CCPA.">
+  <main class="mx-auto w-full max-w-4xl px-4 py-16">
+    <article class="glass-card p-8 prose prose-slate max-w-none text-sm leading-relaxed">
+      <h1 class="text-2xl font-bold text-slate-900 mb-1">Do Not Sell My Personal Information</h1>
+      <p class="text-slate-500 text-xs mb-6">Last Updated: March 1, 2025</p>
+
+      <p>Under the California Consumer Privacy Act (CCPA) and similar state privacy laws, you have the right to opt out of the "sale" of your personal information to third parties. This page explains what that means and how to exercise that right.</p>
+
+      <h2 class="text-lg font-bold text-slate-800 mt-6 mb-2">What We Share</h2>
+      <p>SecureLoan operates as a lead generation service. When you submit a loan request, we transmit your information to participating lenders and marketing partners who may make you an offer. Under the CCPA, this transfer may constitute a "sale" of personal information even though no money changes hands between us and you.</p>
+      <p>Information that may be shared includes:</p>
+      <ul>
+        <li>Name, address, and contact details</li>
+        <li>Financial information (income, loan amount requested, employment status)</li>
+        <li>Device identifiers and IP address</li>
+      </ul>
+
+      <h2 class="text-lg font-bold text-slate-800 mt-6 mb-2">Your Right to Opt Out</h2>
+      <p>You may request that we stop selling your personal information. To exercise this right, contact us by any of the following methods:</p>
+      <ul>
+        <li><strong>Email:</strong> privacy@secureloan.example.com with the subject line "Do Not Sell My Personal Information"</li>
+        <li><strong>Mail:</strong> SecureLoan, 123 Financial District Ave, Suite 400, New York, NY 10005</li>
+      </ul>
+      <p>We will process your request within <strong>15 business days</strong>. Note that opting out may prevent us from being able to match you with lenders.</p>
+
+      <h2 class="text-lg font-bold text-slate-800 mt-6 mb-2">Additional California Rights</h2>
+      <p>California residents also have the right to:</p>
+      <ul>
+        <li>Know what personal information we have collected about you.</li>
+        <li>Request deletion of your personal information (subject to certain exceptions).</li>
+        <li>Not be discriminated against for exercising your privacy rights.</li>
+      </ul>
+
+      <h2 class="text-lg font-bold text-slate-800 mt-6 mb-2">Other State Rights</h2>
+      <p>Residents of Virginia, Colorado, Connecticut, and other states with comprehensive privacy laws may have similar rights. Contact us at the email above to exercise any applicable rights.</p>
+
+      <h2 class="text-lg font-bold text-slate-800 mt-6 mb-2">Contact</h2>
+      <p><strong>SecureLoan</strong><br/>
+      123 Financial District Ave, Suite 400, New York, NY 10005<br/>
+      Email: privacy@secureloan.example.com</p>
+    </article>
+  </main>
+</BaseLayout>
