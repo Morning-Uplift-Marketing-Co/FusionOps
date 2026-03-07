@@ -136,7 +136,6 @@ export default {
       "X-Edge-Country": country,
       "X-Edge-Region": region,
       "X-Edge-City": city,
-      "X-Frame-Options": "DENY",
     });
 
     return new Response(content, { status: 200, headers });
