@@ -3240,8 +3240,9 @@ export default {
           const ipRes = await fetch('https://api64.ipify.org?format=json').catch(() => null);
           const ipData = await ipRes?.json().catch(() => ({}));
           const workerIp = ipData?.ip;
-          console.log('[IBS] Worker outbound IP:', workerIp);
-          if (workerIp) {
+          const isIPv6 = workerIp?.includes(':');
+          console.log('[IBS] Worker outbound IP:', workerIp, isIPv6 ? '(IPv6 - skipping whitelist, add CF IPv4 ranges manually)' : '');
+          if (workerIp && !isIPv6) {
             const f = new URLSearchParams({ ApiKey: acctRow.api_key, Password: acctRow.secret_key, responseformat: 'JSON', Ip: workerIp });
             const r = await fetch('https://api.internet.bs/Account/Access/AddIp', {
               method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: f.toString(),
