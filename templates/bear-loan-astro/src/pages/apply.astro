@@ -1,0 +1,120 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+
+const site = {
+  brand: 'BearLoanNow',
+  domain: 'bearloannow.com',
+  conversionId: '',
+  formStartLabel: '',
+  formSubmitLabel: '',
+  aid: '',
+  voluumDomain: '',
+};
+---
+
+<Layout
+  title="Apply for Pet Care Financing | BearLoanNow"
+  description="Complete your application for pet care financing. Instant decision, no hard credit check."
+  canonicalUrl={`https://${site.domain}/apply`}
+  site={site}
+>
+  <Header />
+  <main class="min-h-screen bg-slate-50 py-16">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+
+      <!-- Header -->
+      <div class="text-center mb-10">
+        <div class="inline-flex items-center gap-2 bg-teal-50 border border-teal-100 rounded-full px-4 py-1.5 mb-4">
+          <span class="flex h-2 w-2 relative">
+            <span class="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-teal-500 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
+          </span>
+          <span class="text-teal-700 text-sm font-medium">Financing available in your area</span>
+        </div>
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-3">Complete Your Application</h1>
+        <p class="text-gray-500">No hard credit check &middot; Decision in seconds &middot; Funds next business day</p>
+      </div>
+
+      <!-- Trust badges -->
+      <div class="grid grid-cols-3 gap-4 mb-8">
+        <div class="bg-white rounded-xl p-4 text-center shadow-sm border border-gray-100">
+          <svg class="w-6 h-6 text-teal-600 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          <div class="text-xs font-semibold text-gray-700">No Hard Pull</div>
+        </div>
+        <div class="bg-white rounded-xl p-4 text-center shadow-sm border border-gray-100">
+          <svg class="w-6 h-6 text-teal-600 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          <div class="text-xs font-semibold text-gray-700">Instant Decision</div>
+        </div>
+        <div class="bg-white rounded-xl p-4 text-center shadow-sm border border-gray-100">
+          <svg class="w-6 h-6 text-teal-600 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+          <div class="text-xs font-semibold text-gray-700">256-bit Secure</div>
+        </div>
+      </div>
+
+      <!-- LeadsGate form container -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="bg-teal-800 px-7 py-4">
+          <p class="text-white font-semibold text-sm">Great news — financing is available in your area</p>
+          <p class="text-teal-300 text-xs mt-0.5">No hard credit check &middot; Decision in seconds</p>
+        </div>
+        <div id="leadsgate-form-container" class="p-6 min-h-64 flex items-center justify-center">
+          <div class="text-center text-gray-400 text-sm">
+            <svg class="w-8 h-8 mx-auto mb-2 animate-spin text-teal-400" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            Loading application form...
+          </div>
+        </div>
+      </div>
+
+      <p class="text-center text-xs text-gray-400 mt-6 max-w-lg mx-auto">
+        By submitting, you agree to our <a href="#" class="underline hover:text-gray-600">Terms of Service</a> and <a href="#" class="underline hover:text-gray-600">Privacy Policy</a>. BearLoanNow is not a lender. Loan offers are provided by third-party lenders subject to their approval criteria.
+      </p>
+    </div>
+  </main>
+  <Footer />
+</Layout>
+
+<script is:inline>
+(function(){
+  var t = window.__TRK || {};
+  var clickid = t.clickId || new URLSearchParams(window.location.search).get('clickid') || '';
+  var aid = t.aid || '';
+
+  if (!aid) {
+    document.getElementById('leadsgate-form-container').innerHTML =
+      '<p class="text-gray-400 text-sm text-center p-8">Form not configured — please set AID in site config.</p>';
+    return;
+  }
+
+  var script = document.createElement('script');
+  script.src = 'https://forms.leadsgate.com/form/embed/' + aid;
+  document.head.appendChild(script);
+
+  window._lg_form_init_ = {
+    aid: aid,
+    template: 'fresh',
+    click_id: clickid,
+    onFormLoad: function() {
+      var convId = t.conversionId || '';
+      var startLabel = t.formStartLabel || '';
+      if (convId && startLabel && typeof gtag === 'function')
+        gtag('event', 'conversion', { send_to: convId + '/' + startLabel });
+      if (window.pixel) window.pixel('fl');
+    },
+    onStepChange: function(step) {
+      if (window.pixel) window.pixel('step', { step: step });
+    },
+    onSubmit: function() {
+      var convId = t.conversionId || '';
+      var submitLabel = t.formSubmitLabel || '';
+      if (convId && submitLabel && typeof gtag === 'function')
+        gtag('event', 'conversion', { send_to: convId + '/' + submitLabel });
+      if (window.pixel) window.pixel('fs', { clickid: clickid });
+    },
+    onSuccess: function(response) {
+      if (window.pixel) window.pixel('success', { clickid: clickid, lead_id: (response && response.lead_id) || '' });
+    }
+  };
+})();
+</script>

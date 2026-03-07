@@ -1,0 +1,53 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Hero from '../components/Hero.astro';
+import StatsBar from '../components/StatsBar.astro';
+import HowItWorks from '../components/HowItWorks.astro';
+import Features from '../components/Features.astro';
+import APRComparison from '../components/APRComparison.astro';
+import EligibleExpenses from '../components/EligibleExpenses.astro';
+import Testimonials from '../components/Testimonials.astro';
+import FAQ from '../components/FAQ.astro';
+import Footer from '../components/Footer.astro';
+
+// Site config — injected per campaign at deploy time
+const site = {
+  brand: 'BearLoanNow',
+  domain: 'bearloannow.com',
+  conversionId: '',       // e.g. 'AW-123456789'
+  formStartLabel: '',     // e.g. 'abc123'
+  formSubmitLabel: '',    // e.g. 'xyz789'
+  aid: '',                // LeadsGate AID
+  voluumDomain: '',       // e.g. 'trk.bearloannow.com'
+};
+---
+
+<Layout
+  title="BearLoanNow – Pet Care Financing $200–$10,000 | Instant Decision"
+  description="Flexible installment loans for veterinary and pet care expenses. No hard credit check. Instant decision. Funds as soon as next business day."
+  canonicalUrl={`https://${site.domain}`}
+  site={site}
+>
+  <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:bg-teal-700 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg">
+    Skip to content
+  </a>
+  <Header />
+  <main id="main-content">
+    <Hero
+      aid={site.aid}
+      conversionId={site.conversionId}
+      formStartLabel={site.formStartLabel}
+      formSubmitLabel={site.formSubmitLabel}
+      voluumDomain={site.voluumDomain}
+    />
+    <StatsBar />
+    <HowItWorks />
+    <Features />
+    <APRComparison />
+    <EligibleExpenses />
+    <Testimonials />
+    <FAQ />
+  </main>
+  <Footer />
+</Layout>
