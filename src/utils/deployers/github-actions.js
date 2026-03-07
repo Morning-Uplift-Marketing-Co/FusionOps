@@ -18,6 +18,13 @@ function isMaskedSecret(v) {
  * Push or update a file in the repo via GitHub Contents API
  * Returns commit URL
  */
+async function getFileSha(url, branch, headers) {
+  const res = await fetch(`${url}?ref=${branch}`, { headers });
+  if (!res.ok) return undefined;
+  const data = await res.json();
+  return data.sha;
+}
+
 async function pushFile({ githubToken, repo, branch, path, content, message }) {
   const url = `${GITHUB_API}/repos/${repo}/contents/${path}`;
   const headers = {
@@ -27,26 +34,25 @@ async function pushFile({ githubToken, repo, branch, path, content, message }) {
     'X-GitHub-Api-Version': '2022-11-28',
   };
 
-  // Check if file exists to get its SHA (required for update)
-  let sha;
-  const existing = await fetch(`${url}?ref=${branch}`, { headers });
-  if (existing.ok) {
-    const data = await existing.json();
-    sha = data.sha;
-  }
+  // Encode content as base64 (works in both browser and Node)
+  const encoded = typeof Buffer !== 'undefined'
+    ? Buffer.from(content, 'utf8').toString('base64')
+    : btoa(unescape(encodeURIComponent(content)));
 
-  const body = {
-    message,
-    content: btoa(unescape(encodeURIComponent(content))), // base64 encode UTF-8
-    branch,
-    ...(sha ? { sha } : {}),
+  const tryPush = async (sha) => {
+    const body = { message, content: encoded, branch, ...(sha ? { sha } : {}) };
+    return fetch(url, { method: 'PUT', headers, body: JSON.stringify(body) });
   };
 
-  const res = await fetch(url, {
-    method: 'PUT',
-    headers,
-    body: JSON.stringify(body),
-  });
+  // Get current SHA
+  let sha = await getFileSha(url, branch, headers);
+  let res = await tryPush(sha);
+
+  // 409 = stale SHA — re-fetch and retry once
+  if (res.status === 409) {
+    sha = await getFileSha(url, branch, headers);
+    res = await tryPush(sha);
+  }
 
   if (!res.ok) {
     const err = await res.text().catch(() => '');

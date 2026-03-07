@@ -50,10 +50,15 @@ jobs:
           CF_API_TOKEN=$(node -e "const c=require('./$CONFIG_FILE');console.log(c.cfApiToken||'')")
           CF_ACCOUNT_ID=$(node -e "const c=require('./$CONFIG_FILE');console.log(c.cfAccountId||'')")
 
-          case "$TEMPLATE_ID" in
-            installment-bear*) DIR="templates/installment-bear" ;;
-            *) DIR="templates/installment-bear" ;;
-          esac
+          # Use exact templateId as directory name if it exists, else fallback
+          if [ -d "templates/$TEMPLATE_ID" ]; then
+            DIR="templates/$TEMPLATE_ID"
+          elif [ -d "templates/installment-bear" ]; then
+            DIR="templates/installment-bear"
+          else
+            echo "ERROR: No template directory found for $TEMPLATE_ID"
+            exit 1
+          fi
 
           echo "dir=$DIR" >> "$GITHUB_OUTPUT"
           echo "cf_pages_project=$CF_PAGES_PROJECT" >> "$GITHUB_OUTPUT"
