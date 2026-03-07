@@ -4198,9 +4198,9 @@ Return this exact JSON shape:
   "tagline": "short tagline (max 6 words)"
 }`;
           const enrichedBody = { ...body, geminiKey: resolvedGeminiKey, anthropicKey: resolvedAnthropicKey };
-          const text = await callAI(env, enrichedBody, prompt, 512);
+          const text = await callAI(env, enrichedBody, prompt, 1024);
           const jsonStr = extractJson(text);
-          if (!jsonStr) return json({ error: 'AI returned unexpected format', raw: text.slice(0, 200) }, 500);
+          if (!jsonStr) return json({ error: 'AI returned unexpected format', raw: text.slice(0, 300) }, 500);
           return json(JSON.parse(jsonStr));
         } catch (e) {
           return json({ error: e.message }, 500);
