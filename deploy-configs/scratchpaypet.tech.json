@@ -1,13 +1,13 @@
 {
-  "templateId": "astro-test002",
+  "templateId": "template103",
   "cfPagesProject": "lp-scratchpaypet-tech",
   "cfApiToken": "8dTwYeTJF93WbhAyi2FzhUe8PV3rIEta5b8Pq5MQ",
   "cfAccountId": "ef771cfd6197dedb36bb3cea22ecf4fc",
   "brand": "Scratchpay",
   "domain": "scratchpaypet.tech",
-  "h1": "Flexible Loans",
-  "sub": "Choose your amount. Pick your timeline. Get funded fast.",
-  "cta": "Check Eligibility",
+  "h1": "Give Your Pet The Best Care, Worry-Free.",
+  "sub": "Unexpected vet bills? New pet costs? Scratchpay provides quick, easy financing from $100 to $5000 so you can give your beloved companion the care they deserve, without the financial stress.",
+  "cta": "Get Your Pet Loan Now",
   "phone": "",
   "email": "support@scratchpaypet.tech",
   "address": "",
@@ -20,5 +20,5 @@
   "accentColor": "",
   "conversionId": "AW-12456",
   "voluumDomain": "",
-  "deployedAt": "2026-03-07T03:58:27.440Z"
+  "deployedAt": "2026-03-07T03:58:44.238Z"
 }
