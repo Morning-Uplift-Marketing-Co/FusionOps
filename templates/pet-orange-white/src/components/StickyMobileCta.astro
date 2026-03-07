@@ -15,7 +15,7 @@ const { href = "#eligibility-form", label = "Check Eligibility →" } =
   <a href={href} class="cta-button w-full">{label}</a>
 </div>
 
-<script is:inline>
+<script data-cfasync="false" is:inline>
   (() => {
     const bar = document.getElementById("sticky-mobile-cta");
     if (!bar) return;

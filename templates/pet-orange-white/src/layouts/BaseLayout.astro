@@ -69,14 +69,14 @@ const cssVars = `--primary:${hsl(...pal[0] as [number,number,number])};--seconda
     <style is:inline set:html={`:root { ${cssVars} } body { font-family: ${font.family}; }`}></style>
     {conversionId && (
       <>
-        <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${conversionId}`}></script>
-        <script is:inline define:vars={{ conversionId, formStartLabel, formSubmitLabel }}>
+        <script data-cfasync="false" is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${conversionId}`}></script>
+        <script data-cfasync="false" is:inline define:vars={{ conversionId, formStartLabel, formSubmitLabel }}>
           (function(){window.dataLayer=window.dataLayer||[];function gtag(){window.dataLayer.push(arguments);}gtag('js',new Date());gtag('config',conversionId);window.__gtagConversionId=conversionId;window.__formStartLabel=formStartLabel;window.__formSubmitLabel=formSubmitLabel;})();
         </script>
       </>
     )}
     {voluumId && (
-      <script is:inline define:vars={{ voluumId, voluumDomain }}>
+      <script data-cfasync="false" is:inline define:vars={{ voluumId, voluumDomain }}>
         (function(){var s=document.createElement('script');s.src='https://'+voluumDomain+'/scripts/'+voluumId+'/vp.js';s.async=true;(document.head||document.documentElement).appendChild(s);})();
       </script>
     )}
