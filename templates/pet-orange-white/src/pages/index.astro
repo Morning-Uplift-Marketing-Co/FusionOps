@@ -1,16 +1,18 @@
 ---
 export const prerender = true;
 
-import BaseLayout from "../layouts/BaseLayout.astro";
+import Layout from "../layouts/Layout.astro";
 import StickyMobileCta from "../components/StickyMobileCta.astro";
 import TrustStrip from "../components/TrustStrip.astro";
 import LoanCalculator from "../components/LoanCalculator.astro";
 import TrustBadges from "../components/TrustBadges.astro";
 import LegalModal from "../components/LegalModal.astro";
 import HowItWorks from "../components/HowItWorks.astro";
+const voluumClickUrl = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '';
+const ctaHref = voluumClickUrl || '#apply';
 ---
 
-<BaseLayout
+<Layout
   title="Flexible Funding Solutions | Premium Eligibility Check"
   description="Check eligibility for tailored credit options with a fast ZIP pre-check. Transparent lending information, no commitment to accept an offer."
 >
@@ -391,7 +393,7 @@ import HowItWorks from "../components/HowItWorks.astro";
     </section>
   </main>
 
-  <StickyMobileCta href="#eligibility-form" label="Check Eligibility →" />
+  <StickyMobileCta href={ctaHref} label="Check Eligibility →" />
 
   <!-- Footer -->
   <footer class="border-t border-slate-100 bg-white mt-8">
