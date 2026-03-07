@@ -71,6 +71,32 @@ const MODULE_TEMPLATES_FALLBACK = [
   { id: 'hyperui-loan', name: 'HyperUI Loan', badge: 'New', description: 'Bold dark-hero loan LP — HyperUI style, green accents, stats strip, benefit grid, dark testimonials section.', category: 'installment', source: 'module' },
 ];
 
+// ── HIDDEN BUILT-IN TEMPLATES ─────────────────────────────────────
+// Built-in (module/legacy) templates cannot be deleted from DB,
+// but users can hide them from the UI. Stored in localStorage.
+const HIDDEN_BUILTIN_KEY = 'lp_hidden_builtin_templates';
+
+function getHiddenBuiltinIds() {
+  try { return new Set(JSON.parse(localStorage.getItem(HIDDEN_BUILTIN_KEY) || '[]')); } catch { return new Set(); }
+}
+
+export function hideBuiltinTemplate(id) {
+  const set = getHiddenBuiltinIds();
+  set.add(id);
+  localStorage.setItem(HIDDEN_BUILTIN_KEY, JSON.stringify([...set]));
+}
+
+export function unhideBuiltinTemplate(id) {
+  const set = getHiddenBuiltinIds();
+  set.delete(id);
+  localStorage.setItem(HIDDEN_BUILTIN_KEY, JSON.stringify([...set]));
+}
+
+export function isBuiltinHidden(id) {
+  return getHiddenBuiltinIds().has(id);
+}
+// ──────────────────────────────────────────────────────────────────
+
 // Template ID aliases for backward compatibility
 const TEMPLATE_ALIASES = {
   'pdl-loansv1': 'pdl-loans-v1',
@@ -423,17 +449,20 @@ export function getAllTemplates() {
   ]);
   const collidedIds = new Set(collisions.map((c) => c.id.toLowerCase()));
 
-  return templates.map((t) => ({
-    ...t,
-    visibilityFlags: {
-      ...(t.visibilityFlags || {}),
-      runtimeModuleLoaded: runtimeModuleTemplates.length > 0 || moduleLoaded,
-      runtimeModuleError: runtimeError,
-      runtimeHasId: moduleRuntimeTemplates.some((m) => m.id === t.id),
-      fallbackHasId: fallbackTemplates.some((f) => f.id === t.id),
-      hasCollision: collidedIds.has(t.id.toLowerCase()),
-    },
-  }));
+  const hiddenIds = getHiddenBuiltinIds();
+  return templates
+    .filter((t) => !hiddenIds.has(t.id))
+    .map((t) => ({
+      ...t,
+      visibilityFlags: {
+        ...(t.visibilityFlags || {}),
+        runtimeModuleLoaded: runtimeModuleTemplates.length > 0 || moduleLoaded,
+        runtimeModuleError: runtimeError,
+        runtimeHasId: moduleRuntimeTemplates.some((m) => m.id === t.id),
+        fallbackHasId: fallbackTemplates.some((f) => f.id === t.id),
+        hasCollision: collidedIds.has(t.id.toLowerCase()),
+      },
+    }));
 }
 
 export function getTemplateDiagnostics(templates, options = {}) {
