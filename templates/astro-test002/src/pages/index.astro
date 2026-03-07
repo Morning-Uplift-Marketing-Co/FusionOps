@@ -22,8 +22,10 @@ const amountMinRaw = String(Number((amountMin).replace(/[^0-9.]/g,'')) || 100);
 const amountMaxRaw = String(Number((amountMax).replace(/[^0-9.]/g,'')) || 5000);
 const primaryColor = import.meta.env.PUBLIC_PRIMARYCOLOR || '#3b5bdb';
 const accentColor  = import.meta.env.PUBLIC_ACCENTCOLOR  || '#f97316';
-const aprMin       = import.meta.env.PUBLIC_APRMIN       || '5.99';
-const aprMax       = import.meta.env.PUBLIC_APRMAX       || '35.99';
+const aprMin          = import.meta.env.PUBLIC_APRMIN            || '5.99';
+const aprMax          = import.meta.env.PUBLIC_APRMAX            || '35.99';
+const voluumClickUrl  = import.meta.env.PUBLIC_VOLUUM_CLICK_URL  || '';
+const ctaHref         = voluumClickUrl || '#apply';
 ---
 
 <Layout>
@@ -172,7 +174,7 @@ const aprMax       = import.meta.env.PUBLIC_APRMAX       || '35.99';
       <div class="container relative z-10 text-center max-w-2xl">
         <h2 class="text-3xl md:text-4xl font-bold mb-4">Ready to Get Started?</h2>
         <p class="text-lg text-white/70 mb-8">Join thousands who've found a smarter way to borrow.</p>
-        <a href="#apply" class="btn-cta inline-flex text-xl !h-16 !px-10">Check My Rate Now <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+        <a href={ctaHref} class="btn-cta inline-flex text-xl !h-16 !px-10">Check My Rate Now <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
         <p class="text-sm text-white/50 mt-4">No impact on your credit score &bull; 100% free to check</p>
       </div>
     </section>

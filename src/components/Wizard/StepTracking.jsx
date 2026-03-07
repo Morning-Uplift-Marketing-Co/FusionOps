@@ -120,6 +120,8 @@ export function StepTracking({ c, u }) {
   // DNS provisioning state
   const [dnsProvisioning, setDnsProvisioning] = useState(false);
   const [dnsResult, setDnsResult] = useState(null); // { success, message } or null
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [verifyResult, setVerifyResult] = useState(null);
 
   const mode = c.trackingMode || "minimal";
   const isVoluum = mode === "voluum";
@@ -600,9 +602,58 @@ export function StepTracking({ c, u }) {
         </CardHeader>
         <CardContent>
           <p className="text-[11px] text-[hsl(var(--muted-foreground))] leading-relaxed">
-            Sends events to <code className="text-[10px] font-mono bg-[hsl(var(--muted))/30] px-1 py-0.5 rounded">https://t.{c.domain || "domain.com"}/e</code> via
+            Sends events to <code className="text-[10px] font-mono bg-[hsl(var(--muted))/30] px-1 py-0.5 rounded">{c.url ? `${c.url}/e` : `https://${c.domain || "domain.com"}/e`}</code> via
             sendBeacon. No setup needed — auto-configured at build time.
           </p>
+          <div className="mt-3">
+            <button
+              type="button"
+              disabled={verifyLoading || !c.domain}
+              onClick={async () => {
+                setVerifyLoading(true);
+                setVerifyResult(null);
+                try {
+                  const baseUrl = c.url ? c.url.replace(/\/$/, '') : (c.domain ? `https://${c.domain}` : null);
+                  if (!baseUrl) throw new Error('No Worker URL or domain configured');
+                  const endpoint = `${baseUrl}/e`;
+                  const verifyParams = new URLSearchParams({ e: 'verify', sid: 'wizard-verify', ts: String(Date.now()) });
+                  const res = await fetch(endpoint, { method: 'POST', body: verifyParams, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+                  setVerifyResult({
+                    success: res.ok,
+                    error: res.ok ? null : `HTTP ${res.status} — endpoint not responding`,
+                    checks: { workerHealth: { ok: res.ok, status: res.status }, pixelEndpoint: { ok: res.ok, status: res.status } },
+                    verifiedAt: new Date().toISOString(),
+                  });
+                } catch (e) {
+                  setVerifyResult({
+                    success: false,
+                    error: e?.message || 'Tracking verify failed',
+                    checks: null,
+                  });
+                } finally {
+                  setVerifyLoading(false);
+                }
+              }}
+              className="px-3 py-1.5 text-[11px] rounded-lg bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] font-semibold cursor-pointer disabled:opacity-40 border-none"
+            >
+              {verifyLoading ? "⏳ Verifying tracking..." : "🧪 Verify Tracking Endpoint"}
+            </button>
+          </div>
+          {verifyResult && (
+            <div className={`mt-3 text-[10px] px-2.5 py-2 rounded-lg border whitespace-pre-wrap ${
+              verifyResult.success
+                ? "bg-[hsl(var(--success))/8] border-[hsl(var(--success))/30] text-[hsl(var(--success))]"
+                : "bg-[hsl(var(--destructive))/8] border-[hsl(var(--destructive))/30] text-[hsl(var(--destructive))]"
+            }`}>
+              {verifyResult.error
+                ? `❌ ${verifyResult.error}`
+                : [
+                  `Worker health: ${verifyResult?.checks?.workerHealth?.ok ? "✅" : "❌"} (${verifyResult?.checks?.workerHealth?.status ?? "-"})`,
+                  `Pixel endpoint: ${verifyResult?.checks?.pixelEndpoint?.ok ? "✅" : "❌"} (${verifyResult?.checks?.pixelEndpoint?.status ?? "-"})`,
+                  verifyResult?.verifiedAt ? `Verified at: ${verifyResult.verifiedAt}` : "",
+                ].filter(Boolean).join("\n")}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -627,12 +678,30 @@ export function StepTracking({ c, u }) {
               className="w-full rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--input))] px-3 py-2 text-[11px] font-mono text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]/50 resize-y"
             />
             <div className="mt-3 space-y-2">
-              <div className="text-[12px] text-[hsl(var(--muted-foreground))]">
-                Add click URLs to CTA buttons:
-              </div>
-              <code className="block w-full text-[13px] font-mono bg-[hsl(var(--muted))/35] border border-[hsl(var(--border))] px-3 py-2 rounded">
-                https://vls.{c.domain || "domain.com"}/click
-              </code>
+              <Field label="CTA Click URL" help="CTA buttons will redirect to this URL when Voluum is enabled">
+                <div className="flex gap-2">
+                  <Inp
+                    value={c.voluumClickUrl || ""}
+                    onChange={v => u("voluumClickUrl", v)}
+                    placeholder={`https://vls.${c.domain || "domain.com"}/click`}
+                  />
+                  {!c.voluumClickUrl && c.domain && (
+                    <button
+                      type="button"
+                      onClick={() => u("voluumClickUrl", `https://vls.${c.domain}/click`)}
+                      className="px-3 py-1.5 text-[10px] rounded-lg bg-[hsl(var(--primary))/15] border border-[hsl(var(--primary))/40] text-[hsl(var(--primary))] font-semibold cursor-pointer whitespace-nowrap"
+                    >
+                      Use Default
+                    </button>
+                  )}
+                </div>
+              </Field>
+              {c.voluumClickUrl && (
+                <div className="flex items-center gap-1.5">
+                  <div className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--success))]" />
+                  <span className="text-[10px] text-[hsl(var(--success))]">CTA buttons will use Voluum click URL</span>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
