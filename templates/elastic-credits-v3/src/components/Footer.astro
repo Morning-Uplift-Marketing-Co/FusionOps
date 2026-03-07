@@ -1,0 +1,256 @@
+---
+const year       = new Date().getFullYear();
+const brand      = import.meta.env.PUBLIC_BRAND      || 'ElasticCredits';
+const domain     = import.meta.env.PUBLIC_DOMAIN     || 'elasticcredits.com';
+const email      = import.meta.env.PUBLIC_EMAIL      || `support@${import.meta.env.PUBLIC_DOMAIN || 'elasticcredits.com'}`;
+const address    = import.meta.env.PUBLIC_ADDRESS    || '';
+const phone      = import.meta.env.PUBLIC_PHONE      || '';
+const amountMax  = import.meta.env.PUBLIC_AMOUNTMAX  || '5,000';
+const aprMin     = import.meta.env.PUBLIC_APRMIN     || '5.99';
+const aprMax     = import.meta.env.PUBLIC_APRMAX     || '35.99';
+---
+
+<!-- Netlify Forms detection -->
+<form name="contact" netlify netlify-honeypot="bot-field" hidden>
+  <input name="name" /><input name="email" /><input name="subject" /><textarea name="message"></textarea>
+</form>
+
+<footer role="contentinfo" class="bg-card border-t border-border mt-auto">
+  <div class="container section-padding">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+      <div class="col-span-2 md:col-span-1">
+        <a href="/" class="flex items-center gap-2 mb-4">
+          <div class="w-8 h-8 rounded-lg bg-hero-gradient flex items-center justify-center">
+            <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <span class="text-lg font-bold text-foreground">{brand}</span>
+        </a>
+        <p class="text-sm text-muted-foreground leading-relaxed">Connecting you with trusted lenders for personal installment loans up to ${amountMax}.</p>
+        {address && (
+          <p class="text-xs text-muted-foreground mt-3 leading-relaxed">{address}</p>
+        )}
+        {phone && (
+          <p class="text-xs text-muted-foreground mt-1">
+            <a href={`tel:${phone}`} class="hover:text-foreground transition-colors">{phone}</a>
+          </p>
+        )}
+        <p class="text-xs text-muted-foreground mt-1">
+          <a href={`mailto:${email}`} class="hover:text-foreground transition-colors">{email}</a>
+        </p>
+      </div>
+      <nav aria-label="Company links">
+        <h3 class="text-sm font-semibold text-foreground mb-3">Company</h3>
+        <ul class="space-y-2 text-sm text-muted-foreground">
+          <li><a href="#how-it-works" class="hover:text-foreground transition-colors">How It Works</a></li>
+          <li><a href="#calculator" class="hover:text-foreground transition-colors">Calculator</a></li>
+          <li><a href="#faq" class="hover:text-foreground transition-colors">FAQ</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Legal links">
+        <h3 class="text-sm font-semibold text-foreground mb-3">Legal</h3>
+        <ul class="space-y-2 text-sm text-muted-foreground">
+          <li><button type="button" data-modal="privacy" class="hover:text-foreground transition-colors text-left">Privacy Policy</button></li>
+          <li><button type="button" data-modal="terms" class="hover:text-foreground transition-colors text-left">Terms of Service</button></li>
+          <li><button type="button" data-modal="disclosures" class="hover:text-foreground transition-colors text-left">Disclosures</button></li>
+          <li><button type="button" data-modal="rates" class="hover:text-foreground transition-colors text-left">Rates &amp; Fees</button></li>
+        </ul>
+      </nav>
+      <nav aria-label="Support links">
+        <h3 class="text-sm font-semibold text-foreground mb-3">Support</h3>
+        <ul class="space-y-2 text-sm text-muted-foreground">
+          <li><button type="button" data-modal="contact" class="hover:text-foreground transition-colors text-left">Contact Us</button></li>
+          <li><button type="button" data-modal="licensing" class="hover:text-foreground transition-colors text-left">Licensing</button></li>
+        </ul>
+      </nav>
+    </div>
+
+    <!-- Compliance -->
+    <div class="border-t border-border pt-8 space-y-4 text-xs text-muted-foreground leading-relaxed">
+      <p><strong class="text-foreground/70">Representative Example:</strong> A $1,000 loan repaid over 12 monthly installments at 15% APR would result in 12 monthly payments of $90.26. Total amount payable: $1,083.12. Total interest: $83.12. Minimum repayment period: 61 days. Maximum repayment period: 24 months.</p>
+      <p><strong class="text-foreground/70">APR Disclosure:</strong> Annual Percentage Rate (APR) ranges from {aprMin}% to {aprMax}%. APR depends on credit score, loan amount, loan term, credit usage and history. Only the most creditworthy applicants qualify for the lowest rates.</p>
+      <p>{domain} is NOT a lender and does not make loan or credit decisions. {domain} connects interested persons with a lender from its network of approved lenders. Not all lenders can provide loan amounts up to ${amountMax}. Cash transfer times may vary. Repayment terms vary by lender and local laws.</p>
+      <p>Loans issued by WebBank, Member FDIC. Checking your rate won't affect your credit score.</p>
+      <div class="pt-4 border-t border-border flex flex-col md:flex-row items-center justify-between gap-2">
+        <p>&copy; {year} {brand}. All rights reserved.</p>
+        <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+          <button type="button" data-modal="disclosures" class="hover:text-foreground transition-colors underline underline-offset-2">Disclosures</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- Legal Modals -->
+<div id="legal-overlay" class="fixed inset-0 z-[200] hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.6);backdrop-filter:blur(4px)" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="relative bg-background rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col border border-border">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
+      <h2 id="modal-title" class="text-lg font-bold text-foreground"></h2>
+      <button type="button" id="modal-close" aria-label="Close" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+    <div id="modal-body" class="overflow-y-auto px-6 py-5 text-sm text-muted-foreground leading-relaxed space-y-4"></div>
+  </div>
+</div>
+
+<script is:inline>
+(function(){
+  var brand   = document.querySelector('[data-brand]') ? document.querySelector('[data-brand]').textContent : (document.title.split('\u2013')[0].trim() || 'ElasticCredits');
+  var domain  = window.location.hostname || 'elasticcredits.com';
+
+  var content = {
+    privacy: {
+      title: 'Privacy Policy',
+      body: '<p><strong>Last updated: January 1, 2025</strong></p>' +
+        '<p><strong>Information We Collect</strong><br>We collect information you provide directly (name, email, phone, address, financial information) and automatically (IP address, browser type, pages visited, cookies, and similar tracking technologies).</p>' +
+        '<p><strong>How We Use Your Information</strong><br>We use your information to: match you with lenders in our network; process your loan inquiry; send you relevant offers and communications; improve our services; comply with legal obligations; and prevent fraud.</p>' +
+        '<p><strong>Information Sharing</strong><br>We share your personal information with lenders and financial service providers in our network in order to fulfill your loan request. We may also share with third-party service providers who assist in our operations, and as required by law.</p>' +
+        '<p><strong>Your Rights</strong><br>You may opt out of marketing communications at any time. You may request access to, correction of, or deletion of your personal data by contacting us. California residents have additional rights under CCPA.</p>' +
+        '<p><strong>Cookies</strong><br>We use cookies and similar technologies to improve your experience, analyze site traffic, and deliver relevant advertising. You may disable cookies in your browser settings.</p>' +
+        '<p><strong>Data Security</strong><br>We use 256-bit SSL encryption and follow industry best practices to protect your information. However, no transmission over the internet is 100% secure.</p>' +
+        '<p><strong>Contact Us</strong><br>For privacy-related inquiries, email us at privacy@' + domain + '.</p>'
+    },
+    terms: {
+      title: 'Terms of Service',
+      body: '<p><strong>Last updated: January 1, 2025</strong></p>' +
+        '<p><strong>Agreement to Terms</strong><br>By accessing or using this website, you agree to be bound by these Terms of Service and all applicable laws and regulations.</p>' +
+        '<p><strong>Not a Lender</strong><br>' + domain + ' is a loan marketplace, NOT a lender. We connect consumers with third-party lenders. We do not make credit decisions or guarantee loan approval. Loan terms, rates, and availability are determined solely by the lender.</p>' +
+        '<p><strong>Eligibility</strong><br>You must be at least 18 years old, a U.S. resident, have a valid bank account, and meet individual lender requirements to use this service.</p>' +
+        '<p><strong>No Guarantee of Approval</strong><br>Submitting an inquiry does not guarantee you will receive a loan offer. Lenders independently evaluate all applications.</p>' +
+        '<p><strong>Accuracy of Information</strong><br>You agree to provide accurate, current, and complete information. Providing false information may result in denial and could violate federal law.</p>' +
+        '<p><strong>No Warranties</strong><br>This website is provided "as is." We make no warranties regarding availability, accuracy, or fitness for a particular purpose.</p>' +
+        '<p><strong>Limitation of Liability</strong><br>We are not liable for any damages arising from your use of this site or any lender\'s products or services.</p>' +
+        '<p><strong>Governing Law</strong><br>These terms are governed by the laws of the United States.</p>'
+    },
+    disclosures: {
+      title: 'Important Disclosures',
+      body: '<p><strong>Marketplace Disclosure</strong><br>This website is operated by a loan marketing company, not a lender. By submitting your information, you authorize us to share it with lenders and financial service providers in our network who may contact you.</p>' +
+        '<p><strong>Not Available in All States</strong><br>Loan products may not be available in all states. Residents of certain states may not be eligible for some or all loan offers displayed.</p>' +
+        '<p><strong>Credit Check</strong><br>Lenders may perform a soft credit inquiry to pre-qualify you, which does not affect your credit score. A hard credit inquiry may be performed upon final application and will appear on your credit report.</p>' +
+        '<p><strong>Loan Amounts &amp; Terms</strong><br>Loan amounts, terms, and availability vary by lender and state. Not all consumers will qualify for the maximum loan amount. Actual loan terms depend on lender assessment of creditworthiness.</p>' +
+        '<p><strong>Marketing Relationship</strong><br>We receive compensation from lenders when consumers obtain loan products through our site. This compensation may influence which lenders we feature but does not affect our commitment to helping consumers find appropriate products.</p>' +
+        '<p><strong>FCRA</strong><br>Consumer reports may be obtained in connection with your inquiry. You have the right to obtain a free copy of your consumer report annually at AnnualCreditReport.com.</p>'
+    },
+    rates: {
+      title: 'Rates & Fees',
+      body: '<p><strong>Annual Percentage Rate (APR)</strong><br>APR on personal loans offered through our network ranges from <strong>5.99% to 35.99%</strong>. The actual APR depends on your credit score, loan amount, loan term, and lender-specific criteria. Only the most creditworthy applicants qualify for the lowest rates.</p>' +
+        '<p><strong>Representative Example</strong><br>A $1,000 loan repaid over 12 monthly installments at 15% APR would result in 12 monthly payments of approximately $90.26. Total repayable: $1,083.12. Total interest charged: $83.12.</p>' +
+        '<p><strong>Loan Terms</strong><br>Minimum repayment period: 61 days. Maximum repayment period: 84 months (7 years). Terms vary by lender and state law.</p>' +
+        '<p><strong>Fees</strong><br>We do not charge any fees to use our matching service. Individual lenders may charge origination fees (typically 1%–8% of the loan amount), late payment fees, and/or prepayment penalties. All fees will be disclosed in your loan agreement before you accept any offer.</p>' +
+        '<p><strong>Effect of Non-Payment</strong><br>If you do not repay your loan on time, lenders may charge late fees and report your account to credit bureaus, which can negatively impact your credit score. In cases of prolonged non-payment, lenders may pursue collection action.</p>' +
+        '<p><strong>Renewal Policy</strong><br>Loan renewal policies vary by lender and state. Some lenders may offer renewals or extensions, which may result in additional fees and interest.</p>' +
+        '<p><strong>No Cost to Apply</strong><br>Checking your rate and submitting an inquiry through our service is completely free and does not obligate you to accept any loan offer.</p>'
+    },
+    licensing: {
+      title: 'Licensing',
+      body: '<p>This website is operated as a loan marketing and matching service. We are not a licensed lender, bank, or credit union and do not make lending decisions.</p>' +
+        '<p>Lenders in our network maintain all applicable state and federal licenses required to originate consumer loans. Loans are originated by licensed lenders and are subject to all applicable state and federal consumer lending laws, including the Truth in Lending Act (TILA) and the Equal Credit Opportunity Act (ECOA).</p>' +
+        '<p>This service is not available to residents of all states. Check with individual lenders for state-specific licensing information.</p>' +
+        '<p>For licensing inquiries, please contact us at legal@' + domain + '.</p>'
+    },
+    contact: {
+      title: 'Contact Us',
+      body: '<form id="contact-form" class="space-y-4">' +
+        '<div><label class="block text-xs font-semibold text-foreground mb-1" for="cf-name">Your Name</label>' +
+        '<input id="cf-name" name="name" type="text" required placeholder="John Smith" class="w-full h-10 px-3 rounded-lg border border-input bg-background text-foreground text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring transition-all" /></div>' +
+        '<div><label class="block text-xs font-semibold text-foreground mb-1" for="cf-email">Email Address</label>' +
+        '<input id="cf-email" name="email" type="email" required placeholder="you@example.com" class="w-full h-10 px-3 rounded-lg border border-input bg-background text-foreground text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring transition-all" /></div>' +
+        '<div><label class="block text-xs font-semibold text-foreground mb-1" for="cf-subject">Subject</label>' +
+        '<select id="cf-subject" name="subject" class="w-full h-10 px-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-all">' +
+        '<option value="General Inquiry">General Inquiry</option>' +
+        '<option value="Loan Question">Loan Question</option>' +
+        '<option value="Account Support">Account Support</option>' +
+        '<option value="Privacy Request">Privacy / Data Request</option>' +
+        '<option value="Other">Other</option>' +
+        '</select></div>' +
+        '<div><label class="block text-xs font-semibold text-foreground mb-1" for="cf-msg">Message</label>' +
+        '<textarea id="cf-msg" name="message" required rows="4" placeholder="How can we help you?" class="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring transition-all resize-none"></textarea></div>' +
+        '<div id="cf-error" class="text-sm text-destructive hidden"></div>' +
+        '<div id="cf-success" class="text-sm text-green-600 hidden">✓ Message sent! We\'ll get back to you within 1 business day.</div>' +
+        '<button type="submit" class="w-full h-11 rounded-xl font-bold text-sm text-white transition-all hover:opacity-90 active:scale-[0.98]" style="background:linear-gradient(135deg,hsl(0 65% 32%),hsl(0 65% 22%))">Send Message</button>' +
+        '<p class="text-xs text-muted-foreground text-center">We typically respond within 1 business day.</p>' +
+        '</form>'
+    }
+  };
+
+  var overlay = document.getElementById('legal-overlay');
+  var titleEl = document.getElementById('modal-title');
+  var bodyEl  = document.getElementById('modal-body');
+  var closeBtn = document.getElementById('modal-close');
+
+  function bindContactForm() {
+    var form = document.getElementById('contact-form');
+    if (!form) return;
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      var errEl  = document.getElementById('cf-error');
+      var okEl   = document.getElementById('cf-success');
+      var btn    = form.querySelector('button[type=submit]');
+      errEl.classList.add('hidden');
+      okEl.classList.add('hidden');
+      var name    = document.getElementById('cf-name').value.trim();
+      var email   = document.getElementById('cf-email').value.trim();
+      var subject = document.getElementById('cf-subject').value;
+      var message = document.getElementById('cf-msg').value.trim();
+      if (!name || !email || !message) {
+        errEl.textContent = 'Please fill in all required fields.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = 'Sending…';
+      var body = new URLSearchParams({
+        'form-name': 'contact',
+        name: name, email: email, subject: subject, message: message
+      });
+      fetch('/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString() })
+        .then(function(r) {
+          if (r.ok) {
+            form.reset();
+            okEl.classList.remove('hidden');
+            btn.textContent = 'Sent!';
+          } else { throw new Error('Network error'); }
+        })
+        .catch(function() {
+          window.location.href = 'mailto:' + domain + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent('Name: ' + name + '\n\n' + message);
+          btn.disabled = false;
+          btn.textContent = 'Send Message';
+        });
+    });
+  }
+
+  function openModal(id) {
+    var c = content[id];
+    if (!c) return;
+    titleEl.textContent = c.title;
+    bodyEl.innerHTML = c.body;
+    overlay.classList.remove('hidden');
+    overlay.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    closeBtn.focus();
+    if (id === 'contact') bindContactForm();
+  }
+
+  function closeModal() {
+    overlay.classList.add('hidden');
+    overlay.classList.remove('flex');
+    document.body.style.overflow = '';
+  }
+
+  document.querySelectorAll('[data-modal]').forEach(function(btn) {
+    btn.addEventListener('click', function() { openModal(btn.dataset.modal); });
+  });
+
+  closeBtn.addEventListener('click', closeModal);
+
+  overlay.addEventListener('click', function(e) {
+    if (e.target === overlay) closeModal();
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeModal();
+  });
+})();
+</script>
