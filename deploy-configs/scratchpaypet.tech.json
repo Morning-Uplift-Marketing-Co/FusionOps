@@ -21,10 +21,12 @@
   "conversionId": "AW-12456",
   "voluumId": "",
   "voluumDomain": "",
+  "voluumClickUrl": "",
   "colorId": "ruby",
   "fontId": "dm-sans",
   "layout": "hero-left",
   "radius": "rounded",
   "trustBadges": "",
-  "deployedAt": "2026-03-07T04:58:50.355Z"
+  "reviews": [],
+  "deployedAt": "2026-03-07T05:35:15.712Z"
 }
