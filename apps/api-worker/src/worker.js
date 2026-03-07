@@ -2354,63 +2354,7 @@ export default {
         return json({ success: true });
       }
 
-      // ═══ AI: GENERATION ═══
-      if (path === "/api/ai/generate-copy" && method === "POST") {
-        try {
-          const body = await request.json();
-          const settingsRow = await db.prepare("SELECT * FROM settings WHERE key = 'geminiKey'").first();
-          const key = (settingsRow?.value || "").trim();
-
-          if (!key || isMaskedSecret(key)) {
-            return json({ error: "Gemini Key not configured or invalid" }, 400);
-          }
-
-          const prompt = `Generate high-converting loan landing page copy.
-            Brand: "${body.brand || "ElasticCredits"}"
-            Loan Type: "${body.loanType || "Personal"}"
-            Amount Range: $${body.amountMin || 100}-$${body.amountMax || 5000}
-            Language: ${body.lang || "English"}
-            Format: Strict JSON object only. No markdown.
-            Structure: {"h1":"","badge":"","cta":"","sub":"","tagline":"","trust_msg":""}`;
-
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-          });
-
-          if (!res.ok) {
-            const errDetail = await res.text().catch(() => "Unknown error");
-            console.error("[AI] Gemini API error:", res.status, errDetail);
-            return json({ error: `Gemini API Error (${res.status})`, details: errDetail }, 502);
-          }
-
-          const d = await res.json();
-          const candidate = d.candidates?.[0];
-          if (!candidate) {
-            console.error("[AI] No candidates returned from Gemini", d);
-            return json({ error: "AI failed to generate a response", details: d }, 500);
-          }
-
-          const text = candidate.content?.parts?.[0]?.text?.replace(/```json|```/g, "").trim();
-          if (!text) {
-            return json({ error: "AI returned empty text" }, 500);
-          }
-
-          try {
-            return json(JSON.parse(text));
-          } catch (pe) {
-            console.warn("[AI] JSON Parse error for text:", text);
-            return json({ error: "AI Format Error (Invalid JSON)", raw: text }, 500);
-          }
-        } catch (e) {
-          console.error("[AI] Unexpected error in generate-copy:", e.message);
-          return json({ error: `Internal Server Error: ${e.message}` }, 500);
-        }
-
-      }
-
-
+      // ═══ AI: GENERATE ASSETS ═══
       if (path === "/api/ai/generate-assets" && method === "POST") {
         const body = await request.json();
         const settingsRes = await db.prepare("SELECT * FROM settings WHERE key = 'geminiKey'").first();
@@ -4127,7 +4071,7 @@ export default {
       // ═══ AI HELPERS ═══
       async function callGemini(apiKey, prompt, maxTokens = 512) {
         const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+          `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
           {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
@@ -4138,7 +4082,10 @@ export default {
           }
         );
         const data = await res.json();
-        return data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        if (!res.ok) throw new Error(`Gemini API error ${res.status}: ${data?.error?.message || JSON.stringify(data).slice(0, 100)}`);
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        if (!text) throw new Error('Gemini returned empty response');
+        return text;
       }
 
       async function callAnthropic(apiKey, prompt, maxTokens = 512) {
@@ -4156,24 +4103,32 @@ export default {
           }),
         });
         const data = await res.json();
-        return data?.content?.[0]?.text || '';
+        if (!res.ok) throw new Error(`Anthropic error ${res.status}: ${data?.error?.message || JSON.stringify(data).slice(0, 100)}`);
+        const text = data?.content?.[0]?.text || '';
+        if (!text) throw new Error('Anthropic returned empty response');
+        return text;
       }
 
       async function callAI(env, body, prompt, maxTokens = 512) {
         // Key priority: request body → env secret
         const geminiKey = body.geminiKey || env.GEMINI_API_KEY || '';
         const anthropicKey = body.anthropicKey || env.ANTHROPIC_API_KEY || '';
+        let lastError = '';
         // Primary: Gemini
         if (geminiKey) {
           try {
             const text = await callGemini(geminiKey, prompt, maxTokens);
             if (text) return text;
-          } catch (_e) { /* fallthrough to backup */ }
+          } catch (e) { lastError = `Gemini: ${e.message}`; }
         }
         // Backup: Anthropic
         if (anthropicKey) {
-          return callAnthropic(anthropicKey, prompt, maxTokens);
+          try {
+            return await callAnthropic(anthropicKey, prompt, maxTokens);
+          } catch (e) { lastError += ` | Anthropic: ${e.message}`; }
         }
+        const hasKeys = !!(geminiKey || anthropicKey);
+        if (hasKeys) throw new Error(`AI providers failed: ${lastError}`);
         throw new Error('No AI API key configured. Add Gemini API Key or Anthropic API Key in Settings.');
       }
 
@@ -4181,6 +4136,14 @@ export default {
       if (path === '/api/ai/generate-copy' && method === 'POST') {
         try {
           const body = await request.json();
+          // Key resolution: request body → env secret → D1 settings
+          const d1GeminiRow = await db.prepare("SELECT value FROM settings WHERE key = 'geminiKey'").first().catch(() => null);
+          const d1AnthropicRow = await db.prepare("SELECT value FROM settings WHERE key = 'anthropicKey'").first().catch(() => null);
+          const resolvedGeminiKey = body.geminiKey || env.GEMINI_API_KEY || (d1GeminiRow?.value || '');
+          const resolvedAnthropicKey = body.anthropicKey || env.ANTHROPIC_API_KEY || (d1AnthropicRow?.value || '');
+          if (!resolvedGeminiKey && !resolvedAnthropicKey) {
+            return json({ error: 'No AI API key configured. Add Gemini API Key in Settings.' }, 400);
+          }
           const { brand = '', loanType = 'personal loan', amountMin = 100, amountMax = 5000, lang = 'English' } = body;
           const prompt = `You are a direct-response copywriter specializing in loan landing pages.
 Generate copy for a loan landing page. Respond ONLY with valid JSON, no explanation.
@@ -4198,7 +4161,8 @@ Return this exact JSON shape:
   "badge": "trust badge text (e.g. 'No Hard Credit Check')",
   "tagline": "short tagline (max 6 words)"
 }`;
-          const text = await callAI(env, body, prompt, 512);
+          const enrichedBody = { ...body, geminiKey: resolvedGeminiKey, anthropicKey: resolvedAnthropicKey };
+          const text = await callAI(env, enrichedBody, prompt, 512);
           const match = text.match(/\{[\s\S]*\}/);
           if (!match) return json({ error: 'AI returned unexpected format', raw: text.slice(0, 200) }, 500);
           return json(JSON.parse(match[0]));
@@ -4211,6 +4175,14 @@ Return this exact JSON shape:
       if (path === '/api/ai/generate-meta' && method === 'POST') {
         try {
           const body = await request.json();
+          // Key resolution: request body → env secret → D1 settings
+          const d1GeminiRow = await db.prepare("SELECT value FROM settings WHERE key = 'geminiKey'").first().catch(() => null);
+          const d1AnthropicRow = await db.prepare("SELECT value FROM settings WHERE key = 'anthropicKey'").first().catch(() => null);
+          const resolvedGeminiKey = body.geminiKey || env.GEMINI_API_KEY || (d1GeminiRow?.value || '');
+          const resolvedAnthropicKey = body.anthropicKey || env.ANTHROPIC_API_KEY || (d1AnthropicRow?.value || '');
+          if (!resolvedGeminiKey && !resolvedAnthropicKey) {
+            return json({ error: 'No AI API key configured. Add Gemini API Key in Settings.' }, 400);
+          }
           const { brand = '', domain = '', loanType = 'personal loan', amountMin = 100, amountMax = 5000, h1 = '', cta = '', lang = 'English' } = body;
           const prompt = `You are an SEO copywriter for loan landing pages.
 Generate meta title and description. Respond ONLY with valid JSON.
@@ -4228,7 +4200,8 @@ Return this exact JSON shape:
   "metaTitle": "SEO title (50-60 chars, include brand and amount)",
   "metaDesc": "Meta description (140-160 chars, include CTA and amount)"
 }`;
-          const text = await callAI(env, body, prompt, 256);
+          const enrichedBody = { ...body, geminiKey: resolvedGeminiKey, anthropicKey: resolvedAnthropicKey };
+          const text = await callAI(env, enrichedBody, prompt, 256);
           const match = text.match(/\{[\s\S]*\}/);
           if (!match) return json({ error: 'AI returned unexpected format', raw: text.slice(0, 200) }, 500);
           return json(JSON.parse(match[0]));
