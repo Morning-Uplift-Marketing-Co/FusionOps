@@ -225,20 +225,114 @@ var _lg_form_init_ = {
   template: "fresh",
   ref: window.location.hostname,
   click_id: getVoluumClickId(),
+
   onFormLoad: function() {
-    window.dataLayer.push({ event: 'leadsgate_form_start' });
+    console.log('📋 LeadsGate form loaded');
+    window.dataLayer.push({
+      'event': 'leadsgate_form_start',
+      'clickId': getVoluumClickId(),
+      'gclid': SafeStorage.get('google_gclid'),
+      'timestamp': new Date().toISOString()
+    });
   },
+
   onStepChange: function(step) {
-    window.dataLayer.push({ event: 'leadsgate_form_progress', step: step });
+    console.log('📊 Form step:', step);
+    window.dataLayer.push({
+      'event': 'leadsgate_form_progress',
+      'step': step,
+      'clickId': getVoluumClickId()
+    });
   },
+
   onSubmit: function() {
-    window.dataLayer.push({ event: 'leadsgate_form_submit' });
+    console.log('📤 Form submitted');
+    window.dataLayer.push({
+      'event': 'leadsgate_form_submit',
+      'clickId': getVoluumClickId(),
+      'timestamp': new Date().toISOString()
+    });
   },
+
   onSuccess: function(data) {
-    window.dataLayer.push({ event: 'lead_conversion_all', type: data.type });
-    if (data.type === 'soldLead') window.dataLayer.push({ event: 'lead_conversion_approved' });
-    if (data.type === 'rejectLead') window.dataLayer.push({ event: 'lead_declined' });
-    if (data.type === 'newLead') window.dataLayer.push({ event: 'lead_pending' });
+    console.log('✅ LeadsGate Response:', data);
+
+    var voluumCid = getVoluumClickId();
+    var googleGclid = SafeStorage.get('google_gclid');
+
+    var type = data.type;
+    var leadId = data.lead_id;
+    var payout = data.price || 0;
+
+    var status = 'pending';
+    if (type === 'soldLead') status = 'approved';
+    else if (type === 'rejectLead') status = 'declined';
+
+    var finalPayout = payout > 0 ? payout : (status === 'declined' ? 5.00 : 50.00);
+
+    console.log('📊 Parsed:', { type: type, status: status, leadId: leadId, payout: finalPayout });
+
+    var conversionData = {
+      transaction_id: leadId,
+      value: finalPayout,
+      currency: 'USD',
+      status: status,
+      type: type,
+      click_id: voluumCid,
+      gclid: googleGclid,
+      created: data.created
+    };
+
+    window.dataLayer.push({
+      'event': 'lead_conversion_all',
+      'leadData': conversionData,
+      'conversionValue': finalPayout,
+      'leadStatus': status,
+      'leadType': type,
+      'transactionId': leadId,
+      'clickId': voluumCid,
+      'gclid': googleGclid
+    });
+
+    console.log('✅ All leads tracked:', status, 'Type:', type, 'Payout:', finalPayout);
+
+    if (type === 'soldLead') {
+      window.dataLayer.push({
+        'event': 'lead_conversion_approved',
+        'leadData': conversionData,
+        'conversionValue': finalPayout,
+        'transactionId': leadId,
+        'clickId': voluumCid,
+        'gclid': googleGclid
+      });
+      console.log('✅ Approved lead tracked | Payout:', finalPayout);
+    }
+
+    if (type === 'rejectLead') {
+      window.dataLayer.push({
+        'event': 'lead_declined',
+        'leadData': conversionData,
+        'conversionValue': finalPayout,
+        'transactionId': leadId,
+        'clickId': voluumCid,
+        'gclid': googleGclid
+      });
+      console.log('⚠️ Declined lead tracked | Payout:', finalPayout);
+    }
+
+    if (type === 'newLead') {
+      window.dataLayer.push({
+        'event': 'lead_pending',
+        'leadData': conversionData,
+        'conversionValue': finalPayout,
+        'transactionId': leadId,
+        'clickId': voluumCid,
+        'gclid': googleGclid
+      });
+      console.log('⏳ Pending lead tracked | Payout:', finalPayout);
+    }
+
+    console.log('✅ Tracking complete for Lead ID:', leadId);
   }
 };
 
