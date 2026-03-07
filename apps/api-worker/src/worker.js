@@ -3234,26 +3234,22 @@ export default {
           : await db.prepare('SELECT * FROM registrar_accounts WHERE provider = ? LIMIT 1').bind(provider).first();
         if (!acctRow) return json({ error: 'Registrar account not found' }, 404);
 
-        // Auto-whitelist this worker's outbound IP before calling InternetBS
-        // (Worker IPs are dynamic/ephemeral — whitelist on every request)
+        // Disable IP restriction on InternetBS account so any IP can call the API
+        // (Cloudflare Worker IPs are ephemeral — whitelisting individual IPs doesn't work)
         try {
-          const myIpRes = await fetch('https://api.ipify.org?format=json');
-          const myIpData = await myIpRes.json();
-          const myIp = myIpData?.ip;
-          if (myIp) {
-            const whitelistForm = new URLSearchParams({
-              ApiKey: acctRow.api_key,
-              Password: acctRow.secret_key,
-              responseformat: 'JSON',
-              Ip: myIp,
-            });
-            await fetch('https://api.internet.bs/Account/Access/AddIp', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-              body: whitelistForm.toString(),
-            }).catch(() => {});
-          }
-        } catch (_e) { /* non-fatal */ }
+          const disableForm = new URLSearchParams({
+            ApiKey: acctRow.api_key,
+            Password: acctRow.secret_key,
+            responseformat: 'JSON',
+          });
+          const disableRes = await fetch('https://api.internet.bs/Account/Access/Disable', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: disableForm.toString(),
+          });
+          const disableData = await disableRes.json().catch(() => ({}));
+          console.log('[IBS] IP restriction disable result:', disableData?.status, disableData?.message);
+        } catch (_e) { console.warn('[IBS] Could not disable IP restriction:', _e?.message); }
 
         // Pre-check to avoid unnecessary registrar updates.
         const beforeCheck = await fetchInternetBsCurrentNameservers(acctRow, domain);
