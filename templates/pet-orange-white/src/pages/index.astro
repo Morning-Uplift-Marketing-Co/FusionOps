@@ -8,13 +8,21 @@ import LoanCalculator from "../components/LoanCalculator.astro";
 import TrustBadges from "../components/TrustBadges.astro";
 import LegalModal from "../components/LegalModal.astro";
 import HowItWorks from "../components/HowItWorks.astro";
+const brand    = import.meta.env.PUBLIC_BRAND   || 'SecureLoan';
+const h1       = import.meta.env.PUBLIC_H1      || 'Flexible Funding Solutions';
+const sub      = import.meta.env.PUBLIC_SUB     || 'Check rates in 60 seconds. No credit impact. No commitment.';
+const cta      = import.meta.env.PUBLIC_CTA     || 'Apply Now';
+const domain   = import.meta.env.PUBLIC_DOMAIN  || '';
+const email    = import.meta.env.PUBLIC_EMAIL   || '';
+const phone    = import.meta.env.PUBLIC_PHONE   || '';
+const address  = import.meta.env.PUBLIC_ADDRESS || '';
 const voluumClickUrl = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '';
-const ctaHref = voluumClickUrl || '#apply';
+const ctaHref  = voluumClickUrl || '#apply';
 ---
 
 <Layout
-  title="Flexible Funding Solutions | Premium Eligibility Check"
-  description="Check eligibility for tailored credit options with a fast ZIP pre-check. Transparent lending information, no commitment to accept an offer."
+  title={`${h1} | ${brand}`}
+  description={sub}
 >
   <main class="page-reveal pb-24 md:pb-16 pt-6 md:pt-12">
     <!-- Header/Logo area -->
@@ -37,7 +45,7 @@ const ctaHref = voluumClickUrl || '#apply';
         </div>
         <span
           class="font-bold font-heading text-xl tracking-tight text-slate-900"
-          >Secure<span class="text-orange-500">Loan</span></span
+          >{brand}</span
         >
       </div>
     </div>
@@ -62,8 +70,7 @@ const ctaHref = voluumClickUrl || '#apply';
           <h1
             class="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-[4rem] leading-[1.1]"
           >
-            Flexible Funding <br />
-            Solutions<a
+            {h1}<a
               href="#disclosure-section"
               class="text-orange-500 font-normal group relative"
               aria-label="View representative example"
@@ -74,7 +81,7 @@ const ctaHref = voluumClickUrl || '#apply';
             >
           </h1>
           <p class="mt-6 max-w-lg text-lg text-slate-600 leading-relaxed">
-            Check rates in 60 seconds. No credit impact. No commitment.
+            {sub}
           </p>
 
           <div class="mt-8 grid grid-cols-2 gap-4 max-w-lg">
@@ -410,17 +417,17 @@ const ctaHref = voluumClickUrl || '#apply';
                 <path fill-rule="evenodd" d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3v-6.75a3 3 0 00-3-3v-3c0-2.9-2.35-5.25-5.25-5.25zm3.75 8.25v-3a3.75 3.75 0 10-7.5 0v3h7.5z" clip-rule="evenodd"/>
               </svg>
             </div>
-            <span class="font-bold font-heading text-slate-900">Secure<span class="text-orange-500">Loan</span></span>
+            <span class="font-bold font-heading text-slate-900">{brand}</span>
           </div>
           <p class="text-xs text-slate-500 max-w-xs leading-relaxed">
-            SecureLoan is a free matching service, not a lender. We connect consumers with third-party lenders and do not make credit decisions.
+            {brand} is a free matching service, not a lender. We connect consumers with third-party lenders and do not make credit decisions.
           </p>
           <p class="mt-3 text-xs text-slate-400">
-            SecureLoan Financial Services, Inc.<br/>
-            Tel: (800) 555-0199<br/>
-            123 Financial District Ave, Suite 400<br/>New York, NY 10005
+            {address && <>{address}<br/></>}
+            {phone && <>Tel: {phone}<br/></>}
+            {email && <>{email}</>}
           </p>
-          <p class="mt-4 text-xs text-slate-400">&copy; {new Date().getFullYear()} SecureLoan. All rights reserved.</p>
+          <p class="mt-4 text-xs text-slate-400">&copy; {new Date().getFullYear()} {brand}. All rights reserved.</p>
         </div>
 
         <!-- Legal + Company columns: side-by-side on mobile -->
@@ -455,7 +462,7 @@ const ctaHref = voluumClickUrl || '#apply';
   </footer>
 
   <LegalModal />
-</BaseLayout>
+</Layout>
 
 <script is:inline>
   (() => {
