@@ -59,6 +59,7 @@ jobs:
             # Known mappings: module registry ID → folder name
             case "$id" in
               astro-test002)                                       echo "templates/astro-test002" ;;
+              pet-orange-white)                                    echo "templates/pet-orange-white" ;;
               *pet*|*scratchpay*|template10[0-9]|template11[0-9]) echo "templates/pet_loans_v1" ;;
               installment-loans-101)                             echo "templates/installment-loans-101" ;;
               *installment*|template12[0-9]|template13[0-9])      echo "templates/installment-bear" ;;
@@ -128,6 +129,10 @@ jobs:
           "
         env:
           CONFIG_FILE: ../../${{ steps.config.outputs.file }}
+
+      - name: Validate template tracking stack
+        working-directory: ${{ steps.template.outputs.dir }}
+        run: node ../../scripts/validate-template-tracking.mjs .
 
       - name: Build Astro site
         working-directory: ${{ steps.template.outputs.dir }}

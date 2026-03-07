@@ -31,12 +31,16 @@ const primaryColor   = import.meta.env.PUBLIC_PRIMARYCOLOR   || '#3b5bdb';
 const accentColor    = import.meta.env.PUBLIC_ACCENTCOLOR    || '#f97316';
 const aprMin         = import.meta.env.PUBLIC_APRMIN         || '5.99';
 const aprMax         = import.meta.env.PUBLIC_APRMAX         || '35.99';
-const conversionId   = import.meta.env.PUBLIC_CONVERSIONID   || '';
-const voluumId       = import.meta.env.PUBLIC_VOLUUMID       || '';
-const voluumDomain   = import.meta.env.PUBLIC_VOLUUMDOMAIN   || 'track.vlm.icu';
-const colorId        = import.meta.env.PUBLIC_COLORID        || 'ocean';
-const fontId         = import.meta.env.PUBLIC_FONTID         || 'dm-sans';
-const radiusId       = import.meta.env.PUBLIC_RADIUS         || 'rounded';
+const conversionId      = import.meta.env.PUBLIC_CONVERSIONID      || '';
+const formStartLabel    = import.meta.env.PUBLIC_FORMSTARTLABEL   || '';
+const formSubmitLabel   = import.meta.env.PUBLIC_FORMSUBMITLABEL  || '';
+const voluumId          = import.meta.env.PUBLIC_VOLUUMID          || '';
+const voluumDomain      = import.meta.env.PUBLIC_VOLUUMDOMAIN      || 'track.vlm.icu';
+const voluumClickUrl    = import.meta.env.PUBLIC_VOLUUM_CLICK_URL  || '';
+const ctaHref           = voluumClickUrl || '#apply';
+const colorId           = import.meta.env.PUBLIC_COLORID           || 'ocean';
+const fontId            = import.meta.env.PUBLIC_FONTID            || 'dm-sans';
+const radiusId          = import.meta.env.PUBLIC_RADIUS            || 'rounded';
 ```
 
 ## Step 3: Replace hardcoded values in HTML
@@ -122,10 +126,15 @@ In `Layout.astro` `<head>`, add after `dataLayer` initialization:
 {conversionId && (
   <>
     <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${conversionId}`}></script>
-    <script is:inline define:vars={{ conversionId }}>
-      function gtag(){window.dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', conversionId);
+    <script is:inline define:vars={{ conversionId, formStartLabel, formSubmitLabel }}>
+      (function(){
+        function gtag(){window.dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', conversionId);
+        window.__gtagConversionId = conversionId;
+        window.__formStartLabel   = formStartLabel;
+        window.__formSubmitLabel  = formSubmitLabel;
+      })();
     </script>
   </>
 )}
@@ -137,6 +146,79 @@ In `Layout.astro` `<head>`, add after `dataLayer` initialization:
   </script>
 )}
 ```
+
+**Required env vars in `deploy-lp.yml`** — verify these lines exist in the `.env` writer step:
+```js
+'PUBLIC_FORMSTARTLABEL='  + JSON.stringify(c.gtagFormStartLabel||c.formStartLabel||''),
+'PUBLIC_FORMSUBMITLABEL=' + JSON.stringify(c.gtagFormSubmitLabel||c.formSubmitLabel||''),
+'PUBLIC_VOLUUM_CLICK_URL=' + JSON.stringify(c.voluumClickUrl||''),
+```
+
+## Step 4d: Add First-Party Pixel (`/e` endpoint + sendBeacon)
+
+**1. Create `src/pages/e.ts`** in the template:
+
+```typescript
+import type { APIRoute } from 'astro';
+
+export const POST: APIRoute = async ({ request }) => {
+  try {
+    const body = await request.text();
+    const payload = JSON.parse(body);
+    console.log('[pixel]', payload);
+  } catch (_) {}
+  return new Response(null, { status: 204 });
+};
+
+export const GET: APIRoute = () => {
+  return new Response(null, { status: 204 });
+};
+```
+
+**2. Add `sendBeacon` fpPixel block in `Layout.astro` body** (before scroll/time tracking):
+
+```astro
+<!-- First-Party Pixel: sendBeacon to /e -->
+<script is:inline>
+(function(){
+  function fpPixel(eventName, extra) {
+    try {
+      var payload = Object.assign({ e: eventName, d: window.location.hostname, ts: Date.now() }, extra || {});
+      navigator.sendBeacon('/e', JSON.stringify(payload));
+    } catch(_) {}
+  }
+  if (!window.__fpPageTracked) {
+    window.__fpPageTracked = true;
+    fpPixel('pv');
+  }
+  window.__fpPixel = fpPixel;
+})();
+</script>
+```
+
+**3. In form submit handler**, fire `fpPixel` and gtag conversion label:
+
+```js
+// After dataLayer.push({ event: 'form_start', ... })
+try {
+  var cid = window.__gtagConversionId;
+  var lbl = window.__formStartLabel;
+  if (cid && lbl && typeof gtag === 'function') {
+    gtag('event', 'conversion', { send_to: cid + '/' + lbl, value: amount, currency: 'USD' });
+  }
+} catch(_) {}
+if (typeof window.__fpPixel === 'function') { window.__fpPixel('form_start', { amount: amount }); }
+```
+
+## Step 4e: CTA buttons — use `ctaHref`
+
+All CTA `<a>` buttons (hero + final CTA section) must use `{ctaHref}` not hard-coded `#apply`:
+
+```astro
+<a href={ctaHref} class="btn-cta ...">{cta}</a>
+```
+
+`ctaHref = voluumClickUrl || '#apply'` — when `PUBLIC_VOLUUM_CLICK_URL` is set, clicks go to Voluum; otherwise scroll to `#apply`.
 
 ## Step 5: Verify
 
@@ -356,10 +438,34 @@ document.body.appendChild(script);
 - SDK URL: `https://apikeep.com/form/applicationInit.js` (not form.leadsgate.com)
 - `PUBLIC_AID` is injected by CI build from deploy config `aid` field (set in Wizard → Tracking → LeadsGate AID)
 
+## Step 9: Pre-deploy checklist — verify all tracking is wired
+
+Before triggering deploy, confirm ALL of these are in the template:
+
+| # | Check | File |
+|---|---|---|
+| 1 | `PUBLIC_FORMSTARTLABEL` + `PUBLIC_FORMSUBMITLABEL` declared | `Layout.astro` frontmatter |
+| 2 | `window.__formStartLabel` / `window.__formSubmitLabel` exposed | `Layout.astro` gtag script |
+| 3 | `src/pages/e.ts` exists (returns 204) | `src/pages/e.ts` |
+| 4 | `sendBeacon('/e', ...)` fpPixel block injected | `Layout.astro` body |
+| 5 | `window.__fpPixel = fpPixel` exposed globally | `Layout.astro` body |
+| 6 | Form submit fires `gtag conversion` + `__fpPixel('form_start')` | `HeroFormStatic.astro` or form component |
+| 7 | `voluumClickUrl` / `ctaHref` declared + used in all CTA `<a>` | `index.astro` |
+| 8 | `PUBLIC_FORMSTARTLABEL`, `PUBLIC_FORMSUBMITLABEL`, `PUBLIC_VOLUUM_CLICK_URL` in `deploy-lp.yml` | `.github/workflows/deploy-lp.yml` |
+| 9 | `robots.txt.ts` API route exists (not static `robots.txt`) | `src/pages/robots.txt.ts` |
+| 10 | `public/_headers` security headers file exists | `public/_headers` |
+
+**Tracking Test should show green for:**
+- Google Ads: gtag.js loaded, Config initialized, Conversion ID set, form_start/form_submit labels present
+- First-Party Pixel: Pixel Function Initialized, Endpoint Found (204), Page View event
+- Voluum: Lander Script, Domain, Click URL in CTA
+- URL Params: GCLID capture, Click ID, UTM
+- Micro-conversions: form_start fires once, Amount Slider, ZIP Input
+
 ## Notes
-- This workflow only modifies `index.astro`, `apply.astro` and optionally `tsconfig.json`
+- This workflow modifies `index.astro`, `apply.astro`, `Layout.astro`, adds `src/pages/e.ts`, `src/pages/robots.txt.ts`, `public/_headers`
 - Do NOT modify `astro.config.mjs`, `package.json`, or any other files
 - Do NOT add React or any new dependencies
 - The deploy pipeline (GitHub Actions) injects all PUBLIC_* values via `.env` before `npm run build`
 - **Gen Reviews** button in Wizard → Step 5 (Copy) generates 3 unique category-aware reviews via Gemini — regenerate anytime before deploy
-- **Voluum CTA**: if `PUBLIC_VOLUUM_CLICK_URL` is set, use it as `href` for all CTA buttons; fallback to `#apply`
+- **Voluum CTA**: always use `ctaHref = voluumClickUrl || '#apply'` — never hardcode `#apply` in CTA buttons
