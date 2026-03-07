@@ -27,6 +27,12 @@ registerTemplate('pet-care-loans', {
 // ── V2 Stable Templates (shared scaffold + compliance) ──
 import { generate as genInstallmentV2 } from './installment-loans-v2/index.js';
 import { generate as genPetCareV2 } from './pet-care-v2/index.js';
+import { generate as genBearLoanModern } from './bear-loan-modern/index.js';
+import { generate as genInstallmentGolden } from './installment-golden/index.js';
+import { generate as genPetCareGolden } from './pet-care-golden/index.js';
+import { generate as genLeadgenGolden } from './leadgen-golden/index.js';
+import { generate as genFlowbiteLoan } from './flowbite-loan/index.js';
+import { generate as genHyperUILoan } from './hyperui-loan/index.js';
 
 registerTemplate('installment-loans-v2', {
   name: 'Installment Loans V2',
@@ -44,6 +50,60 @@ registerTemplate('pet-care-v2', {
   badge: 'V2 Stable',
   category: 'pet-care',
   generate: genPetCareV2,
+});
+
+registerTemplate('bear-loan-modern', {
+  name: 'Bear Loan Modern',
+  description: 'Modern conversion-first design inspired by premium fintech LPs: social proof, calculator, and clean dark UI.',
+  niche: 'installment-loans',
+  badge: 'New',
+  category: 'installment',
+  generate: genBearLoanModern,
+});
+
+registerTemplate('installment-golden', {
+  name: 'Installment Golden',
+  description: 'Golden installment template with production-safe tracking baseline and publish-gate readiness.',
+  niche: 'installment-loans',
+  badge: 'Golden',
+  category: 'installment',
+  generate: genInstallmentGolden,
+});
+
+registerTemplate('pet-care-golden', {
+  name: 'Pet Care Golden',
+  description: 'Golden pet care financing template with vet-focused layout and tracking baseline.',
+  niche: 'pet-care-loans',
+  badge: 'Golden',
+  category: 'pet-care',
+  generate: genPetCareGolden,
+});
+
+registerTemplate('flowbite-loan', {
+  name: 'Flowbite Loan',
+  description: 'Modern loan LP — Flowbite CDN components, trust-heavy design, slider form, testimonials, FAQ. Mobile-first.',
+  niche: 'installment-loans',
+  badge: 'New',
+  category: 'installment',
+  generate: genFlowbiteLoan,
+});
+
+registerTemplate('hyperui-loan', {
+  name: 'HyperUI Loan',
+  description: 'Bold dark-hero loan LP — HyperUI style, green accents, stats strip, benefit grid, dark testimonials section.',
+  niche: 'installment-loans',
+  badge: 'New',
+  category: 'installment',
+  generate: genHyperUILoan,
+});
+
+registerTemplate('leadgen-golden', {
+  name: 'LeadGen Golden',
+  description: 'Golden generic lead generation template for multi-vertical campaigns.',
+  niche: 'general',
+  badge: 'Golden',
+  category: 'general',
+  generate: genLeadgenGolden,
 });
 
 /**
