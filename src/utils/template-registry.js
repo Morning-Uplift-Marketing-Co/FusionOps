@@ -14,7 +14,17 @@ let moduleLoaded = false;
 // Module natively loaded
 
 // Legacy templates — cleared, use custom (api) imports instead
-const LEGACY_TEMPLATES = [];
+const LEGACY_TEMPLATES = [
+  {
+    id: 'astro-test002',
+    name: 'Astro Test 002',
+    badge: 'CI',
+    description: 'Full Astro template with hero form, calc, FAQ, testimonials — deployed via GitHub Actions CI',
+    category: 'loan',
+    source: 'legacy',
+    health: { usable: true, entry: 'ci', reason: '' },
+  },
+];
 
 // Module templates fallback — cleared, use custom (api) imports instead
 const MODULE_TEMPLATES_FALLBACK = [];
