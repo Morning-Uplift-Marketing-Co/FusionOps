@@ -1,34 +1,61 @@
 ---
-const leadsgateScript = import.meta.env.PUBLIC_LEADSGATE_SCRIPT || '';
-const brand           = import.meta.env.PUBLIC_BRAND            || 'ElasticCredits';
-const domain          = import.meta.env.PUBLIC_DOMAIN           || 'elasticcredits.com';
+const aid = import.meta.env.PUBLIC_AID || '';
 ---
-
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
-  <title>Apply — {brand}</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; }
-    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #faf8f5; font-family: system-ui, sans-serif; }
-    #leadsgate-container { width: 100%; max-width: 600px; padding: 1rem; }
-    #leadsgate-placeholder { text-align: center; color: #999; font-size: 14px; padding: 2rem; }
-  </style>
+  <title>Apply</title>
+  <link rel="dns-prefetch" href="//apikeep.com" />
 </head>
 <body>
-  <div id="leadsgate-container">
-    {leadsgateScript ? (
-      <Fragment set:html={leadsgateScript} />
-    ) : (
-      <div id="leadsgate-placeholder">
-        <p>⚠️ Leadsgate form not configured.</p>
-        <p>Set <code>PUBLIC_LEADSGATE_SCRIPT</code> in your <code>.env</code> file.</p>
-      </div>
-    )}
-  </div>
+<script is:inline define:vars={{ aid }}>
+window.dataLayer = window.dataLayer || [];
+
+var SafeStorage = {
+  _mem: {},
+  set: function(k, v) { try { sessionStorage.setItem(k, v); } catch (e) { this._mem[k] = v; } },
+  get: function(k) { try { return sessionStorage.getItem(k); } catch (e) { return this._mem[k] || null; } }
+};
+
+function getVoluumClickId() {
+  var urlParams = new URLSearchParams(window.location.search);
+  var cid = urlParams.get('cid') || urlParams.get('click_id');
+  if (cid) SafeStorage.set('voluum_cid', cid);
+  return SafeStorage.get('voluum_cid') || cid || '';
+}
+
+var _lg_form_init_ = {
+  aid: aid,
+  template: "fresh",
+  ref: window.location.hostname,
+  click_id: getVoluumClickId(),
+  onFormLoad: function() {
+    window.dataLayer.push({ event: 'leadsgate_form_start' });
+  },
+  onStepChange: function(step) {
+    window.dataLayer.push({ event: 'leadsgate_form_progress', step: step });
+  },
+  onSubmit: function() {
+    window.dataLayer.push({ event: 'leadsgate_form_submit' });
+  },
+  onSuccess: function(data) {
+    window.dataLayer.push({ event: 'lead_conversion_all', type: data.type });
+    if (data.type === 'soldLead') window.dataLayer.push({ event: 'lead_conversion_approved' });
+    if (data.type === 'rejectLead') window.dataLayer.push({ event: 'lead_declined' });
+    if (data.type === 'newLead') window.dataLayer.push({ event: 'lead_pending' });
+  }
+};
+
+var script = document.createElement('script');
+script.type = 'text/javascript';
+script.async = true;
+script.src = 'https://apikeep.com/form/applicationInit.js';
+document.body.appendChild(script);
+</script>
+
+<div id="_lg_form_"></div>
 </body>
 </html>
