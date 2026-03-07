@@ -1,5 +1,7 @@
 name: Deploy Landing Page
 
+# Triggered by a git push of deploy-configs/{domain}.json
+# Only needs "repo" scope on PAT — no "workflow" scope required
 on:
   push:
     paths:
@@ -25,69 +27,77 @@ jobs:
         with:
           node-version: 20
 
-      - name: Find deploy config
+      - name: Find changed deploy config
         id: config
         run: |
           CHANGED=$(git diff --name-only HEAD~1 HEAD -- 'deploy-configs/*.json' 2>/dev/null | head -n1)
           if [ -z "$CHANGED" ]; then
+            CHANGED=$(git show --name-only --format='' HEAD -- 'deploy-configs/*.json' | head -n1)
+          fi
+          if [ -z "$CHANGED" ]; then
             CHANGED=$(ls -t deploy-configs/*.json 2>/dev/null | head -n1)
           fi
           echo "file=$CHANGED" >> "$GITHUB_OUTPUT"
-          echo "Using: $CHANGED"
+          echo "Using config: $CHANGED"
           cat "$CHANGED"
 
-      - name: Resolve template
+      - name: Parse config and resolve template
         id: template
         run: |
-          CF="${{ steps.config.outputs.file }}"
-          TID=$(node -e "const c=require('./$CF');process.stdout.write(c.templateId||'installment-bear')")
-          PRJ=$(node -e "const c=require('./$CF');process.stdout.write(c.cfPagesProject||'lp-'+c.domain.replace(/[^a-z0-9]/g,'-'))")
-          TOK=$(node -e "const c=require('./$CF');process.stdout.write(c.cfApiToken||'')")
-          ACC=$(node -e "const c=require('./$CF');process.stdout.write(c.cfAccountId||'')")
-          case "$TID" in
+          CONFIG_FILE="${{ steps.config.outputs.file }}"
+          TEMPLATE_ID=$(node -e "const c=require('./$CONFIG_FILE');console.log(c.templateId||'installment-bear')")
+          CF_PAGES_PROJECT=$(node -e "const c=require('./$CONFIG_FILE');console.log(c.cfPagesProject||'lp-'+c.domain.replace(/[^a-z0-9]/g,'-'))")
+          CF_API_TOKEN=$(node -e "const c=require('./$CONFIG_FILE');console.log(c.cfApiToken||'')")
+          CF_ACCOUNT_ID=$(node -e "const c=require('./$CONFIG_FILE');console.log(c.cfAccountId||'')")
+
+          case "$TEMPLATE_ID" in
             installment-bear*) DIR="templates/installment-bear" ;;
             *) DIR="templates/installment-bear" ;;
           esac
-          echo "dir=$DIR" >> "$GITHUB_OUTPUT"
-          echo "project=$PRJ" >> "$GITHUB_OUTPUT"
-          echo "cf_token=$TOK" >> "$GITHUB_OUTPUT"
-          echo "cf_account=$ACC" >> "$GITHUB_OUTPUT"
 
-      - name: Install dependencies
+          echo "dir=$DIR" >> "$GITHUB_OUTPUT"
+          echo "cf_pages_project=$CF_PAGES_PROJECT" >> "$GITHUB_OUTPUT"
+          echo "cf_api_token=$CF_API_TOKEN" >> "$GITHUB_OUTPUT"
+          echo "cf_account_id=$CF_ACCOUNT_ID" >> "$GITHUB_OUTPUT"
+          echo "Template: $TEMPLATE_ID → $DIR"
+          echo "CF Project: $CF_PAGES_PROJECT"
+
+      - name: Install template dependencies
         working-directory: ${{ steps.template.outputs.dir }}
         run: npm install
 
-      - name: Inject env vars
+      - name: Inject site config as Astro env vars
         working-directory: ${{ steps.template.outputs.dir }}
-        env:
-          CONFIG_FILE: ${{ steps.config.outputs.file }}
         run: |
           node -e "
-          const fs=require('fs');
-          const c=JSON.parse(fs.readFileSync(process.env.CONFIG_FILE,'utf8'));
-          const mn=String(Number(String(c.amountMin||100).replace(/[^0-9.]/g,''))||100);
-          const mx=String(Number(String(c.amountMax||5000).replace(/[^0-9.]/g,''))||5000);
-          fs.writeFileSync('.env',[
-            'PUBLIC_BRAND='+JSON.stringify(c.brand||''),
-            'PUBLIC_DOMAIN='+JSON.stringify(c.domain||'example.com'),
-            'PUBLIC_H1='+JSON.stringify(c.h1||c.brand||''),
-            'PUBLIC_SUB='+JSON.stringify(c.sub||''),
-            'PUBLIC_CTA='+JSON.stringify(c.cta||'Apply Now'),
-            'PUBLIC_PHONE='+JSON.stringify(c.phone||''),
-            'PUBLIC_EMAIL='+JSON.stringify(c.email||('support@'+(c.domain||'example.com'))),
-            'PUBLIC_ADDRESS='+JSON.stringify(c.address||''),
-            'PUBLIC_AID='+JSON.stringify(c.aid||''),
-            'PUBLIC_AMOUNTMIN='+JSON.stringify(mn),
-            'PUBLIC_AMOUNTMAX='+JSON.stringify(mx),
-            'PUBLIC_PRIMARYCOLOR='+JSON.stringify(c.primaryColor||'#3b5bdb'),
-            'PUBLIC_ACCENTCOLOR='+JSON.stringify(c.accentColor||'#f97316'),
-            'PUBLIC_APRMIN='+JSON.stringify(String(c.aprMin||5.99)),
-            'PUBLIC_APRMAX='+JSON.stringify(String(c.aprMax||35.99)),
-          ].join('\n'));
-          console.log('env ok domain='+c.domain+' max='+mx);
+          const fs = require('fs');
+          const c = JSON.parse(fs.readFileSync(process.env.CONFIG_FILE, 'utf8'));
+          const amountMin = String(Number(String(c.amountMin||100).replace(/[^0-9.]/g,''))||100);
+          const amountMax = String(Number(String(c.amountMax||5000).replace(/[^0-9.]/g,''))||5000);
+          const lines = [
+            'PUBLIC_BRAND='       + JSON.stringify(c.brand||''),
+            'PUBLIC_DOMAIN='      + JSON.stringify(c.domain||'example.com'),
+            'PUBLIC_H1='          + JSON.stringify(c.h1||c.brand||''),
+            'PUBLIC_SUB='         + JSON.stringify(c.sub||''),
+            'PUBLIC_CTA='         + JSON.stringify(c.cta||'Apply Now'),
+            'PUBLIC_PHONE='       + JSON.stringify(c.phone||''),
+            'PUBLIC_EMAIL='       + JSON.stringify(c.email||('support@'+(c.domain||'example.com'))),
+            'PUBLIC_ADDRESS='     + JSON.stringify(c.address||''),
+            'PUBLIC_AID='         + JSON.stringify(c.aid||''),
+            'PUBLIC_AMOUNTMIN='   + JSON.stringify(amountMin),
+            'PUBLIC_AMOUNTMAX='   + JSON.stringify(amountMax),
+            'PUBLIC_PRIMARYCOLOR='+ JSON.stringify(c.primaryColor||'#3b5bdb'),
+            'PUBLIC_ACCENTCOLOR=' + JSON.stringify(c.accentColor||'#f97316'),
+            'PUBLIC_APRMIN='      + JSON.stringify(String(c.aprMin||5.99)),
+            'PUBLIC_APRMAX='      + JSON.stringify(String(c.aprMax||35.99)),
+          ];
+          fs.writeFileSync('.env', lines.join('\n'));
+          console.log('Wrote .env for domain:', c.domain, 'amountMax:', amountMax);
           "
+        env:
+          CONFIG_FILE: ../../${{ steps.config.outputs.file }}
 
-      - name: Build
+      - name: Build Astro site
         working-directory: ${{ steps.template.outputs.dir }}
         run: npm run build
 
@@ -95,18 +105,27 @@ jobs:
         id: deploy
         working-directory: ${{ steps.template.outputs.dir }}
         env:
-          CF_TOKEN_INPUT: ${{ steps.template.outputs.cf_token }}
-          CF_ACCOUNT_INPUT: ${{ steps.template.outputs.cf_account }}
-          CF_TOKEN_SECRET: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CF_ACCOUNT_SECRET: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_TOKEN_FROM_CONFIG: ${{ steps.template.outputs.cf_api_token }}
+          CF_ACCOUNT_FROM_CONFIG: ${{ steps.template.outputs.cf_account_id }}
+          CF_TOKEN_FROM_SECRET: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_FROM_SECRET: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          export CLOUDFLARE_API_TOKEN="${CF_TOKEN_INPUT:-$CF_TOKEN_SECRET}"
-          export CLOUDFLARE_ACCOUNT_ID="${CF_ACCOUNT_INPUT:-$CF_ACCOUNT_SECRET}"
+          export CLOUDFLARE_API_TOKEN="${CF_TOKEN_FROM_CONFIG:-$CF_TOKEN_FROM_SECRET}"
+          export CLOUDFLARE_ACCOUNT_ID="${CF_ACCOUNT_FROM_CONFIG:-$CF_ACCOUNT_FROM_SECRET}"
+
+          echo "CF Account: ${CLOUDFLARE_ACCOUNT_ID:0:8}..."
           echo "Token set: $([ -n "$CLOUDFLARE_API_TOKEN" ] && echo YES || echo NO)"
-          echo "Account: ${CLOUDFLARE_ACCOUNT_ID:0:8}..."
-          PROJECT="${{ steps.template.outputs.project }}"
+          PROJECT="${{ steps.template.outputs.cf_pages_project }}"
+
+          # Create project if it doesn't exist yet (ignore error if already exists)
           npx wrangler pages project create "$PROJECT" --production-branch=main 2>&1 || true
-          npx wrangler pages deploy dist/ --project-name="$PROJECT" --branch=main --commit-dirty=true
-          URL=$(npx wrangler pages deployment list --project-name="$PROJECT" 2>/dev/null | grep -Eo 'https://[A-Za-z0-9._-]+\.pages\.dev' | head -n1 || echo "https://$PROJECT.pages.dev")
+
+          # Deploy
+          npx wrangler pages deploy dist/ \
+            --project-name="$PROJECT" \
+            --branch=main \
+            --commit-dirty=true 2>&1 | tee /tmp/wrangler_out.txt
+          cat /tmp/wrangler_out.txt
+          URL=$(grep -Eo 'https://[A-Za-z0-9._-]+\.pages\.dev' /tmp/wrangler_out.txt | head -n1 || true)
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "Deploy URL: $URL"
