@@ -1,11 +1,8 @@
 ---
 export const prerender = true;
 
-const brand      = import.meta.env.PUBLIC_BRAND   || 'Scratchpay';
-const accountId  = import.meta.env.PUBLIC_LEADSGATE_ACCOUNT_ID  || '14881';
-const campaignId = import.meta.env.PUBLIC_LEADSGATE_CAMPAIGN_ID || '';
-const source     = import.meta.env.PUBLIC_LEADSGATE_SOURCE      || 'pet-orange-white';
-const aid        = import.meta.env.PUBLIC_AID || accountId;
+const brand = import.meta.env.PUBLIC_BRAND || 'Scratchpay';
+const aid   = import.meta.env.PUBLIC_AID   || '14881';
 ---
 
 <!DOCTYPE html>
@@ -15,37 +12,17 @@ const aid        = import.meta.env.PUBLIC_AID || accountId;
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Apply | {brand}</title>
   <meta name="robots" content="noindex, nofollow" />
-  <link rel="dns-prefetch" href="//apikeep.com" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; background: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-    body { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 24px 16px 48px; }
-    #_lg_form_ { width: 100%; max-width: 640px; }
+    html, body { height: 100%; min-height: 100vh; background: #f8fafc; }
+    iframe { display: block; width: 100%; border: none; min-height: 100vh; }
   </style>
 </head>
 <body>
-  <div id="_lg_form_"></div>
-
-  <script data-cfasync="false" is:inline define:vars={{ accountId, campaignId, source, aid }}>
-    (function () {
-      var params = new URLSearchParams(window.location.search);
-      var rawZip  = params.get('zip') || '';
-      var safeZip = /^\d{5}$/.test(rawZip) ? rawZip : '';
-      var clickId = params.get('click_id') || params.get('cid') || '';
-      var trackingParams = {};
-      params.forEach(function (val, key) { trackingParams[key] = val; });
-      var resolvedAccount  = accountId  || aid  || '14881';
-      var resolvedCampaign = campaignId || params.get('campaign_id') || '';
-      window._lg_form_init_ = {
-        account_id:  resolvedAccount,
-        campaign_id: resolvedCampaign,
-        click_id:    clickId,
-        zip:         safeZip,
-        source:      source,
-        meta:        trackingParams,
-      };
-    })();
-  </script>
-  <script data-cfasync="false" is:inline src="https://apikeep.com/form/applicationInit.js"></script>
+  <iframe
+    src={`https://flow.leadsgate.com/en/form/${aid}`}
+    allowfullscreen
+    loading="eager"
+  ></iframe>
 </body>
 </html>
