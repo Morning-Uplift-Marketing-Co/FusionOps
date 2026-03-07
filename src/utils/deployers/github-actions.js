@@ -116,7 +116,13 @@ export async function deploy(assets, site, settings) {
     primaryColor:    site.primaryColor || '',
     accentColor:     site.accentColor  || '',
     conversionId:    site.conversionId || '',
+    voluumId:        site.voluumId     || '',
     voluumDomain:    site.voluumDomain || '',
+    colorId:         site.colorId      || '',
+    fontId:          site.fontId       || '',
+    layout:          site.layout       || '',
+    radius:          site.radius       || '',
+    trustBadges:     site.trustBadges  || '',
     deployedAt:      new Date().toISOString(),
   };
 
