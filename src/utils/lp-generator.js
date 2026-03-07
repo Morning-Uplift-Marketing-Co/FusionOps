@@ -1,4 +1,5 @@
 import { COLORS, FONTS, RADIUS, LOAN_TYPES } from "../constants/index.js";
+import { generatePhone } from "./phone-gen.js";
 
 function esc(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -49,7 +50,7 @@ export function generateApplyPage(site) {
   const c = COLORS.find(x => x.id === site.colorId) || COLORS[0];
   const f = FONTS.find(x => x.id === site.fontId) || FONTS[0];
   const brand = esc(site.brand || "LoanBridge");
-  const loanLabel = LOAN_TYPES.find(l => l.id === site.loanType)?.label || "Personal Loans";
+  const loanLabel = LOAN_TYPES.find(l => l.id === site.loanType)?.label || "Personal Finance";
   const hasGads = validConversionId(site.conversionId);
 
   const fingerprint = `${site.id?.slice(0, 8) || 'xxxx'}-${Date.now().toString(36)}`;
@@ -892,7 +893,7 @@ export async function generateLP(site) {
   const f = FONTS.find(x => x.id === site.fontId) || FONTS[0];
   const r = RADIUS.find(x => x.id === site.radius) || RADIUS[2];
   const brand = esc(site.brand || "LoanBridge");
-  const loanLabel = LOAN_TYPES.find(l => l.id === site.loanType)?.label || "Personal Loans";
+  const loanLabel = LOAN_TYPES.find(l => l.id === site.loanType)?.label || "Personal Finance";
   const h1 = esc(site.h1 || `Fast ${loanLabel} Up To $${(site.amountMax || 5000).toLocaleString()}`);
   const badge = esc(site.badge || "Trusted by 15,000+ borrowers");
   const cta = esc(site.cta || "Check Your Rate");
@@ -1023,7 +1024,7 @@ ${hasGads ? `<script async src="https://www.googletagmanager.com/gtag/js?id=${si
     <div>
       <a href="/" style="display:flex;align-items:center;gap:8px;margin-bottom:12px" aria-label="${brand} homepage"><span style="font-weight:700">${brand}</span></a>
       <p style="font-size:.8125rem;color:hsl(var(--${cssVarPrefix}-fg)/.5);line-height:1.6">Trusted lenders for ${loanLabel.toLowerCase()} up to $${(site.amountMax || 5000).toLocaleString()}.</p>
-      ${(() => { const addr = site.address || pickAddress(site.id); return `<address style="font-style:normal;font-size:.75rem;color:hsl(var(--${cssVarPrefix}-fg)/.4);margin-top:10px">${addr.street}, ${addr.city}, ${addr.state} ${addr.zip}</address>`; })()}
+      ${(() => { const addr = site.address || pickAddress(site.id); const phone = site.phone || generatePhone(site.domain || '', site.brand || ''); return `<address style="font-style:normal;font-size:.75rem;color:hsl(var(--${cssVarPrefix}-fg)/.4);margin-top:10px">${addr.street}, ${addr.city}, ${addr.state} ${addr.zip}</address><div style="font-size:.75rem;color:hsl(var(--${cssVarPrefix}-fg)/.4);margin-top:4px">${phone}</div>`; })()}
     </div>
     <nav aria-label="Company links"><h4>Company</h4><a href="#how-it-works">How It Works</a><a href="apply.html">Apply Now</a></nav>
     <nav aria-label="Legal links"><h4>Legal</h4><a href="#" data-modal="privacy">Privacy Policy</a><a href="#" data-modal="terms">Terms of Service</a><a href="#" data-modal="disclosures">Disclosures</a><a href="#" data-modal="nmls">NMLS Consumer Access</a></nav>
