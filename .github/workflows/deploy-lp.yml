@@ -106,8 +106,11 @@ jobs:
             'PUBLIC_AMOUNTMAX='   + JSON.stringify(amountMax),
             'PUBLIC_PRIMARYCOLOR='+ JSON.stringify(c.primaryColor||'#3b5bdb'),
             'PUBLIC_ACCENTCOLOR=' + JSON.stringify(c.accentColor||'#f97316'),
-            'PUBLIC_APRMIN='      + JSON.stringify(String(c.aprMin||5.99)),
-            'PUBLIC_APRMAX='      + JSON.stringify(String(c.aprMax||35.99)),
+            'PUBLIC_APRMIN='        + JSON.stringify(String(c.aprMin||5.99)),
+            'PUBLIC_APRMAX='        + JSON.stringify(String(c.aprMax||35.99)),
+            'PUBLIC_CONVERSIONID='  + JSON.stringify(c.conversionId||''),
+            'PUBLIC_VOLUUMID='      + JSON.stringify(c.voluumId||''),
+            'PUBLIC_VOLUUMDOMAIN='  + JSON.stringify(c.voluumDomain||''),
           ];
           fs.writeFileSync('.env', lines.join('\n'));
           console.log('Wrote .env for domain:', c.domain, 'amountMax:', amountMax);

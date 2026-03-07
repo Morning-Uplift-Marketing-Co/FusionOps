@@ -1,12 +1,15 @@
 ---
 import '../styles/global.css';
 
-const brand      = import.meta.env.PUBLIC_BRAND      || 'ElasticCredits';
-const domain     = import.meta.env.PUBLIC_DOMAIN     || 'elasticcredits.com';
-const amountMin  = import.meta.env.PUBLIC_AMOUNTMIN  || '100';
-const amountMax  = import.meta.env.PUBLIC_AMOUNTMAX  || '5000';
-const aprMin     = import.meta.env.PUBLIC_APRMIN     || '5.99';
-const aprMax     = import.meta.env.PUBLIC_APRMAX     || '35.99';
+const brand          = import.meta.env.PUBLIC_BRAND          || 'ElasticCredits';
+const domain         = import.meta.env.PUBLIC_DOMAIN         || 'elasticcredits.com';
+const amountMin      = import.meta.env.PUBLIC_AMOUNTMIN      || '100';
+const amountMax      = import.meta.env.PUBLIC_AMOUNTMAX      || '5000';
+const aprMin         = import.meta.env.PUBLIC_APRMIN         || '5.99';
+const aprMax         = import.meta.env.PUBLIC_APRMAX         || '35.99';
+const conversionId   = import.meta.env.PUBLIC_CONVERSIONID   || '';
+const voluumId       = import.meta.env.PUBLIC_VOLUUMID       || '';
+const voluumDomain   = import.meta.env.PUBLIC_VOLUUMDOMAIN   || 'track.vlm.icu';
 
 interface Props {
   title?: string;
@@ -15,8 +18,8 @@ interface Props {
 }
 
 const {
-  title = `${brand} – Personal Loans $${amountMin}-$${amountMax} | Fast Approval`,
-  description = `Get personal loans from $${amountMin} to $${amountMax} with flexible repayment. All credit types welcome. Apply online in 2 minutes.`,
+  title = `${brand} – Fast Personal Finance $${amountMin}-$${amountMax} | Fast Approval`,
+  description = `Get personal finance from $${amountMin} to $${amountMax} with flexible repayment. All credit types welcome. Apply online in 2 minutes.`,
   canonicalUrl = `https://${domain}`,
 } = Astro.props;
 ---
@@ -53,6 +56,27 @@ const {
     <script is:inline>
       window.dataLayer = window.dataLayer || [];
     </script>
+
+    <!-- Google Ads Conversion Tracking -->
+    {conversionId && (
+      <>
+        <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${conversionId}`}></script>
+        <script is:inline define:vars={{ conversionId }}>
+          function gtag(){window.dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', conversionId);
+        </script>
+      </>
+    )}
+
+    <!-- Voluum Pixel -->
+    {voluumId && (
+      <script is:inline define:vars={{ voluumId, voluumDomain }}>
+        var vpv = document.createElement('script');
+        vpv.src = 'https://' + voluumDomain + '/scripts/' + voluumId + '/vp.js';
+        document.head.appendChild(vpv);
+      </script>
+    )}
 
     <!-- Critical inline font fallback -->
     <style is:inline>
