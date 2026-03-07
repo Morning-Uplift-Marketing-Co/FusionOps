@@ -49,8 +49,20 @@ async function pushFile({ githubToken, repo, branch, path, content, message }) {
   let res = await tryPush(sha);
 
   for (let attempt = 0; attempt < 3 && res.status === 409; attempt++) {
-    await new Promise(r => setTimeout(r, 300 * (attempt + 1)));
-    sha = await getFileSha(url, branch, headers);
+    await new Promise(r => setTimeout(r, 400 * (attempt + 1)));
+    // GitHub 409 body contains the correct SHA — parse it directly
+    // e.g. {"message":"... does not match <sha>","status":"409"}
+    try {
+      const errBody = await res.clone().json().catch(() => null);
+      const match = errBody?.message?.match(/[0-9a-f]{40}/);
+      if (match) {
+        sha = match[0];
+      } else {
+        sha = await getFileSha(url, branch, headers);
+      }
+    } catch (_) {
+      sha = await getFileSha(url, branch, headers);
+    }
     res = await tryPush(sha);
   }
 
