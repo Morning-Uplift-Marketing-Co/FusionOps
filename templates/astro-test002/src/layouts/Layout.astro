@@ -94,7 +94,7 @@ const {
     <link href={`https://fonts.googleapis.com/css2?family=${font.import}&display=swap`} rel="stylesheet" media="print" onload="this.media='all'" />
     <noscript><link href={`https://fonts.googleapis.com/css2?family=${font.import}&display=swap`} rel="stylesheet" /></noscript>
 
-    <!-- GCLID + Click ID Capture -->
+    <!-- GCLID + Click ID + UTM Capture -->
     <script is:inline>
       (function() {
         var p = new URLSearchParams(window.location.search);
@@ -103,6 +103,8 @@ const {
         try {
           if (gclid) sessionStorage.setItem('google_gclid', gclid);
           if (cid) sessionStorage.setItem('voluum_cid', cid);
+          var utmKeys = ['utm_source','utm_medium','utm_campaign','utm_term','utm_content'];
+          utmKeys.forEach(function(k){ var v = p.get(k); if(v) sessionStorage.setItem(k, v); });
         } catch(e) {}
       })();
     </script>
@@ -166,5 +168,37 @@ const {
   </head>
   <body class="min-h-screen bg-background text-foreground antialiased">
     <slot />
+
+    <!-- First-Party Pixel: pv + Scroll + Time on Page -->
+    <script is:inline>
+    (function(){
+      var dl = window.dataLayer = window.dataLayer || [];
+
+      // pv (page view)
+      dl.push({ event: 'pv', page: window.location.pathname });
+
+      // Scroll tracking 25/50/75/100%
+      var scrolled = {};
+      var thresholds = [25, 50, 75, 100];
+      function onScroll() {
+        var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        var docHeight = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight) - window.innerHeight;
+        if (docHeight <= 0) return;
+        var pct = Math.round((scrollTop / docHeight) * 100);
+        thresholds.forEach(function(t) {
+          if (pct >= t && !scrolled[t]) {
+            scrolled[t] = true;
+            dl.push({ event: 'scroll_depth', percent: t });
+          }
+        });
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+
+      // Time on Page 30s / 60s
+      var timers = { 30: false, 60: false };
+      setTimeout(function(){ if(!timers[30]){ timers[30]=true; dl.push({ event:'time_on_page', seconds:30 }); } }, 30000);
+      setTimeout(function(){ if(!timers[60]){ timers[60]=true; dl.push({ event:'time_on_page', seconds:60 }); } }, 60000);
+    })();
+    </script>
   </body>
 </html>

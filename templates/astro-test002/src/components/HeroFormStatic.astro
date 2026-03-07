@@ -82,14 +82,30 @@ const defaultAmt   = String(Math.round((Number(amountMinRaw) + Number(amountMaxR
   }
 
   btns.forEach(function(b){
-    b.addEventListener('click', function(){ setAmount(parseInt(b.dataset.amount)); });
+    b.addEventListener('click', function(){
+      setAmount(parseInt(b.dataset.amount));
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({ event: 'amt', amount: parseInt(b.dataset.amount) });
+    });
   });
 
+  slider.addEventListener('change', function(){
+    setAmount(parseInt(slider.value));
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ event: 'amt', amount: parseInt(slider.value) });
+  });
   slider.addEventListener('input', function(){ setAmount(parseInt(slider.value)); });
 
+  var zipEntered = false;
   zipInput.addEventListener('input', function(){
     zipInput.value = zipInput.value.replace(/\D/g,'').slice(0,5);
     zipErr.classList.add('hidden');
+    if(zipInput.value.length === 5 && !zipEntered){
+      zipEntered = true;
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({ event: 'ze', zip: zipInput.value });
+    }
+    if(zipInput.value.length < 5) zipEntered = false;
   });
 
   form.addEventListener('submit', function(e){
@@ -101,7 +117,8 @@ const defaultAmt   = String(Math.round((Number(amountMinRaw) + Number(amountMaxR
       return;
     }
     window.dataLayer = window.dataLayer || [];
-    window.dataLayer.push({ event:'generate_lead_start', conversion_value:amount, currency:'USD' });
+    window.dataLayer.push({ event: 'generate_lead_start', conversion_value: amount, currency: 'USD' });
+    window.dataLayer.push({ event: 'form_start', value: amount, currency: 'USD' });
     var p = new URLSearchParams(window.location.search);
     p.set('amount', amount);
     p.set('zip', zip);
