@@ -539,12 +539,41 @@ useEffect(() => {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const startCreate = (existingSite = null) => {
+  const startCreate = async (existingSite = null) => {
     // Guard: reject MouseEvent or non-plain-object arguments (e.g. from onClick handlers)
     const isValidSite = existingSite && typeof existingSite === "object" && !(existingSite instanceof Event) && !existingSite.nativeEvent && existingSite.id;
     if (isValidSite) {
-      // Edit mode: keep original ID for update/redeploy
-      setWizData({ ...WIZARD_DEFAULTS, ...existingSite, _editMode: true });
+      // Edit mode: restore Voluum/tracking fields from deploy config on GitHub
+      // (these were lost before SITE_FIELDS fix — fetch to recover them)
+      let recovered = {};
+      try {
+        const token = (settings.githubToken || '').trim();
+        const owner = (settings.githubRepoOwner || '').trim();
+        const repo  = (settings.githubRepoName  || '').trim();
+        const domain = (existingSite.domain || existingSite.brand || '').replace(/[^a-z0-9.-]/gi, '-').toLowerCase();
+        if (token && owner && repo && domain) {
+          const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/deploy-configs/${domain}.json?ref=main`, {
+            headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            const decoded = atob(data.content.replace(/\n/g, ''));
+            const cfg = JSON.parse(decoded);
+            // Map deploy config keys back to Wizard field names
+            recovered = {
+              trackingMode:        existingSite.trackingMode        || (cfg.voluumId ? 'voluum' : 'minimal'),
+              voluumCampaignId:    existingSite.voluumCampaignId    || cfg.voluumId        || '',
+              voluumTrackingDomain:existingSite.voluumTrackingDomain|| cfg.voluumDomain    || '',
+              voluumClickUrl:      existingSite.voluumClickUrl      || cfg.voluumClickUrl  || '',
+              gtagId:              existingSite.gtagId              || cfg.conversionId    || '',
+              conversionId:        existingSite.conversionId        || cfg.conversionId    || '',
+              aid:                 existingSite.aid                 || cfg.aid             || '',
+            };
+          }
+        }
+      } catch (_) { /* silently ignore — use existing data */ }
+
+      setWizData({ ...WIZARD_DEFAULTS, ...existingSite, ...recovered, _editMode: true });
     } else {
       const defaultTemplateId = settings?.defaultTemplateId || WIZARD_DEFAULTS.templateId;
       setWizData({ ...WIZARD_DEFAULTS, templateId: defaultTemplateId });
