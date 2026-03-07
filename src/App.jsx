@@ -553,7 +553,7 @@ useEffect(() => {
   };
 
   // Keep only plain serializable site fields — drops React event/DOM properties
-  const SITE_FIELDS = new Set(["id", "brand", "domain", "tagline", "email", "templateId", "loanType", "amountMin", "amountMax", "aprMin", "aprMax", "colorId", "fontId", "layout", "radius", "trustBadgeStyle", "trustBadgeIconTone", "h1", "h1span", "badge", "cta", "sub", "conversionId", "formStartLabel", "formSubmitLabel", "aid", "network", "redirectUrl", "voluumId", "voluumDomain", "lang", "faviconDataUrl", "ogImageDataUrl", "formEmbed", "cfProfileId", "cfAccountId", "internetbsAccountId", "domainProvider", "domainProviderAccountId", "status", "createdAt", "updatedAt", "cost"]);
+  const SITE_FIELDS = new Set(["id", "brand", "domain", "tagline", "email", "templateId", "loanType", "amountMin", "amountMax", "aprMin", "aprMax", "colorId", "fontId", "layout", "radius", "trustBadgeStyle", "trustBadgeIconTone", "h1", "h1span", "badge", "cta", "sub", "conversionId", "gtagId", "gtagFormStartLabel", "gtagFormSubmitLabel", "formStartLabel", "formSubmitLabel", "aid", "network", "redirectUrl", "voluumId", "voluumDomain", "voluumCampaignId", "voluumCampaignName", "voluumTrackingDomain", "voluumClickUrl", "voluumLanderScript", "trackingMode", "phone", "address", "lang", "faviconDataUrl", "ogImageDataUrl", "formEmbed", "cfProfileId", "cfAccountId", "internetbsAccountId", "domainProvider", "domainProviderAccountId", "status", "createdAt", "updatedAt", "cost", "reviews", "trustBadges", "deployTarget", "deployOnBuild"]);
   const sanitizeSite = (obj) => Object.fromEntries(
     Object.entries(obj).filter(([k, v]) => SITE_FIELDS.has(k) && typeof v !== "function")
   );
