@@ -122,6 +122,9 @@ export function StepTracking({ c, u }) {
   const [dnsResult, setDnsResult] = useState(null); // { success, message } or null
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [verifyResult, setVerifyResult] = useState(null);
+  // Collapse Voluum script section if already configured (edit mode)
+  const voluumAlreadyConfigured = !!(c.voluumLanderScript && c.voluumId);
+  const [editVoluum, setEditVoluum] = useState(false);
 
   const mode = c.trackingMode || "minimal";
   const isVoluum = mode === "voluum";
@@ -661,48 +664,90 @@ export function StepTracking({ c, u }) {
       {isVoluum && (
         <Card className="mb-3.5">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2">
-              <span>🏃</span> Voluum Lander Script
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-[12px] font-semibold mb-2">Install Lander Tracking Script</div>
-            <p className="text-[11px] text-[hsl(var(--muted-foreground))] leading-relaxed mb-2">
-              Paste your Voluum Lander Tracking Script into your lander page&apos;s HTML. Place it at the bottom of the <code className="text-[10px] font-mono bg-[hsl(var(--muted))/30] px-1 py-0.5 rounded">&lt;head&gt;</code> tag section.
-            </p>
-            <textarea
-              value={c.voluumLanderScript || ""}
-              onChange={(e) => u("voluumLanderScript", normalizeVoluumScriptHost(e.target.value, c.domain))}
-              rows={9}
-              placeholder={buildVoluumLanderScript((c.domain || "").trim()) || "<script>/* Voluum Lander Tracking Script */</script>"}
-              className="w-full rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--input))] px-3 py-2 text-[11px] font-mono text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]/50 resize-y"
-            />
-            <div className="mt-3 space-y-2">
-              <Field label="CTA Click URL" help="CTA buttons will redirect to this URL when Voluum is enabled">
-                <div className="flex gap-2">
-                  <Inp
-                    value={c.voluumClickUrl || ""}
-                    onChange={v => u("voluumClickUrl", v)}
-                    placeholder={`https://vls.${c.domain || "domain.com"}/click`}
-                  />
-                  {!c.voluumClickUrl && c.domain && (
-                    <button
-                      type="button"
-                      onClick={() => u("voluumClickUrl", `https://vls.${c.domain}/click`)}
-                      className="px-3 py-1.5 text-[10px] rounded-lg bg-[hsl(var(--primary))/15] border border-[hsl(var(--primary))/40] text-[hsl(var(--primary))] font-semibold cursor-pointer whitespace-nowrap"
-                    >
-                      Use Default
-                    </button>
-                  )}
-                </div>
-              </Field>
-              {c.voluumClickUrl && (
-                <div className="flex items-center gap-1.5">
-                  <div className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--success))]" />
-                  <span className="text-[10px] text-[hsl(var(--success))]">CTA buttons will use Voluum click URL</span>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <span>🏃</span> Voluum Lander Script
+              </CardTitle>
+              {voluumAlreadyConfigured && !editVoluum && (
+                <div className="flex items-center gap-2">
+                  <Badge variant="success">Configured ✓</Badge>
+                  <button
+                    type="button"
+                    onClick={() => setEditVoluum(true)}
+                    className="px-2.5 py-1 text-[10px] rounded-lg border border-[hsl(var(--border))] bg-transparent text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] cursor-pointer"
+                  >
+                    Edit
+                  </button>
                 </div>
               )}
             </div>
+          </CardHeader>
+          <CardContent>
+            {voluumAlreadyConfigured && !editVoluum ? (
+              /* ── Collapsed summary (edit mode, already configured) ── */
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5 text-[11px] text-[hsl(var(--muted-foreground))]">
+                  <div className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--success))]" />
+                  Lander script installed for <span className="font-mono font-semibold text-[hsl(var(--foreground))]">vls.{c.domain}</span>
+                </div>
+                {c.voluumClickUrl && (
+                  <div className="flex items-center gap-1.5 text-[11px] text-[hsl(var(--muted-foreground))]">
+                    <div className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--success))]" />
+                    CTA → <span className="font-mono font-semibold text-[hsl(var(--foreground))]">{c.voluumClickUrl}</span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* ── Full form (first setup or editing) ── */
+              <>
+                <div className="text-[12px] font-semibold mb-2">Install Lander Tracking Script</div>
+                <p className="text-[11px] text-[hsl(var(--muted-foreground))] leading-relaxed mb-2">
+                  Paste your Voluum Lander Tracking Script into your lander page&apos;s HTML. Place it at the bottom of the <code className="text-[10px] font-mono bg-[hsl(var(--muted))/30] px-1 py-0.5 rounded">&lt;head&gt;</code> tag section.
+                </p>
+                <textarea
+                  value={c.voluumLanderScript || ""}
+                  onChange={(e) => u("voluumLanderScript", normalizeVoluumScriptHost(e.target.value, c.domain))}
+                  rows={9}
+                  placeholder={buildVoluumLanderScript((c.domain || "").trim()) || "<script>/* Voluum Lander Tracking Script */</script>"}
+                  className="w-full rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--input))] px-3 py-2 text-[11px] font-mono text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]/50 resize-y"
+                />
+                <div className="mt-3 space-y-2">
+                  <Field label="CTA Click URL" help="CTA buttons will redirect to this URL when Voluum is enabled">
+                    <div className="flex gap-2">
+                      <Inp
+                        value={c.voluumClickUrl || ""}
+                        onChange={v => u("voluumClickUrl", v)}
+                        placeholder={`https://vls.${c.domain || "domain.com"}/click`}
+                      />
+                      {!c.voluumClickUrl && c.domain && (
+                        <button
+                          type="button"
+                          onClick={() => u("voluumClickUrl", `https://vls.${c.domain}/click`)}
+                          className="px-3 py-1.5 text-[10px] rounded-lg bg-[hsl(var(--primary))/15] border border-[hsl(var(--primary))/40] text-[hsl(var(--primary))] font-semibold cursor-pointer whitespace-nowrap"
+                        >
+                          Use Default
+                        </button>
+                      )}
+                    </div>
+                  </Field>
+                  {c.voluumClickUrl && (
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--success))]" />
+                      <span className="text-[10px] text-[hsl(var(--success))]">CTA buttons will use Voluum click URL</span>
+                    </div>
+                  )}
+                  {editVoluum && (
+                    <button
+                      type="button"
+                      onClick={() => setEditVoluum(false)}
+                      className="mt-1 px-3 py-1.5 text-[10px] rounded-lg border border-[hsl(var(--border))] bg-transparent text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] cursor-pointer"
+                    >
+                      ← Done Editing
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       )}
