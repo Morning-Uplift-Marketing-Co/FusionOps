@@ -1616,7 +1616,8 @@ export default {
       }
     } else if (path.startsWith('/api/')) {
       const publicNoAuth = new Set(['/api/openapi.json']);
-      if (!publicNoAuth.has(path) && !isTrustedOriginRequest(request, url, env)) {
+      const isAiRoute = path.startsWith('/api/ai/');
+      if (!publicNoAuth.has(path) && !isAiRoute && !isTrustedOriginRequest(request, url, env)) {
         return json({ error: 'Unauthorized (untrusted origin, API_SECRET not configured)' }, 401);
       }
     }
