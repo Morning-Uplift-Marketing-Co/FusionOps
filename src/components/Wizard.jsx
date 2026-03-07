@@ -277,8 +277,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                 notify(p?.error || "AI generation failed. Check your API key.", "warning");
             }
         } catch (e) {
-            console.warn("[Wizard] AI generation failed:", e?.message || e);
-            notify("AI generation failed. Check your API key.", "warning");
+            notify(e?.message || "AI generation failed. Check your Gemini API Key in Settings.", "warning");
         } finally {
             setAiLoading(false);
         }
@@ -308,8 +307,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                 notify(p?.error || "Meta generation failed.", "warning");
             }
         } catch (e) {
-            console.warn("[Wizard] AI meta gen failed:", e?.message || e);
-            notify("Meta generation failed. Check your API key.", "warning");
+            notify(e?.message || "Meta generation failed. Check your Gemini API Key in Settings.", "warning");
         } finally {
             setAiMetaLoading(false);
         }
