@@ -3209,6 +3209,16 @@ export default {
         });
       }
 
+      if (path === '/api/automation/registrar/credentials' && method === 'POST') {
+        const body = await request.json();
+        const { provider, accountId } = body;
+        const acctRow = accountId
+          ? await db.prepare('SELECT * FROM registrar_accounts WHERE id = ?').bind(accountId).first()
+          : await db.prepare('SELECT * FROM registrar_accounts WHERE provider = ? LIMIT 1').bind(provider).first();
+        if (!acctRow) return json({ error: 'Registrar account not found' }, 404);
+        return json({ apiKey: acctRow.api_key, secretKey: acctRow.secret_key, provider: acctRow.provider });
+      }
+
       if (path === '/api/automation/registrar/nameservers' && method === 'PUT') {
         const body = await request.json();
         const { domain, nameservers, provider, accountId } = body;

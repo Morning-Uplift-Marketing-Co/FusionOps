@@ -4,6 +4,7 @@ import { uid, now } from "../utils";
 import { generateHtmlByTemplate, generateApplyPageByTemplate, generateDeployAssetsByTemplate } from "../utils/template-router";
 import { fetchCustomTemplates, getCustomTemplatesCache, registry } from "../utils/template-registry";
 import { api } from "../services/api";
+import { getIbsApiBase } from "../utils/api-proxy";
 import { getOrCreateZone, upsertDnsRecord, ensurePixelSubdomain } from "../services/cloudflare-dns";
 import { deployTo, getAvailableTargets } from "../utils/deployers";
 import { MockPhone } from "./ui/mock-phone";
@@ -200,15 +201,36 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                         throw new Error(zone?.error || "Cloudflare nameservers not ready yet");
                     }
 
-                    const res = await api.put("/automation/registrar/nameservers", {
-                        domain,
-                        nameservers: zone.nameservers,
+                    // Fetch credentials from worker (read-only D1 lookup)
+                    const credRes = await api.post("/automation/registrar/credentials", {
                         provider,
                         accountId: providerAccountId,
                     });
+                    if (!credRes?.apiKey) throw new Error(credRes?.error || "Registrar credentials not found");
 
-                    if (!res?.success) {
-                        throw new Error(res?.message || res?.error || "Failed to sync nameservers");
+                    // Call InternetBS directly from browser — avoids Cloudflare Worker IP block
+                    const ibsBase = getIbsApiBase();
+                    const nsPayload = new URLSearchParams({
+                        ApiKey: credRes.apiKey,
+                        Password: credRes.secretKey,
+                        responseformat: "JSON",
+                        Domain: domain,
+                    });
+                    zone.nameservers.forEach((ns, i) => nsPayload.append(`Ns${i + 1}`, ns));
+                    const ibsRes = await fetch(`${ibsBase}/Domain/Update`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: nsPayload.toString(),
+                    });
+                    const ibsData = await ibsRes.json().catch(() => ({}));
+                    const res = {
+                        success: ibsData.status?.toLowerCase() === "success" || ibsData.status?.toLowerCase() === "pending",
+                        message: ibsData.message,
+                        verified: ibsData.status?.toLowerCase() === "success",
+                    };
+
+                    if (!res.success) {
+                        throw new Error(ibsData.message || "InternetBS nameserver update failed");
                     }
 
                     setConfig((p) => ({

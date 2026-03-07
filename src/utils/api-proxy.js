@@ -46,3 +46,14 @@ export function getCfApiBase(/* settings */) {
 export function getMlxApiBase(/* settings */) {
   return `${getWorkerBase()}/api/proxy/mlx`;
 }
+
+/**
+ * Get InternetBS API base URL via cf-proxy.
+ * IMPORTANT: Must be called client-side (browser) so InternetBS sees the
+ * user's IP, not a Cloudflare Worker IP which changes constantly.
+ *
+ * Equivalent to: https://api.internet.bs
+ */
+export function getIbsApiBase() {
+  return "https://lp-cors-proxy.misty-feather-556e.workers.dev/ibs";
+}
