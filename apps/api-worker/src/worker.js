@@ -3234,27 +3234,21 @@ export default {
           : await db.prepare('SELECT * FROM registrar_accounts WHERE provider = ? LIMIT 1').bind(provider).first();
         if (!acctRow) return json({ error: 'Registrar account not found' }, 404);
 
-        // Whitelist worker's current outbound IP(s) in InternetBS before calling Domain/Update
-        // Worker IPs are ephemeral — we must whitelist on every request
-        const ibsWhitelist = async (ip) => {
-          if (!ip) return;
-          const f = new URLSearchParams({ ApiKey: acctRow.api_key, Password: acctRow.secret_key, responseformat: 'JSON', Ip: ip });
-          const r = await fetch('https://api.internet.bs/Account/Access/AddIp', {
-            method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: f.toString(),
-          }).catch(() => null);
-          const d = await r?.json().catch(() => ({}));
-          console.log(`[IBS] AddIp ${ip}:`, d?.status, d?.message);
-        };
+        // Whitelist worker's actual outbound IP in InternetBS before calling Domain/Update
+        // Use api64.ipify.org which returns the real IP used (IPv6 or IPv4)
         try {
-          // Try both ipify (IPv4) and CF's own connecting IP header
-          const ipifyRes = await fetch('https://api64.cloudflare.com/cdn-cgi/trace').catch(() => null);
-          const traceText = await ipifyRes?.text().catch(() => '');
-          const ipv4Match = traceText.match(/ip=([^\n]+)/);
-          const workerIp = ipv4Match?.[1]?.trim();
-          if (workerIp) await ibsWhitelist(workerIp);
-          // Also try ipify as backup
-          const ipifyV4 = await fetch('https://api.ipify.org?format=json').then(r => r.json()).catch(() => ({}));
-          if (ipifyV4?.ip && ipifyV4.ip !== workerIp) await ibsWhitelist(ipifyV4.ip);
+          const ipRes = await fetch('https://api64.ipify.org?format=json').catch(() => null);
+          const ipData = await ipRes?.json().catch(() => ({}));
+          const workerIp = ipData?.ip;
+          console.log('[IBS] Worker outbound IP:', workerIp);
+          if (workerIp) {
+            const f = new URLSearchParams({ ApiKey: acctRow.api_key, Password: acctRow.secret_key, responseformat: 'JSON', Ip: workerIp });
+            const r = await fetch('https://api.internet.bs/Account/Access/AddIp', {
+              method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: f.toString(),
+            }).catch(() => null);
+            const d = await r?.json().catch(() => ({}));
+            console.log(`[IBS] AddIp ${workerIp}:`, d?.status, d?.message);
+          }
         } catch (_e) { console.warn('[IBS] IP whitelist failed:', _e?.message); }
 
         // Pre-check to avoid unnecessary registrar updates.
