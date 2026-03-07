@@ -12,6 +12,7 @@
 const TARGETS = {
   "/cf/": "https://api.cloudflare.com/client/v4/",
   "/mlx/": "https://api.multilogin.com/",
+  "/ibs/": "https://api.internet.bs/",
 };
 
 const CORS_HEADERS = {
