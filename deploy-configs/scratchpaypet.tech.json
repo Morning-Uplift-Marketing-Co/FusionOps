@@ -1,5 +1,5 @@
 {
-  "templateId": "astro-test002",
+  "templateId": "installment-loans-101",
   "cfPagesProject": "lp-scratchpaypet-tech",
   "cfApiToken": "8dTwYeTJF93WbhAyi2FzhUe8PV3rIEta5b8Pq5MQ",
   "cfAccountId": "ef771cfd6197dedb36bb3cea22ecf4fc",
@@ -21,12 +21,12 @@
   "conversionId": "AW-12456",
   "voluumId": "",
   "voluumDomain": "",
-  "voluumClickUrl": "",
+  "voluumClickUrl": "https://vls.scratchpaypet.tech/click",
   "colorId": "ruby",
   "fontId": "dm-sans",
   "layout": "hero-left",
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-07T05:43:48.276Z"
+  "deployedAt": "2026-03-07T06:35:22.367Z"
 }
