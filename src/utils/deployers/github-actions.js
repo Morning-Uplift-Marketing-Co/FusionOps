@@ -68,7 +68,9 @@ export async function deploy(assets, site, settings) {
   const repoOwner = (settings.githubRepoOwner || '').trim();
   const repoName  = (settings.githubRepoName  || '').trim();
   const githubRepo = repoOwner && repoName ? `${repoOwner}/${repoName}` : '';
-  const branch    = (settings.githubRepoBranch || 'master').trim();
+  // Always push deploy config to 'main' — that's where deploy-lp.yml workflow lives
+  // (githubRepoBranch is used by git-push for LP source, not for CI config trigger)
+  const branch    = 'main';
   const cfPagesProject = `lp-${(site.domain || site.brand || 'site').toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 40)}`;
 
   if (!githubToken) return { success: false, error: 'Missing GitHub Token. Add it in Settings → Git Push Pipeline.' };
