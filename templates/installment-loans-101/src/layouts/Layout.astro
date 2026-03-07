@@ -9,9 +9,11 @@ const aprMin       = import.meta.env.PUBLIC_APRMIN       || '5.99';
 const aprMax       = import.meta.env.PUBLIC_APRMAX       || '35.99';
 const primaryColor   = import.meta.env.PUBLIC_PRIMARYCOLOR      || '';
 const accentColor    = import.meta.env.PUBLIC_ACCENTCOLOR       || '';
-const conversionId   = import.meta.env.PUBLIC_CONVERSIONID      || '';
-const voluumId       = import.meta.env.PUBLIC_VOLUUMID          || '';
-const voluumDomain   = import.meta.env.PUBLIC_VOLUUMDOMAIN      || 'track.vlm.icu';
+const conversionId      = import.meta.env.PUBLIC_CONVERSIONID      || '';
+const formStartLabel    = import.meta.env.PUBLIC_FORMSTARTLABEL   || '';
+const formSubmitLabel   = import.meta.env.PUBLIC_FORMSUBMITLABEL  || '';
+const voluumId          = import.meta.env.PUBLIC_VOLUUMID          || '';
+const voluumDomain      = import.meta.env.PUBLIC_VOLUUMDOMAIN      || 'track.vlm.icu';
 
 interface Props {
   title?: string;
@@ -78,10 +80,15 @@ const {
     {conversionId && (
       <>
         <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${conversionId}`}></script>
-        <script is:inline define:vars={{ conversionId }}>
-          function gtag(){window.dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', conversionId);
+        <script is:inline define:vars={{ conversionId, formStartLabel, formSubmitLabel }}>
+          (function(){
+            function gtag(){window.dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', conversionId);
+            window.__gtagConversionId = conversionId;
+            window.__formStartLabel   = formStartLabel;
+            window.__formSubmitLabel  = formSubmitLabel;
+          })();
         </script>
       </>
     )}
@@ -141,7 +148,24 @@ const {
   <body class="min-h-screen bg-background text-foreground antialiased">
     <slot />
 
-    <!-- First-Party Pixel: pv + Scroll + Time on Page -->
+    <!-- First-Party Pixel: sendBeacon to /e -->
+    <script is:inline>
+    (function(){
+      function fpPixel(eventName, extra) {
+        try {
+          var payload = Object.assign({ e: eventName, d: window.location.hostname, ts: Date.now() }, extra || {});
+          navigator.sendBeacon('/e', JSON.stringify(payload));
+        } catch(_) {}
+      }
+      if (!window.__fpPageTracked) {
+        window.__fpPageTracked = true;
+        fpPixel('pv');
+      }
+      window.__fpPixel = fpPixel;
+    })();
+    </script>
+
+    <!-- dataLayer: pv + Scroll + Time on Page -->
     <script is:inline>
     (function(){
       var dl = window.dataLayer = window.dataLayer || [];
