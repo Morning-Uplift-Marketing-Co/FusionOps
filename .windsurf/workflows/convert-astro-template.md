@@ -202,9 +202,8 @@ const aid = import.meta.env.PUBLIC_AID || '';
   <title>Apply</title>
   <link rel="dns-prefetch" href="//apikeep.com" />
 </head>
-<body style="margin:0;padding:0;background:#f9fafb;">
-
-<script is:inline define:vars={{ aid }}>
+<body data-aid={aid}>
+<script is:inline>
 window.dataLayer = window.dataLayer || [];
 
 var SafeStorage = {
@@ -219,6 +218,8 @@ function getVoluumClickId() {
   if (cid) SafeStorage.set('voluum_cid', cid);
   return SafeStorage.get('voluum_cid') || cid || '';
 }
+
+var aid = document.body.getAttribute('data-aid') || '';
 
 var _lg_form_init_ = {
   aid: aid,
