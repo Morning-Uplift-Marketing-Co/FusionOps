@@ -89,6 +89,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
     const [validationErrors, setValidationErrors] = useState([]);
     const [aiLoading, setAiLoading] = useState(false);
     const [aiMetaLoading, setAiMetaLoading] = useState(false);
+    const [aiReviewsLoading, setAiReviewsLoading] = useState(false);
     const [nextLoading, setNextLoading] = useState(false);
     const [initialConfig, setInitialConfig] = useState(null);
     const cardRef = useRef(null);
@@ -310,6 +311,29 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
             notify(e?.message || "Meta generation failed. Check your Gemini API Key in Settings.", "warning");
         } finally {
             setAiMetaLoading(false);
+        }
+    };
+
+    const handleAiReviews = async () => {
+        setAiReviewsLoading(true);
+        try {
+            const p = await api.post("/ai/generate-reviews", {
+                brand: config.brand,
+                loanType: config.loanType,
+                amountMax: config.amountMax,
+                geminiKey: settings?.geminiKey || "",
+                anthropicKey: settings?.anthropicKey || "",
+            });
+            if (Array.isArray(p) && p.length > 0) {
+                upd("reviews", p);
+                notify("Reviews generated!");
+            } else {
+                notify(p?.error || "Reviews generation failed.", "warning");
+            }
+        } catch (e) {
+            notify(e?.message || "Reviews generation failed.", "warning");
+        } finally {
+            setAiReviewsLoading(false);
         }
     };
 
@@ -547,7 +571,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                         {step === 2 && <StepProduct c={config} u={upd} capabilities={capabilities} />}
                         {step === 3 && <StepTemplate c={config} u={upd} capabilities={capabilities} />}
                         {step === 4 && <StepDesign c={config} u={upd} notify={notify} capabilities={capabilities} />}
-                        {step === 5 && <StepCopy c={config} u={upd} onAiGenerate={handleAiGenerate} aiLoading={aiLoading} onAiMeta={handleAiMeta} aiMetaLoading={aiMetaLoading} capabilities={capabilities} />}
+                        {step === 5 && <StepCopy c={config} u={upd} onAiGenerate={handleAiGenerate} aiLoading={aiLoading} onAiMeta={handleAiMeta} aiMetaLoading={aiMetaLoading} onAiReviews={handleAiReviews} aiReviewsLoading={aiReviewsLoading} capabilities={capabilities} />}
                         {step === 6 && <StepTracking c={config} u={upd} capabilities={capabilities} />}
                         {step === 7 && <StepReview c={config} building={building} capabilities={capabilities} />}
                         {step === 7 && (
@@ -590,7 +614,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                     {step === 2 && <StepProduct c={config} u={upd} capabilities={capabilities} />}
                     {step === 3 && <StepTemplate c={config} u={upd} capabilities={capabilities} />}
                     {step === 4 && <StepDesign c={config} u={upd} notify={notify} capabilities={capabilities} />}
-                    {step === 5 && <StepCopy c={config} u={upd} onAiGenerate={handleAiGenerate} aiLoading={aiLoading} onAiMeta={handleAiMeta} aiMetaLoading={aiMetaLoading} capabilities={capabilities} />}
+                    {step === 5 && <StepCopy c={config} u={upd} onAiGenerate={handleAiGenerate} aiLoading={aiLoading} onAiMeta={handleAiMeta} aiMetaLoading={aiMetaLoading} onAiReviews={handleAiReviews} aiReviewsLoading={aiReviewsLoading} capabilities={capabilities} />}
                     {step === 6 && <StepTracking c={config} u={upd} capabilities={capabilities} />}
                     {step === 7 && <StepReview c={config} building={building} capabilities={capabilities} />}
                     {step === 7 && (
