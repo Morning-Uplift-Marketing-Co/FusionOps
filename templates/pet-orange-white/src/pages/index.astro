@@ -1,0 +1,545 @@
+---
+export const prerender = true;
+
+import BaseLayout from "../layouts/BaseLayout.astro";
+import StickyMobileCta from "../components/StickyMobileCta.astro";
+import TrustStrip from "../components/TrustStrip.astro";
+import LoanCalculator from "../components/LoanCalculator.astro";
+import TrustBadges from "../components/TrustBadges.astro";
+import LegalModal from "../components/LegalModal.astro";
+import HowItWorks from "../components/HowItWorks.astro";
+---
+
+<BaseLayout
+  title="Flexible Funding Solutions | Premium Eligibility Check"
+  description="Check eligibility for tailored credit options with a fast ZIP pre-check. Transparent lending information, no commitment to accept an offer."
+>
+  <main class="page-reveal pb-24 md:pb-16 pt-6 md:pt-12">
+    <!-- Header/Logo area -->
+    <div class="mx-auto w-full max-w-7xl px-6 mb-8">
+      <div class="flex items-center gap-2">
+        <div
+          class="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/30"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            class="w-5 h-5 text-white"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3v-6.75a3 3 0 00-3-3v-3c0-2.9-2.35-5.25-5.25-5.25zm3.75 8.25v-3a3.75 3.75 0 10-7.5 0v3h7.5z"
+              clip-rule="evenodd"></path>
+          </svg>
+        </div>
+        <span
+          class="font-bold font-heading text-xl tracking-tight text-slate-900"
+          >Secure<span class="text-orange-500">Loan</span></span
+        >
+      </div>
+    </div>
+
+    <section class="mx-auto w-full max-w-7xl px-6">
+      <div class="grid items-start gap-12 lg:gap-8 lg:grid-cols-[1fr_auto]">
+        <!-- Left Content -->
+        <article class="section-stagger" style="--delay: 100ms;">
+          <div
+            class="inline-flex items-center gap-2 rounded-full border border-orange-200/50 bg-orange-50/50 px-4 py-2 text-sm font-semibold text-orange-700 backdrop-blur-sm mb-6 shadow-sm"
+          >
+            <span class="relative flex h-2 w-2">
+              <span
+                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"
+              ></span>
+              <span
+                class="relative inline-flex rounded-full h-2 w-2 bg-orange-500"
+              ></span>
+            </span>
+            Simple Pre-Check Flow
+          </div>
+          <h1
+            class="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-[4rem] leading-[1.1]"
+          >
+            Flexible Funding <br />
+            Solutions<a
+              href="#disclosure-section"
+              class="text-orange-500 font-normal group relative"
+              aria-label="View representative example"
+              ><span
+                class="absolute -top-3 text-3xl group-hover:scale-125 transition-transform"
+                >*</span
+              >&nbsp;&nbsp;</a
+            >
+          </h1>
+          <p class="mt-6 max-w-lg text-lg text-slate-600 leading-relaxed">
+            Check rates in 60 seconds. No credit impact. No commitment.
+          </p>
+
+          <div class="mt-8 grid grid-cols-2 gap-4 max-w-lg">
+            <div class="flex items-start gap-3">
+              <div
+                class="mt-1 flex-shrink-0 bg-emerald-100 rounded-full p-1 text-emerald-600"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  ><path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="3"
+                    d="M5 13l4 4L19 7"></path></svg
+                >
+              </div>
+              <p class="text-sm font-medium text-slate-700">No Obligation</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <div
+                class="mt-1 flex-shrink-0 bg-emerald-100 rounded-full p-1 text-emerald-600"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  ><path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="3"
+                    d="M5 13l4 4L19 7"></path></svg
+                >
+              </div>
+              <p class="text-sm font-medium text-slate-700">Clear Terms</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <div
+                class="mt-1 flex-shrink-0 bg-emerald-100 rounded-full p-1 text-emerald-600"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  ><path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="3"
+                    d="M5 13l4 4L19 7"></path></svg
+                >
+              </div>
+              <p class="text-sm font-medium text-slate-700">Secure Network</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <div
+                class="mt-1 flex-shrink-0 bg-emerald-100 rounded-full p-1 text-emerald-600"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  ><path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="3"
+                    d="M5 13l4 4L19 7"></path></svg
+                >
+              </div>
+              <p class="text-sm font-medium text-slate-700">Mobile Friendly</p>
+            </div>
+          </div>
+        </article>
+
+        <!-- Right Form -->
+        <aside
+          class="section-stagger relative w-full max-w-md mx-auto lg:ml-auto"
+          style="--delay: 200ms;"
+        >
+          <!-- decorative blur behind card -->
+          <div
+            class="absolute -inset-1 rounded-[2.5rem] bg-gradient-to-br from-orange-300 via-white to-sky-300 opacity-40 blur-2xl"
+          >
+          </div>
+
+          <div
+            id="eligibility-form"
+            class="glass-card relative p-8 sm:p-10"
+            aria-labelledby="eligibility-heading"
+          >
+            <div class="mb-8">
+              <h2
+                id="eligibility-heading"
+                class="text-2xl font-bold text-slate-900 mb-2 font-heading"
+              >
+                Check Eligibility
+              </h2>
+              <p class="text-sm text-slate-500 font-medium">
+                Enter your ZIP code to continue safely.
+              </p>
+            </div>
+
+            <form id="zip-check-form" class="space-y-6" novalidate>
+              <div>
+                <label
+                  for="zip"
+                  class="block text-sm font-bold text-slate-700 mb-2"
+                  >Your ZIP Code</label
+                >
+                <div class="relative">
+                  <input
+                    id="zip"
+                    name="zip"
+                    inputmode="numeric"
+                    autocomplete="postal-code"
+                    maxlength="5"
+                    pattern="\d{5}"
+                    placeholder="e.g. 10001"
+                    class="block w-full rounded-2xl border-0 py-4 pl-5 pr-12 text-slate-900 ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-orange-500 sm:text-lg sm:leading-6 font-semibold shadow-sm transition-shadow bg-white/80 backdrop-blur-sm"
+                    aria-describedby="zip-error"
+                    required
+                  />
+                  <div
+                    class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4"
+                  >
+                    <svg
+                      class="h-5 w-5 text-slate-400"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z"
+                        clip-rule="evenodd"></path>
+                    </svg>
+                  </div>
+                </div>
+                <p
+                  id="zip-error"
+                  class="hidden mt-2 text-sm font-medium text-red-500 animate-pulse"
+                >
+                </p>
+                <p id="zip-city" class="hidden mt-2 text-sm font-semibold text-emerald-600 flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>
+                  <span id="zip-city-text"></span>
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                class="cta-button w-full text-lg shadow-orange-500/25"
+              >
+                Continue Request <span class="ml-2">→</span>
+              </button>
+            </form>
+
+            <div
+              class="mt-6 flex items-start gap-3 rounded-xl bg-slate-50/50 p-4 border border-slate-100"
+            >
+              <svg
+                class="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                ><path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                ></path></svg
+              >
+              <p class="text-[0.7rem] leading-relaxed text-slate-500">
+                By tapping continue, you acknowledge that offers depend on
+                criteria and state availability. We are a free affiliate
+                connection service, not a direct lender.
+              </p>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <div class="mt-20 sm:mt-24">
+      <TrustStrip />
+    </div>
+
+    <HowItWorks />
+
+    <!-- Payment Calculator Section -->
+    <LoanCalculator />
+
+    <!-- Trust Badges -->
+    <TrustBadges />
+
+    <!-- Representative Example (Compliance Block) -->
+    <section
+      id="disclosure-section"
+      class="mx-auto w-full max-w-7xl px-3 sm:px-6 mt-12 sm:mt-16 mb-8"
+      style="content-visibility: auto; contain-intrinsic-size: 400px;"
+    >
+      <div
+        class="bg-slate-100/70 rounded-[2rem] p-3 sm:p-8 border border-slate-200 shadow-sm text-slate-700 text-sm leading-relaxed"
+      >
+        <h3 class="font-bold text-slate-900 mb-1 text-lg font-heading">
+          Representative Example <span class="text-orange-500 font-normal">*</span>
+        </h3>
+        <p class="text-slate-500 mb-5 text-xs">
+          APR, repayment periods, and loan amounts vary by state and lender. We are not a lender and do not make credit decisions.
+        </p>
+
+        <!-- Calculation example table -->
+        <div class="overflow-x-auto -mx-3 sm:mx-0 rounded-xl border border-slate-200 mb-5">
+          <table class="w-full text-sm border-collapse">
+            <thead>
+              <tr class="bg-slate-800 text-white">
+                <th class="py-2 px-2 sm:px-4 text-left font-semibold text-xs uppercase tracking-wider whitespace-nowrap">Amount</th>
+                <th class="py-2 px-2 sm:px-4 text-left font-semibold text-xs uppercase tracking-wider">APR</th>
+                <th class="py-2 px-2 sm:px-4 text-left font-semibold text-xs uppercase tracking-wider">Term</th>
+                <th class="py-2 px-2 sm:px-4 text-left font-semibold text-xs uppercase tracking-wider whitespace-nowrap">Monthly</th>
+                <th class="py-2 px-2 sm:px-4 text-left font-semibold text-xs uppercase tracking-wider whitespace-nowrap">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="bg-white border-t border-slate-100">
+                <td class="py-2.5 px-2 sm:px-4 font-semibold text-slate-900">$1,000</td>
+                <td class="py-2.5 px-2 sm:px-4">15%</td>
+                <td class="py-2.5 px-2 sm:px-4 whitespace-nowrap">12 mo</td>
+                <td class="py-2.5 px-2 sm:px-4 font-semibold text-orange-600">$90.26</td>
+                <td class="py-2.5 px-2 sm:px-4 font-semibold">$1,083.10</td>
+              </tr>
+              <tr class="bg-slate-50 border-t border-slate-100">
+                <td class="py-2.5 px-2 sm:px-4 font-semibold text-slate-900">$2,500</td>
+                <td class="py-2.5 px-2 sm:px-4">15%</td>
+                <td class="py-2.5 px-2 sm:px-4 whitespace-nowrap">24 mo</td>
+                <td class="py-2.5 px-2 sm:px-4 font-semibold text-orange-600">$121.24</td>
+                <td class="py-2.5 px-2 sm:px-4 font-semibold">$2,909.76</td>
+              </tr>
+              <tr class="bg-white border-t border-slate-100">
+                <td class="py-2.5 px-2 sm:px-4 font-semibold text-slate-900">$5,000</td>
+                <td class="py-2.5 px-2 sm:px-4">15%</td>
+                <td class="py-2.5 px-2 sm:px-4 whitespace-nowrap">48 mo</td>
+                <td class="py-2.5 px-2 sm:px-4 font-semibold text-orange-600">$139.15</td>
+                <td class="py-2.5 px-2 sm:px-4 font-semibold">$6,679.20</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Key terms grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="bg-white rounded-xl border border-slate-200 px-4 py-3">
+            <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Min Term</span>
+            <span class="font-semibold text-slate-800">61 Days</span>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 px-4 py-3">
+            <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Max Term</span>
+            <span class="font-semibold text-slate-800">72 Months</span>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 px-4 py-3">
+            <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Max APR</span>
+            <span class="font-semibold text-slate-800">35.99%</span>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 px-4 py-3">
+            <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Fees</span>
+            <span class="font-semibold text-slate-800">No hidden origination fees</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Why Trust Us Section -->
+    <section
+      class="mx-auto w-full max-w-7xl px-6 mt-12 sm:mt-16 section-stagger"
+      style="--delay: 150ms;"
+    >
+      <div class="bg-white rounded-[2rem] p-6 sm:p-10 border border-slate-100 shadow-sm">
+        <div class="mb-5">
+          <h2 class="text-xl font-bold font-heading text-slate-900 mb-1">
+            Why Trust Us?
+          </h2>
+          <p class="text-sm text-slate-600 leading-relaxed">
+            We are a free matching service connecting borrowers with licensed lenders. We never charge fees to submit a request. Our platform adheres to federal and state financial regulations, and your personal data is transmitted using industry-standard encryption — never sold without your consent.
+          </p>
+        </div>
+        <div class="flex flex-row gap-2 mb-5">
+          <!-- Norton Secured badge -->
+          <div class="flex flex-col items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 shadow-sm text-center">
+            <div class="w-10 h-10 rounded-xl bg-yellow-400 flex items-center justify-center">
+              <svg class="w-5 h-5 text-yellow-900" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L4 6v6c0 5.25 3.4 10.15 8 11.35C16.6 22.15 20 17.25 20 12V6l-8-4z"/></svg>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-slate-800 leading-none">Norton</p>
+              <p class="text-[0.65rem] text-slate-500 font-medium">SECURED</p>
+            </div>
+          </div>
+          <!-- McAfee Secure badge -->
+          <div class="flex flex-col items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 shadow-sm text-center">
+            <div class="w-10 h-10 rounded-xl bg-red-500 flex items-center justify-center">
+              <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L4 6v6c0 5.25 3.4 10.15 8 11.35C16.6 22.15 20 17.25 20 12V6l-8-4z"/></svg>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-slate-800 leading-none">McAfee</p>
+              <p class="text-[0.65rem] text-slate-500 font-medium">SECURE</p>
+            </div>
+          </div>
+        </div>
+        <p class="mt-4 pt-4 border-t border-slate-100 text-[0.65rem] leading-relaxed text-slate-400">
+          <strong class="text-slate-500">FCRA Notice:</strong> You have the right to obtain a free copy of your credit report once every 12 months from each of the three nationwide consumer reporting agencies. Visit <span class="underline">annualcreditreport.com</span> or call 1-877-322-8228. APR range: 5.99%&ndash;35.99%. Loan amounts: $100&ndash;$50,000. Repayment terms: 61 days&ndash;72 months. Short-term loans may result in high effective APR. Not available in all states. Rates vary based on creditworthiness and lender criteria.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <StickyMobileCta href="#eligibility-form" label="Check Eligibility →" />
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-100 bg-white mt-8">
+    <div class="mx-auto w-full max-w-7xl px-6 py-10">
+
+      <!-- Top: brand + nav columns -->
+      <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-8 mb-6">
+
+        <!-- Brand -->
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-7 h-7 rounded-lg bg-orange-500 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-white">
+                <path fill-rule="evenodd" d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3v-6.75a3 3 0 00-3-3v-3c0-2.9-2.35-5.25-5.25-5.25zm3.75 8.25v-3a3.75 3.75 0 10-7.5 0v3h7.5z" clip-rule="evenodd"/>
+              </svg>
+            </div>
+            <span class="font-bold font-heading text-slate-900">Secure<span class="text-orange-500">Loan</span></span>
+          </div>
+          <p class="text-xs text-slate-500 max-w-xs leading-relaxed">
+            SecureLoan is a free matching service, not a lender. We connect consumers with third-party lenders and do not make credit decisions.
+          </p>
+          <p class="mt-3 text-xs text-slate-400">
+            SecureLoan Financial Services, Inc.<br/>
+            Tel: (800) 555-0199<br/>
+            123 Financial District Ave, Suite 400<br/>New York, NY 10005
+          </p>
+          <p class="mt-4 text-xs text-slate-400">&copy; {new Date().getFullYear()} SecureLoan. All rights reserved.</p>
+        </div>
+
+        <!-- Legal + Company columns: side-by-side on mobile -->
+        <div class="grid grid-cols-2 sm:contents gap-8">
+        <!-- Legal column -->
+        <nav aria-label="Legal">
+          <p class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">Legal</p>
+          <ul class="space-y-2">
+            <li><a href="/lending-policy" data-legal-modal class="text-xs text-slate-500 hover:text-orange-600 transition-colors">Lending Policy</a></li>
+            <li><a href="/loan-rates-fees" data-legal-modal class="text-xs text-slate-500 hover:text-orange-600 transition-colors">Loan Rates &amp; Fees</a></li>
+            <li><a href="/credit-authorization" data-legal-modal class="text-xs text-slate-500 hover:text-orange-600 transition-colors">Credit Authorization</a></li>
+            <li><a href="/do-not-sell" data-legal-modal class="text-xs text-slate-500 hover:text-orange-600 transition-colors">Do Not Sell My Personal Information</a></li>
+            <li><a href="/disclosures" data-legal-modal class="text-xs text-slate-500 hover:text-orange-600 transition-colors">Disclosures</a></li>
+            <li><a href="/unsubscribe" data-legal-modal class="text-xs text-slate-500 hover:text-orange-600 transition-colors">Unsubscribe</a></li>
+          </ul>
+        </nav>
+
+        <!-- Company column -->
+        <nav aria-label="Company">
+          <p class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">Company</p>
+          <ul class="space-y-2">
+            <li><a href="#" class="text-xs text-slate-500 hover:text-orange-600 transition-colors">About Us</a></li>
+            <li><a href="#" class="text-xs text-slate-500 hover:text-orange-600 transition-colors">Contact Us</a></li>
+            <li><a href="#" class="text-xs text-slate-500 hover:text-orange-600 transition-colors">FAQs</a></li>
+          </ul>
+        </nav>
+        </div>
+
+      </div>
+
+    </div>
+  </footer>
+
+  <LegalModal />
+</BaseLayout>
+
+<script is:inline>
+  (() => {
+    const form = document.querySelector("#zip-check-form");
+    const zipInput = document.querySelector("#zip");
+    const errorNode = document.querySelector("#zip-error");
+    if (
+      !(form instanceof HTMLFormElement) ||
+      !(zipInput instanceof HTMLInputElement) ||
+      !(errorNode instanceof HTMLParagraphElement)
+    ) {
+      return;
+    }
+
+    const getCleanZip = () => zipInput.value.replace(/\D/g, "").slice(0, 5);
+    const zipPattern = /^\d{5}$/;
+    const cityNode = document.querySelector("#zip-city");
+    const cityText = document.querySelector("#zip-city-text");
+
+    let cityTimer = null;
+    function lookupCity(zip) {
+      clearTimeout(cityTimer);
+      if (cityNode) cityNode.classList.add("hidden");
+      if (!zipPattern.test(zip)) return;
+      cityTimer = setTimeout(() => {
+        fetch(`https://api.zippopotam.us/us/${zip}`)
+          .then(r => r.ok ? r.json() : null)
+          .then(data => {
+            if (data && data.places && data.places[0]) {
+              const place = data.places[0];
+              if (cityText) cityText.textContent = `${place["place name"]}, ${place["state abbreviation"]}`;
+              if (cityNode) cityNode.classList.remove("hidden");
+            }
+          })
+          .catch(() => {});
+      }, 300);
+    }
+
+    zipInput.addEventListener("input", () => {
+      zipInput.value = getCleanZip();
+      if (errorNode.textContent) {
+        errorNode.textContent = "";
+        errorNode.classList.add("hidden");
+      }
+      lookupCity(getCleanZip());
+    });
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const zip = getCleanZip();
+      zipInput.value = zip;
+
+      if (!zipPattern.test(zip)) {
+        errorNode.textContent = "Please enter exactly 5 digits.";
+        errorNode.classList.remove("hidden");
+        zipInput.focus();
+        return;
+      }
+
+      const current = new URLSearchParams(window.location.search);
+      current.set("zip", zip);
+      const clickId = current.get("click_id") || current.get("cid") || "";
+      if (clickId) {
+        const payload = {
+          event: "eligibility_submitted",
+          click_id: clickId,
+          timestamp: new Date().toISOString(),
+          meta: { zip },
+        };
+        const body = JSON.stringify(payload);
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon(
+            "/api/track",
+            new Blob([body], { type: "application/json" }),
+          );
+        } else {
+          fetch("/api/track", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body,
+            keepalive: true,
+          }).catch(() => {});
+        }
+      }
+
+      window.location.assign(`/apply?${current.toString()}`);
+    });
+  })();
+</script>
