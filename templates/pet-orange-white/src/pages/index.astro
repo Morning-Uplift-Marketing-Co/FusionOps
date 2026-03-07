@@ -482,6 +482,16 @@ const ctaHref  = voluumClickUrl || '#apply';
     const cityNode = document.querySelector("#zip-city");
     const cityText = document.querySelector("#zip-city-text");
 
+    let formStartFired = false;
+    zipInput.addEventListener("focus", () => {
+      if (!formStartFired) {
+        formStartFired = true;
+        if (typeof window.__fpPixel === 'function') {
+          window.__fpPixel('form_start');
+        }
+      }
+    }, { once: true });
+
     let cityTimer = null;
     function lookupCity(zip) {
       clearTimeout(cityTimer);
@@ -524,28 +534,9 @@ const ctaHref  = voluumClickUrl || '#apply';
 
       const current = new URLSearchParams(window.location.search);
       current.set("zip", zip);
-      const clickId = current.get("click_id") || current.get("cid") || "";
-      if (clickId) {
-        const payload = {
-          event: "eligibility_submitted",
-          click_id: clickId,
-          timestamp: new Date().toISOString(),
-          meta: { zip },
-        };
-        const body = JSON.stringify(payload);
-        if (navigator.sendBeacon) {
-          navigator.sendBeacon(
-            "/api/track",
-            new Blob([body], { type: "application/json" }),
-          );
-        } else {
-          fetch("/api/track", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body,
-            keepalive: true,
-          }).catch(() => {});
-        }
+      const clickId = current.get("vlcid") || current.get("click_id") || current.get("cid") || current.get("cpid") || "";
+      if (typeof window.__fpPixel === 'function') {
+        window.__fpPixel('form_submit', { zip: zip, click_id: clickId });
       }
 
       const dest = ctaHref && ctaHref !== '#apply'
