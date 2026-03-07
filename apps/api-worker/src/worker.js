@@ -4123,10 +4123,58 @@ export default {
         }
       }
 
+      // ═══ AI HELPERS ═══
+      async function callGemini(apiKey, prompt, maxTokens = 512) {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { maxOutputTokens: maxTokens, temperature: 0.7 },
+            }),
+          }
+        );
+        const data = await res.json();
+        return data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      }
+
+      async function callAnthropic(apiKey, prompt, maxTokens = 512) {
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'claude-3-haiku-20240307',
+            max_tokens: maxTokens,
+            messages: [{ role: 'user', content: prompt }],
+          }),
+        });
+        const data = await res.json();
+        return data?.content?.[0]?.text || '';
+      }
+
+      async function callAI(env, prompt, maxTokens = 512) {
+        // Primary: Gemini
+        if (env.GEMINI_API_KEY) {
+          try {
+            const text = await callGemini(env.GEMINI_API_KEY, prompt, maxTokens);
+            if (text) return text;
+          } catch (_e) { /* fallthrough to backup */ }
+        }
+        // Backup: Anthropic
+        if (env.ANTHROPIC_API_KEY) {
+          return callAnthropic(env.ANTHROPIC_API_KEY, prompt, maxTokens);
+        }
+        throw new Error('No AI API key configured. Add GEMINI_API_KEY (primary) or ANTHROPIC_API_KEY (backup) in Worker secrets.');
+      }
+
       // ═══ AI GENERATE COPY ═══
       if (path === '/api/ai/generate-copy' && method === 'POST') {
-        const apiKey = env.ANTHROPIC_API_KEY;
-        if (!apiKey) return json({ error: 'ANTHROPIC_API_KEY not configured' }, 500);
         try {
           const body = await request.json();
           const { brand = '', loanType = 'personal loan', amountMin = 100, amountMax = 5000, lang = 'English' } = body;
@@ -4146,24 +4194,9 @@ Return this exact JSON shape:
   "badge": "trust badge text (e.g. 'No Hard Credit Check')",
   "tagline": "short tagline (max 6 words)"
 }`;
-
-          const res = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: {
-              'x-api-key': apiKey,
-              'anthropic-version': '2023-06-01',
-              'content-type': 'application/json',
-            },
-            body: JSON.stringify({
-              model: 'claude-3-haiku-20240307',
-              max_tokens: 512,
-              messages: [{ role: 'user', content: prompt }],
-            }),
-          });
-          const data = await res.json();
-          const text = data?.content?.[0]?.text || '';
+          const text = await callAI(env, prompt, 512);
           const match = text.match(/\{[\s\S]*\}/);
-          if (!match) return json({ error: 'AI returned unexpected format' }, 500);
+          if (!match) return json({ error: 'AI returned unexpected format', raw: text.slice(0, 200) }, 500);
           return json(JSON.parse(match[0]));
         } catch (e) {
           return json({ error: e.message }, 500);
@@ -4172,8 +4205,6 @@ Return this exact JSON shape:
 
       // ═══ AI GENERATE META ═══
       if (path === '/api/ai/generate-meta' && method === 'POST') {
-        const apiKey = env.ANTHROPIC_API_KEY;
-        if (!apiKey) return json({ error: 'ANTHROPIC_API_KEY not configured' }, 500);
         try {
           const body = await request.json();
           const { brand = '', domain = '', loanType = 'personal loan', amountMin = 100, amountMax = 5000, h1 = '', cta = '', lang = 'English' } = body;
@@ -4193,24 +4224,9 @@ Return this exact JSON shape:
   "metaTitle": "SEO title (50-60 chars, include brand and amount)",
   "metaDesc": "Meta description (140-160 chars, include CTA and amount)"
 }`;
-
-          const res = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: {
-              'x-api-key': apiKey,
-              'anthropic-version': '2023-06-01',
-              'content-type': 'application/json',
-            },
-            body: JSON.stringify({
-              model: 'claude-3-haiku-20240307',
-              max_tokens: 256,
-              messages: [{ role: 'user', content: prompt }],
-            }),
-          });
-          const data = await res.json();
-          const text = data?.content?.[0]?.text || '';
+          const text = await callAI(env, prompt, 256);
           const match = text.match(/\{[\s\S]*\}/);
-          if (!match) return json({ error: 'AI returned unexpected format' }, 500);
+          if (!match) return json({ error: 'AI returned unexpected format', raw: text.slice(0, 200) }, 500);
           return json(JSON.parse(match[0]));
         } catch (e) {
           return json({ error: e.message }, 500);
