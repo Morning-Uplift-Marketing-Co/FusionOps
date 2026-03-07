@@ -60,8 +60,10 @@ jobs:
             case "$id" in
               astro-test002)                                       echo "templates/astro-test002" ;;
               *pet*|*scratchpay*|template10[0-9]|template11[0-9]) echo "templates/pet_loans_v1" ;;
+              installment-loans-101)                             echo "templates/installment-loans-101" ;;
               *installment*|template12[0-9]|template13[0-9])      echo "templates/installment-bear" ;;
               *pdl*|*lander*|template14[0-9])                     echo "templates/pdl_new_01" ;;
+              elastic-credits-v3)                                echo "templates/elastic-credits-v3" ;;
               *elastic*|template15[0-9])                          echo "templates/elastic-credits-v4" ;;
               *bear*)                                             echo "templates/bear-loan-astro" ;;
               *)                                                  echo "templates/installment-bear" ;;
