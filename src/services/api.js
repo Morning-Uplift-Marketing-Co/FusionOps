@@ -90,11 +90,15 @@ async function request(path, opts = {}) {
 
     if (!r.ok) {
         const text = await r.text().catch(() => '');
-        // Don't expose detailed error messages in production
-        const isDev = import.meta.env?.DEV || false;
+        // Parse JSON error body to extract real error message
+        let errorMsg = `HTTP ${r.status}`;
+        try {
+            const parsed = JSON.parse(text);
+            if (parsed?.error) errorMsg = parsed.error;
+        } catch (_) {}
         return {
-            error: `HTTP ${r.status}`,
-            detail: isDev ? text : "Request failed",
+            error: errorMsg,
+            detail: text,
             url,
         };
     }
