@@ -1,0 +1,90 @@
+---
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <slot name="head" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+      rel="preload"
+      as="style"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+  </head>
+  <body
+    class="bg-[#f8fafc] text-slate-800 antialiased selection:bg-orange-500 selection:text-white"
+  >
+    <div class="relative min-h-screen overflow-hidden flex flex-col">
+      <!-- Premium ambient background mesh -->
+      <div
+        class="fixed inset-0 z-0 pointer-events-none w-full h-full overflow-hidden"
+      >
+        <div
+          class="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] rounded-full bg-sky-200/40 blur-[120px]"
+        >
+        </div>
+        <div
+          class="absolute top-[20%] -right-[10%] w-[40%] h-[60%] rounded-full bg-orange-100/40 blur-[120px]"
+        >
+        </div>
+        <div
+          class="absolute -bottom-[20%] left-[20%] w-[60%] h-[50%] rounded-full bg-emerald-100/40 blur-[120px]"
+        >
+        </div>
+      </div>
+
+      <div class="relative z-10 flex-1 flex flex-col">
+        <slot />
+      </div>
+
+      <footer
+        class="relative z-10 mt-auto border-t border-slate-200/60 bg-white/80 backdrop-blur-md py-10"
+      >
+        <div
+          class="mx-auto flex w-full max-w-7xl flex-col gap-6 px-6 md:flex-row md:items-center md:justify-between text-sm text-slate-500"
+        >
+          <div class="max-w-3xl">
+            <p class="font-semibold text-slate-900 mb-2">
+              Affiliate & Regulatory Disclosure
+            </p>
+            <p class="leading-relaxed mb-4 text-xs text-slate-500">
+              This website is not a lender and does not make credit decisions.
+              We provide a marketing lead generation service to a network of
+              independent lenders. We may receive compensation from the lenders
+              we connect you with. This compensation may impact how and where
+              products appear on this site. This service is not available in all
+              states. You are under no obligation to use this site or accept any
+              loan offer from our network. Always review your lender's terms
+              carefully before accepting an offer.
+            </p>
+            <p class="font-medium text-orange-600">
+              Borrow only what you need and can afford to repay.
+            </p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>
