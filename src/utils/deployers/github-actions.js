@@ -123,6 +123,7 @@ export async function deploy(assets, site, settings) {
     layout:          site.layout       || '',
     radius:          site.radius       || '',
     trustBadges:     site.trustBadges  || '',
+    reviews:         site.reviews      || [],
     deployedAt:      new Date().toISOString(),
   };
 

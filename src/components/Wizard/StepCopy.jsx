@@ -3,7 +3,7 @@ import { THEME as T, COPY_SETS } from "../../constants";
 import { Field } from "../ui/field";
 import { InputField as Inp } from "../ui/input-field";
 
-export function StepCopy({ c, u, onAiGenerate, aiLoading, onAiMeta, aiMetaLoading }) {
+export function StepCopy({ c, u, onAiGenerate, aiLoading, onAiMeta, aiMetaLoading, onAiReviews, aiReviewsLoading }) {
     const applyTemplate = (tpl) => {
         u("h1", tpl.h1);
         u("h1span", tpl.h1span || "");
@@ -134,6 +134,37 @@ export function StepCopy({ c, u, onAiGenerate, aiLoading, onAiMeta, aiMetaLoadin
                         ))}
                     </div>
                 </Field>
+            </div>
+
+            {/* ─── Reviews ─── */}
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${T.border}` }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                    <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>⭐ Customer Reviews</div>
+                        <div style={{ fontSize: 10, color: T.dim, marginTop: 2 }}>AI-generated, unique per deploy</div>
+                    </div>
+                    <button onClick={onAiReviews} disabled={aiReviewsLoading} style={{
+                        padding: "6px 14px", background: aiReviewsLoading ? T.input : `linear-gradient(135deg, #10b98120, #06b6d420)`,
+                        border: `1px dashed #10b98180`, borderRadius: 6, cursor: aiReviewsLoading ? "not-allowed" : "pointer",
+                        color: "#10b981", fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", gap: 6,
+                    }}>
+                        {aiReviewsLoading ? "⏳ ..." : "✨ Gen Reviews"}
+                    </button>
+                </div>
+                {(c.reviews || []).length > 0 && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {(c.reviews || []).map((r, i) => (
+                            <div key={i} style={{ padding: "10px 12px", background: T.input, borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 12 }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                                    <span style={{ fontWeight: 600, color: T.text }}>{r.name}</span>
+                                    <span style={{ color: T.dim }}>{r.location}</span>
+                                </div>
+                                <div style={{ color: T.muted, lineHeight: 1.4 }}>"{r.text}"</div>
+                                <div style={{ color: "#f59e0b", marginTop: 4, fontSize: 11 }}>{"★".repeat(r.rating || 5)} {r.rating || 5}.0</div>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </>
     );

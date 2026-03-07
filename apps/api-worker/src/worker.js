@@ -4248,6 +4248,29 @@ Return this exact JSON shape:
         }
       }
 
+      // ═══ AI GENERATE REVIEWS ═══
+      if (path === '/api/ai/generate-reviews' && method === 'POST') {
+        try {
+          const body = await request.json();
+          const d1GeminiRow = await db.prepare("SELECT value FROM settings WHERE key = 'geminiKey'").first().catch(() => null);
+          const d1AnthropicRow = await db.prepare("SELECT value FROM settings WHERE key = 'anthropicKey'").first().catch(() => null);
+          const resolvedGeminiKey = body.geminiKey || env.GEMINI_API_KEY || (d1GeminiRow?.value || '');
+          const resolvedAnthropicKey = body.anthropicKey || env.ANTHROPIC_API_KEY || (d1AnthropicRow?.value || '');
+          if (!resolvedGeminiKey && !resolvedAnthropicKey) {
+            return json({ error: 'No AI API key configured. Add Gemini API Key in Settings.' }, 400);
+          }
+          const { brand = '', loanType = 'personal finance', amountMax = 5000 } = body;
+          const prompt = `You are a UX copywriter. Generate 3 short, realistic customer reviews for a ${loanType} landing page. Each review must match the loan category context. Different names, states, situations. Respond ONLY with valid JSON array.\n\nBrand: ${brand}, Amount up to: $${amountMax}\n\n[\n  {"name":"First L.","location":"City, ST","rating":5,"text":"1-2 sentence review"},\n  {...},\n  {...}\n]`;
+          const enrichedBody = { ...body, geminiKey: resolvedGeminiKey, anthropicKey: resolvedAnthropicKey };
+          const text = await callAI(env, enrichedBody, prompt, 512);
+          const jsonStr = extractJson(text);
+          if (!jsonStr) return json({ error: 'AI returned unexpected format', raw: text.slice(0, 300) }, 500);
+          return json(JSON.parse(jsonStr));
+        } catch (e) {
+          return json({ error: e.message }, 500);
+        }
+      }
+
       return json({ error: 'Not found' }, 404);
 
     } catch (err) {
