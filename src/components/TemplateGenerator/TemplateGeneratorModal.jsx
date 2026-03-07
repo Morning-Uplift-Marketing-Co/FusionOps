@@ -64,6 +64,8 @@ const DEFAULT_STATE = {
 export function TemplateGeneratorModal({ open, onClose, onSave, templates }) {
     const [state, setState] = useState(DEFAULT_STATE);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveStatus, setSaveStatus] = useState(null); // { step, message, ok, error }
 
     if (!open) return null;
 
@@ -104,15 +106,25 @@ export function TemplateGeneratorModal({ open, onClose, onSave, templates }) {
         }
     };
 
-    const handleSave = () => {
-        if (onSave) {
-            onSave(state);
+    const handleSave = async () => {
+        if (!onSave) return;
+        setIsSaving(true);
+        setSaveStatus({ step: 'saving', message: 'Saving template to database...' });
+        try {
+            await onSave(state, (status) => setSaveStatus(status));
+            setSaveStatus({ step: 'done', message: '✅ Template saved & pushed to GitHub!', ok: true });
+            setTimeout(() => handleClose(), 1200);
+        } catch (e) {
+            setSaveStatus({ step: 'error', message: `❌ ${e.message}`, error: true });
+            setIsSaving(false);
         }
-        handleClose();
     };
 
     const handleClose = () => {
+        if (isSaving) return;
         setState(DEFAULT_STATE);
+        setSaveStatus(null);
+        setIsSaving(false);
         onClose();
     };
 
@@ -438,6 +450,19 @@ export function TemplateGeneratorModal({ open, onClose, onSave, templates }) {
                     </div>
 
                     <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                        {isSaving && saveStatus && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 18px', borderRadius: 12,
+                                background: saveStatus.error ? 'rgba(239,68,68,0.12)' : saveStatus.ok ? 'rgba(34,197,94,0.12)' : 'rgba(99,102,241,0.12)',
+                                border: `1px solid ${saveStatus.error ? 'rgba(239,68,68,0.3)' : saveStatus.ok ? 'rgba(34,197,94,0.3)' : 'rgba(99,102,241,0.3)'}`,
+                            }}>
+                                {!saveStatus.ok && !saveStatus.error && (
+                                    <div style={{ width: 14, height: 14, border: `2px solid ${T.primary}`, borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
+                                )}
+                                <span style={{ fontSize: 13, fontWeight: 600, color: saveStatus.error ? '#ef4444' : saveStatus.ok ? '#22c55e' : T.primary }}>
+                                    {saveStatus.message}
+                                </span>
+                            </div>
+                        )}
                         {isGenerating && (
                             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                                 <div className="animate-spin" style={{ width: 14, height: 14, border: `2px solid ${T.primary}`, borderTopColor: "transparent", borderRadius: "50%" }} />
@@ -450,7 +475,7 @@ export function TemplateGeneratorModal({ open, onClose, onSave, templates }) {
                         {!showModeSelector && (isLastStep ? (
                             <button
                                 onClick={handleSave}
-                                disabled={isGenerating}
+                                disabled={isGenerating || isSaving}
                                 style={{
                                     padding: "14px 40px",
                                     background: T.grad,
