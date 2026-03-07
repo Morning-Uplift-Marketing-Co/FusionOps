@@ -19,14 +19,14 @@
   "primaryColor": "",
   "accentColor": "",
   "conversionId": "AW-12456",
-  "voluumId": "",
-  "voluumDomain": "",
-  "voluumClickUrl": "",
-  "colorId": "ruby",
+  "voluumId": "b413b8a9-a0ba-4092-a177-309dbd17c916",
+  "voluumDomain": "vls.scratchpaypet.tech",
+  "voluumClickUrl": "https://vls.scratchpaypet.tech/click",
+  "colorId": "coral",
   "fontId": "dm-sans",
   "layout": "hero-left",
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2569-03-07T07:14:17.545Z"
+  "deployedAt": "2026-03-07T07:19:09.860Z"
 }
