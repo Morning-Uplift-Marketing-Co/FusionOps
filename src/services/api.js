@@ -10,8 +10,9 @@ function resolveApiBase() {
     );
 
     // Default production API base - should be overridden by VITE_API_BASE
-    const PROD_API_BASE = import.meta.env?.VITE_API_BASE || "https://lp-factory-api.misty-feather-556e.workers.dev/api";
-    const fallback = isLocalDev ? "/api" : PROD_API_BASE;
+    const PROD_API_BASE = "https://lp-factory-api.misty-feather-556e.workers.dev/api";
+    // Local dev: use VITE_API_BASE if set, else /api proxy; production: always use VITE_API_BASE or hardcoded
+    const fallback = isLocalDev && !fromEnv ? "/api" : (fromEnv || PROD_API_BASE);
     return String(fromWindow || fromEnv || fallback).replace(/\/+$/, "");
 }
 
@@ -51,10 +52,19 @@ async function request(path, opts = {}) {
     // Add CSRF token to headers for state-changing operations
     const method = (opts.method || "GET").toUpperCase();
     const isMutation = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
+    let isSameOrigin = true;
+    if (typeof window !== "undefined") {
+        try {
+            const targetOrigin = new URL(url, window.location.origin).origin;
+            isSameOrigin = targetOrigin === window.location.origin;
+        } catch (_e) {
+            isSameOrigin = true;
+        }
+    }
 
     const headers = {
         ...opts.headers,
-        ...(isMutation && { "X-CSRF-Token": getCsrfToken() }),
+        ...(isMutation && isSameOrigin && { "X-CSRF-Token": getCsrfToken() }),
     };
 
     // Longer timeout for registrar/automation endpoints (external APIs are slower)
