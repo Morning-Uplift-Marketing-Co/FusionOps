@@ -1,0 +1,114 @@
+---
+const reviews = [
+  { name: 'Sarah M.', initials: 'SM', petType: 'Dog Owner', rating: 5, quote: 'BearLoanNow saved us when our dog needed emergency surgery. The application took 3 minutes and we had approval in seconds. Funds were available the very next day. Truly a lifesaver!' },
+  { name: 'James R.', initials: 'JR', petType: 'Cat Owner', rating: 5, quote: 'My cat needed a $3,000 dental procedure and I had no idea how I was going to cover it. BearLoanNow offered 0% APR and manageable monthly payments. The process was completely painless.' },
+  { name: 'Maria T.', initials: 'MT', petType: 'Rabbit Owner', rating: 5, quote: "I was nervous about a credit check impacting my score but the soft pull meant no worries. Got approved instantly and was able to get my rabbit the specialist care she needed right away." },
+  { name: 'David K.', initials: 'DK', petType: 'Dog Owner', rating: 5, quote: "As a first-time pet owner dealing with an unexpected vet bill, I didn't know where to turn. BearLoanNow walked me through everything. Clear terms, no hidden fees, and genuinely helpful support." },
+  { name: 'Lisa B.', initials: 'LB', petType: 'Dog Owner', rating: 5, quote: "Quick, easy, and transparent. I financed my dog's orthopedic surgery and the monthly payments fit perfectly into my budget. Would recommend to any pet owner facing a big vet bill." },
+  { name: 'Tom W.', initials: 'TW', petType: 'Cat Owner', rating: 5, quote: "The entire experience was smooth from start to finish. My vet was thrilled when I said I could cover the full cost upfront. BearLoanNow made that possible with zero stress." },
+];
+const colors = ['bg-teal-600','bg-teal-700','bg-teal-800','bg-teal-600','bg-teal-700','bg-teal-800'];
+---
+
+<section id="reviews" class="py-20 lg:py-28 bg-slate-50 overflow-hidden">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center max-w-2xl mx-auto mb-14">
+      <span class="inline-block text-teal-700 font-semibold text-sm uppercase tracking-widest mb-3">Customer Stories</span>
+      <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">Trusted by Pet Owners Everywhere</h2>
+      <div class="flex items-center justify-center gap-2">
+        <div class="flex gap-0.5">
+          {[1,2,3,4,5].map(() => <svg class="w-5 h-5 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>)}
+        </div>
+        <span class="font-bold text-gray-900 text-lg">4.9</span>
+        <span class="text-gray-500 text-sm">from 2,400+ verified reviews</span>
+      </div>
+    </div>
+
+    <!-- Carousel wrapper -->
+    <div class="relative">
+      <div id="carousel-track-wrapper" class="overflow-hidden">
+        <div id="carousel-track" class="flex gap-5 transition-transform duration-500 ease-in-out">
+          {reviews.map((r, i) => (
+            <div class="shrink-0 w-full sm:w-[calc(50%-10px)] lg:w-[calc(33.333%-14px)] bg-white rounded-2xl p-7 shadow-sm border border-gray-100 flex flex-col">
+              <svg class="w-7 h-7 text-teal-200 mb-4" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/></svg>
+              <p class="text-gray-700 leading-relaxed text-sm flex-1 mb-5">"{r.quote}"</p>
+              <div class="flex items-center gap-3 pt-4 border-t border-gray-100">
+                <div class={`w-10 h-10 ${colors[i]} rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0`}>{r.initials}</div>
+                <div>
+                  <div class="font-semibold text-gray-900 text-sm">{r.name}</div>
+                  <div class="text-gray-400 text-xs">{r.petType}</div>
+                </div>
+                <div class="ml-auto flex gap-0.5">
+                  {[1,2,3,4,5].map(() => <svg class="w-3.5 h-3.5 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>)}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="flex items-center justify-center gap-4 mt-8">
+        <button id="carousel-prev" class="w-10 h-10 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm hover:bg-teal-50 hover:border-teal-300 transition-all">
+          <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <div id="carousel-dots" class="flex gap-1.5"></div>
+        <button id="carousel-next" class="w-10 h-10 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm hover:bg-teal-50 hover:border-teal-300 transition-all">
+          <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script is:inline>
+(function(){
+  var track = document.getElementById('carousel-track');
+  var dotsContainer = document.getElementById('carousel-dots');
+  var current = 0;
+  var autoPlay;
+
+  function getVisible() {
+    if (window.innerWidth >= 1024) return 3;
+    if (window.innerWidth >= 640) return 2;
+    return 1;
+  }
+
+  var total = 6;
+  function maxIdx() { return Math.max(0, total - getVisible()); }
+
+  function buildDots() {
+    dotsContainer.innerHTML = '';
+    for (var i = 0; i <= maxIdx(); i++) {
+      var d = document.createElement('button');
+      d.className = 'h-2 rounded-full transition-all ' + (i === current ? 'w-6 bg-teal-600' : 'w-2 bg-gray-200 hover:bg-gray-300');
+      d.setAttribute('data-i', i);
+      d.addEventListener('click', function(){ go(parseInt(this.getAttribute('data-i'))); });
+      dotsContainer.appendChild(d);
+    }
+  }
+
+  function go(idx) {
+    current = Math.max(0, Math.min(idx, maxIdx()));
+    var vis = getVisible();
+    var pct = current * (100 / vis);
+    var gap = current * 20 / vis;
+    track.style.transform = 'translateX(calc(-' + pct + '% - ' + gap + 'px))';
+    buildDots();
+  }
+
+  document.getElementById('carousel-prev').addEventListener('click', function(){ go(current <= 0 ? maxIdx() : current - 1); });
+  document.getElementById('carousel-next').addEventListener('click', function(){ go(current >= maxIdx() ? 0 : current + 1); });
+
+  window.addEventListener('resize', function(){ go(Math.min(current, maxIdx())); });
+
+  // Auto-play
+  function startAuto() { autoPlay = setInterval(function(){ go(current >= maxIdx() ? 0 : current + 1); }, 4000); }
+  function stopAuto() { clearInterval(autoPlay); }
+  track.addEventListener('mouseenter', stopAuto);
+  track.addEventListener('mouseleave', startAuto);
+
+  buildDots();
+  startAuto();
+})();
+</script>

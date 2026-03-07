@@ -1,0 +1,96 @@
+---
+---
+<section id="features" class="py-20 lg:py-28 bg-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center max-w-2xl mx-auto mb-14">
+      <span class="inline-block text-teal-700 font-semibold text-sm uppercase tracking-widest mb-3">Why BearLoanNow</span>
+      <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">Built for Pet Owners</h2>
+      <p class="text-lg text-gray-500">Everything about our loans is designed to remove the financial stress from pet care decisions.</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
+      <!-- Feature grid -->
+      <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-5">
+        {[
+          { icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z', title: 'Loans from $200 to $10,000', desc: "Choose the exact amount you need for your pet's care, from a minor checkup to major surgery." },
+          { icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', title: 'No Hard Credit Check', desc: 'We use a soft credit inquiry only, so your credit score is never impacted when you apply.' },
+          { icon: 'M13 10V3L4 14h7v7l9-11h-7z', title: 'Instant Approval Decision', desc: 'Most applicants get a decision within seconds of submitting their application — no waiting.' },
+          { icon: 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6', title: '0% APR Available', desc: 'Qualified applicants on select plans can access 0% APR financing. Rates range up to 35.99%.' },
+          { icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', title: 'Funds Next Business Day', desc: 'Once approved, funds are deposited directly to your bank account as soon as the following day.' },
+          { icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', title: 'Flexible Repayment Terms', desc: 'Repayment terms ranging from 61 to 2,190 days — choose a plan that fits your monthly budget.' },
+          { icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z', title: 'Multiple Payment Methods', desc: 'Pay by credit card, debit card, or bank transfer. Manage everything online, anytime.' },
+          { icon: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z', title: 'Dedicated Support', desc: 'Our team is available Monday–Friday 9 AM–6 PM to help with any questions about your loan.' },
+        ].map(f => (
+          <div class="group flex gap-4 p-5 rounded-xl border border-gray-100 hover:border-teal-200 hover:bg-teal-50/40 transition-all duration-300">
+            <div class="w-11 h-11 bg-teal-50 group-hover:bg-teal-100 rounded-xl flex items-center justify-center shrink-0 transition-colors">
+              <svg class="w-5 h-5 text-teal-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={f.icon}/></svg>
+            </div>
+            <div>
+              <h3 class="font-semibold text-gray-900 text-sm mb-1">{f.title}</h3>
+              <p class="text-gray-500 text-sm leading-relaxed">{f.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <!-- Loan Calculator -->
+      <div class="bg-gradient-to-br from-teal-700 to-teal-900 rounded-2xl p-7 text-white shadow-xl">
+        <h3 class="text-xl font-bold mb-1">Loan Calculator</h3>
+        <p class="text-teal-200 text-sm mb-6">Estimate your monthly payment</p>
+
+        <div class="mb-6">
+          <div class="flex justify-between items-baseline mb-2">
+            <label class="text-sm font-medium text-teal-100">Loan Amount</label>
+            <span id="calc-amount-display" class="text-2xl font-bold">$3,000</span>
+          </div>
+          <input id="calc-amount" type="range" min="200" max="10000" step="100" value="3000" class="w-full accent-amber-400 cursor-pointer" />
+          <div class="flex justify-between text-xs text-teal-300 mt-1"><span>$200</span><span>$10,000</span></div>
+        </div>
+
+        <div class="mb-7">
+          <div class="flex justify-between items-baseline mb-2">
+            <label class="text-sm font-medium text-teal-100">Repayment Period</label>
+            <span id="calc-months-display" class="text-2xl font-bold">12 mo</span>
+          </div>
+          <input id="calc-months" type="range" min="2" max="72" step="1" value="12" class="w-full accent-amber-400 cursor-pointer" />
+          <div class="flex justify-between text-xs text-teal-300 mt-1"><span>2 months</span><span>72 months</span></div>
+        </div>
+
+        <div class="bg-white/10 rounded-xl p-4 mb-4">
+          <div class="text-teal-200 text-xs mb-1">Estimated Monthly Payment</div>
+          <div id="calc-monthly" class="text-4xl font-extrabold text-amber-400">$0.00</div>
+          <div class="text-teal-300 text-xs mt-1">Based on 9.99% APR example</div>
+        </div>
+
+        <div class="space-y-2 text-xs text-teal-300 border-t border-white/10 pt-4">
+          <div class="flex justify-between"><span>Loan Amount</span><span id="calc-total-amount" class="text-white">$3,000</span></div>
+          <div class="flex justify-between"><span>APR (example)</span><span class="text-white">9.99%</span></div>
+          <div class="flex justify-between"><span>Total Repaid</span><span id="calc-total-repaid" class="text-white">$0.00</span></div>
+        </div>
+        <p class="text-teal-400 text-xs mt-4">This is an estimate only. Actual rates vary by credit profile.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script is:inline>
+  var apr = 9.99;
+  function calcMonthly(amount, months) {
+    var r = apr / 100 / 12;
+    if (months <= 0) return 0;
+    return (amount * r) / (1 - Math.pow(1 + r, -months));
+  }
+  function updateCalc() {
+    var amount = parseInt(document.getElementById('calc-amount').value);
+    var months = parseInt(document.getElementById('calc-months').value);
+    var monthly = calcMonthly(amount, months);
+    document.getElementById('calc-amount-display').textContent = '$' + amount.toLocaleString();
+    document.getElementById('calc-months-display').textContent = months + ' mo';
+    document.getElementById('calc-monthly').textContent = '$' + monthly.toFixed(2);
+    document.getElementById('calc-total-amount').textContent = '$' + amount.toLocaleString();
+    document.getElementById('calc-total-repaid').textContent = '$' + (monthly * months).toFixed(2);
+  }
+  document.getElementById('calc-amount').addEventListener('input', updateCalc);
+  document.getElementById('calc-months').addEventListener('input', updateCalc);
+  updateCalc();
+</script>
