@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-03-07
+### Added
+- **6 New Templates**: `bear-loan-modern`, `installment-golden`, `pet-care-golden`, `leadgen-golden`, `flowbite-loan`, `hyperui-loan` — registered in `packages/lp-template-generator/src/templates/index.js`.
+- **`bear-loan-astro` Template**: Full Astro template with APRComparison, EligibleExpenses, FAQ, Features, StatsBar, Testimonials components.
+- **`templates/project` Scaffold**: Blank Astro project scaffold for new template creation.
+- **`robots.txt` via Astro API Route**: Dynamic `robots.txt.ts` in `astro-test002` and `installment-loans-101` — injects `PUBLIC_DOMAIN` for correct Sitemap URL. Disallows `/apply/`.
+- **Security Headers (`_headers`)**: `X-Frame-Options`, `X-Content-Type-Options`, `X-XSS-Protection`, `Referrer-Policy`, `Permissions-Policy`, `Strict-Transport-Security` added to both Astro templates via Cloudflare Pages `_headers` file.
+- **`phone-gen.js` Utility**: Phone number generation/formatting util in `src/utils/`.
+- **Deploy & Debug Scripts**: `scripts/deploy-scratchvetloans.mjs`, `scripts/debug-css-vars.mjs`, `scripts/fix-installment-001.mjs`, `scripts/push-to-github.mjs`, `scripts/push-workflow.ps1`.
+- **`setCustomTemplatesCache` Export**: `utils/template-registry.js` now exports `setCustomTemplatesCache` for external deploy scripts.
+- **Paid Rollout Docs**: `docs/paid-component-normalization-spec.md`, `docs/paid-fast-track-rollout-playbook.md`, `docs/template-worker-deploy-checklist.md`.
+
+### Fixed
+- **Voluum field name mismatch**: `github-actions.js` now correctly reads `site.voluumCampaignId` (Wizard field) → `voluumId` (deploy config), `site.voluumTrackingDomain` → `voluumDomain`, `site.gtagId` → `conversionId`. Previously all three resolved to empty string.
+- **`SITE_FIELDS` whitelist**: Added `voluumCampaignId`, `voluumCampaignName`, `voluumTrackingDomain`, `voluumClickUrl`, `voluumLanderScript`, `voluumCfCname`, `voluumAcmName`, `voluumAcmValue`, `trackingMode`, `gtagId`, `phone`, `address`, `reviews`, `trustBadges`, `deployTarget`, `deployOnBuild` — previously these were stripped by `sanitizeSite()` and lost on save.
+- **Edit Mode Config Restore**: `startCreate()` in `App.jsx` now fetches `deploy-configs/{domain}.json` from GitHub and restores `voluumCampaignId`, `trackingMode`, `gtagId`, `voluumCfCname`, `voluumAcmName`, `voluumAcmValue`, `voluumLanderScript` on edit — fixing "must re-enter Voluum every time" bug.
+- **`voluumCfCname`/`voluumAcmName`/`voluumAcmValue` Persistence**: `github-actions.js` now preserves Tracking Domain DNS fields across redeploys.
+- **LeadsGate SDK URL**: Fixed `packages/lp-template-generator/src/shared/tracking.js` — changed from `forms.leadsgate.com/form/embed/{aid}` to `https://apikeep.com/form/applicationInit.js` with correct `_lg_form_` container and dynamic script injection.
+- **Compliance Contact Modal**: Phone number now renders as `<span>` (not `<a href="tel:">`) to avoid accidental clicks in embed contexts.
+- **Template Preview CSS vars**: `utils/template-router.js` now pre-resolves `${primaryColor}` / `${accentColor}` inside `<style>` blocks before Tailwind CDN injection, preventing broken styles.
+- **Tailwind CDN Auto-detection**: Preview no longer injects Tailwind CDN when template has substantial inline CSS (`>200 chars`), preventing style conflicts.
+
+### Changed
+- **`.gitignore`**: Added `.preview-astrodeck/`, `tmp_check.html`, `*.tar.gz`, `templates/astro-test002/package-lock.json`, `templates/installment-loans-101/package-lock.json`.
+- **`utils/template-router.js`**: Added `phone`, `amountMin`, `amountMax`, `aprMin`, `aprMax`, `loanLabel`, `leadsGateFormId`, `primaryColor`, `accentColor` to preview variable resolution.
+- **`installment-bear/src/pages/apply.astro`**: Updated to use `_lg_form_` container and `apikeep.com` SDK.
+
 ## [2.4.0] - 2026-03-07
 ### Added
 - **Gen Reviews Button**: Wizard Step 5 (Copy) → ✨ Gen Reviews — calls `/api/ai/generate-reviews` to generate 3 unique, category-aware testimonials via Gemini. Reviews saved in config and injected as `PUBLIC_REVIEWS` at CI build time.
