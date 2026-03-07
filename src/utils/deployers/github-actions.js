@@ -126,10 +126,14 @@ export async function deploy(assets, site, settings) {
 
   // Voluum fields: Wizard saves voluumCampaignId/voluumTrackingDomain — map to deploy config keys
   // Preserve existing values if current deploy doesn't provide them
-  const voluumId       = site.voluumCampaignId    || site.voluumId       || existing.voluumId       || '';
-  const voluumDomain   = site.voluumTrackingDomain || site.voluumDomain   || existing.voluumDomain   || '';
-  const voluumClickUrl = site.voluumClickUrl       || existing.voluumClickUrl || '';
-  const conversionId   = site.gtagId || site.conversionId || existing.conversionId || '';
+  const voluumId          = site.voluumCampaignId    || site.voluumId          || existing.voluumId          || '';
+  const voluumDomain      = site.voluumTrackingDomain || site.voluumDomain      || existing.voluumDomain      || '';
+  const voluumClickUrl    = site.voluumClickUrl       || existing.voluumClickUrl    || '';
+  const voluumCfCname     = site.voluumCfCname        || existing.voluumCfCname     || '';
+  const voluumAcmName     = site.voluumAcmName        || existing.voluumAcmName     || '';
+  const voluumAcmValue    = site.voluumAcmValue       || existing.voluumAcmValue    || '';
+  const voluumLanderScript= site.voluumLanderScript   || existing.voluumLanderScript|| '';
+  const conversionId      = site.gtagId || site.conversionId || existing.conversionId || '';
 
   // Build deploy config — written as JSON file, read by workflow
   const config = {
@@ -156,6 +160,10 @@ export async function deploy(assets, site, settings) {
     voluumId,
     voluumDomain,
     voluumClickUrl,
+    voluumCfCname,
+    voluumAcmName,
+    voluumAcmValue,
+    voluumLanderScript,
     colorId:         site.colorId      || '',
     fontId:          site.fontId       || '',
     layout:          site.layout       || '',
