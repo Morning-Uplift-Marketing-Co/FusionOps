@@ -120,43 +120,87 @@ const cssVars = `--primary:${hsl(...pal.p)};--secondary:${hsl(...pal.s)};--accen
 
 ## Step 4c: Add tracking scripts (Google Ads + Voluum)
 
-In `Layout.astro` `<head>`, add after `dataLayer` initialization:
+> ⚠️ **Cloudflare Rocket Loader** changes `type` on every `<script>` tag to `type="xxxx-text/javascript"`, breaking execution. **ALL** `<script is:inline>` tags MUST have `data-cfasync="false"`.
+
+> ⚠️ **`Fragment set:html` in `<head>`** — Astro sanitizes `<script>` tags inside `set:html` in head context. Use direct conditional `{condition && <script is:inline ...>}` instead.
+
+In `Layout.astro` `<head>`, add:
 
 ```astro
 {conversionId && (
-  <>
-    <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${conversionId}`}></script>
-    <script is:inline define:vars={{ conversionId, formStartLabel, formSubmitLabel }}>
-      (function(){
-        function gtag(){window.dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', conversionId);
-        window.__gtagConversionId = conversionId;
-        window.__formStartLabel   = formStartLabel;
-        window.__formSubmitLabel  = formSubmitLabel;
-      })();
-    </script>
-  </>
+  <script data-cfasync="false" async src={`https://www.googletagmanager.com/gtag/js?id=${conversionId}`} is:inline></script>
 )}
-{voluumId && (
-  <script is:inline define:vars={{ voluumId, voluumDomain }}>
-    var vpv = document.createElement('script');
-    vpv.src = 'https://' + voluumDomain + '/scripts/' + voluumId + '/vp.js';
-    document.head.appendChild(vpv);
+{conversionId && (
+  <script data-cfasync="false" is:inline define:vars={{ conversionId, formStartLabel, formSubmitLabel }}>
+    (function(){
+      function gtag(){window.dataLayer=window.dataLayer||[];window.dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', conversionId);
+      window.__gtagConversionId = conversionId;
+      window.__formStartLabel   = formStartLabel;
+      window.__formSubmitLabel  = formSubmitLabel;
+    })();
   </script>
 )}
+
+{/* Voluum — use dtpCallback (NOT vp.js — vp.js does NOT handle click_id/cookies/cep) */}
+{voluumDomain && <meta http-equiv="delegate-ch" content={`sec-ch-ua https://${voluumDomain}; sec-ch-ua-mobile https://${voluumDomain}; sec-ch-ua-arch https://${voluumDomain}; sec-ch-ua-model https://${voluumDomain}; sec-ch-ua-platform https://${voluumDomain}; sec-ch-ua-platform-version https://${voluumDomain}; sec-ch-ua-bitness https://${voluumDomain}; sec-ch-ua-full-version-list https://${voluumDomain}; sec-ch-ua-full-version https://${voluumDomain}`} />}
+{voluumDomain && <style is:inline>{`.dtpcnt{opacity:0;}`}</style>}
+{voluumDomain && (
+  <script data-cfasync="false" is:inline define:vars={{ voluumDomain }}>
+  (function(e,d,k,n,u,v,g,w,C,f,p,x,D,c,q,r,h,t,y,G,z){function A(){for(var a=d.querySelectorAll(".dtpcnt"),b=0,l=a.length;b<l;b++)a[b][w]=a[b][w].replace(/(^|\s+)dtpcnt($|\s+)/g,"")}function E(a,b,l,F){var m=new Date;m.setTime(m.getTime()+(F||864E5));d.cookie=a+"="+b+"; "+l+"samesite=Strict; expires="+m.toGMTString()+"; path=/";k.setItem(a,b);k.setItem(a+"-expires",m.getTime())}function B(a){var b=d.cookie.match(new RegExp("(^| )"+a+"=([^;]+)"));return b?b.pop():k.getItem(a+"-expires")&&+k.getItem(a+"-expires")>(new Date).getTime()?k.getItem(a):null}z="https:"===e.location.protocol?"secure; ":"";e[f]||(e[f]=function(){(e[f].q=e[f].q||[]).push(arguments)},r=d[u],d[u]=function(){r&&r.apply(this,arguments);if(e[f]&&!e[f].hasOwnProperty("params")&&/loaded|interactive|complete/.test(d.readyState))for(;c=d[v][p++];)/\/?click\/?($|(\/[0-9]+)?$)/.test(c.pathname)&&(c[g]="javascrip"+e.postMessage.toString().slice(4,5)+":"+f+'.l="'+c[g]+'",void 0')},setTimeout(function(){(t=RegExp("[?&]cpid(=([^&#]*)|&|#|$)").exec(e.location.href))&&t[2]&&(h=t[2],y=B("vl-"+h));var a=B("vl-cep"),b=location[g];if("savedCep"===D&&a&&(!h||"undefined"===typeof h)&&0>b.indexOf("cep=")){var l=-1<b.indexOf("?")?"&":"?";b+=l+a}c=d.createElement("script");q=d.scripts[0];c.defer=1;c.src="https://"+voluumDomain+"/d/.js?lpref="+n(d.referrer)+"&lpurl="+n(b)+"&lpt="+n(d.title)+"&vtm="+(new Date).getTime()+(y?"&uw=no":"");c[C]=function(){for(p=0;c=d[v][p++];)/dtpCallback\.l/.test(c[g])&&(c[g]=decodeURIComponent(c[g]).match(/dtpCallback\.l="([^"]+)/)[1]);A()};q.parentNode.insertBefore(c,q);h&&E("vl-"+h,"1",z)},0),setTimeout(A,7E3))})(window,document,localStorage,encodeURIComponent,"onreadystatechange","links","href","className","onerror","dtpCallback",0,0,"savedCep");
+  </script>
+)}
+{voluumDomain && (
+  <noscript><link href={`https://${voluumDomain}/d/.js?noscript=true&lpurl=`} rel="stylesheet"/></noscript>
+)}
 ```
+
+Also add `data-cfasync="false"` to ALL other `<script is:inline>` tags in:
+- `Layout.astro` body scripts (fpPixel, etc.)
+- `index.astro` (form submit handler)
+- All components: `StickyMobileCta.astro`, `LegalModal.astro`, `LoanCalculator.astro`, etc.
 
 **Required env vars in `deploy-lp.yml`** — verify these lines exist in the `.env` writer step:
 ```js
 'PUBLIC_FORMSTARTLABEL='  + JSON.stringify(c.gtagFormStartLabel||c.formStartLabel||''),
 'PUBLIC_FORMSUBMITLABEL=' + JSON.stringify(c.gtagFormSubmitLabel||c.formSubmitLabel||''),
-'PUBLIC_VOLUUM_CLICK_URL=' + JSON.stringify(c.voluumClickUrl||''),
+'PUBLIC_VOLUUMDOMAIN='    + JSON.stringify(c.voluumDomain||''),
+'PUBLIC_VOLUUM_CLICK_URL='+ JSON.stringify(c.voluumClickUrl||''),
 ```
 
-## Step 4d: Add First-Party Pixel (`/e` endpoint + sendBeacon)
+**`voluumDomain` default** — set to `''` not `'track.vlm.icu'` to avoid rendering Voluum script for sites that don't use Voluum:
+```astro
+const voluumDomain = import.meta.env.PUBLIC_VOLUUMDOMAIN || '';
+```
 
-**1. Create `src/pages/e.ts`** in the template:
+## Step 4c-ii: Form submit CTA redirect to Voluum
+
+The ZIP form submit script in `index.astro` MUST redirect to `ctaHref` (Voluum URL), not hardcoded `/apply`. Use `define:vars` to inject:
+
+```astro
+<script data-cfasync="false" is:inline define:vars={{ ctaHref }}>
+  (() => {
+    // ... form validation logic ...
+    form.addEventListener("submit", (event) => {
+      // ... validation ...
+      const current = new URLSearchParams(window.location.search);
+      current.set("zip", zip);
+      // ✅ redirect to Voluum if configured, else /apply
+      const dest = ctaHref && ctaHref !== '#apply'
+        ? ctaHref + (ctaHref.includes('?') ? '&' : '?') + current.toString()
+        : `/apply?${current.toString()}`;
+      window.location.assign(dest);
+    });
+  })();
+</script>
+```
+
+## Step 4d: Add First-Party Pixel (pixel worker endpoint + GET beacon)
+
+**Architecture rule (permanent):** Pixel events always go to `https://t.{domain}/e` (Cloudflare Worker), NOT to `/e` on the apex/www host. The apex `/e` returns 404 on static deploys (Cloudflare Pages, Netlify). The `src/pages/e.ts` file is kept as a dev-only fallback only.
+
+**1. Create `src/pages/e.ts`** in the template (dev fallback only — not used in production):
 
 ```typescript
 import type { APIRoute } from 'astro';
@@ -175,17 +219,27 @@ export const GET: APIRoute = () => {
 };
 ```
 
-**2. Add `sendBeacon` fpPixel block in `Layout.astro` body** (before scroll/time tracking):
+**2. Add pixel GET beacon block in `Layout.astro` body** (before scroll/time tracking):
 
 ```astro
-<!-- First-Party Pixel: sendBeacon to /e -->
+<!-- First-Party Pixel: GET beacon to t.{domain}/e (pixel worker) -->
 <script is:inline>
 (function(){
-  function fpPixel(eventName, extra) {
+  var PX_ENDPOINT = 'https://t.' + window.location.hostname + '/e';
+  function sendPixelBeacon(payload) {
     try {
-      var payload = Object.assign({ e: eventName, d: window.location.hostname, ts: Date.now() }, extra || {});
-      navigator.sendBeacon('/e', JSON.stringify(payload));
+      var q = new URLSearchParams();
+      Object.keys(payload || {}).forEach(function(k){
+        var v = payload[k];
+        if (v !== undefined && v !== null) q.set(k, String(v));
+      });
+      var i = new Image(1, 1);
+      i.src = PX_ENDPOINT + '?' + q.toString();
     } catch(_) {}
+  }
+  function fpPixel(eventName, extra) {
+    var payload = Object.assign({ e: eventName, d: window.location.hostname, ts: Date.now() }, extra || {});
+    sendPixelBeacon(payload);
   }
   if (!window.__fpPageTracked) {
     window.__fpPageTracked = true;
@@ -195,6 +249,10 @@ export const GET: APIRoute = () => {
 })();
 </script>
 ```
+
+> **Why GET beacon, not `navigator.sendBeacon` or `fetch`?**
+> `sendBeacon('/e', ...)` and `fetch('/e', ...)` both fail on apex/www static hosts (404/405).
+> An `<img src="https://t.{domain}/e?...">` GET fires cross-origin without CORS, is fire-and-forget, and is handled by the Cloudflare Worker at `t.{domain}/*`.
 
 **3. In form submit handler**, fire `fpPixel` and gtag conversion label:
 
@@ -209,6 +267,15 @@ try {
 } catch(_) {}
 if (typeof window.__fpPixel === 'function') { window.__fpPixel('form_start', { amount: amount }); }
 ```
+
+**4. Pixel infrastructure required per domain (auto-provisioned on deploy):**
+
+Cloudflare must have for each domain:
+- DNS A record: `t.{domain}` → `192.0.2.1` (Proxied = ON)
+- Workers Route: `t.{domain}/*` → `lp-factory-pixel` worker script
+
+Both are automatically provisioned by `ensurePixelSubdomain()` on every Cloudflare Pages deploy.
+After deploy, the system health-checks `https://t.{domain}/e` — if non-2xx, a warning is shown in the wizard.
 
 ## Step 4e: CTA buttons — use `ctaHref`
 
@@ -447,7 +514,7 @@ Before triggering deploy, confirm ALL of these are in the template:
 | 1 | `PUBLIC_FORMSTARTLABEL` + `PUBLIC_FORMSUBMITLABEL` declared | `Layout.astro` frontmatter |
 | 2 | `window.__formStartLabel` / `window.__formSubmitLabel` exposed | `Layout.astro` gtag script |
 | 3 | `src/pages/e.ts` exists (returns 204) | `src/pages/e.ts` |
-| 4 | `sendBeacon('/e', ...)` fpPixel block injected | `Layout.astro` body |
+| 4 | Pixel beacon uses `PX_ENDPOINT = 'https://t.' + hostname + '/e'` (NOT `/e` apex) | `Layout.astro` body |
 | 5 | `window.__fpPixel = fpPixel` exposed globally | `Layout.astro` body |
 | 6 | Form submit fires `gtag conversion` + `__fpPixel('form_start')` | `HeroFormStatic.astro` or form component |
 | 7 | `voluumClickUrl` / `ctaHref` declared + used in all CTA `<a>` | `index.astro` |
@@ -457,10 +524,12 @@ Before triggering deploy, confirm ALL of these are in the template:
 
 **Tracking Test should show green for:**
 - Google Ads: gtag.js loaded, Config initialized, Conversion ID set, form_start/form_submit labels present
-- First-Party Pixel: Pixel Function Initialized, Endpoint Found (204), Page View event
+- First-Party Pixel: Pixel Function Initialized, `t.{domain}/e` GET beacon fires on page load
 - Voluum: Lander Script, Domain, Click URL in CTA
 - URL Params: GCLID capture, Click ID, UTM
 - Micro-conversions: form_start fires once, Amount Slider, ZIP Input
+
+**Post-deploy pixel health gate:** After every Cloudflare Pages deploy, the system auto-pings `https://t.{domain}/e`. A warning is shown in the wizard if it returns non-2xx. If you see this warning, check that Cloudflare Workers Route `t.{domain}/*` → pixel worker exists.
 
 ## Notes
 - This workflow modifies `index.astro`, `apply.astro`, `Layout.astro`, adds `src/pages/e.ts`, `src/pages/robots.txt.ts`, `public/_headers`
@@ -469,3 +538,25 @@ Before triggering deploy, confirm ALL of these are in the template:
 - The deploy pipeline (GitHub Actions) injects all PUBLIC_* values via `.env` before `npm run build`
 - **Gen Reviews** button in Wizard → Step 5 (Copy) generates 3 unique category-aware reviews via Gemini — regenerate anytime before deploy
 - **Voluum CTA**: always use `ctaHref = voluumClickUrl || '#apply'` — never hardcode `#apply` in CTA buttons
+
+## Preview Compatibility Rules (Wizard Live Preview)
+
+The wizard renders a live HTML preview of the template using `astroToHtmlPreview()`. For the preview to work correctly:
+
+1. **All content variables MUST use `import.meta.env.PUBLIC_*`** in frontmatter — NOT hardcoded strings.
+   ```astro
+   const h1 = import.meta.env.PUBLIC_H1 || 'Your Headline';  ✅
+   const h1 = 'Your Headline';                               ❌ (preview will be blank)
+   ```
+
+2. **All colors MUST use CSS custom properties** (`var(--primary)`, `var(--accent)`, `var(--background)`) — NOT hardcoded hex/hsl values in inline styles.
+   ```astro
+   style="background: hsl(var(--primary))"   ✅  (responds to Color Scheme picker)
+   style="background: hsl(0 65% 32%)"        ❌  (ignores Color Scheme picker)
+   ```
+
+3. **CSS `--primary`, `--accent`, `--secondary`, `--background`, `--foreground`, `--radius`** must be declared in `:root` in `global.css` using space-separated HSL values (shadcn convention: `--primary: 217 91% 35%`).
+
+4. **Font**: declare `font-family` on `body` using `var(--font-family)` or set it from `PUBLIC_FONTID`. The preview injector overrides `body { font-family: ... !important }` based on the wizard's Font selection.
+
+The preview engine auto-substitutes all `{varName}` expressions where `varName` was declared from `import.meta.env.PUBLIC_*` in any `.astro` file in the template bundle.
