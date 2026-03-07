@@ -116,6 +116,7 @@ jobs:
             'PUBLIC_LAYOUT='        + JSON.stringify(c.layout||''),
             'PUBLIC_RADIUS='        + JSON.stringify(c.radius||''),
             'PUBLIC_TRUSTBADGES='   + JSON.stringify(c.trustBadges||''),
+            'PUBLIC_REVIEWS='       + JSON.stringify(JSON.stringify(c.reviews||[])),
           ];
           fs.writeFileSync('.env', lines.join('\n'));
           console.log('Wrote .env for domain:', c.domain, 'amountMax:', amountMax);
