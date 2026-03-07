@@ -1,0 +1,34 @@
+---
+const leadsgateScript = import.meta.env.PUBLIC_LEADSGATE_SCRIPT || '';
+const brand           = import.meta.env.PUBLIC_BRAND            || 'ElasticCredits';
+const domain          = import.meta.env.PUBLIC_DOMAIN           || 'elasticcredits.com';
+---
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Apply — {brand}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #faf8f5; font-family: system-ui, sans-serif; }
+    #leadsgate-container { width: 100%; max-width: 600px; padding: 1rem; }
+    #leadsgate-placeholder { text-align: center; color: #999; font-size: 14px; padding: 2rem; }
+  </style>
+</head>
+<body>
+  <div id="leadsgate-container">
+    {leadsgateScript ? (
+      <Fragment set:html={leadsgateScript} />
+    ) : (
+      <div id="leadsgate-placeholder">
+        <p>⚠️ Leadsgate form not configured.</p>
+        <p>Set <code>PUBLIC_LEADSGATE_SCRIPT</code> in your <code>.env</code> file.</p>
+      </div>
+    )}
+  </div>
+</body>
+</html>
