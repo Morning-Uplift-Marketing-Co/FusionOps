@@ -147,3 +147,35 @@ jobs:
           URL=$(grep -Eo 'https://[A-Za-z0-9._-]+\.pages\.dev' /tmp/wrangler_out.txt | head -n1 || true)
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "Deploy URL: $URL"
+
+      - name: Add custom domain to CF Pages
+        env:
+          CF_TOKEN_FROM_CONFIG: ${{ steps.template.outputs.cf_api_token }}
+          CF_ACCOUNT_FROM_CONFIG: ${{ steps.template.outputs.cf_account_id }}
+          CF_TOKEN_FROM_SECRET: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_FROM_SECRET: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          export CF_TOKEN="${CF_TOKEN_FROM_CONFIG:-$CF_TOKEN_FROM_SECRET}"
+          export CF_ACCOUNT="${CF_ACCOUNT_FROM_CONFIG:-$CF_ACCOUNT_FROM_SECRET}"
+          CONFIG_FILE="${{ steps.config.outputs.file }}"
+          DOMAIN=$(node -e "const c=require('./$CONFIG_FILE');console.log(c.domain||'')")
+          PROJECT="${{ steps.template.outputs.cf_pages_project }}"
+
+          if [ -z "$DOMAIN" ] || [ -z "$CF_TOKEN" ] || [ -z "$CF_ACCOUNT" ]; then
+            echo "Skipping custom domain: missing domain, token, or account"
+            exit 0
+          fi
+
+          echo "Adding custom domain $DOMAIN to Pages project $PROJECT..."
+          RESP=$(curl -s -X POST \
+            "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT/pages/projects/$PROJECT/domains" \
+            -H "Authorization: Bearer $CF_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"domain\":\"$DOMAIN\"}")
+          echo "CF Pages domain result: $RESP"
+          # Also try www subdomain
+          curl -s -X POST \
+            "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT/pages/projects/$PROJECT/domains" \
+            -H "Authorization: Bearer $CF_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"domain\":\"www.$DOMAIN\"}" || true
