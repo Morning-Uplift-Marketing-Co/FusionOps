@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { api } from "./services/api";
 import * as db from "./services/neon";
+import { saveSiteToD1, deleteSiteFromD1 } from "./services/d1";
 import { THEME as T, WIZARD_DEFAULTS } from "./constants";
 import { uid, now, LS } from "./utils";
 import { refreshCustomTemplates } from "./utils/template-router";
@@ -26,6 +27,7 @@ import { ErrorLog, logError } from "./components/ErrorLog";
 import { SpendDashboard } from "./components/SpendDashboard";
 import { AccountMap } from "./components/AccountMap";
 import { TrackingDashboard } from "./components/TrackingDashboard";
+import { RealtimeEventsDashboard } from "./components/RealtimeEventsDashboard";
 import { VoluumExplorer } from "./components/VoluumExplorer";
 import { AccountVerificationBanner } from "./components/ui/AccountVerificationBanner";
 import { ApiHealthCheck } from "./components/ApiHealthCheck";
@@ -51,10 +53,10 @@ async function pushAstroTemplateToGitHub({ token, owner, repo, templateId, files
     return btoa(binary);
   };
 
-  const pushFile = async ([filePath, content]) => {
+  const pushFile = async ([filePath, content], retried = false) => {
     const url = `${base}/templates/${templateId}/${filePath}`;
     let sha;
-    // Intentional: 404 is expected for new files — suppress noise
+    // 404 expected for new files — fetch SHA only for existing files
     const ex = await fetch(`${url}?ref=${branch}`, { headers }).catch(() => null);
     if (ex?.ok) sha = (await ex.json().catch(() => ({}))).sha;
 
@@ -66,15 +68,20 @@ async function pushAstroTemplateToGitHub({ token, owner, repo, templateId, files
     };
     const res = await fetch(url, { method: 'PUT', headers, body: JSON.stringify(body) });
     if (!res.ok) {
+      // 409 = stale SHA (concurrent push or race) — retry once with fresh SHA
+      if (res.status === 409 && !retried) {
+        await new Promise(r => setTimeout(r, 300));
+        return pushFile([filePath, content], true);
+      }
       const err = await res.text().catch(() => '');
       throw new Error(`Failed to push ${filePath}: ${res.status} ${err.slice(0, 200)}`);
     }
   };
 
-  // Push files with concurrency limit of 3 to avoid GitHub rate limits
+  // Push files sequentially to avoid GitHub 409 race conditions
   const entries = Object.entries(files);
-  for (let i = 0; i < entries.length; i += 3) {
-    await Promise.all(entries.slice(i, i + 3).map(pushFile));
+  for (const entry of entries) {
+    await pushFile(entry);
   }
 }
 
@@ -539,6 +546,36 @@ useEffect(() => {
     setTimeout(() => setToast(null), 3000);
   };
 
+  const startDuplicate = (sourceSite) => {
+    if (!sourceSite || typeof sourceSite !== 'object' || !sourceSite.id) return;
+    const { _editMode, id, domain, brand, email, phone, address,
+      voluumCampaignId, voluumCampaignName, voluumClickUrl,
+      voluumTrackingDomain, voluumLanderScript,
+      voluumCfCname, voluumAcmName, voluumAcmValue,
+      status, createdAt, updatedAt, cost,
+      ...portable } = sourceSite;
+    setWizData({
+      ...WIZARD_DEFAULTS,
+      ...portable,
+      domain: '',
+      brand: '',
+      email: '',
+      phone: '',
+      address: '',
+      voluumCampaignId: '',
+      voluumCampaignName: '',
+      voluumClickUrl: '',
+      voluumTrackingDomain: '',
+      voluumLanderScript: '',
+      voluumCfCname: '',
+      voluumAcmName: '',
+      voluumAcmValue: '',
+      redirectUrl: '',
+      _editMode: false,
+    });
+    setPage('create');
+  };
+
   const startCreate = async (existingSite = null) => {
     // Guard: reject MouseEvent or non-plain-object arguments (e.g. from onClick handlers)
     const isValidSite = existingSite && typeof existingSite === "object" && !(existingSite instanceof Event) && !existingSite.nativeEvent && existingSite.id;
@@ -586,7 +623,7 @@ useEffect(() => {
   };
 
   // Keep only plain serializable site fields — drops React event/DOM properties
-  const SITE_FIELDS = new Set(["id", "brand", "domain", "tagline", "email", "templateId", "loanType", "amountMin", "amountMax", "aprMin", "aprMax", "colorId", "fontId", "layout", "radius", "trustBadgeStyle", "trustBadgeIconTone", "h1", "h1span", "badge", "cta", "sub", "conversionId", "gtagId", "gtagFormStartLabel", "gtagFormSubmitLabel", "formStartLabel", "formSubmitLabel", "aid", "network", "redirectUrl", "voluumId", "voluumDomain", "voluumCampaignId", "voluumCampaignName", "voluumTrackingDomain", "voluumClickUrl", "voluumLanderScript", "voluumCfCname", "voluumAcmName", "voluumAcmValue", "trackingMode", "phone", "address", "lang", "faviconDataUrl", "ogImageDataUrl", "formEmbed", "cfProfileId", "cfAccountId", "internetbsAccountId", "domainProvider", "domainProviderAccountId", "status", "createdAt", "updatedAt", "cost", "reviews", "trustBadges", "deployTarget", "deployOnBuild"]);
+  const SITE_FIELDS = new Set(["id", "brand", "domain", "tagline", "email", "templateId", "loanType", "amountMin", "amountMax", "aprMin", "aprMax", "colorId", "fontId", "layout", "radius", "trustBadgeStyle", "trustBadgeIconTone", "h1", "h1span", "badge", "cta", "sub", "metaTitle", "metaDesc", "conversionId", "gtagId", "gtagFormStartLabel", "gtagFormSubmitLabel", "formStartLabel", "formSubmitLabel", "aid", "network", "redirectUrl", "voluumId", "voluumDomain", "voluumCampaignId", "voluumCampaignName", "voluumTrackingDomain", "voluumClickUrl", "voluumLanderScript", "voluumCfCname", "voluumAcmName", "voluumAcmValue", "trackingMode", "phone", "address", "lang", "faviconDataUrl", "ogImageDataUrl", "formEmbed", "cfProfileId", "cfAccountId", "internetbsAccountId", "domainProvider", "domainProviderAccountId", "status", "createdAt", "updatedAt", "cost", "reviews", "trustBadges", "deployTarget", "deployOnBuild"]);
   const sanitizeSite = (obj) => Object.fromEntries(
     Object.entries(obj).filter(([k, v]) => SITE_FIELDS.has(k) && typeof v !== "function")
   );
@@ -598,19 +635,20 @@ useEffect(() => {
       const siteData = sanitizeSite(rawData);
       setSites(p => p.map(s => s.id === siteData.id ? { ...s, ...siteData, updatedAt: now() } : s));
 
-      if (neonOk) db.saveSite(siteData).catch(() => { });
-      else if (apiOk) api.put(`/sites/${siteData.id}`, siteData).catch(() => { });
+      if (neonOk) db.saveSite(siteData).catch(() => {});
+      else if (apiOk) api.put(`/sites/${siteData.id}`, siteData).catch(() => {});
+      saveSiteToD1(siteData).catch(() => {}); // D1 backup — fire and forget
 
       notify(`${siteData.brand} updated!`);
     } else {
-      // New site
+      // New site — await Neon (primary), D1 is fire-and-forget
       const cleanSite = sanitizeSite(site);
       setSites(p => [cleanSite, ...p]);
       setStats(p => ({ builds: p.builds + 1, spend: +(p.spend + (cleanSite.cost || 0)).toFixed(3) }));
 
-      // Wait for save to complete before navigating
-      if (neonOk) await db.saveSite(cleanSite).catch(() => { });
-      else if (apiOk) await api.post("/sites", cleanSite).catch(() => { });
+      if (neonOk) await db.saveSite(cleanSite).catch(() => {});
+      else if (apiOk) await api.post("/sites", cleanSite).catch(() => {});
+      saveSiteToD1(cleanSite).catch(() => {}); // D1 backup — fire and forget
 
       notify(`${cleanSite.brand} created!`);
     }
@@ -621,8 +659,9 @@ useEffect(() => {
     const updatedSite = sanitizeSite({ ...site, updatedAt: now() });
     setSites(p => p.map(s => s.id === site.id ? updatedSite : s));
 
-    if (neonOk) await db.saveSite(updatedSite).catch(() => { });
-    else if (apiOk) await api.put(`/sites/${site.id}`, updatedSite).catch(() => { });
+    if (neonOk) await db.saveSite(updatedSite).catch(() => {});
+    else if (apiOk) await api.put(`/sites/${site.id}`, updatedSite).catch(() => {});
+    saveSiteToD1(updatedSite).catch(() => {}); // D1 backup — fire and forget
   };
 
   const delSite = (id) => {
@@ -631,8 +670,9 @@ useEffect(() => {
 
     setSites(p => p.filter(s => s.id !== id));
 
-    if (neonOk) db.deleteSite(id).catch(() => { });
-    else if (apiOk) api.del(`/sites/${id}`).catch(() => { });
+    if (neonOk) db.deleteSite(id).catch(() => {});
+    else if (apiOk) api.del(`/sites/${id}`).catch(() => {});
+    deleteSiteFromD1(id).catch(() => {}); // D1 backup — fire and forget
 
     // Also remove matching domain from OpsCenter
     if (site) {
@@ -855,12 +895,13 @@ useEffect(() => {
           {page === "spend" && <SpendDashboard apiOk={apiOk} neonOk={neonOk} />}
           {page === "voluum" && <VoluumExplorer />}
           {page === "account-map" && <AccountMap apiOk={apiOk} neonOk={neonOk} ops={ops} />}
-          {page === "sites" && <Sites sites={sites} del={delSite} notify={notify} startCreate={startCreate} settings={settings} addDeploy={addDeploy} ops={ops} updateSite={updateSite} />}
+          {page === "sites" && <Sites sites={sites} del={delSite} notify={notify} startCreate={startCreate} startDuplicate={startDuplicate} settings={settings} addDeploy={addDeploy} ops={ops} updateSite={updateSite} />}
           {page === "create" && wizData && <Wizard config={wizData} setConfig={setWizData} addSite={addSite} addDeploy={addDeploy} setPage={setPage} settings={settings} notify={notify} cfAccounts={ops.cfAccounts} registrarAccounts={ops.registrarAccounts} />}
           {page === "variant" && <VariantStudio notify={notify} sites={sites} addSite={addSite} registry={registry} setRegistry={setRegistry} apiOk={apiOk} />}
           {page === "ops" && <OpsCenter data={ops} add={opsAdd} del={opsDel} upd={opsUpd} settings={settings} />}
           {page === "deploys" && <DeployHistory deploys={deploys} />}
           {page === "tracking" && <TrackingDashboard settings={settings} sites={sites} />}
+          {page === "realtime-events" && <RealtimeEventsDashboard sites={sites} />}
           {page === "template-manager" && (
             <TemplateManager
               sites={sites}
@@ -889,15 +930,29 @@ useEffect(() => {
 
           // 1. Save to DB
           st('Saving template to database...');
-          const response = await api.post('/templates', {
-            templateId: templateData.newFolderId,
+          const _rawId = (templateData.newFolderId || templateData.templateName || '').toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+          const safeTemplateId = _rawId.length >= 2 ? _rawId : `tpl-${Date.now().toString(36)}`;
+          const templatePayload = {
             name: templateData.templateName,
             description: templateData.templateDescription,
             category: templateData.category || 'general',
             badge: templateData.badge || 'New',
             sourceCode: templateData.generatedCode,
             files: templateData.generatedFiles || {},
-          });
+          };
+          let response = await api.post('/templates', { templateId: safeTemplateId, ...templatePayload });
+          if (response.error === 'Template ID already exists') {
+            st('Template exists — updating existing record...');
+            const allTpls = await api.get('/templates').catch(() => null);
+            const tplList = Array.isArray(allTpls) ? allTpls : (allTpls?.templates || []);
+            const existingTpl = tplList.find(t => (t.template_id || t.templateId) === safeTemplateId);
+            if (existingTpl) {
+              response = await api.put(`/templates/${existingTpl.id}`, { ...templatePayload, createVersion: true, note: 'Updated via import' });
+            } else {
+              const fallbackId = `${safeTemplateId}-${Date.now().toString(36)}`;
+              response = await api.post('/templates', { templateId: fallbackId, ...templatePayload });
+            }
+          }
 
           if (response.error) {
             const detail = response.detail ? (typeof response.detail === 'string' ? response.detail : JSON.stringify(response.detail)) : '';
