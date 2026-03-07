@@ -36,7 +36,7 @@ function resolveApiBase() {
   return String(fromWindow || fromEnv || fallback).replace(/\/+$/, "");
 }
 
-async function upsertPixelWorkerRoute({ domain, cfAccountId, cfApiToken, pixelScriptName = "lp-factory-pixel" }) {
+async function upsertPixelWorkerRoute({ domain, cfAccountId, cfApiToken, pixelScriptName = "lp-factory-api" }) {
   const zoneRes = await cfProxyJson(`/zones?name=${encodeURIComponent(domain)}&account.id=${encodeURIComponent(cfAccountId)}`, {
     token: cfApiToken,
   });
@@ -593,7 +593,7 @@ async function resolveIp(url) {
  *
  * Kept for backward compatibility; returns success immediately.
  */
-export async function ensurePixelSubdomain({ domain, cfAccountId, cfApiToken, pixelScriptName = "lp-factory-pixel" }) {
+export async function ensurePixelSubdomain({ domain, cfAccountId, cfApiToken, pixelScriptName = "lp-factory-api" }) {
   try {
     const cleanDomain = String(domain || "").trim().toLowerCase();
     if (!cleanDomain) {
