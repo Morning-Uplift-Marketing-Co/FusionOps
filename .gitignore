@@ -19,7 +19,12 @@ Thumbs.db
 .planning/
 logs/
 *.zip
+*.tar.gz
 test-artifacts/
 node_modules/
 dist/nul
 .opencode
+.preview-astrodeck/
+tmp_check.html
+templates/astro-test002/package-lock.json
+templates/installment-loans-101/package-lock.json
