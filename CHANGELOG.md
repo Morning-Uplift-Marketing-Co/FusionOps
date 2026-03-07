@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-03-07
+### Added
+- **Gen Reviews Button**: Wizard Step 5 (Copy) → ✨ Gen Reviews — calls `/api/ai/generate-reviews` to generate 3 unique, category-aware testimonials via Gemini. Reviews saved in config and injected as `PUBLIC_REVIEWS` at CI build time.
+- **Voluum CTA Click URL**: StepTracking Voluum section now has "CTA Click URL" input with "Use Default" button (auto-fill `https://vls.{domain}/click`). When set, all CTA buttons in `astro-test002` use this URL instead of `#apply`. Injected as `PUBLIC_VOLUUM_CLICK_URL`.
+- **`/api/ai/generate-reviews` Worker Route**: New AI generation endpoint — prompt includes `loanType` for category-specific reviews (pet care, installment, PDL, etc.).
+- **`apply.astro` in skill**: `/convert-astro-template` workflow Step 8 — standalone LeadsGate form page (no Layout/header/footer), `PUBLIC_AID` injected via `define:vars`.
+
+### Fixed
+- **409 SHA Race Condition**: `github-actions.js` now parses correct SHA from 409 error body immediately (no clone, no delay), then pushes at once. Fallback re-fetches from API. Retries up to 5x.
+- **Worker Redeploy**: `wrangler deploy` required after each worker.js change for new routes to go live.
+
+### Changed
+- **`deploy-lp.yml`**: Added `PUBLIC_REVIEWS` and `PUBLIC_VOLUUM_CLICK_URL` to injected env vars.
+- **`github-actions.js`**: Added `voluumClickUrl` and `reviews` fields to deploy config JSON.
+- **`convert-astro-template.md` skill**: Updated Steps 7–8 (reviews injection, apply.astro LeadsGate pattern, Voluum CTA note).
+
 ## [2.3.0] - 2026-02-28
 ### Added
 - **Cloudflare Multi-Profile System**: Manage multiple CF accounts in Settings with full CRUD, API validation (32-char hex + Pages API + zone count), and auto-migration of legacy single account to "Default" profile.
