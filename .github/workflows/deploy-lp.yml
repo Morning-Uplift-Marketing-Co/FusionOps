@@ -111,6 +111,7 @@ jobs:
             'PUBLIC_CONVERSIONID='  + JSON.stringify(c.conversionId||''),
             'PUBLIC_VOLUUMID='      + JSON.stringify(c.voluumId||''),
             'PUBLIC_VOLUUMDOMAIN='  + JSON.stringify(c.voluumDomain||''),
+            'PUBLIC_VOLUUM_CLICK_URL=' + JSON.stringify(c.voluumClickUrl||''),
             'PUBLIC_COLORID='       + JSON.stringify(c.colorId||''),
             'PUBLIC_FONTID='        + JSON.stringify(c.fontId||''),
             'PUBLIC_LAYOUT='        + JSON.stringify(c.layout||''),
