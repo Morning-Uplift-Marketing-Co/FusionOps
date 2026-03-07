@@ -1843,26 +1843,33 @@ export default {
         }
 
         const filesJson = body.files ? JSON.stringify(body.files) : '{}';
-        await db.prepare(`
-          INSERT INTO templates (
-            id, template_id, name, description, category, badge,
-            source_code, files, created_at, updated_at, is_deleted, status, current_version, archived_at
-          )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, 1, ?)
-        `).bind(
-          id,
-          templateId,
-          body.name || '',
-          body.description || '',
-          body.category || 'general',
-          body.badge || 'New',
-          body.sourceCode || '',
-          filesJson,
-          now,
-          now,
-          normalizedStatus,
-          normalizedStatus === 'archived' ? now : null
-        ).run();
+        try {
+          await db.prepare(`
+            INSERT INTO templates (
+              id, template_id, name, description, category, badge,
+              source_code, files, created_at, updated_at, is_deleted, status, current_version, archived_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, 1, ?)
+          `).bind(
+            id,
+            templateId,
+            body.name || '',
+            body.description || '',
+            body.category || 'general',
+            body.badge || 'New',
+            body.sourceCode || '',
+            filesJson,
+            now,
+            now,
+            normalizedStatus,
+            normalizedStatus === 'archived' ? now : null
+          ).run();
+        } catch (insertErr) {
+          if (String(insertErr?.message || '').includes('UNIQUE constraint failed')) {
+            return json({ error: `Template ID "${templateId}" already exists. Choose a different ID.` }, 400);
+          }
+          throw insertErr;
+        }
 
         const templateRow = await db.prepare('SELECT * FROM templates WHERE id = ?').bind(id).first();
         if (templateRow) {
