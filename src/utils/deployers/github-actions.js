@@ -44,12 +44,12 @@ async function pushFile({ githubToken, repo, branch, path, content, message }) {
     return fetch(url, { method: 'PUT', headers, body: JSON.stringify(body) });
   };
 
-  // Get current SHA
+  // Get current SHA and retry up to 3 times on 409 (stale SHA)
   let sha = await getFileSha(url, branch, headers);
   let res = await tryPush(sha);
 
-  // 409 = stale SHA — re-fetch and retry once
-  if (res.status === 409) {
+  for (let attempt = 0; attempt < 3 && res.status === 409; attempt++) {
+    await new Promise(r => setTimeout(r, 300 * (attempt + 1)));
     sha = await getFileSha(url, branch, headers);
     res = await tryPush(sha);
   }
