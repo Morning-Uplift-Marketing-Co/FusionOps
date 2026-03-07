@@ -4,13 +4,7 @@
  * and legacy definitions.
  */
 
-import { generateAstrodeckLoanPreview, generateLanderCorePreview, generatePDLLoansV1Preview, generateWorkerSafeLoanPreview } from './lp-generator.js';
-import { generateAstroProject as generateAstrodeckAstro, generateLanderCore as generateLanderCoreAstro, generateAstroProject as generateAstrodeckProject } from './astro-generator.jsx';
 import { api } from '../services/api';
-import astrodeckLoanAdapter from '../templates/astrodeck-loan/adapter.ts';
-import workerSafeLoanAdapter from '../templates/worker-safe-loan/adapter.ts';
-import pdlLoansV1Adapter from '../templates/pdl-loans-v1/adapter.ts';
-import landerCoreAdapter from '../templates/lander-core/adapter.ts';
 
 import { getTemplates as getModuleTemplates, getTemplate as getModuleTemplate } from '#lp-template-generator/core/template-registry.js';
 
@@ -19,57 +13,11 @@ let moduleLoaded = false;
 
 // Module natively loaded
 
-// Legacy templates not yet in the module
-const LEGACY_TEMPLATES = [
-  {
-    id: 'astrodeck-loan',
-    name: 'AstroDeck Loan',
-    badge: 'New',
-    description: 'New AstroDeck-style loan template architecture',
-    category: 'legacy',
-    source: 'legacy',
-    // Generator functions for different output types
-    generators: {
-      html: generateAstrodeckLoanPreview,
-      astro: generateAstrodeckProject,
-    },
-  },
-  {
-    id: 'lander-core',
-    name: 'PDL Loans V2',
-    badge: 'Advanced',
-    description: 'High-conversion bear-style template with interactive form',
-    category: 'legacy',
-    source: 'legacy',
-    generators: {
-      html: generateLanderCorePreview,
-      astro: generateLanderCoreAstro,
-    },
-  },
-];
+// Legacy templates — cleared, use custom (api) imports instead
+const LEGACY_TEMPLATES = [];
 
-// Module templates (fallback when module not loaded)
-const MODULE_TEMPLATES_FALLBACK = [
-  { id: 'worker-safe-loan', name: 'Worker-Safe Loan', badge: 'No-TW', description: 'Worker-safe HTML template (no Tailwind CDN/runtime). Use when deployed templates distort.', category: 'general', source: 'legacy' },
-  { id: 'classic', name: 'Classic LP', badge: 'Stable', description: 'Current production LP flow (HTML + Astro generator)', category: 'general', source: 'module' },
-  { id: 'pdl-loans-v1', name: 'PDL Loans V1', badge: 'Popular', description: 'Payday/PDL loan template with hero form, trust badges, calculator, FAQ', category: 'pdl', source: 'module' },
-  { id: 'pdl-loans-v3', name: 'PDL Loans V3', badge: 'New', description: 'Enhanced PDL template with modern design, dark mode, and improved UX', category: 'pdl', source: 'module' },
-  { id: 'simple-lp', name: 'Simple LP', badge: 'Simple', description: 'Minimal landing page with full tracking support', category: 'general', source: 'module' },
-  { id: 'pet-care-loans', name: 'Pet Care Loans', badge: 'New', description: 'Pet care financing landing page based on PDL V3 architecture', category: 'general', source: 'module' },
-  { id: 'elastic-credits-v3', name: 'Elastic Credits V3', badge: 'New', description: 'Custom credit template with tracking integration and modern design', category: 'pdl', source: 'module' },
-  { id: 'scratchpay-bridge', name: 'Scratchpay Bridge', badge: 'New', description: 'Pet care financing bridge page with claymorphism design', category: 'general', source: 'module' },
-  { id: 'pet-loans-v1', name: 'Pet Loans V1', badge: 'New', description: 'Pet care financing LP with hero form, calculator, FAQ', category: 'pet-care', source: 'module' },
-  { id: 'installment-loans-v1', name: 'Installment Loans V1', badge: 'New', description: 'Standard installment loan LP with payment calculator', category: 'installment', source: 'module' },
-  { id: 'installment-loans-v2', name: 'Installment Loans V2', badge: 'V2 Stable', description: 'V2 stable — inline CSS, shared compliance, guaranteed no white pages', category: 'installment', source: 'module' },
-  { id: 'bear-loan-modern', name: 'Bear Loan Modern', badge: 'New', description: 'Modern dark fintech LP with social proof and payment calculator', category: 'installment', source: 'module' },
-  { id: 'pet-care-v2', name: 'Pet Care V2', badge: 'V2 Stable', description: 'V2 stable pet financing LP with vet services grid', category: 'pet-care', source: 'module' },
-  { id: 'installment-golden', name: 'Installment Golden', badge: 'Golden', description: 'Golden installment LP with production-safe tracking baseline', category: 'installment', source: 'module' },
-  { id: 'pet-care-golden', name: 'Pet Care Golden', badge: 'Golden', description: 'Golden pet financing LP with mobile-first trust and FAQ flow', category: 'pet-care', source: 'module' },
-  { id: 'leadgen-golden', name: 'LeadGen Golden', badge: 'Golden', description: 'Golden generic lead-gen LP for cross-vertical campaigns', category: 'general', source: 'module' },
-  { id: 'template-green-01', name: 'Template Green 01', badge: 'Premium', description: 'Teal/green premium finance LP with amber CTAs. Mobile-first, clean design with calculator, FAQ, and trust elements.', category: 'installment', source: 'module' },
-  { id: 'flowbite-loan', name: 'Flowbite Loan', badge: 'New', description: 'Modern loan LP — Flowbite CDN components, trust-heavy design, slider form, testimonials, FAQ. Mobile-first.', category: 'installment', source: 'module' },
-  { id: 'hyperui-loan', name: 'HyperUI Loan', badge: 'New', description: 'Bold dark-hero loan LP — HyperUI style, green accents, stats strip, benefit grid, dark testimonials section.', category: 'installment', source: 'module' },
-];
+// Module templates fallback — cleared, use custom (api) imports instead
+const MODULE_TEMPLATES_FALLBACK = [];
 
 // ── HIDDEN BUILT-IN TEMPLATES ─────────────────────────────────────
 // Built-in (module/legacy) templates cannot be deleted from DB,
