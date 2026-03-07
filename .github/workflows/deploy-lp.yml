@@ -50,27 +50,22 @@ jobs:
           CF_API_TOKEN=$(node -e "const c=require('./$CONFIG_FILE');console.log(c.cfApiToken||'')")
           CF_ACCOUNT_ID=$(node -e "const c=require('./$CONFIG_FILE');console.log(c.cfAccountId||'')")
 
-          # Map templateId (from registry) → actual folder in templates/
-          # Module IDs like template103 need to resolve to a real folder
-          resolve_template_dir() {
-            local id="$1"
-            # Direct match first
-            if [ -d "templates/$id" ]; then echo "templates/$id"; return; fi
-            # Known mappings: module registry ID → folder name
-            case "$id" in
-              astro-test002)                                       echo "templates/astro-test002" ;;
-              pet-orange-white)                                    echo "templates/pet-orange-white" ;;
-              *pet*|*scratchpay*|template10[0-9]|template11[0-9]) echo "templates/pet_loans_v1" ;;
-              installment-loans-101)                             echo "templates/installment-loans-101" ;;
-              *installment*|template12[0-9]|template13[0-9])      echo "templates/installment-bear" ;;
-              *pdl*|*lander*|template14[0-9])                     echo "templates/pdl_new_01" ;;
-              elastic-credits-v3)                                echo "templates/elastic-credits-v3" ;;
-              *elastic*|template15[0-9])                          echo "templates/elastic-credits-v4" ;;
-              *bear*)                                             echo "templates/bear-loan-astro" ;;
-              *)                                                  echo "templates/installment-bear" ;;
+          # Map templateId → actual folder in templates/
+          # Direct match takes absolute priority
+          if [ -d "templates/$TEMPLATE_ID" ]; then
+            DIR="templates/$TEMPLATE_ID"
+          else
+            case "$TEMPLATE_ID" in
+              *pet*|*scratchpay*|template10[0-9]|template11[0-9]) DIR="templates/pet_loans_v1" ;;
+              installment-loans-101)                               DIR="templates/installment-loans-101" ;;
+              *installment*|template12[0-9]|template13[0-9])      DIR="templates/installment-bear" ;;
+              *pdl*|*lander*|template14[0-9])                     DIR="templates/pdl_new_01" ;;
+              elastic-credits-v3)                                  DIR="templates/elastic-credits-v3" ;;
+              *elastic*|template15[0-9])                          DIR="templates/elastic-credits-v4" ;;
+              *bear*)                                              DIR="templates/bear-loan-astro" ;;
+              *)                                                   DIR="templates/installment-bear" ;;
             esac
-          }
-          DIR=$(resolve_template_dir "$TEMPLATE_ID")
+          fi
           if [ ! -d "$DIR" ]; then
             echo "ERROR: Template directory not found: $DIR (templateId=$TEMPLATE_ID)"
             exit 1
