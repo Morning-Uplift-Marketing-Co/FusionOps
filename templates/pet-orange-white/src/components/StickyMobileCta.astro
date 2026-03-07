@@ -1,0 +1,31 @@
+---
+interface Props {
+  href?: string;
+  label?: string;
+}
+
+const { href = "#eligibility-form", label = "Check Eligibility →" } =
+  Astro.props;
+---
+
+<div
+  id="sticky-mobile-cta"
+  class="fixed inset-x-0 bottom-0 z-50 border-t border-sky-200 bg-white/95 p-3 backdrop-blur md:hidden translate-y-full transition-transform duration-300"
+>
+  <a href={href} class="cta-button w-full">{label}</a>
+</div>
+
+<script is:inline>
+  (() => {
+    const bar = document.getElementById("sticky-mobile-cta");
+    if (!bar) return;
+    const onScroll = () => {
+      const scrolled = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
+      if (scrolled >= 0.30) {
+        bar.classList.remove("translate-y-full");
+        window.removeEventListener("scroll", onScroll);
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+  })();
+</script>
