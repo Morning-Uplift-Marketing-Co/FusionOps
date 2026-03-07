@@ -7,6 +7,40 @@ interface Props {
 }
 
 const { title, description } = Astro.props;
+
+const conversionId    = import.meta.env.PUBLIC_CONVERSIONID     || '';
+const formStartLabel  = import.meta.env.PUBLIC_FORMSTARTLABEL   || '';
+const formSubmitLabel = import.meta.env.PUBLIC_FORMSUBMITLABEL  || '';
+const voluumId        = import.meta.env.PUBLIC_VOLUUMID         || '';
+const voluumDomain    = import.meta.env.PUBLIC_VOLUUMDOMAIN     || 'track.vlm.icu';
+const colorId         = import.meta.env.PUBLIC_COLORID          || 'ocean';
+const fontId          = import.meta.env.PUBLIC_FONTID           || 'plus-jakarta';
+const radiusId        = import.meta.env.PUBLIC_RADIUS           || 'rounded';
+
+const COLOR_MAP: Record<string, number[][]> = {
+  ocean:    [[217,91,35],  [158,64,42],  [15,92,62],   [210,40,98],  [222,47,11]],
+  forest:   [[152,68,28],  [45,93,47],   [350,80,55],  [140,20,97],  [150,40,10]],
+  midnight: [[235,70,42],  [170,60,45],  [25,95,58],   [230,25,97],  [235,50,12]],
+  ruby:     [[350,72,42],  [25,90,55],   [200,75,45],  [350,20,97],  [350,45,12]],
+  slate:    [[215,25,35],  [160,55,42],  [25,88,58],   [215,15,97],  [215,30,12]],
+  coral:    [[16,80,50],   [195,65,42],  [280,55,55],  [16,30,97],   [16,50,12] ],
+  teal:     [[175,65,38],  [280,55,48],  [35,90,55],   [175,25,97],  [175,45,11]],
+  plum:     [[270,55,40],  [150,55,42],  [20,88,58],   [270,15,97],  [270,40,12]],
+};
+const FONT_MAP: Record<string, {import: string; family: string}> = {
+  'dm-sans':       { import: 'DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700', family: '"DM Sans", system-ui, sans-serif' },
+  'plus-jakarta':  { import: 'Plus+Jakarta+Sans:wght@400;600;700;800',           family: '"Plus Jakarta Sans", system-ui, sans-serif' },
+  'outfit':        { import: 'Outfit:wght@400;500;600;700',                       family: '"Outfit", system-ui, sans-serif' },
+  'manrope':       { import: 'Manrope:wght@400;500;600;700',                      family: '"Manrope", system-ui, sans-serif' },
+  'inter':         { import: 'Inter:wght@400;500;600;700',                        family: '"Inter", system-ui, sans-serif' },
+  'space-grotesk': { import: 'Space+Grotesk:wght@400;500;600;700',               family: '"Space Grotesk", system-ui, sans-serif' },
+};
+const RADIUS_MAP: Record<string, string> = { sharp:'0rem', subtle:'0.375rem', rounded:'0.75rem', pill:'1.5rem' };
+const pal  = COLOR_MAP[colorId]  || COLOR_MAP['ocean'];
+const font = FONT_MAP[fontId]    || FONT_MAP['plus-jakarta'];
+const rad  = RADIUS_MAP[radiusId] || '0.75rem';
+const hsl  = (h: number, s: number, l: number) => `${h} ${s}% ${l}%`;
+const cssVars = `--primary:${hsl(...pal[0] as [number,number,number])};--secondary:${hsl(...pal[1] as [number,number,number])};--accent:${hsl(...pal[2] as [number,number,number])};--background:${hsl(...pal[3] as [number,number,number])};--foreground:${hsl(...pal[4] as [number,number,number])};--radius:${rad};`;
 ---
 
 <!doctype html>
@@ -21,17 +55,31 @@ const { title, description } = Astro.props;
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+      href={`https://fonts.googleapis.com/css2?family=${font.import}&display=swap`}
       rel="preload"
       as="style"
       onload="this.onload=null;this.rel='stylesheet'"
     />
     <noscript>
       <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+        href={`https://fonts.googleapis.com/css2?family=${font.import}&display=swap`}
         rel="stylesheet"
       />
     </noscript>
+    <style is:inline set:html={`:root { ${cssVars} } body { font-family: ${font.family}; }`}></style>
+    {conversionId && (
+      <>
+        <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${conversionId}`}></script>
+        <script is:inline define:vars={{ conversionId, formStartLabel, formSubmitLabel }}>
+          (function(){window.dataLayer=window.dataLayer||[];function gtag(){window.dataLayer.push(arguments);}gtag('js',new Date());gtag('config',conversionId);window.__gtagConversionId=conversionId;window.__formStartLabel=formStartLabel;window.__formSubmitLabel=formSubmitLabel;})();
+        </script>
+      </>
+    )}
+    {voluumId && (
+      <script is:inline define:vars={{ voluumId, voluumDomain }}>
+        var vpv=document.createElement('script');vpv.src='https://'+voluumDomain+'/scripts/'+voluumId+'/vp.js';document.head.appendChild(vpv);
+      </script>
+    )}
   </head>
   <body
     class="bg-[#f8fafc] text-slate-800 antialiased selection:bg-orange-500 selection:text-white"
