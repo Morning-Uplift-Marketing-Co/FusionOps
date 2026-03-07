@@ -4097,6 +4097,13 @@ export default {
       }
 
       // ═══ AI HELPERS ═══
+      function extractJson(text) {
+        const start = text.indexOf('{');
+        const end = text.lastIndexOf('}');
+        if (start === -1 || end === -1 || end < start) return null;
+        return text.slice(start, end + 1);
+      }
+
       async function callGemini(apiKey, prompt, maxTokens = 512) {
         const res = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
@@ -4191,9 +4198,9 @@ Return this exact JSON shape:
 }`;
           const enrichedBody = { ...body, geminiKey: resolvedGeminiKey, anthropicKey: resolvedAnthropicKey };
           const text = await callAI(env, enrichedBody, prompt, 512);
-          const match = text.match(/\{[\s\S]*\}/);
-          if (!match) return json({ error: 'AI returned unexpected format', raw: text.slice(0, 200) }, 500);
-          return json(JSON.parse(match[0]));
+          const jsonStr = extractJson(text);
+          if (!jsonStr) return json({ error: 'AI returned unexpected format', raw: text.slice(0, 200) }, 500);
+          return json(JSON.parse(jsonStr));
         } catch (e) {
           return json({ error: e.message }, 500);
         }
@@ -4229,10 +4236,10 @@ Return this exact JSON shape:
   "metaDesc": "Meta description (140-160 chars, include CTA and amount)"
 }`;
           const enrichedBody = { ...body, geminiKey: resolvedGeminiKey, anthropicKey: resolvedAnthropicKey };
-          const text = await callAI(env, enrichedBody, prompt, 256);
-          const match = text.match(/\{[\s\S]*\}/);
-          if (!match) return json({ error: 'AI returned unexpected format', raw: text.slice(0, 200) }, 500);
-          return json(JSON.parse(match[0]));
+          const text = await callAI(env, enrichedBody, prompt, 1024);
+          const jsonStr = extractJson(text);
+          if (!jsonStr) return json({ error: 'AI returned unexpected format', raw: text.slice(0, 500) }, 500);
+          return json(JSON.parse(jsonStr));
         } catch (e) {
           return json({ error: e.message }, 500);
         }
