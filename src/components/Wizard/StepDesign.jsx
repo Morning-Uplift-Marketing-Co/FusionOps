@@ -63,9 +63,10 @@ export function StepDesign({ c, u, notify }) {
     const handleGenImages = async () => {
         setGenLoading(true);
         try {
-            const favicon = generateFavicon(c);
+            const siteWithFallback = { ...c, brand: c.brand?.trim() || 'Brand' };
+            const favicon = generateFavicon(siteWithFallback);
             u("faviconDataUrl", favicon);
-            const ogImage = await generateOgImage(c);
+            const ogImage = await generateOgImage(siteWithFallback);
             u("ogImageDataUrl", ogImage);
         } catch (e) {
             console.error("Image gen failed:", e);
@@ -285,11 +286,10 @@ export function StepDesign({ c, u, notify }) {
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${T.border}` }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 10 }}>🎨 Brand Assets (Use Current Design Colors)</div>
                 <div style={{ fontSize: 11, color: T.muted, marginBottom: 10 }}>Auto-updates when Color Scheme changes. You can also regenerate manually.</div>
-                <button onClick={handleGenImages} disabled={genLoading || !c.brand?.trim()} style={{
+                <button onClick={handleGenImages} disabled={genLoading} style={{
                     width: "100%", padding: 12, marginBottom: 14, background: genLoading ? T.input : `linear-gradient(135deg, ${T.primary}15, ${T.accent}15)`,
-                    border: `1px dashed ${T.primary}`, borderRadius: 8, cursor: genLoading || !c.brand?.trim() ? "not-allowed" : "pointer",
+                    border: `1px dashed ${T.primary}`, borderRadius: 8, cursor: genLoading ? "not-allowed" : "pointer",
                     color: T.primary, fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                    opacity: !c.brand?.trim() ? 0.5 : 1,
                 }}>
                     {genLoading ? "⏳ Generating..." : "✨ Generate Favicon & OG Image"}
                 </button>
