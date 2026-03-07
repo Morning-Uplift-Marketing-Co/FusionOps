@@ -9,11 +9,9 @@ function resolveApiBase() {
         /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(window.location.hostname)
     );
 
-    // Default production API base - should be overridden by VITE_API_BASE
+    // Always fall back to production worker — /api proxy on localhost doesn't have all routes
     const PROD_API_BASE = "https://lp-factory-api.misty-feather-556e.workers.dev/api";
-    // Local dev: use VITE_API_BASE if set, else /api proxy; production: always use VITE_API_BASE or hardcoded
-    const fallback = isLocalDev && !fromEnv ? "/api" : (fromEnv || PROD_API_BASE);
-    return String(fromWindow || fromEnv || fallback).replace(/\/+$/, "");
+    return String(fromWindow || fromEnv || PROD_API_BASE).replace(/\/+$/, "");
 }
 
 function buildApiUrl(path) {
