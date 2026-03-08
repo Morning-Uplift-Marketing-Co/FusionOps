@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.16] - 2026-03-08
+### Changed
+- **`pet-orange-white` apply LeadsGate callbacks**: Switched from `hooks: {}` API to top-level `onFormLoad/onStepChange/onSubmit/onSuccess` callbacks. `onSuccess` uses `data.type/lead_id/price` (LeadsGate response format).
+
 ## [2.7.15] - 2026-03-08
 ### Fixed
 - **`pet-orange-white` apply form reverted to working state**: Restored `template: "fresh"`, direct `aid` string interpolation, and simple script loading — matching the last known working version.
