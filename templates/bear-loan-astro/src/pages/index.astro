@@ -19,7 +19,8 @@ const site = {
   formStartLabel: '',     // e.g. 'abc123'
   formSubmitLabel: '',    // e.g. 'xyz789'
   aid: '',                // LeadsGate AID
-  voluumDomain: '',       // e.g. 'trk.bearloannow.com'
+  voluumDomain: '',       // e.g. 'link.bearloannow.com'
+  voluumClickUrl: '',     // e.g. 'https://link.bearloannow.com/{campaign-id}'
 };
 ---
 
@@ -40,6 +41,7 @@ const site = {
       formStartLabel={site.formStartLabel}
       formSubmitLabel={site.formSubmitLabel}
       voluumDomain={site.voluumDomain}
+      voluumClickUrl={site.voluumClickUrl}
     />
     <StatsBar />
     <HowItWorks />

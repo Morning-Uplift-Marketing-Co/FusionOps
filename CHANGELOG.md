@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.25] - 2026-03-09
+### Fixed
+- **StepTracking.jsx code deduplication**: Use fetchCampaigns and fetchTrafficSources from voluum.js instead of duplicate code
+- **Workspace data in UI**: Traffic sources now include workspace field for proper campaign creation
+- **bear-loan-astro template**: Fix Hero component to use voluumClickUrl instead of hardcoded /click format
+- **Code consistency**: All Voluum data fetching now uses shared functions from voluum.js
+
 ## [2.7.24] - 2026-03-09
 ### Fixed
 - **Add workspace field to all fetch functions**: fetchCampaigns, fetchTrafficSources, fetchOffers now return workspace data
