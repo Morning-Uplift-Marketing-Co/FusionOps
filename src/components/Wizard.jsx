@@ -92,6 +92,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
     const [aiReviewsLoading, setAiReviewsLoading] = useState(false);
     const [nextLoading, setNextLoading] = useState(false);
     const [initialConfig, setInitialConfig] = useState(null);
+    const [demoMode, setDemoMode] = useState(false);
     const cardRef = useRef(null);
     const deployTargets = useMemo(() => getAvailableTargets(settings), [settings]);
 
@@ -240,6 +241,12 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
 
         setValidationErrors([]);
         if (step < 7) setStep(s => s + 1);
+    };
+
+    const handleDemoJump = () => {
+        setDemoMode(true);
+        setValidationErrors([]);
+        setStep(4);
     };
 
     const handleBackOrCancel = () => {
@@ -401,7 +408,13 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                             type: "deploy",
                             target,
                         });
-                        notify(`✅ Save + Deploy complete (${target})`);
+                        if (deployResult.pixelHealthOk) {
+                            notify(`✅ Save + Deploy complete (${target}) — Pixel t.${sitePayload.domain}/e ✓`);
+                        } else if (deployResult.pixelHealthError) {
+                            notify(`✅ Deploy done, but pixel not ready: ${deployResult.pixelHealthError}`, "warning");
+                        } else {
+                            notify(`✅ Save + Deploy complete (${target})`);
+                        }
                     } else {
                         notify(`Saved, but deploy failed: ${deployResult.error}`, "warning");
                     }
@@ -537,7 +550,18 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
 
     return (
         <div className="max-w-[1060px] mx-auto animate-[fadeIn_.3s_ease]" onKeyDown={handleKeyDown}>
-            <h1 className="text-[20px] font-bold m-0 mb-1">Create New LP</h1>
+            <div className="flex items-center justify-between mb-1">
+                <h1 className="text-[20px] font-bold m-0">Create New LP</h1>
+                {step <= 3 && (
+                    <button
+                        onClick={handleDemoJump}
+                        title="Skip to Step 4 Design preview without domain validation"
+                        style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, background: demoMode ? '#f59e0b20' : '#6366f120', border: `1px solid ${demoMode ? '#f59e0b' : '#6366f1'}`, color: demoMode ? '#f59e0b' : '#6366f1', cursor: 'pointer', fontWeight: 600 }}
+                    >
+                        {demoMode ? '🎭 Demo Mode ON' : '🎭 Demo Preview'}
+                    </button>
+                )}
+            </div>
             <p className="text-[hsl(var(--muted-foreground))] text-xs mb-5">Build a PPC-optimized loan landing page</p>
 
             <Card className="px-4 py-3.5 mb-4">
@@ -565,7 +589,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
             )}
 
             {showPreview ? (
-                <div className="grid gap-6 items-start" style={{ gridTemplateColumns: "1fr 340px" }}>
+                <div className="grid gap-6 items-start" style={{ gridTemplateColumns: "1fr 460px" }}>
                     <Card className="p-7 mb-4" ref={cardRef}>
                         {step === 1 && <StepBrand c={config} u={upd} settings={settings} cfAccounts={cfAccounts} registrarAccounts={registrarAccounts} capabilities={capabilities} />}
                         {step === 2 && <StepProduct c={config} u={upd} capabilities={capabilities} />}
