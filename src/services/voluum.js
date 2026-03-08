@@ -257,6 +257,7 @@ export async function createCampaign(token, campaignData) {
             inlineFlow: {
                 name: `${country} - inline path`,
                 countries: [{ code: country }],
+                defaultTransitionInPath: "DIRECT",
                 defaultPaths: [
                     {
                         name: "New path",

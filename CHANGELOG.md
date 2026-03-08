@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.20] - 2026-03-09
+### Fixed
+- **Google Ads compatibility**: Set `defaultTransitionInPath: DIRECT` in Voluum campaigns to avoid "Can't use this setting" error with 302 redirects
+
 ## [2.7.19] - 2026-03-09
 ### Fixed
 - **Voluum API implementation corrected**: Use `namePostfix` instead of `name` for lander/offer/campaign creation
