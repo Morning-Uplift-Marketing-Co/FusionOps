@@ -251,7 +251,9 @@ export function StepDesign({ c, u, notify }) {
                     const popupH = 420;
                     const popupW = 300;
                     const top = Math.min(hoverPos.y, window.innerHeight - popupH - 12);
-                    const left = Math.max(8, hoverPos.x - popupW - 330);
+                    // hoverPos.x = rect.right + 8, show popup to the right of the card
+                    // clamp so popup doesn't overflow right edge of viewport
+                    const left = Math.min(hoverPos.x, window.innerWidth - popupW - 8);
                     return (
                         <div style={{
                             position: "fixed",
