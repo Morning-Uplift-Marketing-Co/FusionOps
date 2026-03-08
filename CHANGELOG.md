@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.15] - 2026-03-08
+### Fixed
+- **`pet-orange-white` apply form reverted to working state**: Restored `template: "fresh"`, direct `aid` string interpolation, and simple script loading — matching the last known working version.
+
 ## [2.7.14] - 2026-03-08
 ### Fixed
 - **`pet-orange-white` LeadsGate template name**: Changed `template` from `"t1"` to `"elvis-us"` in `apply.astro` — `t1` caused `Form cannot be embedded` error from LeadsGate server.

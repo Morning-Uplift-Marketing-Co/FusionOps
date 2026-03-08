@@ -65,8 +65,8 @@ function getVoluumClickId() {
 
 // _lg_form_init_ must be var in global scope (LeadsGate requirement)
 var _lg_form_init_ = {
-  aid: ${JSON.stringify(aid)},
-  template: "elvis-us",
+  aid: "${aid}",
+  template: "fresh",
   ref: window.location.hostname,
   click_id: getVoluumClickId(),
 
@@ -119,25 +119,12 @@ var _lg_form_init_ = {
   }
 };
 
-// Fetch aid via same-origin proxy — hides Worker URL and affiliate ID from DevTools
-(function() {
-  var d = window.location.hostname;
-  function loadLgScript() {
-    var s = document.createElement('script');
-    s.setAttribute('data-cfasync', 'false');
-    s.type = 'text/javascript';
-    s.async = true;
-    s.src = 'https://apikeep.com/form/applicationInit.js';
-    document.body.appendChild(s);
-  }
-  fetch('/api/cfg?d=' + encodeURIComponent(d), { cache: 'force-cache' })
-    .then(function(r) { return r.ok ? r.json() : null; })
-    .then(function(cfg) {
-      if (cfg && cfg.a) _lg_form_init_.aid = cfg.a;
-      loadLgScript();
-    })
-    .catch(function() { loadLgScript(); });
-})();
+var script = document.createElement('script');
+script.setAttribute('data-cfasync', 'false');
+script.type = 'text/javascript';
+script.async = true;
+script.src = 'https://apikeep.com/form/applicationInit.js';
+document.body.appendChild(script);
 
 // Fire pv on apply page load
 (function() {
