@@ -5,9 +5,10 @@ interface Props {
   formStartLabel?: string;
   formSubmitLabel?: string;
   voluumDomain?: string;
+  voluumClickUrl?: string;
 }
-const { aid = '', conversionId = '', formStartLabel = '', formSubmitLabel = '', voluumDomain = '' } = Astro.props;
-const ctaUrl = voluumDomain ? `https://${voluumDomain}/click` : '/apply';
+const { aid = '', conversionId = '', formStartLabel = '', formSubmitLabel = '', voluumDomain = '', voluumClickUrl = '' } = Astro.props;
+const ctaUrl = voluumClickUrl || '/apply';
 ---
 
 <section id="apply" class="relative overflow-hidden">

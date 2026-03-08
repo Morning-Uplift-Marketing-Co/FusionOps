@@ -5,7 +5,7 @@ import { Field } from "../ui/field";
 import { InputField as Inp, SelectField } from "../ui/input-field";
 import { cn } from "../../lib/utils";
 import { NETWORKS_AFF } from "../../constants";
-import { fetchVoluumSession, createCampaign as createVoluumCampaign } from "../../services/voluum";
+import { fetchVoluumSession, createCampaign as createVoluumCampaign, fetchCampaigns as fetchVoluumCampaigns, fetchTrafficSources as fetchVoluumTrafficSources } from "../../services/voluum";
 import { LS } from "../../utils";
 import { getOrCreateZone, upsertDnsRecord } from "../../services/cloudflare-dns";
 
@@ -47,20 +47,9 @@ let _campaignCacheToken = null;
 
 async function fetchCampaigns(token) {
   if (_campaignCache && _campaignCacheToken === token) return _campaignCache;
-  const data = await voluumProxy(token, "GET", "/campaign");
-  console.log("[voluum] campaign response keys:", Object.keys(data || {}), "full:", JSON.stringify(data).slice(0, 500));
-  const all = data?.campaigns || data?.rows || data?.elements || [];
-  console.log("[voluum] campaigns found:", all.length, "deleted:", all.filter(c => c.deleted).length);
-  const rows = all.filter(c => !c.deleted)
-    .map(c => ({
-      id: c.id,
-      name: c.namePostfix || c.name || c.id,
-      fullName: c.name,
-      trackingDomain: c.preferredTrackingDomain || "",
-      trafficSourceName: c.trafficSource?.name || "",
-      trafficSourceId: c.trafficSource?.id || "",
-      directTracking: c.directTracking,
-    }));
+  console.log("[voluum] fetching campaigns via voluum.js");
+  const rows = await fetchVoluumCampaigns(token, { activeOnly: true });
+  console.log("[voluum] campaigns found:", rows.length);
   _campaignCache = rows;
   _campaignCacheToken = token;
   return rows;
@@ -201,10 +190,9 @@ export function StepTracking({ c, u }) {
         const camps = await fetchCampaigns(token);
         // Also fetch traffic sources for create form
         try {
-          const tsData = await voluumProxy(token, "GET", "/traffic-source");
-          const tsList = tsData?.trafficSources || tsData?.rows || [];
-          console.log("[voluum] traffic sources:", tsList.length, Object.keys(tsData || {}));
-          setTrafficSources(tsList.map(ts => ({ id: ts.id, name: ts.name })));
+          const tsList = await fetchVoluumTrafficSources(token);
+          console.log("[voluum] traffic sources:", tsList.length);
+          setTrafficSources(tsList.map(ts => ({ id: ts.id, name: ts.name, workspace: ts.workspace })));
         } catch (_e) { /* non-critical */ }
         return camps;
       })
