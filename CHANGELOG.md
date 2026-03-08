@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.4] - 2026-03-08
+### Fixed
+- **GitHub Actions DNS provisioning (Cloudflare Pages)**: Deploy workflow now fails fast if custom-domain attach API returns an error instead of silently continuing.
+- **Explicit DNS upsert**: Added workflow step to upsert Cloudflare DNS `CNAME` records for root + `www` to the deployed `*.pages.dev` host.
+
 ## [2.7.3] - 2026-03-08
 ### Added
 - **Manual thumbnail upload (🖼 button)**: Template cards now have a 🖼 button to upload a screenshot image directly from local disk → stored in R2. Faster and more reliable than auto-generate via Puppeteer.
