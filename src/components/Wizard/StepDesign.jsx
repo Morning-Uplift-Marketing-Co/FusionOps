@@ -255,11 +255,14 @@ export function StepDesign({ c, u, notify }) {
                         : null;
                     // Clamp popup so it doesn't go off screen bottom
                     const popupH = 320;
+                    const popupW = 260;
                     const top = Math.min(hoverPos.y, window.innerHeight - popupH - 12);
+                    // Show popup to the left of the card grid (avoid overlapping the preview panel on the right)
+                    const left = Math.max(8, hoverPos.x - popupW - 330);
                     return (
                         <div style={{
                             position: "fixed",
-                            left: hoverPos.x,
+                            left,
                             top,
                             width: 260,
                             height: popupH,
