@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.21] - 2026-03-09
+### Fixed
+- **Workspace consistency**: Use workspace ID from created lander instead of traffic source to ensure lander, offer, and campaign all share the same workspace
+
 ## [2.7.20] - 2026-03-09
 ### Fixed
 - **Google Ads compatibility**: Set `defaultTransitionInPath: DIRECT` in Voluum campaigns to avoid "Can't use this setting" error with 302 redirects
