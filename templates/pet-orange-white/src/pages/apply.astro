@@ -165,6 +165,30 @@ var _lg_form_init_ = {
   var p = new URLSearchParams(window.location.search);
   var cid = p.get('clickid') || p.get('vlcid') || p.get('click_id') || p.get('cid') || p.get('cpid') || '';
   fpPixel('pv', cid ? { click_id: cid } : {});
+
+  // Fallback: fire lg_form_load when LeadsGate mounts the form
+  // (in case onFormLoad fires before our callback is registered)
+  var formLoadFired = false;
+  var lgDiv = document.getElementById('_lg_form_');
+  if (lgDiv) {
+    var obs = new MutationObserver(function(mutations) {
+      if (!formLoadFired && lgDiv.children.length > 0) {
+        formLoadFired = true;
+        obs.disconnect();
+        var cid2 = getVoluumClickId();
+        fpPixel('lg_form_load', { click_id: cid2, source: 'observer' });
+      }
+    });
+    obs.observe(lgDiv, { childList: true, subtree: true });
+    // Safety timeout — fire after 10s regardless
+    setTimeout(function() {
+      if (!formLoadFired) {
+        formLoadFired = true;
+        obs.disconnect();
+        fpPixel('lg_form_load', { click_id: getVoluumClickId(), source: 'timeout' });
+      }
+    }, 10000);
+  }
 })();
 
 var script = document.createElement('script');
