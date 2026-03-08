@@ -254,8 +254,8 @@ export function StepDesign({ c, u, notify }) {
                         ? `https://lp-factory-api.misty-feather-556e.workers.dev${hoveredTemplate.thumbnailUrl}`
                         : null;
                     // Clamp popup so it doesn't go off screen bottom
-                    const popupH = 320;
-                    const popupW = 260;
+                    const popupH = 420;
+                    const popupW = 300;
                     const top = Math.min(hoverPos.y, window.innerHeight - popupH - 12);
                     // Show popup to the left of the card grid (avoid overlapping the preview panel on the right)
                     const left = Math.max(8, hoverPos.x - popupW - 330);
@@ -264,7 +264,7 @@ export function StepDesign({ c, u, notify }) {
                             position: "fixed",
                             left,
                             top,
-                            width: 260,
+                            width: popupW,
                             height: popupH,
                             background: T.card || "#1e1e2e",
                             border: `1px solid ${T.border}`,
@@ -291,11 +291,11 @@ export function StepDesign({ c, u, notify }) {
                                         srcDoc={html}
                                         sandbox="allow-scripts"
                                         style={{
-                                            width: 780,
-                                            height: 870,
+                                            width: 390,
+                                            height: 2000,
                                             border: "none",
                                             transformOrigin: "0 0",
-                                            transform: "scale(0.333)",
+                                            transform: `scale(${popupW / 390})`,
                                             pointerEvents: "none",
                                         }}
                                     />
