@@ -1,8 +1,10 @@
 ---
 // Pure Astro component - ZERO client JS framework needed
-const cta          = import.meta.env.PUBLIC_CTA          || 'Check My Rate';
-const amountMin    = import.meta.env.PUBLIC_AMOUNTMIN    || '100';
-const amountMax    = import.meta.env.PUBLIC_AMOUNTMAX    || '5000';
+const cta            = import.meta.env.PUBLIC_CTA              || 'Check My Rate';
+const amountMin      = import.meta.env.PUBLIC_AMOUNTMIN        || '100';
+const amountMax      = import.meta.env.PUBLIC_AMOUNTMAX        || '5000';
+const voluumClickUrl = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '';
+const ctaHref        = voluumClickUrl || '#apply';
 const amountMinRaw = String(Number((amountMin).replace(/[^0-9.]/g,'')) || 100);
 const amountMaxRaw = String(Number((amountMax).replace(/[^0-9.]/g,'')) || 5000);
 const defaultAmt   = String(Math.round((Number(amountMinRaw) + Number(amountMaxRaw)) / 2 / 100) * 100);
@@ -55,7 +57,7 @@ const defaultAmt   = String(Math.round((Number(amountMinRaw) + Number(amountMaxR
   </form>
 </div>
 
-<script is:inline>
+<script is:inline data-cfasync="false" define:vars={{ ctaHref }}>
 (function(){
   var amount = 2000;
   var slider = document.getElementById('amount-slider');
@@ -64,6 +66,7 @@ const defaultAmt   = String(Math.round((Number(amountMinRaw) + Number(amountMaxR
   var form = document.getElementById('hero-form');
   var zipInput = document.getElementById('zip');
   var zipErr = document.getElementById('zip-error');
+  var formStartFired = false;
 
   function fmt(n){ return '$' + n.toLocaleString(); }
 
@@ -92,6 +95,19 @@ const defaultAmt   = String(Math.round((Number(amountMinRaw) + Number(amountMaxR
     zipErr.classList.add('hidden');
   });
 
+  // form_start on ZIP focus
+  zipInput.addEventListener('focus', function(){
+    if (formStartFired) return;
+    formStartFired = true;
+    if (typeof window.__fpPixel === 'function') window.__fpPixel('form_start', { click_id: window.__fpClickId || '' });
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ event: 'form_start' });
+    if (window.__gtagConversionId && window.__formStartLabel) {
+      function gtag(){window.dataLayer.push(arguments);}
+      gtag('event', 'conversion', { send_to: window.__gtagConversionId + '/' + window.__formStartLabel });
+    }
+  });
+
   form.addEventListener('submit', function(e){
     e.preventDefault();
     var zip = zipInput.value;
@@ -100,12 +116,22 @@ const defaultAmt   = String(Math.round((Number(amountMinRaw) + Number(amountMaxR
       zipErr.classList.remove('hidden');
       return;
     }
+    // form_submit events
+    if (typeof window.__fpPixel === 'function') window.__fpPixel('form_submit', { click_id: window.__fpClickId || '', zip: zip });
     window.dataLayer = window.dataLayer || [];
-    window.dataLayer.push({ event:'generate_lead_start', conversion_value:amount, currency:'USD' });
+    window.dataLayer.push({ event: 'form_submit', conversion_value: amount, currency: 'USD' });
+    if (window.__gtagConversionId && window.__formSubmitLabel) {
+      function gtag(){window.dataLayer.push(arguments);}
+      gtag('event', 'conversion', { send_to: window.__gtagConversionId + '/' + window.__formSubmitLabel });
+    }
+    // Redirect: use Voluum click URL if configured, otherwise /apply
     var p = new URLSearchParams(window.location.search);
     p.set('amount', amount);
     p.set('zip', zip);
-    window.location.href = '/apply?' + p.toString();
+    var dest = ctaHref && ctaHref !== '#apply'
+      ? ctaHref + (ctaHref.indexOf('?') > -1 ? '&' : '?') + p.toString()
+      : '/apply?' + p.toString();
+    window.location.assign(dest);
   });
 })();
 </script>

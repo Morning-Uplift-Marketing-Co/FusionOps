@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.17] - 2026-03-09
+### Fixed
+- **`installment-loans-101` hero form now uses Voluum click URL**: `HeroFormStatic.astro` reads `PUBLIC_VOLUUM_CLICK_URL` and redirects through Voluum when configured, falling back to `/apply` otherwise.
+- **`installment-loans-101` hero form fires `form_start` / `form_submit` events**: ZIP focus fires `form_start` (fpPixel + dataLayer + Google conversion), form submit fires `form_submit` with same triple tracking.
+- **`template-router` preview now resolves Voluum click URL**: `normalizedSite.redirectUrl` pulls from `site.voluumClickUrl` so `PUBLIC_VOLUUM_CLICK_URL` substitution works correctly in Wizard preview.
+- **Footer compliance copy**: Max repayment period corrected from 24 to 72 months; removed lender-specific WebBank claim; fixed mailto fallback to use `support@{domain}` instead of bare domain.
+
 ## [2.7.16] - 2026-03-08
 ### Changed
 - **`pet-orange-white` apply LeadsGate callbacks**: Switched from `hooks: {}` API to top-level `onFormLoad/onStepChange/onSubmit/onSuccess` callbacks. `onSuccess` uses `data.type/lead_id/price` (LeadsGate response format).
