@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.8] - 2026-03-08
+### Fixed
+- **Fresh Pages project slug for `joracreditz.com`**: Switched deploy config from `lp-joracreditz-com` to `lp-jora-creditz-main` to avoid reuse of the previously deleted Cloudflare Pages project slug.
+- **Pages project preservation**: `github-actions` deployer now preserves an existing `cfPagesProject` from deploy config instead of recomputing and overwriting it on future deploys.
+
 ## [2.7.7] - 2026-03-08
 ### Fixed
 - **Cloudflare Pages custom-domain attach resilience**: GitHub deploy workflow no longer aborts the entire job when the Pages domain attach API returns a non-fatal error.
