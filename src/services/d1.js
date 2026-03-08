@@ -166,6 +166,102 @@ export async function tableExists(tableName) {
 }
 
 /* ═════════════════════════════════════════════════════════════════════
+   SITE HELPERS — parallel write alongside Neon
+══════════════════════════════════════════════════════════════════════ */
+
+/**
+ * Resolve the Worker API base URL (same logic as voluum.js / api.js)
+ */
+function resolveApiBase() {
+  const fromWindow = typeof window !== "undefined" ? window.__LP_API__ : "";
+  const fromEnv = typeof import.meta !== "undefined" && import.meta.env ? import.meta.env.VITE_API_BASE : "";
+  const DEFAULT = "https://lp-factory-api.misty-feather-556e.workers.dev/api";
+  return String(fromWindow || fromEnv || DEFAULT).replace(/\/+$/, "");
+}
+
+/**
+ * Direct D1 write via Worker env.DB binding (no API token needed).
+ * Uses /api/automation/d1/direct-query which calls env.DB.prepare() internally.
+ */
+async function directExecute(sql, params = []) {
+  const base = resolveApiBase();
+  const res = await fetch(`${base}/automation/d1/direct-query`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sql, params }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.success) throw new Error(data.error || `D1 HTTP ${res.status}`);
+  return data;
+}
+
+let _sitesTableReady = false;
+
+/**
+ * Ensure the sites table exists in D1 — only runs once per session
+ */
+async function ensureSitesTable() {
+  if (_sitesTableReady) return;
+  await directExecute(
+    `CREATE TABLE IF NOT EXISTS sites (
+      id TEXT PRIMARY KEY,
+      data TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )`
+  );
+  _sitesTableReady = true;
+}
+
+/**
+ * Upsert a site into D1 (parallel write alongside Neon)
+ * @param {object} site  — plain site object with an `id` field
+ */
+export async function saveSiteToD1(site) {
+  await ensureSitesTable();
+  const { id, ...data } = site;
+  const safeId = id || `site-${Date.now().toString(36)}`;
+  await directExecute(
+    `INSERT INTO sites (id, data, updated_at)
+     VALUES (?, ?, datetime('now'))
+     ON CONFLICT(id) DO UPDATE SET
+       data = excluded.data,
+       updated_at = datetime('now')`,
+    [safeId, JSON.stringify(data)]
+  );
+  return true;
+}
+
+/**
+ * Delete a site from D1 by id
+ * @param {string} id
+ */
+export async function deleteSiteFromD1(id) {
+  await directExecute(`DELETE FROM sites WHERE id = ?`, [id]);
+  return true;
+}
+
+/**
+ * One-time migration: bulk-upsert all sites from Neon → D1
+ * @param {Array} sites  — array of site objects (from Neon loadSites)
+ * @returns {{ synced: number, errors: number }}
+ */
+export async function migrateSitesToD1(sites) {
+  await ensureSitesTable();
+  let synced = 0;
+  let errors = 0;
+  for (const site of sites) {
+    try {
+      await saveSiteToD1(site);
+      synced++;
+    } catch (_) {
+      errors++;
+    }
+  }
+  return { synced, errors };
+}
+
+/* ═════════════════════════════════════════════════════════════════════
    EXPORTS
 ══════════════════════════════════════════════════════════════════════ */
 
@@ -175,6 +271,8 @@ const d1Service = {
   testConnection,
   getTables,
   tableExists,
+  saveSiteToD1,
+  deleteSiteFromD1,
 };
 
 export default d1Service;

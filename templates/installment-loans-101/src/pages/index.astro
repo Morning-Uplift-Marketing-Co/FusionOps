@@ -253,5 +253,44 @@ const ctaHref         = voluumClickUrl || '#apply';
       </div>
     </section>
   </main>
+
+  <!-- Mobile Sticky Bottom CTA (shows after 30% scroll) -->
+  <div
+    id="mobile-sticky-cta"
+    class="fixed inset-x-0 bottom-0 z-[120] p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] bg-background/95 backdrop-blur border-t border-border shadow-[0_-8px_24px_rgba(0,0,0,0.12)] md:hidden translate-y-full opacity-0 pointer-events-none transition-all duration-300"
+  >
+    <a href={ctaHref} class="btn-cta w-full !h-12 !text-base inline-flex justify-center">
+      <span>{cta}</span>
+      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14" />
+        <path d="m12 5 7 7-7 7" />
+      </svg>
+    </a>
+  </div>
+
+  <script is:inline>
+    (function () {
+      var bar = document.getElementById('mobile-sticky-cta');
+      if (!bar) return;
+
+      function toggleStickyBar() {
+        var scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
+        var scrollable = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight) - window.innerHeight;
+        if (scrollable <= 0) return;
+
+        var progress = scrollTop / scrollable;
+        var show = progress >= 0.3;
+
+        bar.classList.toggle('translate-y-full', !show);
+        bar.classList.toggle('opacity-0', !show);
+        bar.classList.toggle('pointer-events-none', !show);
+      }
+
+      toggleStickyBar();
+      window.addEventListener('scroll', toggleStickyBar, { passive: true });
+      window.addEventListener('resize', toggleStickyBar);
+    })();
+  </script>
+
   <Footer />
 </Layout>

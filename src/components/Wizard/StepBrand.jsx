@@ -2,6 +2,7 @@ import React from "react";
 import { THEME as T } from "../../constants";
 import { Field } from "../ui/field";
 import { InputField as Inp } from "../ui/input-field";
+import { generateBusinessAddress, generateDomainVanityPhone } from "../../utils/contact-gen";
 
 export function StepBrand({ c, u, settings, cfAccounts = [], registrarAccounts = [] }) {
     const cfProfiles = Array.isArray(settings?.cfProfiles) ? settings.cfProfiles : [];
@@ -30,6 +31,8 @@ export function StepBrand({ c, u, settings, cfAccounts = [], registrarAccounts =
     const currentSyncKey = `${String(c.domain || "").trim().toLowerCase()}|${selectedProvider}|${selectedProviderAccountId}|${String(c.cfAccountId || "")}`;
     const isDnsSynced = !!c._step1DnsSyncKey && c._step1DnsSyncKey === currentSyncKey;
     const shouldShowProviderAccountSelect = showProviderAccountSelect && providerAccounts.length > 1;
+    const autoPhone = React.useMemo(() => generateDomainVanityPhone(c.domain || "", c.brand || ""), [c.domain, c.brand]);
+    const autoAddress = React.useMemo(() => generateBusinessAddress(c.domain || "", c.brand || ""), [c.domain, c.brand]);
 
     React.useEffect(() => {
         if (!hasProviderSelection) return;
@@ -51,6 +54,23 @@ export function StepBrand({ c, u, settings, cfAccounts = [], registrarAccounts =
         }
     }, [hasProviderSelection, providerAccounts, selectedProvider, selectedProviderAccountId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    React.useEffect(() => {
+        if (!hasDomain) return;
+
+        const phone = String(c.phone || "").trim();
+        const address = String(c.address || "").trim();
+
+        if ((!phone || c._phoneAuto) && autoPhone && c.phone !== autoPhone) {
+            u("phone", autoPhone);
+            u("_phoneAuto", true);
+        }
+
+        if ((!address || c._addressAuto) && autoAddress && c.address !== autoAddress) {
+            u("address", autoAddress);
+            u("_addressAuto", true);
+        }
+    }, [hasDomain, autoPhone, autoAddress, c.phone, c.address, c._phoneAuto, c._addressAuto]); // eslint-disable-line react-hooks/exhaustive-deps
+
     return (
         <>
             <div style={{ textAlign: "center", marginBottom: 24 }}>
@@ -66,8 +86,45 @@ export function StepBrand({ c, u, settings, cfAccounts = [], registrarAccounts =
             <Field label="Brand Tagline" help="Sub headline or trust message"><Inp value={c.tagline} onChange={v => u("tagline", v)} placeholder="Fast. Simple. Trusted." /></Field>
             <Field label="Compliance Email" help="Used in footer and privacy policy"><Inp value={c.email} onChange={v => u("email", v)} placeholder="support@loanbridge.com" /></Field>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                <Field label="Phone" help="Contact number for footer/compliance"><Inp value={c.phone || ""} onChange={v => u("phone", v)} placeholder="(800) 123-4567" /></Field>
-                <Field label="Business Address" help="Used in footer disclosure"><Inp value={c.address || ""} onChange={v => u("address", v)} placeholder="123 Main St, New York, NY 10001" /></Field>
+                <Field label="Phone" help="Auto-generated from domain (vanity) — editable"><Inp value={c.phone || ""} onChange={v => { u("_phoneAuto", false); u("phone", v); }} placeholder="1-800-SCRATCH-TECH" /></Field>
+                <Field label="Business Address" help="Deterministic real US office address from local dataset — editable"><Inp value={c.address || ""} onChange={v => { u("_addressAuto", false); u("address", v); }} placeholder="123 Main St, New York, NY 10001" /></Field>
+            </div>
+            <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
+                <button
+                    type="button"
+                    onClick={() => { u("phone", autoPhone); u("_phoneAuto", true); }}
+                    style={{
+                        border: `1px solid hsl(var(--border))`,
+                        background: "hsl(var(--input))",
+                        color: "hsl(var(--foreground))",
+                        borderRadius: 8,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        padding: "6px 10px",
+                        cursor: "pointer",
+                    }}
+                >
+                    Auto Phone
+                </button>
+                <button
+                    type="button"
+                    onClick={() => { u("address", autoAddress); u("_addressAuto", true); }}
+                    style={{
+                        border: `1px solid hsl(var(--border))`,
+                        background: "hsl(var(--input))",
+                        color: "hsl(var(--foreground))",
+                        borderRadius: 8,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        padding: "6px 10px",
+                        cursor: "pointer",
+                    }}
+                >
+                    Random Real Address
+                </button>
+                <div style={{ fontSize: 11, color: T.muted, display: "flex", alignItems: "center" }}>
+                    Address source is curated real offices (not DNS records).
+                </div>
             </div>
 
             {/* Cloudflare Profile Selection */}

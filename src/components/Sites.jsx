@@ -12,7 +12,7 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { cn } from "../lib/utils";
 
-export function Sites({ sites, del, notify, startCreate, settings, addDeploy, ops, updateSite }) {
+export function Sites({ sites, del, notify, startCreate, startDuplicate, settings, addDeploy, ops, updateSite }) {
     const [search, setSearch] = useState("");
     const [groupBy, setGroupBy] = useState("google-ads");
     const [onlyIssues, setOnlyIssues] = useState(false);
@@ -752,6 +752,7 @@ export function Sites({ sites, del, notify, startCreate, settings, addDeploy, op
                                                 <div className="flex flex-wrap gap-1.5 mt-3">
                                                     <Button variant="ghost" onClick={() => setPreview(s)} className="px-2.5 py-1.5 text-[10px] h-auto">👁 Preview</Button>
                                                     <Button variant="ghost" onClick={() => startCreate(s)} className="px-2.5 py-1.5 text-[10px] h-auto">🔄 Edit & Redeploy</Button>
+                                                    {startDuplicate && <Button variant="ghost" onClick={() => startDuplicate(s)} className="px-2.5 py-1.5 text-[10px] h-auto">📋 Duplicate</Button>}
 
                                                     {editingPolicySite === s.id && (
                                                         <div className="absolute top-full right-0 mt-1 bg-white border border-[hsl(var(--border))] rounded-lg shadow-lg p-2 z-50">

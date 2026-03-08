@@ -102,6 +102,7 @@ export function Sidebar({ page, setPage, siteCount, startCreate, startTemplateGe
         { id: "ops", icon: "🏢", label: "Ops Center" },
         { id: "deploys", icon: "🚀", label: "Deploys" },
         { id: "tracking", icon: "🔬", label: "Tracking Test" },
+        { id: "realtime-events", icon: "⚡", label: "Realtime Events" },
         { id: "error-log", icon: "🐛", label: "Error Log" },
         { id: "api-health", icon: "🩺", label: "API Health" },
         { id: "docs", icon: "📚", label: "API Docs", external: true, href: "/docs" },

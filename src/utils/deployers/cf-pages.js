@@ -415,6 +415,24 @@ export async function deploy(content, site, settings) {
       }
     }
 
+    // ═════════════════════════════════════════════════════════════════════
+    // Step 11: Health-check pixel endpoint t.{domain}/e
+    // ═════════════════════════════════════════════════════════════════════
+    let pixelHealthOk = false;
+    let pixelHealthError = null;
+    if (site.domain) {
+      try {
+        const pixelUrl = `https://t.${site.domain}/e?e=healthcheck&ts=${Date.now()}`;
+        const hc = await fetch(pixelUrl, { method: "GET", signal: AbortSignal.timeout(5000) });
+        pixelHealthOk = hc.status < 400;
+        if (!pixelHealthOk) {
+          pixelHealthError = `Pixel endpoint returned HTTP ${hc.status}. Ensure Workers Route t.${site.domain}/* → pixel worker is set.`;
+        }
+      } catch (e) {
+        pixelHealthError = `Pixel endpoint unreachable: ${e.message}. Ensure Workers Route t.${site.domain}/* → pixel worker is set.`;
+      }
+    }
+
     return {
       success: true,
       url,
@@ -426,6 +444,8 @@ export async function deploy(content, site, settings) {
       pixelError,
       pixelRouteCreated,
       pixelRouteError,
+      pixelHealthOk,
+      pixelHealthError,
     };
   } catch (e) {
     return { success: false, error: e.message };
