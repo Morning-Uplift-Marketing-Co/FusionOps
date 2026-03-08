@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.14] - 2026-03-08
+### Fixed
+- **`pet-orange-white` LeadsGate template name**: Changed `template` from `"t1"` to `"elvis-us"` in `apply.astro` — `t1` caused `Form cannot be embedded` error from LeadsGate server.
+
 ## [2.7.13] - 2026-03-08
 ### Fixed
 - **`pet-orange-white` landing page missing `__fpPixel` and `__fpClickId`**: Added first-party pixel initializer and `window.__fpClickId` to `BaseLayout.astro` so `form_start`/`form_submit` events carry the correct `click_id` and the CTA redirect flow is not missing tracking context.
