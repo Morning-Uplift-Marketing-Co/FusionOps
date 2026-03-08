@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.22] - 2026-03-09
+### Fixed
+- **Workspace requirement enforced**: Require workspace ID from traffic source before creating any entities
+- **Workspace consistency guaranteed**: Use traffic source workspace ID for all entities (lander, offer, campaign, inline flow)
+- **Removed lander workspace extraction**: Voluum doesn't return workspace in lander response, so use traffic source workspace throughout
+
 ## [2.7.21] - 2026-03-09
 ### Fixed
 - **Workspace consistency**: Use workspace ID from created lander instead of traffic source to ensure lander, offer, and campaign all share the same workspace
