@@ -75,6 +75,24 @@ const cssVars = `--primary:${hsl(...pal[0] as [number,number,number])};--seconda
         </script>
       </>
     )}
+    <script data-cfasync="false" is:inline>
+      (function(){
+        var p = new URLSearchParams(window.location.search);
+        var cid = p.get('vlcid') || p.get('clickid') || p.get('click_id') || p.get('cid') || p.get('cpid') || '';
+        if (cid) {
+          window.__fpClickId = cid;
+          try { sessionStorage.setItem('voluum_cpid', cid); } catch(_){}
+        }
+        window.__fpPixel = function(eventName, extra) {
+          try {
+            var endpoint = 'https://t.' + window.location.hostname + '/e';
+            var payload = Object.assign({ e: eventName, d: window.location.hostname, ts: Math.floor(Date.now()/1000) }, extra || {});
+            navigator.sendBeacon(endpoint, JSON.stringify(payload));
+          } catch(_) {}
+        };
+        window.__fpPixel('pv', cid ? { click_id: cid } : {});
+      })();
+    </script>
     {voluumDomain && (
       <script data-cfasync="false" is:inline define:vars={{ voluumDomain }}>
         (function(){
