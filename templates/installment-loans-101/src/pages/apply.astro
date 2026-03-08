@@ -1,68 +1,5 @@
 ---
 const aid = import.meta.env.PUBLIC_AID || '';
-const lgScript = `
-window.dataLayer = window.dataLayer || [];
-
-var SafeStorage = {
-  _mem: {},
-  set: function(k, v) {
-    try { sessionStorage.setItem(k, v); }
-    catch (e) { this._mem[k] = v; }
-  },
-  get: function(k) {
-    try { return sessionStorage.getItem(k); }
-    catch (e) { return this._mem[k] || null; }
-  }
-};
-
-function getVoluumClickId() {
-  var urlParams = new URLSearchParams(window.location.search);
-  var cid = urlParams.get('cid') || urlParams.get('click_id');
-  return SafeStorage.get('voluum_cid') || cid || '';
-}
-
-var _lg_form_init_ = {
-  aid: "${aid}",
-  template: "fresh",
-  ref: window.location.hostname,
-  click_id: getVoluumClickId(),
-  onFormLoad: function() {
-    console.log('LeadsGate form loaded');
-    window.dataLayer.push({ 'event': 'leadsgate_form_start', 'clickId': getVoluumClickId(), 'gclid': SafeStorage.get('google_gclid'), 'timestamp': new Date().toISOString() });
-  },
-  onStepChange: function(step) {
-    console.log('Form step:', step);
-    window.dataLayer.push({ 'event': 'leadsgate_form_progress', 'step': step, 'clickId': getVoluumClickId() });
-  },
-  onSubmit: function() {
-    console.log('Form submitted');
-    window.dataLayer.push({ 'event': 'leadsgate_form_submit', 'clickId': getVoluumClickId(), 'timestamp': new Date().toISOString() });
-  },
-  onSuccess: function(data) {
-    console.log('LeadsGate Response:', data);
-    var voluumCid = getVoluumClickId();
-    var googleGclid = SafeStorage.get('google_gclid');
-    var type = data.type;
-    var leadId = data.lead_id;
-    var payout = data.price || 0;
-    var status = 'pending';
-    if (type === 'soldLead') status = 'approved';
-    else if (type === 'rejectLead') status = 'declined';
-    var finalPayout = payout > 0 ? payout : (status === 'declined' ? 5.00 : 50.00);
-    var conversionData = { transaction_id: leadId, value: finalPayout, currency: 'USD', status: status, type: type, click_id: voluumCid, gclid: googleGclid, created: data.created };
-    window.dataLayer.push({ 'event': 'lead_conversion_all', 'leadData': conversionData, 'conversionValue': finalPayout, 'leadStatus': status, 'leadType': type, 'transactionId': leadId, 'clickId': voluumCid, 'gclid': googleGclid });
-    if (type === 'soldLead') { window.dataLayer.push({ 'event': 'lead_conversion_approved', 'leadData': conversionData, 'conversionValue': finalPayout, 'transactionId': leadId, 'clickId': voluumCid, 'gclid': googleGclid }); }
-    if (type === 'rejectLead') { window.dataLayer.push({ 'event': 'lead_declined', 'leadData': conversionData, 'conversionValue': finalPayout, 'transactionId': leadId, 'clickId': voluumCid, 'gclid': googleGclid }); }
-    if (type === 'newLead') { window.dataLayer.push({ 'event': 'lead_pending', 'leadData': conversionData, 'conversionValue': finalPayout, 'transactionId': leadId, 'clickId': voluumCid, 'gclid': googleGclid }); }
-  }
-};
-
-var script = document.createElement('script');
-script.type = 'text/javascript';
-script.async = true;
-script.src = 'https://apikeep.com/form/applicationInit.js';
-document.body.appendChild(script);
-`;
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -74,7 +11,94 @@ document.body.appendChild(script);
   <link rel="dns-prefetch" href="//apikeep.com" />
 </head>
 <body>
-<script set:html={lgScript}></script>
+
+<script is:inline data-cfasync="false" define:vars={{ aid }}>
+window.dataLayer = window.dataLayer || [];
+
+var SafeStorage = {
+  _mem: {},
+  set: function(k, v) { try { sessionStorage.setItem(k, v); } catch(e) { this._mem[k] = v; } },
+  get: function(k) { try { return sessionStorage.getItem(k); } catch(e) { return this._mem[k] || null; } }
+};
+
+// First-party pixel for apply page (no Layout here)
+var PX_DOMAIN = window.location.hostname;
+function fpPixel(evt, extra) {
+  try {
+    var q = Object.assign({ e: evt, d: PX_DOMAIN, ts: Date.now() }, extra || {});
+    var img = new Image(1,1);
+    img.src = 'https://t.' + PX_DOMAIN + '/e?' + new URLSearchParams(q).toString();
+  } catch(_) {}
+}
+
+function getVoluumClickId() {
+  var p = new URLSearchParams(window.location.search);
+  return p.get('vlcid') || p.get('clickid') || p.get('cid') || p.get('click_id') || p.get('cpid')
+    || SafeStorage.get('voluum_cpid') || SafeStorage.get('voluum_cid') || '';
+}
+
+// Page view
+fpPixel('pv', { click_id: getVoluumClickId() });
+
+var _lg_form_init_ = {
+  aid: aid,
+  template: "fresh",
+  ref: window.location.hostname,
+  click_id: getVoluumClickId(),
+
+  hooks: {
+    onFormLoad: function() {
+      fpPixel('lg_form_load', { click_id: getVoluumClickId() });
+      window.dataLayer.push({ event: 'lg_form_load', clickId: getVoluumClickId() });
+    },
+    onStepChange: function(data) {
+      fpPixel('lg_step', { step: data && data.step, click_id: getVoluumClickId() });
+      window.dataLayer.push({ event: 'lg_step', step: data && data.step, clickId: getVoluumClickId() });
+    },
+    onSubmit: function() {
+      fpPixel('lg_submit', { click_id: getVoluumClickId() });
+      window.dataLayer.push({ event: 'lg_submit', clickId: getVoluumClickId() });
+    },
+    onLeadSold: function(data) {
+      fpPixel('lg_success', { lead_id: data && data.leadId, payout: data && data.price, click_id: getVoluumClickId() });
+      window.dataLayer.push({ event: 'lg_success', leadId: data && data.leadId, payout: data && data.price, clickId: getVoluumClickId() });
+    },
+    onLeadRejected: function(data) {
+      fpPixel('lg_finished', { lead_id: data && data.leadId, payout: data && data.price, click_id: getVoluumClickId() });
+      window.dataLayer.push({ event: 'lg_declined', leadId: data && data.leadId, payout: data && data.price, clickId: getVoluumClickId() });
+    },
+    onLeadFinished: function(data) {
+      fpPixel('lg_finished', { lead_id: data && data.leadId, payout: data && data.price, click_id: getVoluumClickId() });
+      window.dataLayer.push({ event: 'lg_finished', leadId: data && data.leadId, payout: data && data.price, clickId: getVoluumClickId() });
+    }
+  }
+};
+
+// MutationObserver fallback — LeadsGate sometimes fires onFormLoad before callback registers
+(function() {
+  var fired = false;
+  var observer = new MutationObserver(function() {
+    var form = document.getElementById('_lg_form_');
+    if (form && form.children.length > 0 && !fired) {
+      fired = true;
+      observer.disconnect();
+      if (window._lg_form_init_ && window._lg_form_init_.hooks && typeof window._lg_form_init_.hooks.onFormLoad === 'function') {
+        window._lg_form_init_.hooks.onFormLoad();
+      }
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+  setTimeout(function() { if (!fired) { fired = true; observer.disconnect(); fpPixel('lg_form_load_timeout'); } }, 10000);
+})();
+
+var lgScript = document.createElement('script');
+lgScript.type = 'text/javascript';
+lgScript.async = true;
+lgScript.setAttribute('data-cfasync', 'false');
+lgScript.src = 'https://apikeep.com/form/applicationInit.js';
+document.head.appendChild(lgScript);
+</script>
+
 <div id="_lg_form_"></div>
 </body>
 </html>

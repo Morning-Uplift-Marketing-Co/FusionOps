@@ -12,8 +12,8 @@ const accentColor    = import.meta.env.PUBLIC_ACCENTCOLOR       || '';
 const conversionId      = import.meta.env.PUBLIC_CONVERSIONID      || '';
 const formStartLabel    = import.meta.env.PUBLIC_FORMSTARTLABEL   || '';
 const formSubmitLabel   = import.meta.env.PUBLIC_FORMSUBMITLABEL  || '';
-const voluumId          = import.meta.env.PUBLIC_VOLUUMID          || '';
-const voluumDomain      = import.meta.env.PUBLIC_VOLUUMDOMAIN      || 'track.vlm.icu';
+const voluumDomain      = import.meta.env.PUBLIC_VOLUUMDOMAIN      || '';
+const voluumClickUrl    = import.meta.env.PUBLIC_VOLUUM_CLICK_URL  || '';
 
 interface Props {
   title?: string;
@@ -57,7 +57,7 @@ const {
     <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700&display=swap" rel="stylesheet" /></noscript>
 
     <!-- GCLID + Click ID + UTM Capture -->
-    <script is:inline>
+    <script is:inline data-cfasync="false">
       (function() {
         var p = new URLSearchParams(window.location.search);
         var gclid = p.get('gclid');
@@ -72,15 +72,15 @@ const {
     </script>
 
     <!-- GTM dataLayer -->
-    <script is:inline>
+    <script is:inline data-cfasync="false">
       window.dataLayer = window.dataLayer || [];
     </script>
 
     <!-- Google Ads Conversion Tracking -->
     {conversionId && (
       <>
-        <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${conversionId}`}></script>
-        <script is:inline define:vars={{ conversionId, formStartLabel, formSubmitLabel }}>
+        <script is:inline data-cfasync="false" async src={`https://www.googletagmanager.com/gtag/js?id=${conversionId}`}></script>
+        <script is:inline data-cfasync="false" define:vars={{ conversionId, formStartLabel, formSubmitLabel }}>
           (function(){
             function gtag(){window.dataLayer.push(arguments);}
             gtag('js', new Date());
@@ -93,12 +93,19 @@ const {
       </>
     )}
 
-    <!-- Voluum Pixel -->
-    {voluumId && (
-      <script is:inline define:vars={{ voluumId, voluumDomain }}>
-        var vpv = document.createElement('script');
-        vpv.src = 'https://' + voluumDomain + '/scripts/' + voluumId + '/vp.js';
-        document.head.appendChild(vpv);
+    <!-- Voluum dtpCallback — click_id via ?cpid=, cookie restore, link rewriting -->
+    {voluumDomain && (
+      <script is:inline data-cfasync="false" define:vars={{ voluumDomain }}>
+        (function(){
+          var p = new URLSearchParams(window.location.search);
+          var cpid = p.get('cpid') || p.get('cid') || p.get('click_id') || p.get('vlcid') || '';
+          if (cpid) { try { sessionStorage.setItem('voluum_cpid', cpid); } catch(_){} }
+          var s = document.createElement('script');
+          s.async = true;
+          s.setAttribute('data-cfasync','false');
+          s.src = 'https://' + voluumDomain + '/dtpCallback.js';
+          document.head.appendChild(s);
+        })();
       </script>
     )}
 
@@ -148,14 +155,25 @@ const {
   <body class="min-h-screen bg-background text-foreground antialiased">
     <slot />
 
-    <!-- First-Party Pixel: sendBeacon to /e -->
-    <script is:inline>
+    <!-- First-Party Pixel: sendBeacon to t.{domain}/e (pixel worker) -->
+    <script is:inline data-cfasync="false">
     (function(){
-      function fpPixel(eventName, extra) {
+      var PX_ENDPOINT = 'https://t.' + window.location.hostname + '/e';
+      function sendPixelBeacon(payload) {
         try {
-          var payload = Object.assign({ e: eventName, d: window.location.hostname, ts: Date.now() }, extra || {});
-          navigator.sendBeacon('/e', JSON.stringify(payload));
+          var q = new URLSearchParams();
+          Object.keys(payload || {}).forEach(function(k){
+            var v = payload[k];
+            if (v !== undefined && v !== null) q.set(k, String(v));
+          });
+          var i = new Image(1, 1);
+          i.src = PX_ENDPOINT + '?' + q.toString();
         } catch(_) {}
+      }
+
+      function fpPixel(eventName, extra) {
+        var payload = Object.assign({ e: eventName, d: window.location.hostname, ts: Date.now() }, extra || {});
+        sendPixelBeacon(payload);
       }
       if (!window.__fpPageTracked) {
         window.__fpPageTracked = true;
@@ -166,7 +184,7 @@ const {
     </script>
 
     <!-- dataLayer: pv + Scroll + Time on Page -->
-    <script is:inline>
+    <script is:inline data-cfasync="false">
     (function(){
       var dl = window.dataLayer = window.dataLayer || [];
       dl.push({ event: 'pv', page: window.location.pathname });
