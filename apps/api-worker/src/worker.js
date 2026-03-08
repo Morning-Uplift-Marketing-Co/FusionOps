@@ -3,6 +3,7 @@
 // Origin: https://github.com/songsawat-w/ppc-gen-cfca
 
 import { neon } from '@neondatabase/serverless';
+import puppeteer from '@cloudflare/puppeteer';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -946,6 +947,59 @@ export default {
         return json({ ok: true, id });
       } catch (e) {
         return json({ ok: false, error: e.message }, 500);
+      }
+    }
+
+    // ═══ TEMPLATE THUMBNAIL — serve from R2 ═══
+    // GET /api/templates/:id/thumb → returns stored PNG from R2
+    const thumbServeMatch = path.match(/^\/api\/templates\/([^/]+)\/thumb$/);
+    if (thumbServeMatch && method === 'GET') {
+      const id = decodeURIComponent(thumbServeMatch[1]);
+      try {
+        const obj = await env.THUMBS.get(`thumbs/${id}.png`);
+        if (!obj) return new Response(null, { status: 404 });
+        const headers = new Headers({ 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400', ...corsHeaders });
+        return new Response(obj.body, { headers });
+      } catch (e) {
+        return json({ error: e.message }, 500);
+      }
+    }
+
+    // ═══ TEMPLATE THUMBNAIL — generate via Browser Rendering ═══
+    // POST /api/templates/:id/generate-thumb → screenshot template HTML → store in R2
+    const thumbGenMatch = path.match(/^\/api\/templates\/([^/]+)\/generate-thumb$/);
+    if (thumbGenMatch && method === 'POST') {
+      const id = decodeURIComponent(thumbGenMatch[1]);
+      try {
+        const db = env.DB;
+        // Load template from D1
+        const row = await db.prepare(`SELECT data FROM templates WHERE id = ? LIMIT 1`).bind(id).first();
+        if (!row) return json({ error: 'Template not found' }, 404);
+        const tpl = JSON.parse(row.data || '{}');
+        const files = tpl.files || {};
+        // Find HTML to render — prefer index.html, else index.astro stripped
+        const htmlKeys = Object.keys(files);
+        const htmlKey = htmlKeys.find(k => k === 'index.html') || htmlKeys.find(k => k.endsWith('/index.html')) || htmlKeys.find(k => k.endsWith('index.astro'));
+        if (!htmlKey) return json({ error: 'No renderable HTML found in template' }, 422);
+        let html = String(files[htmlKey] || '');
+        // Strip Astro frontmatter if present
+        html = html.replace(/^---[\s\S]*?---\n?/, '');
+        // Launch browser and screenshot
+        const browser = await puppeteer.launch(env.BROWSER);
+        const page = await browser.newPage();
+        await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 });
+        await page.setContent(html, { waitUntil: 'networkidle0', timeout: 15000 });
+        const screenshot = await page.screenshot({ type: 'png', clip: { x: 0, y: 0, width: 390, height: 844 } });
+        await browser.close();
+        // Store in R2
+        await env.THUMBS.put(`thumbs/${id}.png`, screenshot, { httpMetadata: { contentType: 'image/png' } });
+        // Store thumbUrl in D1 template record
+        const thumbUrl = `/api/templates/${encodeURIComponent(id)}/thumb`;
+        const updated = { ...tpl, thumbnailUrl: thumbUrl, thumbnailGeneratedAt: new Date().toISOString() };
+        await db.prepare(`UPDATE templates SET data = ? WHERE id = ?`).bind(JSON.stringify(updated), id).run();
+        return json({ ok: true, thumbUrl });
+      } catch (e) {
+        return json({ error: e.message }, 500);
       }
     }
 

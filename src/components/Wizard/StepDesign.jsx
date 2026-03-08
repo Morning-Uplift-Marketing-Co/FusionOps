@@ -15,6 +15,7 @@ export function StepDesign({ c, u, notify }) {
     const [templates, setTemplates] = useState([]);
     const [loadingTemplates, setLoadingTemplates] = useState(true);
     const [deleting, setDeleting] = useState(null);
+    const [generatingThumb, setGeneratingThumb] = useState(null);
 
     // Load templates on mount
     const loadTemplates = (forceRefresh = false) => {
@@ -120,74 +121,113 @@ export function StepDesign({ c, u, notify }) {
                                         onClick={() => u("templateId", t.id)}
                                         style={{
                                             width: "100%",
-                                            padding: 12,
+                                            padding: 0,
                                             background: isSelected ? T.primaryGlow : T.input,
                                             border: `2px solid ${isSelected ? T.primary : T.border}`,
                                             borderRadius: 10,
                                             cursor: "pointer",
                                             textAlign: "left",
                                             transition: "all 0.2s",
+                                            overflow: "hidden",
                                         }}
                                     >
-                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                                            <div style={{ fontSize: 13, fontWeight: 700, color: isSelected ? "#fff" : T.text }}>
-                                                {t.name}
-                                            </div>
-                                            <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                                        {/* Thumbnail area */}
+                                        <div style={{ width: "100%", height: 90, background: T.surface || "#1a1a2e", overflow: "hidden", position: "relative", borderRadius: "8px 8px 0 0" }}>
+                                            {t.thumbnailUrl ? (
+                                                <img
+                                                    src={`https://lp-factory-api.misty-feather-556e.workers.dev${t.thumbnailUrl}?t=${t.thumbnailGeneratedAt ? new Date(t.thumbnailGeneratedAt).getTime() : 0}`}
+                                                    alt={t.name}
+                                                    style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }}
+                                                    onError={e => { e.target.style.display = 'none'; }}
+                                                />
+                                            ) : (
+                                                <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                                    <span style={{ fontSize: 28, opacity: 0.4 }}>⚡</span>
+                                                </div>
+                                            )}
+                                            {/* Badges overlay */}
+                                            <div style={{ position: "absolute", top: 4, right: 4, display: "flex", gap: 3 }}>
                                                 {isCustom && (
-                                                    <span style={{
-                                                        fontSize: 8, padding: "2px 5px", borderRadius: 4,
-                                                        background: "#f59e0b20", color: "#f59e0b", fontWeight: 700,
-                                                    }}>API</span>
+                                                    <span style={{ fontSize: 8, padding: "2px 5px", borderRadius: 4, background: "#f59e0bcc", color: "#fff", fontWeight: 700 }}>API</span>
                                                 )}
                                                 {t.badge && (
-                                                    <span style={{
-                                                        fontSize: 9, padding: "2px 6px", borderRadius: 10,
-                                                        background: isSelected ? "rgba(255,255,255,0.2)" : `${T.primary}20`,
-                                                        color: isSelected ? "#fff" : T.primary, fontWeight: 600,
-                                                    }}>
-                                                        {t.badge}
-                                                    </span>
+                                                    <span style={{ fontSize: 8, padding: "2px 5px", borderRadius: 4, background: `${T.primary}cc`, color: "#fff", fontWeight: 700 }}>{t.badge}</span>
                                                 )}
                                             </div>
                                         </div>
-                                        <div style={{ fontSize: 11, color: isSelected ? "rgba(255,255,255,0.7)" : T.muted }}>
-                                            {t.description}
+                                        {/* Name + description */}
+                                        <div style={{ padding: "8px 10px" }}>
+                                            <div style={{ fontSize: 12, fontWeight: 700, color: isSelected ? "#fff" : T.text, marginBottom: 2 }}>
+                                                {t.name}
+                                            </div>
+                                            {t.description && (
+                                                <div style={{ fontSize: 10, color: isSelected ? "rgba(255,255,255,0.6)" : T.muted, lineHeight: 1.3, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                                                    {t.description}
+                                                </div>
+                                            )}
                                         </div>
                                     </button>
                                     {isCustom && t.dbId && (
-                                        <button
-                                            title="Delete this custom template"
-                                            disabled={deleting === t.dbId}
-                                            onClick={async (e) => {
-                                                e.stopPropagation();
-                                                if (!confirm(`Delete template "${t.name}"? This cannot be undone.`)) return;
-                                                setDeleting(t.dbId);
-                                                try {
-                                                    await api.del(`/templates/${t.dbId}`);
-                                                    if (c.templateId === t.id) u("templateId", "");
-                                                    await forceReloadTemplates();
-                                                    notify?.(`Template "${t.name}" deleted`, 'success');
-                                                } catch (err) {
-                                                    console.error('Delete failed:', err);
-                                                    notify?.(`Failed to delete: ${err.message}`, 'error');
-                                                } finally {
-                                                    setDeleting(null);
-                                                }
-                                            }}
-                                            style={{
-                                                position: "absolute", top: 6, right: 6,
-                                                width: 24, height: 24, borderRadius: 6,
-                                                background: deleting === t.dbId ? T.input : "#ef444420",
-                                                border: "1px solid #ef444440",
-                                                color: "#ef4444", fontSize: 12,
-                                                cursor: deleting === t.dbId ? "wait" : "pointer",
-                                                display: "flex", alignItems: "center", justifyContent: "center",
-                                                transition: "all 0.15s", zIndex: 2,
-                                            }}
-                                        >
-                                            {deleting === t.dbId ? "..." : "🗑"}
-                                        </button>
+                                        <div style={{ position: "absolute", bottom: 6, right: 6, display: "flex", gap: 4, zIndex: 2 }}>
+                                            {/* 📸 Generate thumbnail */}
+                                            <button
+                                                title="Generate thumbnail screenshot"
+                                                disabled={generatingThumb === t.dbId}
+                                                onClick={async (e) => {
+                                                    e.stopPropagation();
+                                                    setGeneratingThumb(t.dbId);
+                                                    try {
+                                                        await api.post(`/templates/${t.dbId}/generate-thumb`, {});
+                                                        await forceReloadTemplates();
+                                                        notify?.('Thumbnail generated!', 'success');
+                                                    } catch (err) {
+                                                        notify?.(`Thumbnail failed: ${err.message}`, 'error');
+                                                    } finally {
+                                                        setGeneratingThumb(null);
+                                                    }
+                                                }}
+                                                style={{
+                                                    width: 24, height: 24, borderRadius: 6,
+                                                    background: generatingThumb === t.dbId ? T.input : "#6366f120",
+                                                    border: "1px solid #6366f140",
+                                                    color: "#6366f1", fontSize: 12,
+                                                    cursor: generatingThumb === t.dbId ? "wait" : "pointer",
+                                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                                }}
+                                            >
+                                                {generatingThumb === t.dbId ? "⏳" : "📸"}
+                                            </button>
+                                            {/* 🗑 Delete */}
+                                            <button
+                                                title="Delete this custom template"
+                                                disabled={deleting === t.dbId}
+                                                onClick={async (e) => {
+                                                    e.stopPropagation();
+                                                    if (!confirm(`Delete template "${t.name}"? This cannot be undone.`)) return;
+                                                    setDeleting(t.dbId);
+                                                    try {
+                                                        await api.del(`/templates/${t.dbId}`);
+                                                        if (c.templateId === t.id) u("templateId", "");
+                                                        await forceReloadTemplates();
+                                                        notify?.(`Template "${t.name}" deleted`, 'success');
+                                                    } catch (err) {
+                                                        notify?.(`Failed to delete: ${err.message}`, 'error');
+                                                    } finally {
+                                                        setDeleting(null);
+                                                    }
+                                                }}
+                                                style={{
+                                                    width: 24, height: 24, borderRadius: 6,
+                                                    background: deleting === t.dbId ? T.input : "#ef444420",
+                                                    border: "1px solid #ef444440",
+                                                    color: "#ef4444", fontSize: 12,
+                                                    cursor: deleting === t.dbId ? "wait" : "pointer",
+                                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                                }}
+                                            >
+                                                {deleting === t.dbId ? "..." : "🗑"}
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
                             );
