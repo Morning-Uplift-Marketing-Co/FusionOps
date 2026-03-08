@@ -973,6 +973,9 @@ export default {
       try {
         const db = env.DB;
         await ensureTemplateManagerSchema(db);
+        // Ensure thumbnail columns exist before querying
+        try { await db.prepare('ALTER TABLE templates ADD COLUMN thumbnail_url TEXT').run(); } catch (_e) {}
+        try { await db.prepare('ALTER TABLE templates ADD COLUMN thumbnail_generated_at TEXT').run(); } catch (_e) {}
         // Load template from D1 — uses files column (JSON string), not data
         const row = await db.prepare(`SELECT id, files, name, thumbnail_url FROM templates WHERE id = ? AND COALESCE(is_deleted,0) = 0 LIMIT 1`).bind(id).first();
         if (!row) return json({ error: 'Template not found' }, 404);
