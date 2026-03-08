@@ -31,7 +31,6 @@ function fpPixel(eventName, extra) {
   } catch(_) {}
 }
 
-
 var SafeStorage = {
   _mem: {},
   set: function(k, v) {
@@ -44,77 +43,57 @@ var SafeStorage = {
   }
 };
 
-function getCookie(name) {
-  var match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-  return match ? match.pop() : null;
-}
-
 function getVoluumClickId() {
   var urlParams = new URLSearchParams(window.location.search);
-  // vlcid = actual Voluum click ID (set by dtpCallback after redirect)
-  // cid / click_id = legacy / direct params
-  // cpid = Voluum campaign ID (present on landing page, NOT the click ID)
-  var fromUrl = urlParams.get('vlcid') || urlParams.get('clickid') || urlParams.get('cid') || urlParams.get('click_id') || '';
-  // dtpCallback stores click ID in localStorage as "vlcid" and in cookie "vlcid"
-  var fromStorage = SafeStorage.get('vlcid') || SafeStorage.get('voluum_cid') || '';
-  var fromCookie = getCookie('vlcid') || '';
-  // Also check localStorage for cpid-keyed entry set by dtpCallback (vl-{cpid} = "1" means visited)
-  var cpid = urlParams.get('cpid') || '';
-  return fromUrl || fromStorage || fromCookie || cpid || '';
+  var cid = urlParams.get('vlcid') || urlParams.get('clickid') || urlParams.get('cid') || urlParams.get('click_id') || '';
+  return SafeStorage.get('vlcid') || SafeStorage.get('voluum_cid') || cid || urlParams.get('cpid') || '';
 }
 
-// _lg_form_init_ must be var in global scope (LeadsGate requirement)
+// Fire pv on apply page load
+(function() {
+  var p = new URLSearchParams(window.location.search);
+  var cid = p.get('clickid') || p.get('vlcid') || p.get('click_id') || p.get('cid') || p.get('cpid') || '';
+  fpPixel('pv', cid ? { click_id: cid } : {});
+})();
+
 var _lg_form_init_ = {
   aid: "${aid}",
   template: "fresh",
   ref: window.location.hostname,
   click_id: getVoluumClickId(),
 
-  hooks: {
-    onFormLoad: function() {
-      var cid = getVoluumClickId();
-      fpPixel('lg_form_load', { click_id: cid });
-      window.dataLayer.push({ 'event': 'leadsgate_form_start', 'clickId': cid, 'timestamp': new Date().toISOString() });
-    },
+  onFormLoad: function() {
+    fpPixel('lg_form_load', { click_id: getVoluumClickId() });
+    window.dataLayer.push({ 'event': 'leadsgate_form_start', 'clickId': getVoluumClickId(), 'timestamp': new Date().toISOString() });
+  },
 
-    onStepChange: function(data) {
-      var cid = getVoluumClickId();
-      var step = data && data.step ? data.step : data;
-      fpPixel('lg_step', { step: step, click_id: cid });
-      window.dataLayer.push({ 'event': 'leadsgate_form_progress', 'step': step, 'clickId': cid });
-    },
+  onStepChange: function(step) {
+    window.dataLayer.push({ 'event': 'leadsgate_form_progress', 'step': step, 'clickId': getVoluumClickId() });
+  },
 
-    onSubmit: function() {
-      var cid = getVoluumClickId();
-      fpPixel('lg_submit', { click_id: cid });
-      window.dataLayer.push({ 'event': 'leadsgate_form_submit', 'clickId': cid, 'timestamp': new Date().toISOString() });
-    },
+  onSubmit: function() {
+    fpPixel('lg_submit', { click_id: getVoluumClickId() });
+    window.dataLayer.push({ 'event': 'leadsgate_form_submit', 'clickId': getVoluumClickId(), 'timestamp': new Date().toISOString() });
+  },
 
-    onLeadSold: function(data) {
-      var cid = getVoluumClickId();
-      var leadId = data && data.leadId;
-      var payout = (data && data.price) || 50.00;
-      fpPixel('lg_success', { click_id: cid, lead_id: leadId, status: 'approved', payout: payout });
-      window.dataLayer.push({ 'event': 'lead_conversion_approved', 'transactionId': leadId, 'conversionValue': payout, 'clickId': cid });
-      window.dataLayer.push({ 'event': 'lead_conversion_all', 'leadStatus': 'approved', 'transactionId': leadId, 'conversionValue': payout, 'clickId': cid });
-    },
+  onSuccess: function(data) {
+    var voluumCid = getVoluumClickId();
+    var type = data.type;
+    var leadId = data.lead_id;
+    var payout = data.price || 0;
+    var status = type === 'soldLead' ? 'approved' : type === 'rejectLead' ? 'declined' : 'pending';
+    var finalPayout = payout > 0 ? payout : (status === 'declined' ? 5.00 : 50.00);
 
-    onLeadRejected: function(data) {
-      var cid = getVoluumClickId();
-      var leadId = data && data.leadId;
-      var payout = (data && data.price) || 5.00;
-      fpPixel('lg_success', { click_id: cid, lead_id: leadId, status: 'declined', payout: payout });
-      window.dataLayer.push({ 'event': 'lead_declined', 'transactionId': leadId, 'conversionValue': payout, 'clickId': cid });
-      window.dataLayer.push({ 'event': 'lead_conversion_all', 'leadStatus': 'declined', 'transactionId': leadId, 'conversionValue': payout, 'clickId': cid });
-    },
+    fpPixel('lg_' + status, { click_id: voluumCid, lead_id: leadId, status: status, payout: finalPayout });
 
-    onLeadFinished: function(data) {
-      var cid = getVoluumClickId();
-      var leadId = data && data.leadId;
-      var payout = (data && data.price) || 0;
-      fpPixel('lg_finished', { click_id: cid, lead_id: leadId, payout: payout });
-      window.dataLayer.push({ 'event': 'lead_pending', 'transactionId': leadId, 'conversionValue': payout, 'clickId': cid });
-      window.dataLayer.push({ 'event': 'lead_conversion_all', 'leadStatus': 'pending', 'transactionId': leadId, 'conversionValue': payout, 'clickId': cid });
+    window.dataLayer.push({ 'event': 'lead_conversion_all', 'leadStatus': status, 'leadType': type, 'transactionId': leadId, 'conversionValue': finalPayout, 'clickId': voluumCid });
+
+    if (type === 'soldLead') {
+      window.dataLayer.push({ 'event': 'lead_conversion_approved', 'transactionId': leadId, 'conversionValue': finalPayout, 'clickId': voluumCid });
+    } else if (type === 'rejectLead') {
+      window.dataLayer.push({ 'event': 'lead_declined', 'transactionId': leadId, 'conversionValue': finalPayout, 'clickId': voluumCid });
+    } else {
+      window.dataLayer.push({ 'event': 'lead_pending', 'transactionId': leadId, 'conversionValue': finalPayout, 'clickId': voluumCid });
     }
   }
 };
@@ -125,37 +104,6 @@ script.type = 'text/javascript';
 script.async = true;
 script.src = 'https://apikeep.com/form/applicationInit.js';
 document.body.appendChild(script);
-
-// Fire pv on apply page load
-(function() {
-  var p = new URLSearchParams(window.location.search);
-  var cid = p.get('clickid') || p.get('vlcid') || p.get('click_id') || p.get('cid') || p.get('cpid') || '';
-  fpPixel('pv', cid ? { click_id: cid } : {});
-
-  // Fallback: fire lg_form_load when LeadsGate mounts the form
-  // (in case onFormLoad fires before our callback is registered)
-  var formLoadFired = false;
-  var lgDiv = document.getElementById('_lg_form_');
-  if (lgDiv) {
-    var obs = new MutationObserver(function(mutations) {
-      if (!formLoadFired && lgDiv.children.length > 0) {
-        formLoadFired = true;
-        obs.disconnect();
-        var cid2 = getVoluumClickId();
-        fpPixel('lg_form_load', { click_id: cid2, source: 'observer' });
-      }
-    });
-    obs.observe(lgDiv, { childList: true, subtree: true });
-    // Safety timeout — fire after 10s regardless
-    setTimeout(function() {
-      if (!formLoadFired) {
-        formLoadFired = true;
-        obs.disconnect();
-        fpPixel('lg_form_load', { click_id: getVoluumClickId(), source: 'timeout' });
-      }
-    }, 10000);
-  }
-})();
 
 </script>
 
