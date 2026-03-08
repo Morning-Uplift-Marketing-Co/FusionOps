@@ -54,7 +54,7 @@ function getVoluumClickId() {
   // vlcid = actual Voluum click ID (set by dtpCallback after redirect)
   // cid / click_id = legacy / direct params
   // cpid = Voluum campaign ID (present on landing page, NOT the click ID)
-  var fromUrl = urlParams.get('vlcid') || urlParams.get('cid') || urlParams.get('click_id') || '';
+  var fromUrl = urlParams.get('vlcid') || urlParams.get('clickid') || urlParams.get('cid') || urlParams.get('click_id') || '';
   // dtpCallback stores click ID in localStorage as "vlcid" and in cookie "vlcid"
   var fromStorage = SafeStorage.get('vlcid') || SafeStorage.get('voluum_cid') || '';
   var fromCookie = getCookie('vlcid') || '';
