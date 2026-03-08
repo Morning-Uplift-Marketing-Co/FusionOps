@@ -1,6 +1,7 @@
 name = "lp-factory-api"
 main = "src/worker.js"
 compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
 account_id = "ef771cfd6197dedb36bb3cea22ecf4fc"
 
 # D1 Database binding
@@ -10,3 +11,12 @@ binding = "DB"
 database_name = "fusionops-main-new-v2"
 database_id = "4eaee76d-10fb-42a7-bb9d-50737c3da785"
 preview_database_id = "4eaee76d-10fb-42a7-bb9d-50737c3da785"
+
+# Browser Rendering API — for template thumbnail screenshots
+[browser]
+binding = "BROWSER"
+
+# R2 Bucket — stores generated thumbnails
+[[r2_buckets]]
+binding = "THUMBS"
+bucket_name = "lp-factory-thumbs"
