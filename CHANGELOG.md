@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.2] - 2026-03-08
+### Security
+- **Hide affiliate `aid` from HTML source**: `apply.astro` (`pet-orange-white`) now fetches `aid` async from Worker `/api/cfg?d={domain}` instead of embedding it directly in HTML — prevents competitors from reading affiliate ID via DevTools.
+- **Worker `/api/cfg` route**: New endpoint in `apps/api-worker/src/worker.js` — looks up `aid` from D1 site config by domain, returns `{a: aid}`. No other sensitive data exposed.
+- **`template: "fresh"` → `"t1"`**: Changed LeadsGate template identifier to a less descriptive name.
+
 ## [2.6.1] - 2026-03-08
 ### Changed
 - **`convert-astro-template.md` workflow (Step 4c)**: Replaced wrong `vp.js` Voluum loader with correct `dtpCallback` script. Added Rocket Loader warnings, `data-cfasync="false"` checklist, `voluumDomain` default `''`, and `Fragment set:html` head limitation note.

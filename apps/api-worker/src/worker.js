@@ -949,6 +949,26 @@ export default {
       }
     }
 
+    // ═══ SITE CONFIG — returns obfuscated aid for a given domain ═══
+    // Called by apply.astro to avoid exposing aid directly in HTML source
+    if (path === '/api/cfg' && method === 'GET') {
+      try {
+        const db = env.DB;
+        const domain = url.searchParams.get('d') || '';
+        if (!domain) return json({ error: 'Missing d param' }, 400);
+        const row = await db.prepare(
+          `SELECT data FROM sites WHERE id = ? OR json_extract(data, '$.domain') = ? LIMIT 1`
+        ).bind(domain, domain).first();
+        const data = row?.data ? JSON.parse(row.data) : null;
+        const aid = data?.aid || '';
+        if (!aid) return json({ error: 'Not found' }, 404);
+        // Return only what's needed — single char key to minimize fingerprinting
+        return json({ a: aid });
+      } catch (e) {
+        return json({ error: e.message }, 500);
+      }
+    }
+
     // ═══ PIXEL EVENTS API — query stored events ═══
     if (path === '/api/pixel/events' && method === 'GET') {
       try {

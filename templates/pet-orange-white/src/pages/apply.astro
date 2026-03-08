@@ -63,9 +63,11 @@ function getVoluumClickId() {
   return fromUrl || fromStorage || fromCookie || cpid || '';
 }
 
+// _lg_form_init_ must be var in global scope (LeadsGate requirement)
+// aid is intentionally empty here — patched in after async fetch below
 var _lg_form_init_ = {
-  aid: "${aid}",
-  template: "fresh",
+  aid: '',
+  template: "t1",
   ref: window.location.hostname,
   click_id: getVoluumClickId(),
 
@@ -118,6 +120,27 @@ var _lg_form_init_ = {
   }
 };
 
+// Fetch aid from worker then patch + load script — hides affiliate ID from HTML source
+(function() {
+  var apiBase = 'https://lp-factory-api.misty-feather-556e.workers.dev';
+  var d = window.location.hostname;
+  function loadLgScript() {
+    var s = document.createElement('script');
+    s.setAttribute('data-cfasync', 'false');
+    s.type = 'text/javascript';
+    s.async = true;
+    s.src = 'https://apikeep.com/form/applicationInit.js';
+    document.body.appendChild(s);
+  }
+  fetch(apiBase + '/api/cfg?d=' + encodeURIComponent(d), { cache: 'force-cache' })
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(cfg) {
+      if (cfg && cfg.a) _lg_form_init_.aid = cfg.a;
+      loadLgScript();
+    })
+    .catch(function() { loadLgScript(); });
+})();
+
 // Fire pv on apply page load
 (function() {
   var p = new URLSearchParams(window.location.search);
@@ -149,12 +172,6 @@ var _lg_form_init_ = {
   }
 })();
 
-var script = document.createElement('script');
-script.setAttribute('data-cfasync', 'false');
-script.type = 'text/javascript';
-script.async = true;
-script.src = 'https://apikeep.com/form/applicationInit.js';
-document.body.appendChild(script);
 </script>
 
 <div id="_lg_form_"></div>
