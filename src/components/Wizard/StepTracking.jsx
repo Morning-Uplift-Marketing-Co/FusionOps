@@ -229,12 +229,23 @@ export function StepTracking({ c, u }) {
       const { accessId, accessKey } = getCredentials();
       if (!accessId || !accessKey) throw new Error("Voluum credentials not found");
       const token = await fetchVoluumSession(accessId, accessKey);
-      const created = await createVoluumCampaign(token, { ...newCamp, redirectUrl: newCamp.redirectUrl || c.url || c.redirectUrl || "" });
+      const trackingDomain = normalizeTrackingDomain(c.voluumTrackingDomain, c.domain);
+      const created = await createVoluumCampaign(token, {
+        ...newCamp,
+        domain: c.domain,
+        trackingDomain: trackingDomain,
+      });
       // Add to campaign list and auto-select
       setCampaigns(prev => [{ ...created, trafficSourceName: "" }, ...prev]);
       u("voluumCampaignId", created.id);
       u("voluumCampaignName", created.name);
-      u("voluumTrackingDomain", normalizeTrackingDomain(created.trackingDomain || "", c.domain));
+      u("voluumTrackingDomain", created.trackingDomain || trackingDomain);
+      u("voluumLanderId", created.landerId || "");
+      u("voluumOfferId", created.offerId || "");
+      u("voluumLanderTrackingUrl", created.landerTrackingUrl || created.url || "");
+      u("voluumClickUrl", created.clickUrl || `https://${trackingDomain}/click`);
+      u("voluumId", created.id);
+      u("voluumDomain", trackingDomain);
       setShowCreate(false);
       setNewCamp({ name: "", country: "US", costModel: "CPC", costValue: 0, trafficSourceId: "", redirectUrl: c.url || c.redirectUrl || "" });
       clearVoluumCache();
@@ -248,9 +259,13 @@ export function StepTracking({ c, u }) {
   // ─── Campaign select handler ───
   const handleCampaignSelect = (campaignId) => {
     const camp = campaigns.find(c => c.id === campaignId);
+    const trackingDomain = normalizeTrackingDomain(camp?.trackingDomain || "", c.domain);
     u("voluumCampaignId", campaignId);
     u("voluumCampaignName", camp?.name || "");
-    u("voluumTrackingDomain", normalizeTrackingDomain(camp?.trackingDomain || "", c.domain));
+    u("voluumTrackingDomain", trackingDomain);
+    u("voluumId", campaignId);
+    u("voluumDomain", trackingDomain);
+    u("voluumClickUrl", `https://${trackingDomain}/click`);
   };
 
   return (

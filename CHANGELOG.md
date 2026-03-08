@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.18] - 2026-03-09
+### Fixed
+- **Voluum campaign creation system completely rebuilt**: `createCampaign()` now creates lander → offer → direct-tracking campaign with inline path (was broken simple redirect campaign)
+- **Wizard now saves all Voluum post-create fields**: `voluumLanderId`, `voluumOfferId`, `voluumLanderTrackingUrl`, `voluumClickUrl`, `voluumId`, `voluumDomain` (enables proper dashboard test URL generation)
+- **Campaign creation sets `preferredTrackingDomain`** on lander, offer, and campaign to prevent cross-site tracking domain contamination
+- **Campaign uses `offerRedirectMode: REGULAR`** so Voluum redirects to `/apply` after form submit (was `REDIRECTLESS` causing homepage redirect)
+- **Campaign uses `directTracking: true`** with `directTrackingLanderId` for proper DTP flow
+
 ## [2.7.17] - 2026-03-09
 ### Fixed
 - **`installment-loans-101` hero form now uses Voluum click URL**: `HeroFormStatic.astro` reads `PUBLIC_VOLUUM_CLICK_URL` and redirects through Voluum when configured, falling back to `/apply` otherwise.

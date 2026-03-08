@@ -158,33 +158,43 @@ export async function fetchCampaigns(token, { activeOnly = true } = {}) {
 }
 
 /**
- * Create a new Voluum campaign
+ * Fetch all workspaces
+ * Returns: [{ id, name }]
+ */
+export async function fetchWorkspaces(token) {
+    const data = await voluumProxy(token, "GET", "/workspace");
+    return (data?.workspaces || data?.rows || []).map(w => ({
+        id: w.id,
+        name: w.name || w.id,
+    }));
+}
+
+/**
+ * Create a new Voluum campaign with lander + offer + direct tracking
  * @param {string} token
- * @param {object} campaignData  { name, trafficSourceId, country, costModel, costValue, trackingDomain }
+ * @param {object} campaignData  { name, trafficSourceId, country, costModel, costValue, domain, trackingDomain, aid }
  */
 export async function createCampaign(token, campaignData) {
-    const body = {
-        namePostfix: campaignData.name || "New Campaign",
-        country: { code: campaignData.country || "US" },
-        costModel: {
-            type: campaignData.costModel || "CPC",
-            value: Number(campaignData.costValue) || 0,
-        },
-        workspace: { id: "a6bcc011-3079-4e0f-9059-c9e677f05e41" },
-        directTracking: true,
-        redirectTarget: {
-            redirectUrl: { url: campaignData.redirectUrl || "https://example.com", redirectMode: "REGULAR" },
-        },
-    };
+    // Resolve workspace ID dynamically — never hardcode
+    let workspaceId;
+    try {
+        const workspaces = await fetchWorkspaces(token);
+        if (workspaces?.length > 0) {
+            workspaceId = workspaces[0].id;
+        } else {
+            throw new Error("No workspaces found in Voluum account.");
+        }
+    } catch (e) {
+        throw new Error(e.message || "Failed to fetch Voluum workspaces");
+    }
 
     // trafficSource is required — use provided ID or fetch first available
-    if (campaignData.trafficSourceId) {
-        body.trafficSource = { id: campaignData.trafficSourceId };
-    } else {
+    let trafficSourceId = campaignData.trafficSourceId;
+    if (!trafficSourceId) {
         try {
             const sources = await fetchTrafficSources(token);
             if (sources?.length > 0) {
-                body.trafficSource = { id: sources[0].id };
+                trafficSourceId = sources[0].id;
             } else {
                 throw new Error("No traffic sources in Voluum. Create one in Voluum panel first (Traffic Sources → + New).");
             }
@@ -192,17 +202,125 @@ export async function createCampaign(token, campaignData) {
             throw new Error(e.message || "Failed to fetch traffic sources");
         }
     }
-    const data = await voluumProxy(token, "POST", "/campaign", body);
-    if (data?.id) {
-        // Invalidate campaign cache
+
+    // Resolve affiliate network ID for offer creation
+    let affiliateNetworkId;
+    try {
+        const networks = await voluumProxy(token, "GET", "/affiliate-network");
+        const networkList = networks?.affiliateNetworks || networks?.rows || [];
+        if (networkList.length > 0) {
+            affiliateNetworkId = networkList[0].id;
+        } else {
+            throw new Error("No affiliate networks found. Create one in Voluum panel first (Affiliate Networks → + New).");
+        }
+    } catch (e) {
+        throw new Error(e.message || "Failed to fetch affiliate networks");
+    }
+
+    const domain = campaignData.domain || "example.com";
+    const trackingDomain = campaignData.trackingDomain || `link.${domain}`;
+    const country = campaignData.country || "US";
+    const campaignName = campaignData.name || "New Campaign";
+
+    // Step 1: Create lander
+    const landerBody = {
+        name: `${country} - [Master] ${domain}`,
+        url: `https://${domain}`,
+        country: { code: country },
+        workspace: { id: workspaceId },
+        numberOfOffers: 1,
+        preferredTrackingDomain: trackingDomain,
+    };
+    const landerData = await voluumProxy(token, "POST", "/lander", landerBody);
+    if (!landerData?.id) {
+        const errDetail = landerData?.errors?.map(e => `${e.field}: ${e.message}`).join("; ") ||
+            landerData?.message || landerData?.error || "Failed to create lander";
+        throw new Error(errDetail);
+    }
+    const landerId = landerData.id;
+
+    // Step 2: Create offer
+    const offerBody = {
+        name: `LeadsGate - ${country} - [Master] ${domain}`,
+        url: `https://${domain}/apply?clickid={clickid}`,
+        country: { code: country },
+        workspace: { id: workspaceId },
+        affiliateNetwork: { id: affiliateNetworkId },
+        payout: { type: "AUTO", geoPayouts: [] },
+        conversionTrackingMethod: "S2S_POSTBACK_URL",
+        preferredTrackingDomain: trackingDomain,
+    };
+    const offerData = await voluumProxy(token, "POST", "/offer", offerBody);
+    if (!offerData?.id) {
+        const errDetail = offerData?.errors?.map(e => `${e.field}: ${e.message}`).join("; ") ||
+            offerData?.message || offerData?.error || "Failed to create offer";
+        throw new Error(errDetail);
+    }
+    const offerId = offerData.id;
+
+    // Step 3: Create campaign with direct tracking + inline path
+    const campaignBody = {
+        name: campaignName,
+        country: { code: country },
+        costModel: {
+            type: campaignData.costModel || "NOT_TRACKED",
+            value: Number(campaignData.costValue) || 0,
+        },
+        workspace: { id: workspaceId },
+        trafficSource: { id: trafficSourceId },
+        directTracking: true,
+        directTrackingLanderId: landerId,
+        preferredTrackingDomain: trackingDomain,
+        redirectTarget: {
+            inlineFlow: {
+                name: `${country} - inline path`,
+                countries: [{ code: country }],
+                workspace: { id: workspaceId },
+                defaultPaths: [
+                    {
+                        name: "New path",
+                        active: true,
+                        weight: 100,
+                        landers: [
+                            {
+                                weight: 100,
+                                lander: { id: landerId },
+                                sublanders: [],
+                            },
+                        ],
+                        offers: [
+                            {
+                                weight: 100,
+                                offer: { id: offerId },
+                            },
+                        ],
+                        offerRedirectMode: "REGULAR",
+                    },
+                ],
+                defaultOfferRedirectMode: "REGULAR",
+            },
+        },
+    };
+
+    const campaignResponseData = await voluumProxy(token, "POST", "/campaign", campaignBody);
+    if (campaignResponseData?.id) {
         return {
-            id: data.id,
-            name: data.namePostfix || data.name || data.id,
-            trackingDomain: data.preferredTrackingDomain || "",
-            status: data.status || "ACTIVE",
+            id: campaignResponseData.id,
+            name: campaignResponseData.namePostfix || campaignResponseData.name || campaignResponseData.id,
+            trackingDomain: campaignResponseData.preferredTrackingDomain || trackingDomain,
+            status: campaignResponseData.status || "ACTIVE",
+            url: campaignResponseData.url || `https://${domain}`,
+            landerId: landerId,
+            offerId: offerId,
+            landerTrackingUrl: campaignResponseData.url || `https://${domain}`,
+            clickUrl: `https://${trackingDomain}/click`,
         };
     }
-    throw new Error(typeof data?.message === "string" ? data.message : typeof data?.error === "string" ? data.error : JSON.stringify(data?.error || data?.message || "Failed to create campaign"));
+    // Surface Voluum field-level validation errors
+    const errDetail = campaignResponseData?.errors?.map(e => `${e.field}: ${e.message}`).join("; ") ||
+        campaignResponseData?.message || campaignResponseData?.error ||
+        JSON.stringify(campaignResponseData || "Failed to create campaign");
+    throw new Error(errDetail);
 }
 
 /**
