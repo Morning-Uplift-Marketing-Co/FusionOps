@@ -142,7 +142,8 @@ export function StepTracking({ c, u }) {
   const mode = c.trackingMode || "minimal";
   const isVoluum = mode === "voluum";
   const pixelBaseUrl = resolvePixelBaseUrl(c.url, c.domain);
-  const pixelEndpoint = pixelBaseUrl ? `${pixelBaseUrl}/e` : "";
+  const cleanDomain = String(c.domain || "").trim().replace(/^https?:\/\//i, "").replace(/\/+$/, "");
+  const pixelEndpoint = cleanDomain ? `https://t.${cleanDomain}/e` : "";
 
   useEffect(() => {
     if (!isVoluum) return;
