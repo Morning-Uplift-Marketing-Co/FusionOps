@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.1] - 2026-03-08
+### Added
+- **Hover Preview Popup on template cards**: Hovering over a template card in Step 4 (Design) shows a fixed popup to the left with a live iframe preview of the template HTML — or thumbnail image if one has been generated via 📸. Falls back to ⚡ placeholder for CI templates without stored HTML.
+
 ## [2.7.0] - 2026-03-08
 ### Added
 - **Template Thumbnail Screenshots**: Cloudflare Browser Rendering API + R2 — headless browser screenshots stored in `lp-factory-thumbs` R2 bucket.
