@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.11] - 2026-03-08
+### Fixed
+- **Wrangler deploy compatibility**: Removed unsupported `--domain` arguments from `wrangler pages deploy` in `deploy-lp.yml` so the current CI Wrangler version can deploy successfully again.
+
 ## [2.7.10] - 2026-03-08
 ### Fixed
 - **`pet-orange-white` apply form initialization**: Set LeadsGate `_lg_form_init_.aid` immediately from `PUBLIC_AID` so `/apply/` no longer boots the embed with an empty `affiliateId` and fails with `Form cannot be embedded`.
