@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.24] - 2026-03-09
+### Fixed
+- **Add workspace field to all fetch functions**: fetchCampaigns, fetchTrafficSources, fetchOffers now return workspace data
+- **createTrafficSource workspace support**: Add optional workspaceId parameter to ensure traffic sources are created in correct workspace
+- **Data consistency**: All Voluum entity fetch functions now consistently return workspace information
+
 ## [2.7.23] - 2026-03-09
 ### Fixed
 - **Voluum click URL format corrected**: Use `/{campaignId}` instead of `/click` for DTP campaigns
