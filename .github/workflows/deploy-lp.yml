@@ -164,6 +164,7 @@ jobs:
           echo "Deploy URL: $URL"
 
       - name: Add custom domain to CF Pages
+        continue-on-error: true
         env:
           CF_TOKEN_FROM_CONFIG: ${{ steps.template.outputs.cf_api_token }}
           CF_ACCOUNT_FROM_CONFIG: ${{ steps.template.outputs.cf_account_id }}
@@ -193,7 +194,7 @@ jobs:
             -H "Authorization: Bearer $CF_TOKEN" \
             -H "Content-Type: application/json" \
             -d "{\"domain\":\"$DOMAIN\"}")
-          RESP="$RESP" node -e "const r=JSON.parse(process.env.RESP||'{}');const codes=(r.errors||[]).map(e=>String(e.code));if(!(r.success||codes.includes('8000013')||codes.includes('81057'))){console.error('CF Pages root domain attach failed:', JSON.stringify(r));process.exit(1)};console.log('CF Pages root domain attach:', JSON.stringify(r));"
+          RESP="$RESP" node -e "const r=JSON.parse(process.env.RESP||'{}');const codes=(r.errors||[]).map(e=>String(e.code));if(!(r.success||codes.includes('8000013')||codes.includes('81057'))){console.warn('CF Pages root domain attach failed (continuing to DNS upsert):', JSON.stringify(r));process.exit(0)};console.log('CF Pages root domain attach:', JSON.stringify(r));"
 
           echo "Adding www.$DOMAIN custom domain to Pages project $PROJECT..."
           RESP_WWW=$(curl -s -X POST \
@@ -201,9 +202,10 @@ jobs:
             -H "Authorization: Bearer $CF_TOKEN" \
             -H "Content-Type: application/json" \
             -d "{\"domain\":\"www.$DOMAIN\"}")
-          RESP_WWW="$RESP_WWW" node -e "const r=JSON.parse(process.env.RESP_WWW||'{}');const codes=(r.errors||[]).map(e=>String(e.code));if(!(r.success||codes.includes('8000013')||codes.includes('81057'))){console.error('CF Pages www domain attach failed:', JSON.stringify(r));process.exit(1)};console.log('CF Pages www domain attach:', JSON.stringify(r));"
+          RESP_WWW="$RESP_WWW" node -e "const r=JSON.parse(process.env.RESP_WWW||'{}');const codes=(r.errors||[]).map(e=>String(e.code));if(!(r.success||codes.includes('8000013')||codes.includes('81057'))){console.warn('CF Pages www domain attach failed (continuing to DNS upsert):', JSON.stringify(r));process.exit(0)};console.log('CF Pages www domain attach:', JSON.stringify(r));"
 
       - name: Upsert Cloudflare DNS CNAME (root + www)
+        if: always()
         env:
           CF_TOKEN_FROM_CONFIG: ${{ steps.template.outputs.cf_api_token }}
           CF_ACCOUNT_FROM_CONFIG: ${{ steps.template.outputs.cf_account_id }}

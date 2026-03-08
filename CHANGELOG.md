@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.7] - 2026-03-08
+### Fixed
+- **Cloudflare Pages custom-domain attach resilience**: GitHub deploy workflow no longer aborts the entire job when the Pages domain attach API returns a non-fatal error.
+- **Always-run DNS provisioning**: Root and `www` Cloudflare DNS CNAME upsert now runs even if the Pages custom-domain attach step warns or fails.
+
 ## [2.7.6] - 2026-03-08
 ### Fixed
 - **Cloudflare credential precedence in CI**: `deploy-lp.yml` now prefers repository secrets over per-config credentials to avoid stale/wrong account-token mismatches during Pages custom-domain attach and DNS upsert.
