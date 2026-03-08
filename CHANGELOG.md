@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.2] - 2026-03-08
+### Fixed
+- **Hover popup position**: Now shows to the right of the hovered card, clamped to viewport edge (was appearing behind sidebar at x=8)
+- **Hover popup content**: Removed broken iframe fallback. Now shows thumbnail screenshot if generated via 📸, else a clean "📷 No preview yet — click 📸" placeholder. No more solid-color hero sections.
+
 ## [2.7.1] - 2026-03-08
 ### Added
 - **Hover Preview Popup on template cards**: Hovering over a template card in Step 4 (Design) shows a fixed popup to the left with a live iframe preview of the template HTML — or thumbnail image if one has been generated via 📸. Falls back to ⚡ placeholder for CI templates without stored HTML.
