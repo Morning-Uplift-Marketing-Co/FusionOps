@@ -69,94 +69,52 @@ var _lg_form_init_ = {
   ref: window.location.hostname,
   click_id: getVoluumClickId(),
 
-  onFormLoad: function() {
-    var cid = getVoluumClickId();
-    fpPixel('lg_form_load', { click_id: cid });
-    window.dataLayer.push({ 'event': 'leadsgate_form_start', 'clickId': cid, 'timestamp': new Date().toISOString() });
-  },
+  hooks: {
+    onFormLoad: function() {
+      var cid = getVoluumClickId();
+      fpPixel('lg_form_load', { click_id: cid });
+      window.dataLayer.push({ 'event': 'leadsgate_form_start', 'clickId': cid, 'timestamp': new Date().toISOString() });
+    },
 
-  onStepChange: function(step) {
-    var cid = getVoluumClickId();
-    fpPixel('lg_step', { step: step, click_id: cid });
-    window.dataLayer.push({ 'event': 'leadsgate_form_progress', 'step': step, 'clickId': cid });
-  },
+    onStepChange: function(data) {
+      var cid = getVoluumClickId();
+      var step = data && data.step ? data.step : data;
+      fpPixel('lg_step', { step: step, click_id: cid });
+      window.dataLayer.push({ 'event': 'leadsgate_form_progress', 'step': step, 'clickId': cid });
+    },
 
-  onSubmit: function() {
-    var cid = getVoluumClickId();
-    fpPixel('lg_submit', { click_id: cid });
-    window.dataLayer.push({ 'event': 'leadsgate_form_submit', 'clickId': cid, 'timestamp': new Date().toISOString() });
-  },
+    onSubmit: function() {
+      var cid = getVoluumClickId();
+      fpPixel('lg_submit', { click_id: cid });
+      window.dataLayer.push({ 'event': 'leadsgate_form_submit', 'clickId': cid, 'timestamp': new Date().toISOString() });
+    },
 
-  onSuccess: function(data) {
-    console.log('LeadsGate Response:', data);
+    onLeadSold: function(data) {
+      var cid = getVoluumClickId();
+      var leadId = data && data.leadId;
+      var payout = (data && data.price) || 50.00;
+      fpPixel('lg_success', { click_id: cid, lead_id: leadId, status: 'approved', payout: payout });
+      window.dataLayer.push({ 'event': 'lead_conversion_approved', 'transactionId': leadId, 'conversionValue': payout, 'clickId': cid });
+      window.dataLayer.push({ 'event': 'lead_conversion_all', 'leadStatus': 'approved', 'transactionId': leadId, 'conversionValue': payout, 'clickId': cid });
+    },
 
-    var voluumCid = getVoluumClickId();
-    var googleGclid = SafeStorage.get('google_gclid');
-    var type = data.type;
-    var leadId = data.lead_id;
-    var payout = data.price || 0;
-    var status = 'pending';
-    if (type === 'soldLead') status = 'approved';
-    else if (type === 'rejectLead') status = 'declined';
-    var finalPayout = payout > 0 ? payout : (status === 'declined' ? 5.00 : 50.00);
+    onLeadRejected: function(data) {
+      var cid = getVoluumClickId();
+      var leadId = data && data.leadId;
+      var payout = (data && data.price) || 5.00;
+      fpPixel('lg_success', { click_id: cid, lead_id: leadId, status: 'declined', payout: payout });
+      window.dataLayer.push({ 'event': 'lead_declined', 'transactionId': leadId, 'conversionValue': payout, 'clickId': cid });
+      window.dataLayer.push({ 'event': 'lead_conversion_all', 'leadStatus': 'declined', 'transactionId': leadId, 'conversionValue': payout, 'clickId': cid });
+    },
 
-    var conversionData = {
-      transaction_id: leadId,
-      value: finalPayout,
-      currency: 'USD',
-      status: status,
-      type: type,
-      click_id: voluumCid,
-      gclid: googleGclid,
-      created: data.created
-    };
-
-    window.dataLayer.push({
-      'event': 'lead_conversion_all',
-      'leadData': conversionData,
-      'conversionValue': finalPayout,
-      'leadStatus': status,
-      'leadType': type,
-      'transactionId': leadId,
-      'clickId': voluumCid,
-      'gclid': googleGclid
-    });
-
-    if (type === 'soldLead') {
-      window.dataLayer.push({
-        'event': 'lead_conversion_approved',
-        'leadData': conversionData,
-        'conversionValue': finalPayout,
-        'transactionId': leadId,
-        'clickId': voluumCid,
-        'gclid': googleGclid
-      });
+    onLeadFinished: function(data) {
+      var cid = getVoluumClickId();
+      var leadId = data && data.leadId;
+      var payout = (data && data.price) || 0;
+      fpPixel('lg_finished', { click_id: cid, lead_id: leadId, payout: payout });
+      window.dataLayer.push({ 'event': 'lead_pending', 'transactionId': leadId, 'conversionValue': payout, 'clickId': cid });
+      window.dataLayer.push({ 'event': 'lead_conversion_all', 'leadStatus': 'pending', 'transactionId': leadId, 'conversionValue': payout, 'clickId': cid });
     }
-
-    if (type === 'rejectLead') {
-      window.dataLayer.push({
-        'event': 'lead_declined',
-        'leadData': conversionData,
-        'conversionValue': finalPayout,
-        'transactionId': leadId,
-        'clickId': voluumCid,
-        'gclid': googleGclid
-      });
-    }
-
-    if (type === 'newLead') {
-      window.dataLayer.push({
-        'event': 'lead_pending',
-        'leadData': conversionData,
-        'conversionValue': finalPayout,
-        'transactionId': leadId,
-        'clickId': voluumCid,
-        'gclid': googleGclid
-      });
-    }
-
-    fpPixel('lg_success', { click_id: voluumCid, lead_id: leadId, status: status, payout: finalPayout, type: type });
-    console.log('Tracking complete for Lead ID:', leadId);
   }
 };
 
