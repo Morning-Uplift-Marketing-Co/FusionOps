@@ -221,6 +221,8 @@ export async function fetchCustomTemplates(force = false) {
             source: 'api',
             sourceCode: t.source_code,
             createdAt: t.created_at,
+            thumbnailUrl: t.thumbnail_url || null,
+            thumbnailGeneratedAt: t.thumbnail_generated_at || null,
           }, {
             sourceHint: 'api',
             registryPath: 'api-custom',

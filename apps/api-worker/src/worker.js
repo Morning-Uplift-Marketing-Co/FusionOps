@@ -972,14 +972,16 @@ export default {
       const id = decodeURIComponent(thumbGenMatch[1]);
       try {
         const db = env.DB;
-        // Load template from D1
-        const row = await db.prepare(`SELECT data FROM templates WHERE id = ? LIMIT 1`).bind(id).first();
+        await ensureTemplateManagerSchema(db);
+        // Load template from D1 — uses files column (JSON string), not data
+        const row = await db.prepare(`SELECT id, files, name, thumbnail_url FROM templates WHERE id = ? AND COALESCE(is_deleted,0) = 0 LIMIT 1`).bind(id).first();
         if (!row) return json({ error: 'Template not found' }, 404);
-        const tpl = JSON.parse(row.data || '{}');
-        const files = tpl.files || {};
-        // Find HTML to render — prefer index.html, else index.astro stripped
+        const files = parseTemplateFiles(row.files);
+        // Find HTML to render — prefer index.html, else strip Astro frontmatter
         const htmlKeys = Object.keys(files);
-        const htmlKey = htmlKeys.find(k => k === 'index.html') || htmlKeys.find(k => k.endsWith('/index.html')) || htmlKeys.find(k => k.endsWith('index.astro'));
+        const htmlKey = htmlKeys.find(k => k === 'index.html')
+          || htmlKeys.find(k => k.endsWith('/index.html'))
+          || htmlKeys.find(k => k.endsWith('index.astro'));
         if (!htmlKey) return json({ error: 'No renderable HTML found in template' }, 422);
         let html = String(files[htmlKey] || '');
         // Strip Astro frontmatter if present
@@ -993,10 +995,12 @@ export default {
         await browser.close();
         // Store in R2
         await env.THUMBS.put(`thumbs/${id}.png`, screenshot, { httpMetadata: { contentType: 'image/png' } });
-        // Store thumbUrl in D1 template record
+        // Store thumbnailUrl in D1 — add column if needed
+        try { await db.prepare('ALTER TABLE templates ADD COLUMN thumbnail_url TEXT').run(); } catch (_e) {}
+        try { await db.prepare('ALTER TABLE templates ADD COLUMN thumbnail_generated_at TEXT').run(); } catch (_e) {}
         const thumbUrl = `/api/templates/${encodeURIComponent(id)}/thumb`;
-        const updated = { ...tpl, thumbnailUrl: thumbUrl, thumbnailGeneratedAt: new Date().toISOString() };
-        await db.prepare(`UPDATE templates SET data = ? WHERE id = ?`).bind(JSON.stringify(updated), id).run();
+        await db.prepare(`UPDATE templates SET thumbnail_url = ?, thumbnail_generated_at = datetime('now'), updated_at = datetime('now') WHERE id = ?`)
+          .bind(thumbUrl, id).run();
         return json({ ok: true, thumbUrl });
       } catch (e) {
         return json({ error: e.message }, 500);
