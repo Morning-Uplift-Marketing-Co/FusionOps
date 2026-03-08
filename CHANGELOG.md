@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.19] - 2026-03-09
+### Fixed
+- **Voluum API implementation corrected**: Use `namePostfix` instead of `name` for lander/offer/campaign creation
+- **Workspace resolution from traffic source**: Extract workspace ID from selected traffic source to ensure all entities share same workspace
+- **Removed invalid fields**: Removed `preferredTrackingDomain` (must exist before use) and `affiliateNetwork` (causes cross-workspace errors)
+- **Added required field**: `realtimeRoutingApiState: DISABLED` in campaign defaultPaths
+- **Campaign creation now works end-to-end**: Lander → Offer → Campaign with inline flow successfully creates in Voluum
+
 ## [2.7.18] - 2026-03-09
 ### Fixed
 - **Voluum campaign creation system completely rebuilt**: `createCampaign()` now creates lander → offer → direct-tracking campaign with inline path (was broken simple redirect campaign)

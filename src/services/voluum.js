@@ -175,62 +175,46 @@ export async function fetchWorkspaces(token) {
  * @param {object} campaignData  { name, trafficSourceId, country, costModel, costValue, domain, trackingDomain, aid }
  */
 export async function createCampaign(token, campaignData) {
-    // Resolve workspace ID dynamically — never hardcode
-    let workspaceId;
-    try {
-        const workspaces = await fetchWorkspaces(token);
-        if (workspaces?.length > 0) {
-            workspaceId = workspaces[0].id;
-        } else {
-            throw new Error("No workspaces found in Voluum account.");
-        }
-    } catch (e) {
-        throw new Error(e.message || "Failed to fetch Voluum workspaces");
-    }
-
     // trafficSource is required — use provided ID or fetch first available
     let trafficSourceId = campaignData.trafficSourceId;
+    let workspaceId;
     if (!trafficSourceId) {
         try {
             const sources = await fetchTrafficSources(token);
             if (sources?.length > 0) {
                 trafficSourceId = sources[0].id;
+                workspaceId = sources[0].workspace?.id;
             } else {
                 throw new Error("No traffic sources in Voluum. Create one in Voluum panel first (Traffic Sources → + New).");
             }
         } catch (e) {
             throw new Error(e.message || "Failed to fetch traffic sources");
         }
-    }
-
-    // Resolve affiliate network ID for offer creation
-    let affiliateNetworkId;
-    try {
-        const networks = await voluumProxy(token, "GET", "/affiliate-network");
-        const networkList = networks?.affiliateNetworks || networks?.rows || [];
-        if (networkList.length > 0) {
-            affiliateNetworkId = networkList[0].id;
-        } else {
-            throw new Error("No affiliate networks found. Create one in Voluum panel first (Affiliate Networks → + New).");
+    } else {
+        // Get workspace from traffic source
+        try {
+            const sources = await fetchTrafficSources(token);
+            const source = sources.find(s => s.id === trafficSourceId);
+            workspaceId = source?.workspace?.id;
+        } catch (e) {
+            // Continue without workspace - will use default
         }
-    } catch (e) {
-        throw new Error(e.message || "Failed to fetch affiliate networks");
     }
 
     const domain = campaignData.domain || "example.com";
-    const trackingDomain = campaignData.trackingDomain || `link.${domain}`;
     const country = campaignData.country || "US";
     const campaignName = campaignData.name || "New Campaign";
 
     // Step 1: Create lander
     const landerBody = {
-        name: `${country} - [Master] ${domain}`,
+        namePostfix: `[Master] ${domain}`,
         url: `https://${domain}`,
         country: { code: country },
-        workspace: { id: workspaceId },
         numberOfOffers: 1,
-        preferredTrackingDomain: trackingDomain,
     };
+    if (workspaceId) {
+        landerBody.workspace = { id: workspaceId };
+    }
     const landerData = await voluumProxy(token, "POST", "/lander", landerBody);
     if (!landerData?.id) {
         const errDetail = landerData?.errors?.map(e => `${e.field}: ${e.message}`).join("; ") ||
@@ -241,15 +225,15 @@ export async function createCampaign(token, campaignData) {
 
     // Step 2: Create offer
     const offerBody = {
-        name: `LeadsGate - ${country} - [Master] ${domain}`,
+        namePostfix: `[Master] ${domain}`,
         url: `https://${domain}/apply?clickid={clickid}`,
         country: { code: country },
-        workspace: { id: workspaceId },
-        affiliateNetwork: { id: affiliateNetworkId },
         payout: { type: "AUTO", geoPayouts: [] },
         conversionTrackingMethod: "S2S_POSTBACK_URL",
-        preferredTrackingDomain: trackingDomain,
     };
+    if (workspaceId) {
+        offerBody.workspace = { id: workspaceId };
+    }
     const offerData = await voluumProxy(token, "POST", "/offer", offerBody);
     if (!offerData?.id) {
         const errDetail = offerData?.errors?.map(e => `${e.field}: ${e.message}`).join("; ") ||
@@ -260,22 +244,19 @@ export async function createCampaign(token, campaignData) {
 
     // Step 3: Create campaign with direct tracking + inline path
     const campaignBody = {
-        name: campaignName,
+        namePostfix: campaignName,
         country: { code: country },
         costModel: {
-            type: campaignData.costModel || "NOT_TRACKED",
+            type: campaignData.costModel || "CPC",
             value: Number(campaignData.costValue) || 0,
         },
-        workspace: { id: workspaceId },
         trafficSource: { id: trafficSourceId },
         directTracking: true,
         directTrackingLanderId: landerId,
-        preferredTrackingDomain: trackingDomain,
         redirectTarget: {
             inlineFlow: {
                 name: `${country} - inline path`,
                 countries: [{ code: country }],
-                workspace: { id: workspaceId },
                 defaultPaths: [
                     {
                         name: "New path",
@@ -295,25 +276,31 @@ export async function createCampaign(token, campaignData) {
                             },
                         ],
                         offerRedirectMode: "REGULAR",
+                        realtimeRoutingApiState: "DISABLED",
                     },
                 ],
                 defaultOfferRedirectMode: "REGULAR",
             },
         },
     };
+    if (workspaceId) {
+        campaignBody.workspace = { id: workspaceId };
+        campaignBody.redirectTarget.inlineFlow.workspace = { id: workspaceId };
+    }
 
     const campaignResponseData = await voluumProxy(token, "POST", "/campaign", campaignBody);
     if (campaignResponseData?.id) {
+        const trackingDomain = campaignResponseData.preferredTrackingDomain || `link.${domain}`;
         return {
             id: campaignResponseData.id,
-            name: campaignResponseData.namePostfix || campaignResponseData.name || campaignResponseData.id,
-            trackingDomain: campaignResponseData.preferredTrackingDomain || trackingDomain,
+            name: campaignResponseData.name || campaignResponseData.namePostfix || campaignResponseData.id,
+            trackingDomain: trackingDomain,
             status: campaignResponseData.status || "ACTIVE",
             url: campaignResponseData.url || `https://${domain}`,
             landerId: landerId,
             offerId: offerId,
             landerTrackingUrl: campaignResponseData.url || `https://${domain}`,
-            clickUrl: `https://${trackingDomain}/click`,
+            clickUrl: trackingDomain ? `https://${trackingDomain}/click` : `https://link.${domain}/click`,
         };
     }
     // Surface Voluum field-level validation errors
