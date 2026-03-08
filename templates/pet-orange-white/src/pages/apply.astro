@@ -120,9 +120,8 @@ var _lg_form_init_ = {
   }
 };
 
-// Fetch aid from worker then patch + load script — hides affiliate ID from HTML source
+// Fetch aid via same-origin proxy — hides Worker URL and affiliate ID from DevTools
 (function() {
-  var apiBase = 'https://lp-factory-api.misty-feather-556e.workers.dev';
   var d = window.location.hostname;
   function loadLgScript() {
     var s = document.createElement('script');
@@ -132,7 +131,7 @@ var _lg_form_init_ = {
     s.src = 'https://apikeep.com/form/applicationInit.js';
     document.body.appendChild(s);
   }
-  fetch(apiBase + '/api/cfg?d=' + encodeURIComponent(d), { cache: 'force-cache' })
+  fetch('/api/cfg?d=' + encodeURIComponent(d), { cache: 'force-cache' })
     .then(function(r) { return r.ok ? r.json() : null; })
     .then(function(cfg) {
       if (cfg && cfg.a) _lg_form_init_.aid = cfg.a;
