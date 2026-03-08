@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.3] - 2026-03-08
+### Added
+- **Manual thumbnail upload (🖼 button)**: Template cards now have a 🖼 button to upload a screenshot image directly from local disk → stored in R2. Faster and more reliable than auto-generate via Puppeteer.
+- **`POST /api/templates/:id/upload-thumb`**: Worker endpoint that accepts `multipart/form-data` image upload and stores it in R2, then updates `thumbnail_url` in D1.
+- **`api.postForm()`**: Added `postForm` helper to `api.js` for multipart/form-data requests.
+
 ## [2.7.2] - 2026-03-08
 ### Fixed
 - **Hover popup position**: Now shows to the right of the hovered card, clamped to viewport edge (was appearing behind sidebar at x=8)

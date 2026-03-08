@@ -116,6 +116,7 @@ async function request(path, opts = {}) {
 export const api = {
     get: (path) => request(path),
     post: (path, data) => request(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }),
+    postForm: (path, formData) => request(path, { method: "POST", body: formData }),
     put: (path, data) => request(path, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }),
     del: (path) => request(path, { method: "DELETE" }),
     patch: (path, data) => request(path, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }),

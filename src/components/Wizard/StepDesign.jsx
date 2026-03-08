@@ -16,6 +16,7 @@ export function StepDesign({ c, u, notify }) {
     const [loadingTemplates, setLoadingTemplates] = useState(true);
     const [deleting, setDeleting] = useState(null);
     const [generatingThumb, setGeneratingThumb] = useState(null);
+    const [uploadingThumb, setUploadingThumb] = useState(null);
     const [hoveredTemplate, setHoveredTemplate] = useState(null);
     const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
 
@@ -206,6 +207,43 @@ export function StepDesign({ c, u, notify }) {
                                             >
                                                 {generatingThumb === t.dbId ? "⏳" : "📸"}
                                             </button>
+                                            {/* 🖼 Upload thumbnail */}
+                                            <label
+                                                title="Upload preview image"
+                                                style={{
+                                                    width: 24, height: 24, borderRadius: 6,
+                                                    background: uploadingThumb === t.dbId ? T.input : "#10b98120",
+                                                    border: "1px solid #10b98140",
+                                                    color: "#10b981", fontSize: 12,
+                                                    cursor: uploadingThumb === t.dbId ? "wait" : "pointer",
+                                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                                }}
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                {uploadingThumb === t.dbId ? "⏳" : "🖼"}
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    style={{ display: "none" }}
+                                                    onChange={async (e) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (!file) return;
+                                                        e.target.value = '';
+                                                        setUploadingThumb(t.dbId);
+                                                        try {
+                                                            const fd = new FormData();
+                                                            fd.append('image', file);
+                                                            await api.postForm(`/templates/${t.dbId}/upload-thumb`, fd);
+                                                            await forceReloadTemplates();
+                                                            notify?.('Preview uploaded!', 'success');
+                                                        } catch (err) {
+                                                            notify?.(`Upload failed: ${err.message}`, 'error');
+                                                        } finally {
+                                                            setUploadingThumb(null);
+                                                        }
+                                                    }}
+                                                />
+                                            </label>
                                             {/* 🗑 Delete */}
                                             <button
                                                 title="Delete this custom template"
@@ -286,7 +324,7 @@ export function StepDesign({ c, u, notify }) {
                                         <span style={{ fontSize: 36 }}>📷</span>
                                         <span style={{ fontSize: 12, fontWeight: 600, color: T.text }}>No preview yet</span>
                                         <span style={{ fontSize: 10, color: T.muted, lineHeight: 1.5 }}>
-                                            Click the <strong style={{ color: T.text }}>📸</strong> button on this template card to generate a screenshot preview.
+                                            Click <strong style={{ color: T.text }}>�</strong> on the card to upload a screenshot, or <strong style={{ color: T.text }}>📸</strong> to auto-generate one.
                                         </span>
                                     </div>
                                 )}
