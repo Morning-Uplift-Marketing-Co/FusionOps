@@ -25,7 +25,7 @@
   "formSubmitLabel": "form_submit",
   "voluumId": "db197437-82db-4e96-a1ab-48fc3b3917b1",
   "voluumDomain": "link.joracreditz.com",
-  "voluumClickUrl": "https://link.joracreditz.com/click",
+  "voluumClickUrl": "https://link.joracreditz.com/db197437-82db-4e96-a1ab-48fc3b3917b1",
   "voluumCfCname": "d251vxmh7r5adz.cloudfront.net",
   "voluumAcmName": "_573298e9daa376ee31b2e783116864c5.link.joracreditz.com.",
   "voluumAcmValue": "_f8f52514d4e0915257d8754ccfda08d0.jkddzztszm.acm-validations.aws.",
@@ -36,5 +36,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-08T08:27:00.000Z"
+  "deployedAt": "2026-03-09T03:15:00.000Z"
 }

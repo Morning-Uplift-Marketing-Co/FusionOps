@@ -3,6 +3,7 @@ import { generateAstroProject } from "./astro-generator.jsx";
 import { getTemplateGenerator, resolveTemplateId as resolveId, clearCustomTemplatesCache, fetchCustomTemplates, getCustomTemplatesCache, registry } from "./template-registry.js";
 import { detectTemplateFormat } from "./template-standard.js";
 import { generatePhone } from "./phone-gen.js";
+import { generateBusinessAddress } from "./contact-gen.js";
 import { ADAPTER_RUNTIME_VERSION } from "../adapters/runtime-version.ts";
 import { TemplateRuntimeError } from "../adapters/template-runtime-error.ts";
 import { emitTemplateRuntimeEvent } from "../adapters/template-runtime-events.ts";
@@ -199,9 +200,9 @@ function astroToHtmlPreview(files, site, options = {}) {
     aprMin: site.aprMin || 5.99,
     aprMax: site.aprMax || 35.99,
     loanLabel: site.loanLabel || site.loanType || 'Personal Finance',
-    address: site.address || '',
+    address: site.address || generateBusinessAddress(site.domain || '', site.brand || ''),
     network: site.network || 'LeadsGate',
-    redirectUrl: site.redirectUrl || '#',
+    redirectUrl: site.voluumClickUrl || site.redirectUrl || '#',
     primaryColor: colorObj.p ? `hsl(${colorObj.p[0]}, ${colorObj.p[1]}%, ${colorObj.p[2]}%)` : '#3b82f6',
     accentColor: colorObj.a ? `hsl(${colorObj.a[0]}, ${colorObj.a[1]}%, ${colorObj.a[2]}%)` : '#f97316',
     bgColor: colorObj.bg || '#ffffff',
@@ -214,6 +215,71 @@ function astroToHtmlPreview(files, site, options = {}) {
     canonicalUrl: `https://${normalizedSite.domain}`,
     canonical: `https://${normalizedSite.domain}`,
   };
+
+  // ── Build frontmatter var map from ALL .astro files in the template ──────────
+  // Parses:  const varName = import.meta.env.PUBLIC_XXX || 'default'
+  // Maps each varName → the wizard's live value from normalizedSite (or the default
+  // fallback when wizard has no value), so {varName} expressions in the HTML body
+  // are correctly substituted rather than wiped by the generic expression stripper.
+  const PUBLIC_VAR_KEY_MAP = {
+    PUBLIC_BRAND:          'brand',
+    PUBLIC_DOMAIN:         'domain',
+    PUBLIC_H1:             'h1',
+    PUBLIC_SUB:            'sub',
+    PUBLIC_CTA:            'cta',
+    PUBLIC_BADGE:          'badge',
+    PUBLIC_PHONE:          'phone',
+    PUBLIC_EMAIL:          'email',
+    PUBLIC_ADDRESS:        'address',
+    PUBLIC_AID:            'aid',
+    PUBLIC_AMOUNTMIN:      'amountMin',
+    PUBLIC_AMOUNTMAX:      'amountMax',
+    PUBLIC_APRMIN:         'aprMin',
+    PUBLIC_APRMAX:         'aprMax',
+    PUBLIC_PRIMARYCOLOR:   'primaryColor',
+    PUBLIC_ACCENTCOLOR:    'accentColor',
+    PUBLIC_VOLUUMDOMAIN:   'voluumDomain',
+    PUBLIC_VOLUUM_CLICK_URL: 'redirectUrl',
+    PUBLIC_CONVERSIONID:   'conversionId',
+    PUBLIC_FORMSTARTLABEL: 'formStartLabel',
+    PUBLIC_FORMSUBMITLABEL:'formSubmitLabel',
+    PUBLIC_COLORID:        'colorId',
+    PUBLIC_FONTID:         'fontId',
+    PUBLIC_RADIUS:         'radius',
+  };
+
+  // Collect all frontmatter blocks from all .astro files
+  const frontmatterVarMap = {};
+  for (const [fpath, fcontent] of Object.entries(files)) {
+    if (!fpath.endsWith('.astro')) continue;
+    const fmMatch = String(fcontent).match(/^---\n?([\s\S]*?)\n?---/m);
+    if (!fmMatch) continue;
+    const fmBlock = fmMatch[1];
+    // Match: const varName = import.meta.env.PUBLIC_XXX || 'default'
+    const declRe = /(?:const|let|var)\s+(\w+)\s*=\s*import\.meta\.env\.(PUBLIC_[A-Z0-9_]+)\s*(?:\|\|\s*(?:'([^']*)'|"([^"]*)"|\`([^`]*)\`|([^\n;,]+)))?/g;
+    let dm;
+    while ((dm = declRe.exec(fmBlock)) !== null) {
+      const localVar  = dm[1];
+      const envKey    = dm[2];
+      const defVal    = dm[3] ?? dm[4] ?? dm[5] ?? dm[6] ?? '';
+      const siteKey   = PUBLIC_VAR_KEY_MAP[envKey];
+      const liveValue = siteKey ? String(normalizedSite[siteKey] ?? defVal) : defVal;
+      frontmatterVarMap[localVar] = liveValue;
+    }
+    // Also handle: const ctaHref = voluumClickUrl || '#apply'  (derived var, no import.meta.env)
+    const derivedRe = /(?:const|let|var)\s+(ctaHref)\s*=\s*(\w+)\s*\|\|\s*(?:'([^']*)'|"([^"]*)")/g;
+    let dv;
+    while ((dv = derivedRe.exec(fmBlock)) !== null) {
+      const derivedVar  = dv[1];
+      const sourceVar   = dv[2];
+      const fallback    = dv[3] ?? dv[4] ?? '#apply';
+      frontmatterVarMap[derivedVar] = frontmatterVarMap[sourceVar] || normalizedSite.redirectUrl || fallback;
+    }
+  }
+
+  // Also inject amountMinRaw / amountMaxRaw (computed in frontmatter, not from env)
+  frontmatterVarMap['amountMinRaw'] = normalizedSite.amountMinRaw;
+  frontmatterVarMap['amountMaxRaw'] = normalizedSite.amountMaxRaw;
 
   // Basic Astro to HTML conversion for preview
   let html = indexContent;
@@ -556,6 +622,21 @@ function astroToHtmlPreview(files, site, options = {}) {
   html = safeHtml;
   // ── end map evaluator ───────────────────────────────────────────────────────
 
+  // ── Substitute frontmatter vars: {varName} → live wizard value ───────────────
+  // Must run BEFORE the generic stripper so {h1}, {brand}, {cta}, {ctaHref}, etc.
+  // declared via `const varName = import.meta.env.PUBLIC_XXX || '...'` get filled
+  // with real data instead of being wiped as unknown expressions.
+  if (Object.keys(frontmatterVarMap).length > 0) {
+    // Sort by length descending so longer names match first (e.g. amountMinRaw > amountMin)
+    const sortedVars = Object.keys(frontmatterVarMap).sort((a, b) => b.length - a.length);
+    for (const varName of sortedVars) {
+      const value = String(frontmatterVarMap[varName] ?? '');
+      // Replace {varName} but NOT {varName.something} (those are handled by dot-prop stripper)
+      const re = new RegExp('\\{\\s*' + varName + '\\s*\\}(?!\\.)', 'g');
+      html = html.replace(re, value);
+    }
+  }
+
   // Remove simple interpolations like {t.name} or {f.a} (leftovers after map eval)
   html = html.replace(/\{\s*[a-zA-Z_$][\w$]*\.[\w$]+\s*\}/g, '');
   // Remove conditional expression blocks that cannot be rendered in plain HTML.
@@ -614,12 +695,60 @@ function astroToHtmlPreview(files, site, options = {}) {
   const tailwindFallbackCss = `<style>\n.shadow-cta{box-shadow:0 4px 14px 0 hsl(40 90% 55% / 0.4)}\n.shadow-card{box-shadow:0 10px 15px -3px hsl(350 75% 38% / 0.08),0 4px 6px -4px hsl(350 75% 38% / 0.06)}\n</style>`;
   const tailwindCdn = needsTailwind && !hasTailwindCdn ? `${tailwindConfigScript}\n${tailwindCdnScript}\n${tailwindFallbackCss}` : '';
 
+  // ── Design token CSS vars override ─────────────────────────────────────────
+  // Injected as highest-specificity :root override so colorId/radius changes
+  // from the wizard are reflected in the preview for templates that use
+  // CSS custom properties like --primary, --accent, --background, --radius.
+  // Values are in "H S% L%" space-separated format (matches shadcn/Tailwind convention).
+  const hslVals = (arr) => arr ? `${arr[0]} ${arr[1]}% ${arr[2]}%` : null;
+  const RADIUS_MAP_PREVIEW = { sharp: '0rem', subtle: '0.375rem', rounded: '0.75rem', pill: '1.5rem' };
+  const radiusVal = RADIUS_MAP_PREVIEW[site.radius] || RADIUS_MAP_PREVIEW[site.radiusId] || '0.75rem';
+  const FONT_IMPORTS_PREVIEW = {
+    'dm-sans':       'DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700',
+    'plus-jakarta':  'Plus+Jakarta+Sans:wght@400;600;700',
+    'outfit':        'Outfit:wght@400;500;600;700',
+    'manrope':       'Manrope:wght@400;500;600;700',
+    'inter':         'Inter:wght@400;500;600;700',
+    'space-grotesk': 'Space+Grotesk:wght@400;500;600;700',
+    'sora':          'Sora:wght@400;600;700',
+    'figtree':       'Figtree:wght@400;500;600;700',
+  };
+  const FONT_FAMILY_PREVIEW = {
+    'dm-sans':       '"DM Sans", system-ui, sans-serif',
+    'plus-jakarta':  '"Plus Jakarta Sans", system-ui, sans-serif',
+    'outfit':        '"Outfit", system-ui, sans-serif',
+    'manrope':       '"Manrope", system-ui, sans-serif',
+    'inter':         '"Inter", system-ui, sans-serif',
+    'space-grotesk': '"Space Grotesk", system-ui, sans-serif',
+    'sora':          '"Sora", system-ui, sans-serif',
+    'figtree':       '"Figtree", system-ui, sans-serif',
+  };
+  const fontId = site.fontId || 'dm-sans';
+  const fontImport = FONT_IMPORTS_PREVIEW[fontId] || FONT_IMPORTS_PREVIEW['dm-sans'];
+  const fontFamily = FONT_FAMILY_PREVIEW[fontId] || FONT_FAMILY_PREVIEW['dm-sans'];
+  const fontLinkTag = `<link href="https://fonts.googleapis.com/css2?family=${fontImport}&display=swap" rel="stylesheet">`;
+  const colorOverrideCss = [
+    colorObj.p  ? `--primary:${hslVals(colorObj.p)};` : '',
+    colorObj.s  ? `--secondary:${hslVals(colorObj.s)};` : '',
+    colorObj.a  ? `--accent:${hslVals(colorObj.a)};` : '',
+    colorObj.bg ? `--background:${hslVals(colorObj.bg)};` : '',
+    colorObj.fg ? `--foreground:${hslVals(colorObj.fg)};` : '',
+    `--radius:${radiusVal};`,
+    `--ring:${colorObj.p ? hslVals(colorObj.p) : ''};`,
+  ].filter(Boolean).join('');
+  const designTokenOverride = `<style>
+/* LP Factory: Design token override for preview */
+:root{${colorOverrideCss}}
+body{font-family:${fontFamily}!important;}
+</style>
+${fontLinkTag}`;
+
   // Merge component styles collected during resolveComponents
   const componentStylesBlock = componentStyles.length > 0
     ? `<style>\n/* Merged from component files */\n${componentStyles.join('\n')}\n</style>`
     : '';
 
-  const headInjections = fallbackVars + '\n' + tailwindCdn + (componentStylesBlock ? '\n' + componentStylesBlock : '');
+  const headInjections = fallbackVars + '\n' + designTokenOverride + '\n' + tailwindCdn + (componentStylesBlock ? '\n' + componentStylesBlock : '');
 
   if (html.includes('</head>')) {
     html = html.replace('</head>', headInjections + '\n</head>');
