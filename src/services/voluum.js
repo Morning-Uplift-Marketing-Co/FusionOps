@@ -222,6 +222,8 @@ export async function createCampaign(token, campaignData) {
         throw new Error(errDetail);
     }
     const landerId = landerData.id;
+    // Use workspace from created lander to ensure all entities share same workspace
+    const landerWorkspaceId = landerData.workspace?.id || workspaceId;
 
     // Step 2: Create offer
     const offerBody = {
@@ -231,8 +233,8 @@ export async function createCampaign(token, campaignData) {
         payout: { type: "AUTO", geoPayouts: [] },
         conversionTrackingMethod: "S2S_POSTBACK_URL",
     };
-    if (workspaceId) {
-        offerBody.workspace = { id: workspaceId };
+    if (landerWorkspaceId) {
+        offerBody.workspace = { id: landerWorkspaceId };
     }
     const offerData = await voluumProxy(token, "POST", "/offer", offerBody);
     if (!offerData?.id) {
@@ -284,9 +286,9 @@ export async function createCampaign(token, campaignData) {
             },
         },
     };
-    if (workspaceId) {
-        campaignBody.workspace = { id: workspaceId };
-        campaignBody.redirectTarget.inlineFlow.workspace = { id: workspaceId };
+    if (landerWorkspaceId) {
+        campaignBody.workspace = { id: landerWorkspaceId };
+        campaignBody.redirectTarget.inlineFlow.workspace = { id: landerWorkspaceId };
     }
 
     const campaignResponseData = await voluumProxy(token, "POST", "/campaign", campaignBody);
