@@ -23,6 +23,15 @@ const pageHtml = `<!DOCTYPE html>
 <script data-cfasync="false">
 window.dataLayer = window.dataLayer || [];
 
+function fpPixel(eventName, extra) {
+  try {
+    var endpoint = 'https://t.' + window.location.hostname + '/e';
+    var payload = Object.assign({ e: eventName, d: window.location.hostname, ts: Math.floor(Date.now()/1000) }, extra || {});
+    navigator.sendBeacon(endpoint, JSON.stringify(payload));
+  } catch(_) {}
+}
+
+
 var SafeStorage = {
   _mem: {},
   set: function(k, v) {
@@ -61,31 +70,21 @@ var _lg_form_init_ = {
   click_id: getVoluumClickId(),
 
   onFormLoad: function() {
-    console.log('LeadsGate form loaded');
-    window.dataLayer.push({
-      'event': 'leadsgate_form_start',
-      'clickId': getVoluumClickId(),
-      'gclid': SafeStorage.get('google_gclid'),
-      'timestamp': new Date().toISOString()
-    });
+    var cid = getVoluumClickId();
+    fpPixel('lg_form_load', { click_id: cid });
+    window.dataLayer.push({ 'event': 'leadsgate_form_start', 'clickId': cid, 'timestamp': new Date().toISOString() });
   },
 
   onStepChange: function(step) {
-    console.log('Form step:', step);
-    window.dataLayer.push({
-      'event': 'leadsgate_form_progress',
-      'step': step,
-      'clickId': getVoluumClickId()
-    });
+    var cid = getVoluumClickId();
+    fpPixel('lg_step', { step: step, click_id: cid });
+    window.dataLayer.push({ 'event': 'leadsgate_form_progress', 'step': step, 'clickId': cid });
   },
 
   onSubmit: function() {
-    console.log('Form submitted');
-    window.dataLayer.push({
-      'event': 'leadsgate_form_submit',
-      'clickId': getVoluumClickId(),
-      'timestamp': new Date().toISOString()
-    });
+    var cid = getVoluumClickId();
+    fpPixel('lg_submit', { click_id: cid });
+    window.dataLayer.push({ 'event': 'leadsgate_form_submit', 'clickId': cid, 'timestamp': new Date().toISOString() });
   },
 
   onSuccess: function(data) {
@@ -156,9 +155,17 @@ var _lg_form_init_ = {
       });
     }
 
+    fpPixel('lg_success', { click_id: voluumCid, lead_id: leadId, status: status, payout: finalPayout, type: type });
     console.log('Tracking complete for Lead ID:', leadId);
   }
 };
+
+// Fire pv on apply page load
+(function() {
+  var p = new URLSearchParams(window.location.search);
+  var cid = p.get('clickid') || p.get('vlcid') || p.get('click_id') || p.get('cid') || p.get('cpid') || '';
+  fpPixel('pv', cid ? { click_id: cid } : {});
+})();
 
 var script = document.createElement('script');
 script.setAttribute('data-cfasync', 'false');
