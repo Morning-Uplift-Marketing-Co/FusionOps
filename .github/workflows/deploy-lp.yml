@@ -150,17 +150,6 @@ jobs:
           echo "CF Account: ${CLOUDFLARE_ACCOUNT_ID:0:8}..."
           echo "Token set: $([ -n "$CLOUDFLARE_API_TOKEN" ] && echo YES || echo NO)"
           PROJECT="${{ steps.template.outputs.cf_pages_project }}"
-          CONFIG_FILE="../../${{ steps.config.outputs.file }}"
-          DOMAIN=$(node -e "const c=require(process.argv[1]);const d=String(c.domain||'').trim().toLowerCase().replace(/^https?:\/\//,'').replace(/^\/\//,'').replace(/[/?#].*$/,'').replace(/\.+$/,'').replace(/^www\./,'');console.log(d)" "$CONFIG_FILE")
-          DOMAIN_ARGS=()
-
-          if [ -n "$DOMAIN" ] && echo "$DOMAIN" | grep -Eq '^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$'; then
-            DOMAIN_ARGS+=("--domain=$DOMAIN")
-            DOMAIN_ARGS+=("--domain=www.$DOMAIN")
-            echo "Wrangler will bind custom domains during deploy: $DOMAIN, www.$DOMAIN"
-          else
-            echo "Wrangler custom-domain bind skipped: missing or invalid domain '$DOMAIN'"
-          fi
 
           # Create project if it doesn't exist yet (ignore error if already exists)
           npx wrangler pages project create "$PROJECT" --production-branch=main 2>&1 || true
@@ -169,8 +158,7 @@ jobs:
           npx wrangler pages deploy dist/ \
             --project-name="$PROJECT" \
             --branch=main \
-            --commit-dirty=true \
-            "${DOMAIN_ARGS[@]}" 2>&1 | tee /tmp/wrangler_out.txt
+            --commit-dirty=true 2>&1 | tee /tmp/wrangler_out.txt
           cat /tmp/wrangler_out.txt
           URL=$(grep -Eo 'https://[A-Za-z0-9._-]+\.pages\.dev' /tmp/wrangler_out.txt | head -n1 || true)
           echo "url=$URL" >> "$GITHUB_OUTPUT"
