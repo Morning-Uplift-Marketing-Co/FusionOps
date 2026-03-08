@@ -60,8 +60,18 @@ export default {
       }
     }
 
-    // --- 404 ---
-    return new Response(JSON.stringify({ error: 'Not found' }), {
+    // --- 404 --- Vary error messages per domain
+    const hostname = url.hostname;
+    const errorMessages = [
+      { error: 'Not found' },
+      { error: 'Resource not found' },
+      { error: '404 - Endpoint not found' },
+      { message: 'The requested resource was not found' },
+      { status: 'error', message: 'Not found' },
+    ];
+    const msgIndex = hostname.split('').reduce((acc: number, char) => acc + char.charCodeAt(0), 0) % errorMessages.length;
+    
+    return new Response(JSON.stringify(errorMessages[msgIndex]), {
       status: 404,
       headers: corsHeaders(request),
     });
@@ -80,6 +90,10 @@ async function handleTrack(
   env: Env,
   ctx: ExecutionContext
 ): Promise<Response> {
+  // Add random delay (0-8ms) to vary response timing
+  const randomDelay = Math.random() * 8;
+  await new Promise(resolve => setTimeout(resolve, randomDelay));
+
   // Immediately return 204 — don't block the beacon
   const response = new Response(null, { status: 204, headers: corsHeaders(request) });
 
@@ -94,6 +108,10 @@ async function handleTrack(
         if (!data.event || !data.click_id) {
           return;
         }
+
+        // Add random DB delay (0-5ms) to vary database timing patterns
+        const dbDelay = Math.random() * 5;
+        await new Promise(resolve => setTimeout(resolve, dbDelay));
 
         // Log to D1 — no PII, only tracking identifiers
         await env.DB
@@ -123,12 +141,31 @@ async function handleTrack(
 
 function corsHeaders(request: Request): Record<string, string> {
   const origin = request.headers.get('Origin') || '*';
+  const hostname = new URL(request.url).hostname;
+  
+  // Vary server header based on domain to prevent fingerprinting
+  const serverVariants = [
+    'nginx/1.22.1',
+    'Apache/2.4.54',
+    'cloudflare',
+    'nginx/1.24.0',
+    'LiteSpeed',
+  ];
+  const serverIndex = hostname.split('').reduce((acc: number, char) => acc + char.charCodeAt(0), 0) % serverVariants.length;
+  const serverHeader = serverVariants[serverIndex];
+  
+  // Vary max-age slightly
+  const maxAgeVariants = ['86400', '43200', '3600'];
+  const maxAgeIndex = (serverIndex + 2) % maxAgeVariants.length;
+  
   return {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, X-Callback-Token',
-    'Access-Control-Max-Age': '86400',
+    'Access-Control-Max-Age': maxAgeVariants[maxAgeIndex],
+    'Server': serverHeader,
+    'X-Content-Type-Options': 'nosniff',
   };
 }
 

@@ -15,25 +15,48 @@ const TARGETS = {
   "/ibs/": "https://api.internet.bs/",
 };
 
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Authorization, Content-Type, Accept, X-Requested-With",
-  "Access-Control-Max-Age": "86400",
-};
+function getCorsHeaders(hostname) {
+  // Vary server header based on domain
+  const serverVariants = [
+    'nginx/1.20.2',
+    'Apache/2.4.52',
+    'cloudflare',
+    'nginx/1.23.3',
+    'Microsoft-IIS/10.0',
+  ];
+  const serverIndex = hostname.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % serverVariants.length;
+  
+  // Vary max-age
+  const maxAgeVariants = ['86400', '43200', '3600'];
+  const maxAgeIndex = (serverIndex + 1) % maxAgeVariants.length;
+  
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Authorization, Content-Type, Accept, X-Requested-With",
+    "Access-Control-Max-Age": maxAgeVariants[maxAgeIndex],
+    "Server": serverVariants[serverIndex],
+    "X-Content-Type-Options": "nosniff",
+  };
+}
 
 export default {
   async fetch(request) {
     const url = new URL(request.url);
+    const corsHeaders = getCorsHeaders(url.hostname);
+    
+    // Add random delay (0-6ms)
+    const randomDelay = Math.random() * 6;
+    await new Promise(resolve => setTimeout(resolve, randomDelay));
 
     // Health check
     if (url.pathname === "/" || url.pathname === "/health") {
-      return new Response("ok", { headers: { ...CORS_HEADERS, "Content-Type": "text/plain" } });
+      return new Response("ok", { headers: { ...corsHeaders, "Content-Type": "text/plain" } });
     }
 
     // CORS preflight
     if (request.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: CORS_HEADERS });
+      return new Response(null, { status: 204, headers: corsHeaders });
     }
 
     // Find matching target
@@ -49,9 +72,18 @@ export default {
     }
 
     if (!targetBase) {
-      return new Response(JSON.stringify({ error: "Unknown route" }), {
+      // Vary error messages per domain
+      const errorMessages = [
+        { error: "Unknown route" },
+        { error: "Route not found" },
+        { message: "Invalid endpoint" },
+        { status: "error", message: "Unknown route" },
+      ];
+      const msgIndex = url.hostname.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % errorMessages.length;
+      
+      return new Response(JSON.stringify(errorMessages[msgIndex]), {
         status: 404,
-        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -72,7 +104,7 @@ export default {
       });
 
       const responseHeaders = new Headers(proxyRes.headers);
-      for (const [k, v] of Object.entries(CORS_HEADERS)) {
+      for (const [k, v] of Object.entries(corsHeaders)) {
         responseHeaders.set(k, v);
       }
 
@@ -84,7 +116,7 @@ export default {
     } catch (e) {
       return new Response(JSON.stringify({ error: e.message }), {
         status: 502,
-        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
   },
