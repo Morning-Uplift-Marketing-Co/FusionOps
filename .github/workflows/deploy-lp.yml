@@ -143,8 +143,8 @@ jobs:
           CF_TOKEN_FROM_SECRET: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CF_ACCOUNT_FROM_SECRET: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          export CLOUDFLARE_API_TOKEN="${CF_TOKEN_FROM_CONFIG:-$CF_TOKEN_FROM_SECRET}"
-          export CLOUDFLARE_ACCOUNT_ID="${CF_ACCOUNT_FROM_CONFIG:-$CF_ACCOUNT_FROM_SECRET}"
+          export CLOUDFLARE_API_TOKEN="${CF_TOKEN_FROM_SECRET:-$CF_TOKEN_FROM_CONFIG}"
+          export CLOUDFLARE_ACCOUNT_ID="${CF_ACCOUNT_FROM_SECRET:-$CF_ACCOUNT_FROM_CONFIG}"
 
           echo "CF Account: ${CLOUDFLARE_ACCOUNT_ID:0:8}..."
           echo "Token set: $([ -n "$CLOUDFLARE_API_TOKEN" ] && echo YES || echo NO)"
@@ -171,8 +171,8 @@ jobs:
           CF_ACCOUNT_FROM_SECRET: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
-          export CF_TOKEN="${CF_TOKEN_FROM_CONFIG:-$CF_TOKEN_FROM_SECRET}"
-          export CF_ACCOUNT="${CF_ACCOUNT_FROM_CONFIG:-$CF_ACCOUNT_FROM_SECRET}"
+          export CF_TOKEN="${CF_TOKEN_FROM_SECRET:-$CF_TOKEN_FROM_CONFIG}"
+          export CF_ACCOUNT="${CF_ACCOUNT_FROM_SECRET:-$CF_ACCOUNT_FROM_CONFIG}"
           CONFIG_FILE="${{ steps.config.outputs.file }}"
           DOMAIN=$(node -e "const c=require('./$CONFIG_FILE');const d=String(c.domain||'').trim().toLowerCase().replace(/^https?:\/\//,'').replace(/^\/\//,'').replace(/[/?#].*$/,'').replace(/\.+$/,'').replace(/^www\./,'');console.log(d)")
           PROJECT="${{ steps.template.outputs.cf_pages_project }}"
@@ -211,8 +211,8 @@ jobs:
           CF_ACCOUNT_FROM_SECRET: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
-          export CF_TOKEN="${CF_TOKEN_FROM_CONFIG:-$CF_TOKEN_FROM_SECRET}"
-          export CF_ACCOUNT="${CF_ACCOUNT_FROM_CONFIG:-$CF_ACCOUNT_FROM_SECRET}"
+          export CF_TOKEN="${CF_TOKEN_FROM_SECRET:-$CF_TOKEN_FROM_CONFIG}"
+          export CF_ACCOUNT="${CF_ACCOUNT_FROM_SECRET:-$CF_ACCOUNT_FROM_CONFIG}"
           CONFIG_FILE="${{ steps.config.outputs.file }}"
           DOMAIN=$(node -e "const c=require('./$CONFIG_FILE');const d=String(c.domain||'').trim().toLowerCase().replace(/^https?:\/\//,'').replace(/^\/\//,'').replace(/[/?#].*$/,'').replace(/\.+$/,'').replace(/^www\./,'');console.log(d)")
           DEPLOY_URL="${{ steps.deploy.outputs.url }}"

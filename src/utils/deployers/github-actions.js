@@ -14,6 +14,26 @@ function isMaskedSecret(v) {
   return typeof v === 'string' && /^\*+$/.test(v.trim());
 }
 
+function normalizeHost(v) {
+  const raw = String(v || '').trim().toLowerCase();
+  if (!raw) return '';
+  return raw
+    .replace(/^https?:\/\//, '')
+    .replace(/^\/\//, '')
+    .replace(/[/?#].*$/, '')
+    .replace(/\/+$/, '');
+}
+
+function normalizeUrl(v) {
+  const raw = String(v || '').trim();
+  if (!raw) return '';
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (/^[a-z0-9.-]+\//i.test(raw) || /^[a-z0-9.-]+$/i.test(raw)) {
+    return `https://${raw.replace(/^\/+/, '')}`;
+  }
+  return raw;
+}
+
 /**
  * Push or update a file in the repo via GitHub Contents API
  * Returns commit URL
@@ -126,21 +146,36 @@ export async function deploy(assets, site, settings) {
 
   // Voluum fields: Wizard saves voluumCampaignId/voluumTrackingDomain — map to deploy config keys
   // Preserve existing values if current deploy doesn't provide them
-  const voluumId          = site.voluumCampaignId    || site.voluumId          || existing.voluumId          || '';
-  const voluumDomain      = site.voluumTrackingDomain || site.voluumDomain      || existing.voluumDomain      || '';
-  const voluumClickUrl    = site.voluumClickUrl       || existing.voluumClickUrl    || '';
+  const voluumId          = site.voluumCampaignId      || site.voluumId            || existing.voluumId            || '';
+  const voluumDomainRaw   = site.voluumTrackingDomain  || site.voluumDomain        || existing.voluumDomain        || '';
+  const voluumDomain      = normalizeHost(voluumDomainRaw);
+  const voluumClickUrlRaw = site.voluumClickUrl        || existing.voluumClickUrl  || '';
+  const voluumClickUrl    = normalizeUrl(voluumClickUrlRaw);
   const voluumCfCname     = site.voluumCfCname        || existing.voluumCfCname     || '';
   const voluumAcmName     = site.voluumAcmName        || existing.voluumAcmName     || '';
   const voluumAcmValue    = site.voluumAcmValue       || existing.voluumAcmValue    || '';
   const voluumLanderScript= site.voluumLanderScript   || existing.voluumLanderScript|| '';
   const conversionId      = site.gtagId || site.conversionId || existing.conversionId || '';
+  const formStartLabel    = site.gtagFormStartLabel || site.formStartLabel || existing.gtagFormStartLabel || existing.formStartLabel || '';
+  const formSubmitLabel   = site.gtagFormSubmitLabel || site.formSubmitLabel || existing.gtagFormSubmitLabel || existing.formSubmitLabel || '';
+
+  const isVoluumMode = (site.trackingMode || '').toLowerCase() === 'voluum'
+    || Boolean(site.voluumCampaignId || site.voluumId || existing.voluumId);
+  if (isVoluumMode && (!voluumId || !voluumDomain)) {
+    return {
+      success: false,
+      error: 'Voluum mode requires both Campaign ID and Tracking Domain (vls.yourdomain.com).',
+    };
+  }
 
   // Build deploy config — written as JSON file, read by workflow
   const config = {
     templateId:      site.templateId    || 'installment-bear',
     cfPagesProject,
-    cfApiToken:      (settings.cfApiToken  || '').trim(),
-    cfAccountId:     (settings.cfAccountId || '').trim(),
+    // Security: do not persist CF credentials in deploy-config JSON.
+    // Workflow should read CLOUDFLARE_* from GitHub repository secrets.
+    cfApiToken:      '',
+    cfAccountId:     '',
     brand:           site.brand        || '',
     domain:          site.domain       || '',
     h1:              site.h1           || '',
@@ -157,6 +192,10 @@ export async function deploy(assets, site, settings) {
     primaryColor:    site.primaryColor || '',
     accentColor:     site.accentColor  || '',
     conversionId,
+    gtagFormStartLabel: formStartLabel,
+    gtagFormSubmitLabel: formSubmitLabel,
+    formStartLabel,
+    formSubmitLabel,
     voluumId,
     voluumDomain,
     voluumClickUrl,

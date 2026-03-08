@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.6] - 2026-03-08
+### Fixed
+- **Cloudflare credential precedence in CI**: `deploy-lp.yml` now prefers repository secrets over per-config credentials to avoid stale/wrong account-token mismatches during Pages custom-domain attach and DNS upsert.
+- **Deploy config hardening**: `github-actions` deployer no longer persists Cloudflare API token/account into `deploy-configs/*.json`.
+
 ## [2.7.5] - 2026-03-08
 ### Fixed
 - **Cloudflare Pages custom-domain attach**: Normalize deploy-config `domain` before API calls (strip scheme/path/trailing dot/leading `www`) to prevent `invalid TLD` failures.
