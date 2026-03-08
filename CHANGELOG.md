@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.26] - 2026-03-09
+### Fixed
+- **TrackingDashboard Voluum detection**: Update regex to detect new click URL format (/{campaignId}) and support link/vls domains
+- **Tracking verification**: Now correctly identifies both old (/click) and new (/{campaign-id}) Voluum URL formats
+
 ## [2.7.25] - 2026-03-09
 ### Fixed
 - **StepTracking.jsx code deduplication**: Use fetchCampaigns and fetchTrafficSources from voluum.js instead of duplicate code

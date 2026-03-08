@@ -80,8 +80,8 @@ function analyzeHtml(html) {
 
     // Layer 3: Voluum
     voluumScript: /dtpCallback|delegate-ch|voluum/i.test(html),
-    voluumDomain: (html.match(/trk\.([a-z0-9.-]+)\/click/) || [])[1] || null,
-    voluumClickUrl: /trk\.[^'"]+\/click/.test(html),
+    voluumDomain: (html.match(/(?:trk|link|vls)\.([a-z0-9.-]+)/) || [])[1] || null,
+    voluumClickUrl: /(?:trk|link|vls)\.[^'"]+\/[a-f0-9-]{36}/.test(html) || /(?:trk|link|vls)\.[^'"]+\/click/.test(html),
 
     // Layer 4: GCLID capture
     gclidCapture: /gclid|sessionStorage.*gclid/i.test(html),
