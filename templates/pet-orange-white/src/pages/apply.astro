@@ -64,9 +64,8 @@ function getVoluumClickId() {
 }
 
 // _lg_form_init_ must be var in global scope (LeadsGate requirement)
-// aid is intentionally empty here — patched in after async fetch below
 var _lg_form_init_ = {
-  aid: '',
+  aid: ${JSON.stringify(aid)},
   template: "t1",
   ref: window.location.hostname,
   click_id: getVoluumClickId(),
