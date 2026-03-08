@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.0] - 2026-03-08
+### Added
+- **Template Thumbnail Screenshots**: Cloudflare Browser Rendering API + R2 — headless browser screenshots stored in `lp-factory-thumbs` R2 bucket.
+- **`POST /api/templates/:id/generate-thumb`**: Worker endpoint that screenshots template HTML and stores PNG in R2, writes `thumbnail_url` back to D1.
+- **`GET /api/templates/:id/thumb`**: Serves stored thumbnail PNG directly from R2 with 24h cache.
+- **📸 button on template cards**: Custom templates now show a 📸 button to trigger screenshot generation on demand.
+- **Thumbnail display in template cards**: Cards show real screenshot preview instead of ⚡ icon once generated.
+- **Same-origin `/api/cfg` proxy** (`functions/api/cfg.js` in `pet-orange-white`): Cloudflare Pages Function proxies aid fetch through same domain — hides Worker URL and shared infrastructure from Google and competitors.
+
 ## [2.6.2] - 2026-03-08
 ### Security
 - **Hide affiliate `aid` from HTML source**: `apply.astro` (`pet-orange-white`) now fetches `aid` async from Worker `/api/cfg?d={domain}` instead of embedding it directly in HTML — prevents competitors from reading affiliate ID via DevTools.
