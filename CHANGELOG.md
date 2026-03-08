@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.10] - 2026-03-08
+### Fixed
+- **`pet-orange-white` apply form initialization**: Set LeadsGate `_lg_form_init_.aid` immediately from `PUBLIC_AID` so `/apply/` no longer boots the embed with an empty `affiliateId` and fails with `Form cannot be embedded`.
+
 ## [2.7.9] - 2026-03-08
 ### Fixed
 - **Pages custom-domain binding during deploy**: `deploy-lp.yml` now passes `--domain` for root and `www` to `wrangler pages deploy`, so Cloudflare Pages associates the custom domains during deployment instead of relying only on the later API attach step.
