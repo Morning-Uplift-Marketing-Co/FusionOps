@@ -542,7 +542,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
         };
         run();
         return () => { cancelled = true; };
-    }, [config.templateId, config.brand, config.domain, config.loanType, config.colorId, config.fontId, config.layout, config.radius, config.trustBadgeStyle, config.trustBadgeIconTone, config.h1, config.badge, config.cta, config.sub, config.amountMin, config.amountMax, config.redirectUrl, config.conversionId]);
+    }, [config.templateId, config.brand, config.domain, config.loanType, config.colorId, config.fontId, config.layout, config.radius, config.h1, config.badge, config.cta, config.sub, config.amountMin, config.amountMax, config.redirectUrl, config.conversionId]);
 
     // Two-column layout for steps 4(Design), 5(Copy), 7(Review)
     const showPreview = step === 4 || step === 5 || step === 7;
