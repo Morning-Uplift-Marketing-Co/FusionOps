@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.12] - 2026-03-08
+### Added
+- **Clear Log button in Realtime Events Dashboard**: Clears the current event list from local state without refetching, placed alongside Refresh and Pause/Resume controls.
+
 ## [2.7.11] - 2026-03-08
 ### Fixed
 - **Wrangler deploy compatibility**: Removed unsupported `--domain` arguments from `wrangler pages deploy` in `deploy-lp.yml` so the current CI Wrangler version can deploy successfully again.
