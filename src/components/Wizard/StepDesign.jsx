@@ -249,6 +249,9 @@ export function StepDesign({ c, u, notify }) {
                     const htmlKey = Object.keys(files).find(k => k === 'index.html' || k.endsWith('/index.html') || k.endsWith('index.astro'));
                     let html = htmlKey ? String(files[htmlKey] || '') : '';
                     html = html.replace(/^---[\s\S]*?---\n?/, '');
+                    // Inject CSS to collapse full-viewport hero sections so popup shows more content
+                    const overrideCss = `<style>*{min-height:0!important;height:auto!important;}section,div[class*="hero"],header{min-height:0!important;}html,body{height:auto!important;overflow:visible!important;}</style>`;
+                    html = html.replace(/<\/head>/, overrideCss + '</head>').replace(/^(?!.*<head)/, overrideCss);
                     const hasHtml = !!html.trim();
                     const thumbUrl = hoveredTemplate.thumbnailUrl
                         ? `https://lp-factory-api.misty-feather-556e.workers.dev${hoveredTemplate.thumbnailUrl}`
@@ -291,11 +294,11 @@ export function StepDesign({ c, u, notify }) {
                                         srcDoc={html}
                                         sandbox="allow-scripts"
                                         style={{
-                                            width: 390,
-                                            height: 2000,
+                                            width: 1200,
+                                            height: (popupH - 36) / 0.25,
                                             border: "none",
                                             transformOrigin: "0 0",
-                                            transform: `scale(${popupW / 390})`,
+                                            transform: `scale(${popupW / 1200})`,
                                             pointerEvents: "none",
                                         }}
                                     />
