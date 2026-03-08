@@ -245,22 +245,12 @@ export function StepDesign({ c, u, notify }) {
                 )}
                 {/* ── Hover Preview Popup ── */}
                 {hoveredTemplate && (() => {
-                    const files = hoveredTemplate.files || {};
-                    const htmlKey = Object.keys(files).find(k => k === 'index.html' || k.endsWith('/index.html') || k.endsWith('index.astro'));
-                    let html = htmlKey ? String(files[htmlKey] || '') : '';
-                    html = html.replace(/^---[\s\S]*?---\n?/, '');
-                    // Inject CSS to collapse full-viewport hero sections so popup shows more content
-                    const overrideCss = `<style>*{min-height:0!important;height:auto!important;}section,div[class*="hero"],header{min-height:0!important;}html,body{height:auto!important;overflow:visible!important;}</style>`;
-                    html = html.replace(/<\/head>/, overrideCss + '</head>').replace(/^(?!.*<head)/, overrideCss);
-                    const hasHtml = !!html.trim();
                     const thumbUrl = hoveredTemplate.thumbnailUrl
                         ? `https://lp-factory-api.misty-feather-556e.workers.dev${hoveredTemplate.thumbnailUrl}`
                         : null;
-                    // Clamp popup so it doesn't go off screen bottom
                     const popupH = 420;
                     const popupW = 300;
                     const top = Math.min(hoverPos.y, window.innerHeight - popupH - 12);
-                    // Show popup to the left of the card grid (avoid overlapping the preview panel on the right)
                     const left = Math.max(8, hoverPos.x - popupW - 330);
                     return (
                         <div style={{
@@ -285,27 +275,17 @@ export function StepDesign({ c, u, notify }) {
                                 )}
                             </div>
                             {/* Preview area */}
-                            <div style={{ width: "100%", height: popupH - 36, overflow: "hidden", position: "relative" }}>
+                            <div style={{ width: "100%", height: popupH - 36, overflow: "hidden", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
                                 {thumbUrl ? (
                                     <img src={thumbUrl} alt={hoveredTemplate.name}
                                         style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} />
-                                ) : hasHtml ? (
-                                    <iframe
-                                        srcDoc={html}
-                                        sandbox="allow-scripts"
-                                        style={{
-                                            width: 1200,
-                                            height: (popupH - 36) / 0.25,
-                                            border: "none",
-                                            transformOrigin: "0 0",
-                                            transform: `scale(${popupW / 1200})`,
-                                            pointerEvents: "none",
-                                        }}
-                                    />
                                 ) : (
-                                    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                                        <span style={{ fontSize: 32 }}>⚡</span>
-                                        <span style={{ fontSize: 10, color: T.muted, textAlign: "center", padding: "0 12px" }}>CI template — preview available after deploy</span>
+                                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, padding: "0 20px", textAlign: "center" }}>
+                                        <span style={{ fontSize: 36 }}>📷</span>
+                                        <span style={{ fontSize: 12, fontWeight: 600, color: T.text }}>No preview yet</span>
+                                        <span style={{ fontSize: 10, color: T.muted, lineHeight: 1.5 }}>
+                                            Click the <strong style={{ color: T.text }}>📸</strong> button on this template card to generate a screenshot preview.
+                                        </span>
                                     </div>
                                 )}
                             </div>
