@@ -73,7 +73,7 @@ export function clearVoluumCache() {
 
 function buildVoluumLanderScript(domain) {
   if (!domain) return "";
-  const host = `vls.${domain}`;
+  const host = `link.${domain}`;
   return `<meta http-equiv="delegate-ch" content="sec-ch-ua https://${host}; sec-ch-ua-mobile https://${host}; sec-ch-ua-arch https://${host}; sec-ch-ua-model https://${host}; sec-ch-ua-platform https://${host}; sec-ch-ua-platform-version https://${host}; sec-ch-ua-bitness https://${host}; sec-ch-ua-full-version-list https://${host}; sec-ch-ua-full-version https://${host}"><style>.dtpcnt{opacity: 0;}</style>
 <script>
     (function(e,d,k,n,u,v,g,w,C,f,p,x,D,c,q,r,h,t,y,G,z){function A(){for(var a=d.querySelectorAll(".dtpcnt"),b=0,l=a.length;b<l;b++)a[b][w]=a[b][w].replace(/(^|\\s+)dtpcnt($|\\s+)/g,"")}function E(a,b,l,F){var m=new Date;m.setTime(m.getTime()+(F||864E5));d.cookie=a+"="+b+"; "+l+"samesite=Strict; expires="+m.toGMTString()+"; path=/";k.setItem(a,b);k.setItem(a+"-expires",m.getTime())}function B(a){var b=d.cookie.match(new RegExp("(^| )"+a+"=([^;]+)"));return b?b.pop():k.getItem(a+"-expires")&&+k.getItem(a+"-expires")>(new Date).getTime()?k.getItem(a):null}z="https:"===e.location.protocol?"secure; ":"";e[f]||(e[f]=function(){(e[f].q=e[f].q||[]).push(arguments)},r=d[u],d[u]=function(){r&&r.apply(this,arguments);if(e[f]&&!e[f].hasOwnProperty("params")&&/loaded|interactive|complete/.test(d.readyState))for(;c=d[v][p++];)/\\/?click\\/?($|(\\/[0-9]+)?$)/.test(c.pathname)&&(c[g]="javascrip"+e.postMessage.toString().slice(4,5)+":"+f+'.l="'+c[g]+'",void 0')},setTimeout(function(){(t=RegExp("[?&]cpid(=([^&#]*)|&|#|$)").exec(e.location.href))&&t[2]&&(h=t[2],y=B("vl-"+h));var a=B("vl-cep"),b=location[g];if("savedCep"===D&&a&&(!h||"undefined"===typeof h)&&0>b.indexOf("cep=")){var l=-1<b.indexOf("?")?"&":"?";b+=l+a}c=d.createElement("script");q=d.scripts[0];c.defer=1;c.src=x+(-1===x.indexOf("?")?"?":"&")+"lpref="+n(d.referrer)+"&lpurl="+n(b)+"&lpt="+n(d.title)+"&vtm="+(new Date).getTime()+(y?"&uw=no":"");c[C]=function(){for(p=0;c=d[v][p++];)/dtpCallback\\.l/.test(c[g])&&(c[g]=decodeURIComponent(c[g]).match(/dtpCallback\\.l="([^"]+)/)[1]);A()};q.parentNode.insertBefore(c,q);h&&E("vl-"+h,"1",z)},0),setTimeout(A,7E3))})(window,document,localStorage,encodeURIComponent,"onreadystatechange","links","href","className","onerror","dtpCallback",0,"https://${host}/d/.js","savedCep");
@@ -85,15 +85,15 @@ function normalizeVoluumScriptHost(script = "", domain = "") {
   const value = String(script || "");
   if (!value) return value;
 
-  // Generic normalize: any https://trk.xxx -> https://vls.xxx
-  let normalized = value.replace(/https:\/\/trk\./gi, "https://vls.");
+  // Generic normalize: any https://trk.xxx or https://vls.xxx -> https://link.xxx
+  let normalized = value.replace(/https:\/\/trk\./gi, "https://link.").replace(/https:\/\/vls\./gi, "https://link.");
 
-  // If domain is known, enforce vls.{domain} for this lander
+  // If domain is known, enforce link.{domain} for this lander
   const cleanDomain = String(domain || "").trim();
   if (cleanDomain) {
     normalized = normalized
-      .replace(/https:\/\/vls\.[^/\s"']+/gi, `https://vls.${cleanDomain}`)
-      .replace(/https:\/\/trk\.[^/\s"']+/gi, `https://vls.${cleanDomain}`);
+      .replace(/https:\/\/link\.[^/\s"']+/gi, `https://link.${cleanDomain}`)
+      .replace(/https:\/\/trk\.[^/\s"']+/gi, `https://link.${cleanDomain}`);
   }
 
   return normalized;
@@ -101,8 +101,19 @@ function normalizeVoluumScriptHost(script = "", domain = "") {
 
 function normalizeTrackingDomain(rawTrackingDomain = "", domain = "") {
   const cleanDomain = String(domain || "").trim();
-  if (cleanDomain) return `vls.${cleanDomain}`;
-  return String(rawTrackingDomain || "").trim().replace(/^trk\./i, "vls.");
+  if (cleanDomain) return `link.${cleanDomain}`;
+  return String(rawTrackingDomain || "").trim().replace(/^(trk|vls)\./i, "link.");
+}
+
+function resolvePixelBaseUrl(url = "", domain = "") {
+  const rawUrl = String(url || "").trim();
+  if (rawUrl) {
+    const withScheme = /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl.replace(/^\/+/, "")}`;
+    return withScheme.replace(/\/+$/, "");
+  }
+
+  const cleanDomain = String(domain || "").trim().replace(/^https?:\/\//i, "").replace(/\/+$/, "");
+  return cleanDomain ? `https://${cleanDomain}` : "";
 }
 
 // ─── Component ───
@@ -113,7 +124,7 @@ export function StepTracking({ c, u }) {
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
-  const [newCamp, setNewCamp] = useState({ name: "", country: "US", costModel: "CPC", costValue: 0, trafficSourceId: "" });
+  const [newCamp, setNewCamp] = useState({ name: "", country: "US", costModel: "CPC", costValue: 0, trafficSourceId: "", redirectUrl: c.url || c.redirectUrl || "" });
   const [trafficSources, setTrafficSources] = useState([]);
   const fetchedRef = useRef(false);
 
@@ -125,9 +136,13 @@ export function StepTracking({ c, u }) {
   // Collapse Voluum script section if already configured (edit mode)
   const voluumAlreadyConfigured = !!(c.voluumLanderScript && c.voluumId);
   const [editVoluum, setEditVoluum] = useState(false);
+  const dnsAlreadyConfigured = !!(c.voluumCfCname && c.voluumAcmName && c.voluumAcmValue);
+  const [editDns, setEditDns] = useState(false);
 
   const mode = c.trackingMode || "minimal";
   const isVoluum = mode === "voluum";
+  const pixelBaseUrl = resolvePixelBaseUrl(c.url, c.domain);
+  const pixelEndpoint = pixelBaseUrl ? `${pixelBaseUrl}/e` : "";
 
   useEffect(() => {
     if (!isVoluum) return;
@@ -203,12 +218,6 @@ export function StepTracking({ c, u }) {
   // ─── Mode switch handler ───
   const handleModeSwitch = (newMode) => {
     u("trackingMode", newMode);
-    if (newMode === "minimal") {
-      u("voluumCampaignId", "");
-      u("voluumCampaignName", "");
-      u("voluumTrackingDomain", "");
-      u("voluumLanderScript", "");
-    }
   };
 
   // ─── Create campaign handler ───
@@ -219,14 +228,14 @@ export function StepTracking({ c, u }) {
       const { accessId, accessKey } = getCredentials();
       if (!accessId || !accessKey) throw new Error("Voluum credentials not found");
       const token = await fetchVoluumSession(accessId, accessKey);
-      const created = await createVoluumCampaign(token, newCamp);
+      const created = await createVoluumCampaign(token, { ...newCamp, redirectUrl: newCamp.redirectUrl || c.url || c.redirectUrl || "" });
       // Add to campaign list and auto-select
       setCampaigns(prev => [{ ...created, trafficSourceName: "" }, ...prev]);
       u("voluumCampaignId", created.id);
       u("voluumCampaignName", created.name);
       u("voluumTrackingDomain", normalizeTrackingDomain(created.trackingDomain || "", c.domain));
       setShowCreate(false);
-      setNewCamp({ name: "", country: "US", costModel: "CPC", costValue: 0, trafficSourceId: "" });
+      setNewCamp({ name: "", country: "US", costModel: "CPC", costValue: 0, trafficSourceId: "", redirectUrl: c.url || c.redirectUrl || "" });
       clearVoluumCache();
     } catch (e) {
       setCreateError(typeof e?.message === "string" ? e.message : typeof e === "string" ? e : JSON.stringify(e) || "Failed to create campaign");
@@ -386,102 +395,150 @@ export function StepTracking({ c, u }) {
                     <span className="text-sm">🌐</span>
                     <span className="text-[12px] font-semibold">Tracking Domain DNS</span>
                   </div>
-                  {c._trkDnsProvisioned && <Badge variant="success">✅ Provisioned</Badge>}
-                </div>
-                <p className="text-[10px] text-[hsl(var(--muted-foreground))] leading-relaxed">
-                  Paste the CNAME values from Voluum → Settings → Domains → Custom Domain Setup.
-                  This will auto-create the DNS records in Cloudflare.
-                </p>
-
-                {/* CloudFront CNAME */}
-                <Field label="CloudFront CNAME target" help={`trk.${c.domain} → this value`}>
-                  <Inp
-                    value={c.voluumCfCname || ""}
-                    onChange={v => u("voluumCfCname", v.trim())}
-                    placeholder="dyewkdxvpdi17.cloudfront.net"
-                  />
-                </Field>
-
-                {/* ACM Certificate CNAME */}
-                <Field label="Certificate CNAME name" help="Long _acb2ed... record name">
-                  <Inp
-                    value={c.voluumAcmName || ""}
-                    onChange={v => u("voluumAcmName", v.trim())}
-                    placeholder="_acb2ed6d0f898953d094985dbd802f40.trk.scratchpaypet.tech"
-                  />
-                </Field>
-                <Field label="Certificate CNAME value" help="Long _f37b35... ACM validation value">
-                  <Inp
-                    value={c.voluumAcmValue || ""}
-                    onChange={v => u("voluumAcmValue", v.trim())}
-                    placeholder="_f37b35a7a6817cbb0aa20a7d1a...acm-validations.aws"
-                  />
-                </Field>
-
-                {dnsResult && (
-                  <div className={`text-[10px] px-2.5 py-2 rounded-lg border ${
-                    dnsResult.success
-                      ? "bg-[hsl(var(--success))/8] border-[hsl(var(--success))/30] text-[hsl(var(--success))]"
-                      : "bg-[hsl(var(--destructive))/8] border-[hsl(var(--destructive))/30] text-[hsl(var(--destructive))]"
-                  }`}>
-                    {dnsResult.message}
+                  <div className="flex items-center gap-2">
+                    {(c._trkDnsProvisioned || dnsAlreadyConfigured) && <Badge variant="success">✅ Provisioned</Badge>}
+                    {dnsAlreadyConfigured && !editDns && (
+                      <button
+                        type="button"
+                        onClick={() => setEditDns(true)}
+                        className="px-2.5 py-1 text-[10px] rounded-lg border border-[hsl(var(--border))] bg-transparent text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] cursor-pointer"
+                      >
+                        Edit
+                      </button>
+                    )}
                   </div>
+                </div>
+                {dnsAlreadyConfigured && !editDns ? (
+                  <div className="space-y-2">
+                    <p className="text-[10px] text-[hsl(var(--muted-foreground))] leading-relaxed">
+                      DNS records are already saved. Fields are locked to prevent accidental overwrite with empty values.
+                    </p>
+                    <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">CloudFront CNAME</span>
+                        <span className="text-[10px] font-mono text-[hsl(var(--foreground))]">{c.voluumCfCname}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Certificate CNAME Name</span>
+                        <span className="text-[10px] font-mono text-[hsl(var(--muted-foreground))]">{c.voluumAcmName}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Certificate CNAME Value</span>
+                        <span className="text-[10px] font-mono text-[hsl(var(--muted-foreground))]">{c.voluumAcmValue}</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-[10px] text-[hsl(var(--muted-foreground))] leading-relaxed">
+                      Paste the CNAME values from Voluum → Settings → Domains → Custom Domain Setup.
+                      This will auto-create the DNS records in Cloudflare.
+                    </p>
+
+                    {/* CloudFront CNAME */}
+                    <Field label="CloudFront CNAME target" help={`trk.${c.domain} → this value`}>
+                      <Inp
+                        value={c.voluumCfCname || ""}
+                        onChange={v => u("voluumCfCname", v.trim())}
+                        placeholder="dyewkdxvpdi17.cloudfront.net"
+                      />
+                    </Field>
+
+                    {/* ACM Certificate CNAME */}
+                    <Field label="Certificate CNAME name" help="Long _acb2ed... record name">
+                      <Inp
+                        value={c.voluumAcmName || ""}
+                        onChange={v => u("voluumAcmName", v.trim())}
+                        placeholder="_acb2ed6d0f898953d094985dbd802f40.trk.scratchpaypet.tech"
+                      />
+                    </Field>
+                    <Field label="Certificate CNAME value" help="Long _f37b35... ACM validation value">
+                      <Inp
+                        value={c.voluumAcmValue || ""}
+                        onChange={v => u("voluumAcmValue", v.trim())}
+                        placeholder="_f37b35a7a6817cbb0aa20a7d1a...acm-validations.aws"
+                      />
+                    </Field>
+
+                    {dnsResult && (
+                      <div className={`text-[10px] px-2.5 py-2 rounded-lg border ${
+                        dnsResult.success
+                          ? "bg-[hsl(var(--success))/8] border-[hsl(var(--success))/30] text-[hsl(var(--success))]"
+                          : "bg-[hsl(var(--destructive))/8] border-[hsl(var(--destructive))/30] text-[hsl(var(--destructive))]"
+                      }`}>
+                        {dnsResult.message}
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      disabled={dnsProvisioning || !c.voluumCfCname}
+                      onClick={async () => {
+                        setDnsProvisioning(true);
+                        setDnsResult(null);
+                        try {
+                          const s = LS.get("settings") || {};
+                          // Resolve CF credentials from profile or global
+                          const cfProfiles = Array.isArray(s.cfProfiles) ? s.cfProfiles : [];
+                          const cfProfile = cfProfiles.find(p => p.id === c.cfProfileId);
+                          const cfAccountId = cfProfile?.accountId || s.cfAccountId;
+                          const cfApiToken = cfProfile?.apiToken || s.cfApiToken;
+                          if (!cfAccountId || !cfApiToken) throw new Error("Cloudflare credentials not found — configure in Settings");
+
+                          const zone = await getOrCreateZone(c.domain, cfAccountId, cfApiToken);
+                          if (!zone.success || !zone.zoneId) throw new Error(zone.error || "Failed to get zone");
+
+                          const results = [];
+                          const trkSub = (c.voluumTrackingDomain || `vls.${c.domain}`).split(".")[0];
+
+                          // 1. Tracking CNAME: trk.domain → CloudFront
+                          const r1 = await upsertDnsRecord({
+                            zoneId: zone.zoneId, cfAccountId, cfApiToken,
+                            domain: c.domain,
+                            type: "CNAME", name: `${trkSub}.${c.domain}`,
+                            content: c.voluumCfCname, proxied: false,
+                          });
+                          results.push(r1.success ? `✅ ${trkSub} CNAME → ${c.voluumCfCname.slice(0, 30)}...` : `❌ ${trkSub} CNAME: ${r1.error}`);
+
+                          // 2. ACM Certificate CNAME (if provided)
+                          if (c.voluumAcmName && c.voluumAcmValue) {
+                            const r2 = await upsertDnsRecord({
+                              zoneId: zone.zoneId, cfAccountId, cfApiToken,
+                              domain: c.domain,
+                              type: "CNAME", name: c.voluumAcmName,
+                              content: c.voluumAcmValue, proxied: false,
+                            });
+                            results.push(r2.success ? `✅ ACM cert CNAME created` : `❌ ACM CNAME: ${r2.error}`);
+                          }
+
+                          const allOk = results.every(r => r.startsWith("✅"));
+                          if (allOk) {
+                            u("_trkDnsProvisioned", true);
+                            setEditDns(false);
+                          }
+                          setDnsResult({ success: allOk, message: results.join("\n") });
+                        } catch (e) {
+                          setDnsResult({ success: false, message: e.message || "DNS provisioning failed" });
+                        } finally {
+                          setDnsProvisioning(false);
+                        }
+                      }}
+                      className="w-full px-3 py-2 text-[11px] rounded-lg bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] font-semibold cursor-pointer disabled:opacity-40 border-none"
+                    >
+                      {dnsProvisioning ? "⏳ Provisioning DNS..." : "🌐 Provision Tracking Domain DNS"}
+                    </button>
+
+                    {editDns && dnsAlreadyConfigured && (
+                      <button
+                        type="button"
+                        onClick={() => setEditDns(false)}
+                        className="w-full px-3 py-1.5 text-[10px] rounded-lg border border-[hsl(var(--border))] bg-transparent text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] cursor-pointer"
+                      >
+                        ← Cancel DNS Editing
+                      </button>
+                    )}
+                  </>
                 )}
-
-                <button
-                  type="button"
-                  disabled={dnsProvisioning || !c.voluumCfCname}
-                  onClick={async () => {
-                    setDnsProvisioning(true);
-                    setDnsResult(null);
-                    try {
-                      const s = LS.get("settings") || {};
-                      // Resolve CF credentials from profile or global
-                      const cfProfiles = Array.isArray(s.cfProfiles) ? s.cfProfiles : [];
-                      const cfProfile = cfProfiles.find(p => p.id === c.cfProfileId);
-                      const cfAccountId = cfProfile?.accountId || s.cfAccountId;
-                      const cfApiToken = cfProfile?.apiToken || s.cfApiToken;
-                      if (!cfAccountId || !cfApiToken) throw new Error("Cloudflare credentials not found — configure in Settings");
-
-                      const zone = await getOrCreateZone(c.domain, cfAccountId, cfApiToken);
-                      if (!zone.success || !zone.zoneId) throw new Error(zone.error || "Failed to get zone");
-
-                      const results = [];
-                      const trkSub = (c.voluumTrackingDomain || `vls.${c.domain}`).split(".")[0];
-
-                      // 1. Tracking CNAME: trk.domain → CloudFront
-                      const r1 = await upsertDnsRecord({
-                        zoneId: zone.zoneId, cfAccountId, cfApiToken,
-                        domain: c.domain,
-                        type: "CNAME", name: `${trkSub}.${c.domain}`,
-                        content: c.voluumCfCname, proxied: false,
-                      });
-                      results.push(r1.success ? `✅ ${trkSub} CNAME → ${c.voluumCfCname.slice(0, 30)}...` : `❌ ${trkSub} CNAME: ${r1.error}`);
-
-                      // 2. ACM Certificate CNAME (if provided)
-                      if (c.voluumAcmName && c.voluumAcmValue) {
-                        const r2 = await upsertDnsRecord({
-                          zoneId: zone.zoneId, cfAccountId, cfApiToken,
-                          domain: c.domain,
-                          type: "CNAME", name: c.voluumAcmName,
-                          content: c.voluumAcmValue, proxied: false,
-                        });
-                        results.push(r2.success ? `✅ ACM cert CNAME created` : `❌ ACM CNAME: ${r2.error}`);
-                      }
-
-                      const allOk = results.every(r => r.startsWith("✅"));
-                      if (allOk) u("_trkDnsProvisioned", true);
-                      setDnsResult({ success: allOk, message: results.join("\n") });
-                    } catch (e) {
-                      setDnsResult({ success: false, message: e.message || "DNS provisioning failed" });
-                    } finally {
-                      setDnsProvisioning(false);
-                    }
-                  }}
-                  className="w-full px-3 py-2 text-[11px] rounded-lg bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] font-semibold cursor-pointer disabled:opacity-40 border-none"
-                >
-                  {dnsProvisioning ? "⏳ Provisioning DNS..." : "🌐 Provision Tracking Domain DNS"}
-                </button>
               </div>
             )}
 
@@ -491,7 +548,7 @@ export function StepTracking({ c, u }) {
               </p>
             )}
 
-            <div className="mt-2.5 flex items-center gap-3">
+            <div className="mt-2.5 flex items-center gap-3 flex-wrap">
               <button
                 type="button"
                 onClick={() => { clearVoluumCache(); fetchedRef.current = false; setCampaigns([]); }}
@@ -501,11 +558,37 @@ export function StepTracking({ c, u }) {
               </button>
               <button
                 type="button"
-                onClick={() => setShowCreate(true)}
+                onClick={() => {
+                  setNewCamp({ name: "", country: "US", costModel: "CPC", costValue: 0, trafficSourceId: "", redirectUrl: c.url || c.redirectUrl || "" });
+                  setShowCreate(true);
+                }}
                 className="text-[10px] text-[hsl(var(--primary))] hover:text-[hsl(var(--foreground))] transition-colors cursor-pointer bg-transparent border-none p-0 font-semibold"
               >
                 ➕ Create new campaign
               </button>
+              {c.voluumCampaignId && (() => {
+                const activeCamp = campaigns.find(camp => camp.id === c.voluumCampaignId);
+                if (!activeCamp) return null;
+                return (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewCamp({
+                        name: (activeCamp.name || "") + " (copy)",
+                        country: activeCamp.country || "US",
+                        costModel: activeCamp.costModel?.type || activeCamp.costModel || "CPC",
+                        costValue: activeCamp.costModel?.value || 0,
+                        trafficSourceId: activeCamp.trafficSourceId || "",
+                        redirectUrl: c.url || c.redirectUrl || "",
+                      });
+                      setShowCreate(true);
+                    }}
+                    className="text-[10px] text-[hsl(var(--accent))] hover:text-[hsl(var(--foreground))] transition-colors cursor-pointer bg-transparent border-none p-0 font-semibold"
+                  >
+                    📋 Clone campaign
+                  </button>
+                );
+              })()}
             </div>
 
             {/* ─── Inline Create Campaign ─── */}
@@ -605,7 +688,7 @@ export function StepTracking({ c, u }) {
         </CardHeader>
         <CardContent>
           <p className="text-[11px] text-[hsl(var(--muted-foreground))] leading-relaxed">
-            Sends events to <code className="text-[10px] font-mono bg-[hsl(var(--muted))/30] px-1 py-0.5 rounded">{c.url ? `${c.url}/e` : `https://${c.domain || "domain.com"}/e`}</code> via
+            Sends events to <code className="text-[10px] font-mono bg-[hsl(var(--muted))/30] px-1 py-0.5 rounded">{pixelEndpoint || "https://domain.com/e"}</code> via
             sendBeacon. No setup needed — auto-configured at build time.
           </p>
           <div className="mt-3">
@@ -616,21 +699,33 @@ export function StepTracking({ c, u }) {
                 setVerifyLoading(true);
                 setVerifyResult(null);
                 try {
-                  const baseUrl = c.url ? c.url.replace(/\/$/, '') : (c.domain ? `https://${c.domain}` : null);
-                  if (!baseUrl) throw new Error('No Worker URL or domain configured');
-                  const endpoint = `${baseUrl}/e`;
+                  if (!pixelEndpoint) throw new Error('No Worker URL or domain configured');
                   const verifyParams = new URLSearchParams({ e: 'verify', sid: 'wizard-verify', ts: String(Date.now()) });
-                  const res = await fetch(endpoint, { method: 'POST', body: verifyParams, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+
+                  // Try POST first (preferred), then fallback to GET for endpoints that only allow GET.
+                  let res = await fetch(pixelEndpoint, {
+                    method: 'POST',
+                    body: verifyParams,
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                  });
+
+                  if (!res.ok) {
+                    res = await fetch(`${pixelEndpoint}?${verifyParams.toString()}`, {
+                      method: 'GET',
+                      cache: 'no-store',
+                    });
+                  }
+
                   setVerifyResult({
                     success: res.ok,
-                    error: res.ok ? null : `HTTP ${res.status} — endpoint not responding`,
+                    error: res.ok ? null : `HTTP ${res.status} — endpoint not responding (${pixelEndpoint})`,
                     checks: { workerHealth: { ok: res.ok, status: res.status }, pixelEndpoint: { ok: res.ok, status: res.status } },
                     verifiedAt: new Date().toISOString(),
                   });
                 } catch (e) {
                   setVerifyResult({
                     success: false,
-                    error: e?.message || 'Tracking verify failed',
+                    error: `${e?.message || 'Tracking verify failed'} (${pixelEndpoint || c.domain || 'unknown-host'})`,
                     checks: null,
                   });
                 } finally {
