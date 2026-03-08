@@ -154,6 +154,7 @@ export async function fetchCampaigns(token, { activeOnly = true } = {}) {
         directTracking: c.directTracking,
         costModel: c.costModel || "",
         createdAt: c.createdDate || "",
+        workspace: c.workspace || null,
     }));
 }
 
@@ -312,17 +313,23 @@ export async function createCampaign(token, campaignData) {
 }
 
 /**
- * Fetch all traffic sources
- * Returns: [{ id, name, postbackUrl, ... }]
+ * Create a new traffic source
+ * @param {string} token
+ * @param {string} name
+ * @param {object} opts - { workspaceId }
+ * Returns: { id, name }
  */
-export async function createTrafficSource(token, name = "Google Ads") {
+export async function createTrafficSource(token, name = "Google Ads", opts = {}) {
     const body = {
         name,
         postbackUrl: "",
         pixelRedirectUrl: "",
     };
+    if (opts.workspaceId) {
+        body.workspace = { id: opts.workspaceId };
+    }
     const data = await voluumProxy(token, "POST", "/traffic-source", body);
-    if (data?.id) return { id: data.id, name: data.name || name };
+    if (data?.id) return { id: data.id, name: data.name || name, workspace: data.workspace || null };
     throw new Error(data?.message || data?.error || "Failed to create traffic source");
 }
 
@@ -333,6 +340,7 @@ export async function fetchTrafficSources(token) {
         name: ts.namePostfix || ts.name || ts.id,
         postbackUrl: ts.postbackUrl || "",
         status: ts.status || "ACTIVE",
+        workspace: ts.workspace || null,
     }));
 }
 
@@ -350,6 +358,7 @@ export async function fetchOffers(token) {
         payout: o.payout || 0,
         status: o.status || "ACTIVE",
         country: o.country || "",
+        workspace: o.workspace || null,
     }));
 }
 
