@@ -54,7 +54,11 @@ if (layout) {
     "Layout.astro must NOT use apex /e transport — use t.{domain}/e instead",
     issues
   );
-  ensure(layout.includes('/scripts/') && layout.includes('/vp.js'), 'Layout.astro missing Voluum vp.js injection', issues);
+  ensure(
+    layout.includes('dtpCallback') || layout.includes('PUBLIC_VOLUUMDOMAIN'),
+    'Layout.astro missing Voluum dtpCallback injection (use dtpCallback.js, not vp.js)',
+    issues
+  );
 }
 
 if (index) {
