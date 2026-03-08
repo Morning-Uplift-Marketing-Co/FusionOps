@@ -118,7 +118,6 @@ export async function deploy(assets, site, settings) {
   // Always push deploy config to 'main' — that's where deploy-lp.yml workflow lives
   // (githubRepoBranch is used by git-push for LP source, not for CI config trigger)
   const branch    = 'main';
-  const cfPagesProject = `lp-${(site.domain || site.brand || 'site').toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 40)}`;
 
   if (!githubToken) return { success: false, error: 'Missing GitHub Token. Add it in Settings → Git Push Pipeline.' };
   if (!githubRepo)  return { success: false, error: 'Missing GitHub Repo. Add Repo Owner + Repo Name in Settings.' };
@@ -143,6 +142,9 @@ export async function deploy(assets, site, settings) {
       existing = JSON.parse(decoded);
     }
   } catch (_) { /* new site — no existing config */ }
+
+  const defaultCfPagesProject = `lp-${(site.domain || site.brand || 'site').toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 40)}`;
+  const cfPagesProject = (site.cfPagesProject || existing.cfPagesProject || defaultCfPagesProject || '').trim();
 
   // Voluum fields: Wizard saves voluumCampaignId/voluumTrackingDomain — map to deploy config keys
   // Preserve existing values if current deploy doesn't provide them
