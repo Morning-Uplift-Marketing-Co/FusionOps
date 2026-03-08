@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.27] - 2026-03-09
+### Security
+- **Pixel Worker anti-fingerprinting**: Add domain-specific response header variations (Server, X-Powered-By)
+- **Timing randomization**: Add random delays (0-8ms response, 0-5ms DB) to prevent timing pattern detection
+- **Error message variation**: Customize 404 messages per domain to prevent fingerprinting
+- **Enhanced privacy**: Prevent Google Ads from detecting shared infrastructure across domains
+
 ## [2.7.26] - 2026-03-09
 ### Fixed
 - **TrackingDashboard Voluum detection**: Update regex to detect new click URL format (/{campaignId}) and support link/vls domains
