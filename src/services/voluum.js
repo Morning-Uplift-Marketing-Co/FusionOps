@@ -205,16 +205,19 @@ export async function createCampaign(token, campaignData) {
     const country = campaignData.country || "US";
     const campaignName = campaignData.name || "New Campaign";
 
+    // Ensure workspace ID is set - critical for entity consistency
+    if (!workspaceId) {
+        throw new Error("Workspace ID is required. Traffic source must have a workspace.");
+    }
+
     // Step 1: Create lander
     const landerBody = {
         namePostfix: `[Master] ${domain}`,
         url: `https://${domain}`,
         country: { code: country },
         numberOfOffers: 1,
+        workspace: { id: workspaceId },
     };
-    if (workspaceId) {
-        landerBody.workspace = { id: workspaceId };
-    }
     const landerData = await voluumProxy(token, "POST", "/lander", landerBody);
     if (!landerData?.id) {
         const errDetail = landerData?.errors?.map(e => `${e.field}: ${e.message}`).join("; ") ||
@@ -222,20 +225,16 @@ export async function createCampaign(token, campaignData) {
         throw new Error(errDetail);
     }
     const landerId = landerData.id;
-    // Use workspace from created lander to ensure all entities share same workspace
-    const landerWorkspaceId = landerData.workspace?.id || workspaceId;
 
-    // Step 2: Create offer
+    // Step 2: Create offer (use same workspace as lander)
     const offerBody = {
         namePostfix: `[Master] ${domain}`,
         url: `https://${domain}/apply?clickid={clickid}`,
         country: { code: country },
         payout: { type: "AUTO", geoPayouts: [] },
         conversionTrackingMethod: "S2S_POSTBACK_URL",
+        workspace: { id: workspaceId },
     };
-    if (landerWorkspaceId) {
-        offerBody.workspace = { id: landerWorkspaceId };
-    }
     const offerData = await voluumProxy(token, "POST", "/offer", offerBody);
     if (!offerData?.id) {
         const errDetail = offerData?.errors?.map(e => `${e.field}: ${e.message}`).join("; ") ||
@@ -286,10 +285,8 @@ export async function createCampaign(token, campaignData) {
             },
         },
     };
-    if (landerWorkspaceId) {
-        campaignBody.workspace = { id: landerWorkspaceId };
-        campaignBody.redirectTarget.inlineFlow.workspace = { id: landerWorkspaceId };
-    }
+    campaignBody.workspace = { id: workspaceId };
+    campaignBody.redirectTarget.inlineFlow.workspace = { id: workspaceId };
 
     const campaignResponseData = await voluumProxy(token, "POST", "/campaign", campaignBody);
     if (campaignResponseData?.id) {
