@@ -88,11 +88,12 @@ jobs:
           node -e "
           const fs = require('fs');
           const c = JSON.parse(fs.readFileSync(process.env.CONFIG_FILE, 'utf8'));
+          const cleanDomain = String(c.domain||'').trim().toLowerCase().replace(/^https?:\/\//,'').replace(/^\/\//,'').replace(/[/?#].*$/,'').replace(/\.+$/,'').replace(/^www\./,'');
           const amountMin = String(Number(String(c.amountMin||100).replace(/[^0-9.]/g,''))||100);
           const amountMax = String(Number(String(c.amountMax||5000).replace(/[^0-9.]/g,''))||5000);
           const lines = [
             'PUBLIC_BRAND='       + JSON.stringify(c.brand||''),
-            'PUBLIC_DOMAIN='      + JSON.stringify(c.domain||'example.com'),
+            'PUBLIC_DOMAIN='      + JSON.stringify(cleanDomain||'example.com'),
             'PUBLIC_H1='          + JSON.stringify(c.h1||c.brand||''),
             'PUBLIC_SUB='         + JSON.stringify(c.sub||''),
             'PUBLIC_CTA='         + JSON.stringify(c.cta||'Apply Now'),
@@ -173,12 +174,17 @@ jobs:
           export CF_TOKEN="${CF_TOKEN_FROM_CONFIG:-$CF_TOKEN_FROM_SECRET}"
           export CF_ACCOUNT="${CF_ACCOUNT_FROM_CONFIG:-$CF_ACCOUNT_FROM_SECRET}"
           CONFIG_FILE="${{ steps.config.outputs.file }}"
-          DOMAIN=$(node -e "const c=require('./$CONFIG_FILE');console.log(c.domain||'')")
+          DOMAIN=$(node -e "const c=require('./$CONFIG_FILE');const d=String(c.domain||'').trim().toLowerCase().replace(/^https?:\/\//,'').replace(/^\/\//,'').replace(/[/?#].*$/,'').replace(/\.+$/,'').replace(/^www\./,'');console.log(d)")
           PROJECT="${{ steps.template.outputs.cf_pages_project }}"
 
           if [ -z "$DOMAIN" ] || [ -z "$CF_TOKEN" ] || [ -z "$CF_ACCOUNT" ]; then
             echo "Skipping custom domain: missing domain, token, or account"
             exit 0
+          fi
+
+          if ! echo "$DOMAIN" | grep -Eq '^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$'; then
+            echo "Invalid domain in deploy config after normalization: '$DOMAIN'"
+            exit 1
           fi
 
           echo "Adding custom domain $DOMAIN to Pages project $PROJECT..."
@@ -208,7 +214,7 @@ jobs:
           export CF_TOKEN="${CF_TOKEN_FROM_CONFIG:-$CF_TOKEN_FROM_SECRET}"
           export CF_ACCOUNT="${CF_ACCOUNT_FROM_CONFIG:-$CF_ACCOUNT_FROM_SECRET}"
           CONFIG_FILE="${{ steps.config.outputs.file }}"
-          DOMAIN=$(node -e "const c=require('./$CONFIG_FILE');console.log(c.domain||'')")
+          DOMAIN=$(node -e "const c=require('./$CONFIG_FILE');const d=String(c.domain||'').trim().toLowerCase().replace(/^https?:\/\//,'').replace(/^\/\//,'').replace(/[/?#].*$/,'').replace(/\.+$/,'').replace(/^www\./,'');console.log(d)")
           DEPLOY_URL="${{ steps.deploy.outputs.url }}"
 
           if [ -z "$DOMAIN" ] || [ -z "$CF_TOKEN" ] || [ -z "$CF_ACCOUNT" ] || [ -z "$DEPLOY_URL" ]; then

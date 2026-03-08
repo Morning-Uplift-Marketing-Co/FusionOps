@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.5] - 2026-03-08
+### Fixed
+- **Cloudflare Pages custom-domain attach**: Normalize deploy-config `domain` before API calls (strip scheme/path/trailing dot/leading `www`) to prevent `invalid TLD` failures.
+- **Deploy env consistency**: `PUBLIC_DOMAIN` in workflow now uses normalized domain value so template env and Cloudflare domain attach are aligned.
+
 ## [2.7.4] - 2026-03-08
 ### Fixed
 - **GitHub Actions DNS provisioning (Cloudflare Pages)**: Deploy workflow now fails fast if custom-domain attach API returns an error instead of silently continuing.
