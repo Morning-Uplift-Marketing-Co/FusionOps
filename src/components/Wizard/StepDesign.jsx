@@ -16,6 +16,8 @@ export function StepDesign({ c, u, notify }) {
     const [loadingTemplates, setLoadingTemplates] = useState(true);
     const [deleting, setDeleting] = useState(null);
     const [generatingThumb, setGeneratingThumb] = useState(null);
+    const [hoveredTemplate, setHoveredTemplate] = useState(null);
+    const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
 
     // Load templates on mount
     const loadTemplates = (forceRefresh = false) => {
@@ -116,7 +118,14 @@ export function StepDesign({ c, u, notify }) {
                             const isSelected = c.templateId === t.id;
                             const isCustom = t.source === 'api';
                             return (
-                                <div key={t.id} style={{ position: "relative" }}>
+                                <div key={t.id} style={{ position: "relative" }}
+                                    onMouseEnter={(e) => {
+                                        const rect = e.currentTarget.getBoundingClientRect();
+                                        setHoverPos({ x: rect.right + 8, y: rect.top });
+                                        setHoveredTemplate(t);
+                                    }}
+                                    onMouseLeave={() => setHoveredTemplate(null)}
+                                >
                                     <button
                                         onClick={() => u("templateId", t.id)}
                                         style={{
@@ -234,6 +243,69 @@ export function StepDesign({ c, u, notify }) {
                         })}
                     </div>
                 )}
+                {/* ── Hover Preview Popup ── */}
+                {hoveredTemplate && (() => {
+                    const files = hoveredTemplate.files || {};
+                    const htmlKey = Object.keys(files).find(k => k === 'index.html' || k.endsWith('/index.html') || k.endsWith('index.astro'));
+                    let html = htmlKey ? String(files[htmlKey] || '') : '';
+                    html = html.replace(/^---[\s\S]*?---\n?/, '');
+                    const hasHtml = !!html.trim();
+                    const thumbUrl = hoveredTemplate.thumbnailUrl
+                        ? `https://lp-factory-api.misty-feather-556e.workers.dev${hoveredTemplate.thumbnailUrl}`
+                        : null;
+                    // Clamp popup so it doesn't go off screen bottom
+                    const popupH = 320;
+                    const top = Math.min(hoverPos.y, window.innerHeight - popupH - 12);
+                    return (
+                        <div style={{
+                            position: "fixed",
+                            left: hoverPos.x,
+                            top,
+                            width: 260,
+                            height: popupH,
+                            background: T.card || "#1e1e2e",
+                            border: `1px solid ${T.border}`,
+                            borderRadius: 12,
+                            overflow: "hidden",
+                            zIndex: 9999,
+                            boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
+                            pointerEvents: "none",
+                        }}>
+                            {/* Header */}
+                            <div style={{ padding: "8px 12px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", gap: 6 }}>
+                                <span style={{ fontSize: 11, fontWeight: 700, color: T.text }}>{hoveredTemplate.name}</span>
+                                {hoveredTemplate.badge && (
+                                    <span style={{ fontSize: 8, padding: "1px 5px", borderRadius: 4, background: `${T.primary}cc`, color: "#fff", fontWeight: 700 }}>{hoveredTemplate.badge}</span>
+                                )}
+                            </div>
+                            {/* Preview area */}
+                            <div style={{ width: "100%", height: popupH - 36, overflow: "hidden", position: "relative" }}>
+                                {thumbUrl ? (
+                                    <img src={thumbUrl} alt={hoveredTemplate.name}
+                                        style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} />
+                                ) : hasHtml ? (
+                                    <iframe
+                                        srcDoc={html}
+                                        sandbox="allow-scripts"
+                                        style={{
+                                            width: 780,
+                                            height: 870,
+                                            border: "none",
+                                            transformOrigin: "0 0",
+                                            transform: "scale(0.333)",
+                                            pointerEvents: "none",
+                                        }}
+                                    />
+                                ) : (
+                                    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                                        <span style={{ fontSize: 32 }}>⚡</span>
+                                        <span style={{ fontSize: 10, color: T.muted, textAlign: "center", padding: "0 12px" }}>CI template — preview available after deploy</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })()}
             </Field>
 
             <Field label="Color Scheme" req>
