@@ -291,16 +291,17 @@ export async function createCampaign(token, campaignData) {
     const campaignResponseData = await voluumProxy(token, "POST", "/campaign", campaignBody);
     if (campaignResponseData?.id) {
         const trackingDomain = campaignResponseData.preferredTrackingDomain || `link.${domain}`;
+        const campaignId = campaignResponseData.id;
         return {
-            id: campaignResponseData.id,
-            name: campaignResponseData.name || campaignResponseData.namePostfix || campaignResponseData.id,
+            id: campaignId,
+            name: campaignResponseData.name || campaignResponseData.namePostfix || campaignId,
             trackingDomain: trackingDomain,
             status: campaignResponseData.status || "ACTIVE",
             url: campaignResponseData.url || `https://${domain}`,
             landerId: landerId,
             offerId: offerId,
             landerTrackingUrl: campaignResponseData.url || `https://${domain}`,
-            clickUrl: trackingDomain ? `https://${trackingDomain}/click` : `https://link.${domain}/click`,
+            clickUrl: `https://${trackingDomain}/${campaignId}`,
         };
     }
     // Surface Voluum field-level validation errors

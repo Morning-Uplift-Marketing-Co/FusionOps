@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.23] - 2026-03-09
+### Fixed
+- **Voluum click URL format corrected**: Use `/{campaignId}` instead of `/click` for DTP campaigns
+- **Updated all click URL generation**: voluum.js, StepTracking.jsx, and deploy configs now use correct format
+- **Fixed scratchpaypet.tech config**: Updated voluumClickUrl to include campaign ID
+
 ## [2.7.22] - 2026-03-09
 ### Fixed
 - **Workspace requirement enforced**: Require workspace ID from traffic source before creating any entities

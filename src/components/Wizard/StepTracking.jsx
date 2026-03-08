@@ -243,7 +243,7 @@ export function StepTracking({ c, u }) {
       u("voluumLanderId", created.landerId || "");
       u("voluumOfferId", created.offerId || "");
       u("voluumLanderTrackingUrl", created.landerTrackingUrl || created.url || "");
-      u("voluumClickUrl", created.clickUrl || `https://${trackingDomain}/click`);
+      u("voluumClickUrl", created.clickUrl || `https://${trackingDomain}/${created.id}`);
       u("voluumId", created.id);
       u("voluumDomain", trackingDomain);
       setShowCreate(false);
@@ -265,7 +265,7 @@ export function StepTracking({ c, u }) {
     u("voluumTrackingDomain", trackingDomain);
     u("voluumId", campaignId);
     u("voluumDomain", trackingDomain);
-    u("voluumClickUrl", `https://${trackingDomain}/click`);
+    u("voluumClickUrl", `https://${trackingDomain}/${campaignId}`);
   };
 
   return (
@@ -828,12 +828,12 @@ export function StepTracking({ c, u }) {
                       <Inp
                         value={c.voluumClickUrl || ""}
                         onChange={v => u("voluumClickUrl", v)}
-                        placeholder={`https://vls.${c.domain || "domain.com"}/click`}
+                        placeholder={c.voluumCampaignId ? `https://vls.${c.domain || "domain.com"}/${c.voluumCampaignId}` : `https://vls.${c.domain || "domain.com"}/{campaign-id}`}
                       />
-                      {!c.voluumClickUrl && c.domain && (
+                      {!c.voluumClickUrl && c.domain && c.voluumCampaignId && (
                         <button
                           type="button"
-                          onClick={() => u("voluumClickUrl", `https://vls.${c.domain}/click`)}
+                          onClick={() => u("voluumClickUrl", `https://vls.${c.domain}/${c.voluumCampaignId}`)}
                           className="px-3 py-1.5 text-[10px] rounded-lg bg-[hsl(var(--primary))/15] border border-[hsl(var(--primary))/40] text-[hsl(var(--primary))] font-semibold cursor-pointer whitespace-nowrap"
                         >
                           Use Default
