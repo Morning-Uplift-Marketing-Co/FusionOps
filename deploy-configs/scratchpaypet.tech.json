@@ -1,8 +1,8 @@
 {
   "templateId": "pet-orange-white",
   "cfPagesProject": "lp-scratchpaypet-tech",
-  "cfApiToken": "***CF_TOKEN_REMOVED***",
-  "cfAccountId": "***CF_ACCOUNT_ID_REMOVED***",
+  "cfApiToken": "",
+  "cfAccountId": "",
   "brand": "Scratchpay",
   "domain": "scratchpaypet.tech",
   "h1": "Get $100-$5000 for Your Pet's Needs, Fast!",
@@ -36,5 +36,5 @@
   "radius": "sharp",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-07T23:45:01.360Z"
+  "deployedAt": "2026-03-08T07:51:00.000Z"
 }
