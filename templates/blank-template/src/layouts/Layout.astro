@@ -1,0 +1,161 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  canonicalUrl?: string;
+}
+
+const {
+  title = `${brand} – Personal Loans $${amountMin}-$${amountMax} | Fast Approval`,
+  description = `Get personal loans from $${amountMin} to $${amountMax} with flexible repayment. All credit types welcome. Apply online in 2 minutes.`,
+  canonicalUrl = `https://${domain}`,
+} = Astro.props;
+
+// Required env vars for Wizard features
+const brand        = import.meta.env.PUBLIC_BRAND        || 'YourBrand';
+const domain       = import.meta.env.PUBLIC_DOMAIN       || 'example.com';
+const amountMin    = import.meta.env.PUBLIC_AMOUNTMIN    || '100';
+const amountMax    = import.meta.env.PUBLIC_AMOUNTMAX    || '5000';
+const aprMin       = import.meta.env.PUBLIC_APRMIN       || '5.99';
+const aprMax       = import.meta.env.PUBLIC_APRMAX       || '35.99';
+
+// Design system env vars (Wizard Step 4)
+const colorId      = import.meta.env.PUBLIC_COLORID      || 'ocean';
+const fontId       = import.meta.env.PUBLIC_FONTID       || 'plus-jakarta';
+const radiusId     = import.meta.env.PUBLIC_RADIUS       || 'rounded';
+const layout       = import.meta.env.PUBLIC_LAYOUT       || 'hero-center';
+
+// Tracking env vars
+const conversionId     = import.meta.env.PUBLIC_CONVERSIONID     || '';
+const formStartLabel   = import.meta.env.PUBLIC_FORMSTARTLABEL   || '';
+const formSubmitLabel  = import.meta.env.PUBLIC_FORMSUBMITLABEL  || '';
+const voluumDomain     = import.meta.env.PUBLIC_VOLUUMDOMAIN     || '';
+const voluumClickUrl   = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '';
+
+// Color system
+const COLOR_MAP: Record<string, number[][]> = {
+  ocean:    [[217,91,35],  [158,64,42],  [15,92,62],   [210,40,98],  [222,47,11]],
+  forest:   [[152,68,28],  [45,93,47],   [350,80,55],  [140,20,97],  [150,40,10]],
+  midnight: [[235,70,42],  [170,60,45],  [25,95,58],   [230,25,97],  [235,50,12]],
+  ruby:     [[350,72,42],  [25,90,55],   [200,75,45],  [350,20,97],  [350,45,12]],
+  slate:    [[215,25,35],  [160,55,42],  [25,88,58],   [215,15,97],  [215,30,12]],
+  coral:    [[16,80,50],   [195,65,42],  [280,55,55],  [16,30,97],   [16,50,12] ],
+  teal:     [[175,65,38],  [280,55,48],  [35,90,55],   [175,25,97],  [175,45,11]],
+  plum:     [[270,55,40],  [150,55,42],  [20,88,58],   [270,15,97],  [270,40,12]],
+};
+
+// Font system
+const FONT_MAP: Record<string, {import: string; family: string}> = {
+  'plus-jakarta':   { import: 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap', family: 'Plus Jakarta Sans, sans-serif' },
+  'inter':         { import: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap', family: 'Inter, sans-serif' },
+  'dm-sans':        { import: 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap', family: 'DM Sans, sans-serif' },
+  'roboto':        { import: 'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap', family: 'Roboto, sans-serif' },
+  'poppins':       { import: 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap', family: 'Poppins, sans-serif' },
+};
+
+// Radius system
+const RADIUS_MAP: Record<string, string> = {
+  'sharp': '0',
+  'rounded': '0.5rem',
+  'full': '9999px',
+};
+
+const colors = COLOR_MAP[colorId] || COLOR_MAP.ocean;
+const font = FONT_MAP[fontId] || FONT_MAP['plus-jakarta'];
+const radius = RADIUS_MAP[radiusId] || RADIUS_MAP.rounded;
+
+// Generate CSS variables
+const cssVars = `
+  --color-primary: ${colors[0].join(' ')};
+  --color-secondary: ${colors[1].join(' ')};
+  --color-accent: ${colors[2].join(' ')};
+  --color-warning: ${colors[3].join(' ')};
+  --color-danger: ${colors[4].join(' ')};
+  --radius: ${radius};
+`;
+
+const hsl = (h, s, l) => `hsl(${h}, ${s}%, ${l}%)`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href={canonicalUrl} />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:site_name" content={brand} />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+
+    <!-- Font Import -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href={font.import} rel="stylesheet" />
+
+    <!-- CSS Variables -->
+    <style is:inline set:html={`:root { ${cssVars} } body { font-family: ${font.family}; }`}></style>
+
+    <!-- Google Tag Manager (if configured) -->
+    {conversionId && (
+      <>
+        <script data-cfasync="false" is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${conversionId}`}></script>
+        <script data-cfasync="false" is:inline define:vars={{ conversionId, formStartLabel, formSubmitLabel }}>
+          (function(){window.dataLayer=window.dataLayer||[];function gtag(){window.dataLayer.push(arguments);}gtag('js',new Date());gtag('config',conversionId);window.__gtagConversionId=conversionId;window.__formStartLabel=formStartLabel;window.__formSubmitLabel=formSubmitLabel;})();
+        </script>
+      </>
+    )}
+
+    <!-- First-Party Pixel + Voluum Click ID -->
+    <script data-cfasync="false" is:inline>
+      (function(){
+        var p = new URLSearchParams(window.location.search);
+        var cid = p.get('vlcid') || p.get('clickid') || p.get('click_id') || p.get('cid') || p.get('cpid') || '';
+        if (cid) {
+          window.__fpClickId = cid;
+          try { sessionStorage.setItem('voluum_cpid', cid); } catch(_){}
+        }
+        window.__fpPixel = function(eventName, extra) {
+          try {
+            var endpoint = 'https://t.' + window.location.hostname + '/e';
+            var payload = Object.assign({ e: eventName, d: window.location.hostname, ts: Math.floor(Date.now()/1000) }, extra || {});
+            navigator.sendBeacon(endpoint, JSON.stringify(payload));
+          } catch(_) {}
+        };
+        window.__fpPixel('pv', cid ? { click_id: cid } : {});
+      })();
+    </script>
+
+    <!-- Voluum dtpCallback (if configured) -->
+    {voluumDomain && (
+      <script data-cfasync="false" is:inline define:vars={{ voluumDomain }}>
+      (function(){
+        var p = new URLSearchParams(window.location.search);
+        var cpid = p.get('cpid') || p.get('cid') || p.get('click_id') || p.get('vlcid') || '';
+        if (cpid) { try { sessionStorage.setItem('voluum_cpid', cpid); } catch(_){} }
+        var s = document.createElement('script');
+        s.async = true; s.setAttribute('data-cfasync','false');
+        s.src = 'https://' + voluumDomain + '/dtpCallback.js';
+        document.head.appendChild(s);
+      })();
+      </script>
+    )}
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

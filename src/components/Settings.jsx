@@ -7,6 +7,8 @@ import { api } from "../services/api";
 import { multiloginApi } from "../services/multilogin";
 import { getCfApiBase } from "../utils/api-proxy";
 import { detectIncompleteSettings } from "../services/account-lock";
+import { migrateSitesToD1 } from "../services/d1";
+import { loadSites } from "../services/neon";
 
 export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
     const asArray = (v) => Array.isArray(v) ? v : [];
@@ -66,6 +68,8 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
     const [d1DatabaseId, setD1DatabaseId] = useState(settings.d1DatabaseId || "");
     const [d1ApiToken, setD1ApiToken] = useState(settings.d1ApiToken || "");
     const [d1Result, setD1Result] = useState(null);
+    const [d1MigrateResult, setD1MigrateResult] = useState(null);
+    const [migrating, setMigrating] = useState(false);
 
     // NodeMaven Proxy Pre-flight
     const [nmProxyUser, setNmProxyUser] = useState(settings.nmProxyUser || "");
@@ -304,6 +308,24 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
         setTesting(null);
     };
 
+    const migrateNeonToD1 = async () => {
+        setMigrating(true);
+        setD1MigrateResult(null);
+        try {
+            const sites = await loadSites();
+            if (!sites || sites.length === 0) {
+                setD1MigrateResult({ success: false, error: "No sites found in Neon to migrate." });
+                return;
+            }
+            const { synced, errors } = await migrateSitesToD1(sites);
+            setD1MigrateResult({ success: true, synced, errors, total: sites.length });
+        } catch (e) {
+            setD1MigrateResult({ success: false, error: e.message || "Migration failed" });
+        } finally {
+            setMigrating(false);
+        }
+    };
+
     const testD1 = async () => {
         setTesting("d1");
         let requestUrl = "";
@@ -485,9 +507,17 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                                         <div>{d1Result.success ? `✓ Connected${d1Result.database ? ` to "${d1Result.database.name}"` : d1Result.count !== undefined ? ` (${d1Result.count} databases)` : ""}` : `✗ ${d1Result.error}`}</div>
                                     </div>
                                 )}
-                                <div className="flex gap-1.5">
+                                {d1MigrateResult && (
+                                    <div className={`text-[11px] ${d1MigrateResult.success ? "text-[hsl(var(--success))]" : "text-[hsl(var(--destructive))]"}`}>
+                                        {d1MigrateResult.success
+                                            ? `✓ Synced ${d1MigrateResult.synced}/${d1MigrateResult.total} sites to D1${d1MigrateResult.errors > 0 ? ` (${d1MigrateResult.errors} errors)` : ""}`
+                                            : `✗ ${d1MigrateResult.error}`}
+                                    </div>
+                                )}
+                                <div className="flex gap-1.5 flex-wrap">
                                     <Button variant="ghost" onClick={testD1} disabled={!d1AccountId || !d1ApiToken || testing === "d1"} className="text-xs">{testing === "d1" ? "..." : "🔑 Test"}</Button>
                                     <Button onClick={() => { const cleanId = d1AccountId.trim(); if (cleanId && !/^[0-9a-f]{32}$/i.test(cleanId)) { setD1Result({ success: false, error: `Account ID must be exactly 32 hex characters (got ${cleanId.length})` }); return; } save({ d1AccountId: cleanId, d1DatabaseId, d1ApiToken }); }} disabled={saving} className="text-xs">{saving ? "Saving..." : "💾 Save"}</Button>
+                                    <Button variant="ghost" onClick={migrateNeonToD1} disabled={migrating || !neonOk} className="text-xs" title={!neonOk ? "Neon must be connected first" : "Copy all sites from Neon → D1"}>{migrating ? "⏳ Syncing..." : "🔄 Sync Neon→D1"}</Button>
                                 </div>
                             </CardContent>
                         </Card>
