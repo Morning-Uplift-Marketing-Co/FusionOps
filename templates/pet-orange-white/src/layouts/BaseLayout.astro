@@ -11,8 +11,8 @@ const { title, description } = Astro.props;
 const conversionId    = import.meta.env.PUBLIC_CONVERSIONID     || '';
 const formStartLabel  = import.meta.env.PUBLIC_FORMSTARTLABEL   || '';
 const formSubmitLabel = import.meta.env.PUBLIC_FORMSUBMITLABEL  || '';
-const voluumId        = import.meta.env.PUBLIC_VOLUUMID         || '';
-const voluumDomain    = import.meta.env.PUBLIC_VOLUUMDOMAIN     || 'track.vlm.icu';
+const voluumDomain    = import.meta.env.PUBLIC_VOLUUMDOMAIN     || '';
+const voluumClickUrl  = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '';
 const colorId         = import.meta.env.PUBLIC_COLORID          || 'ocean';
 const fontId          = import.meta.env.PUBLIC_FONTID           || 'plus-jakarta';
 const radiusId        = import.meta.env.PUBLIC_RADIUS           || 'rounded';
@@ -75,9 +75,18 @@ const cssVars = `--primary:${hsl(...pal[0] as [number,number,number])};--seconda
         </script>
       </>
     )}
-    {voluumId && (
-      <script data-cfasync="false" is:inline define:vars={{ voluumId, voluumDomain }}>
-        (function(){var s=document.createElement('script');s.src='https://'+voluumDomain+'/scripts/'+voluumId+'/vp.js';s.async=true;(document.head||document.documentElement).appendChild(s);})();
+    {voluumDomain && (
+      <script data-cfasync="false" is:inline define:vars={{ voluumDomain }}>
+        (function(){
+          var p = new URLSearchParams(window.location.search);
+          var cpid = p.get('cpid') || p.get('cid') || p.get('click_id') || p.get('vlcid') || '';
+          if (cpid) { try { sessionStorage.setItem('voluum_cpid', cpid); } catch(_){} }
+          var s = document.createElement('script');
+          s.async = true;
+          s.setAttribute('data-cfasync','false');
+          s.src = 'https://' + voluumDomain + '/dtpCallback.js';
+          document.head.appendChild(s);
+        })();
       </script>
     )}
   </head>
