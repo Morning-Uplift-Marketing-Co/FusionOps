@@ -1,8 +1,8 @@
 {
   "templateId": "pet-orange-white",
   "cfPagesProject": "lp-joracreditz-com",
-  "cfApiToken": "***CF_TOKEN_REMOVED***",
-  "cfAccountId": "***CF_ACCOUNT_ID_REMOVED***",
+  "cfApiToken": "",
+  "cfAccountId": "",
   "brand": "JoraCredit",
   "domain": "joracreditz.com",
   "h1": "Get Up To $5000 Fast Funding Now!",
