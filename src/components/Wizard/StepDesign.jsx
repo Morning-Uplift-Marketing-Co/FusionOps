@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { THEME as T, COLORS, FONTS, LAYOUTS, RADIUS, TRUST_BADGE_STYLES, TRUST_BADGE_ICON_TONES } from "../../constants";
+import { THEME as T, COLORS, FONTS, LAYOUTS, RADIUS } from "../../constants";
 import { hsl } from "../../utils";
 import { generateFavicon, generateOgImage } from "../../utils/image-gen";
 import { getAllTemplates, getAllTemplatesAsync, clearCustomTemplatesCache, fetchCustomTemplates } from "../../utils/template-registry";
@@ -245,43 +245,6 @@ export function StepDesign({ c, u, notify }) {
                     </div>
                 </Field>
             </div>
-            <Field label="Trust Badges">
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6 }}>
-                    {TRUST_BADGE_STYLES.map(s => (
-                        <button key={s.id} onClick={() => u("trustBadgeStyle", s.id)} style={{
-                            padding: "8px 10px", background: c.trustBadgeStyle === s.id ? T.primaryGlow : T.input,
-                            border: `2px solid ${c.trustBadgeStyle === s.id ? T.primary : T.border}`,
-                            borderRadius: 6, cursor: "pointer", textAlign: "left",
-                        }}>
-                            <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
-                                {s.id !== "cards" && (
-                                    <div style={{ flex: 1, height: 7, borderRadius: 999, background: `${T.primary}33` }} />
-                                )}
-                                {s.id !== "compact" && (
-                                    <>
-                                        <div style={{ width: 10, height: 10, borderRadius: 3, background: `${T.primary}44` }} />
-                                        <div style={{ width: 10, height: 10, borderRadius: 3, background: `${T.primary}44` }} />
-                                    </>
-                                )}
-                            </div>
-                            <div style={{ fontSize: 11, color: T.text, fontWeight: 700 }}>{s.label}</div>
-                            <div style={{ fontSize: 10, color: T.dim }}>{s.desc}</div>
-                        </button>
-                    ))}
-                </div>
-            </Field>
-            <Field label="Trust Icon Tone">
-                <div style={{ display: "flex", gap: 6 }}>
-                    {TRUST_BADGE_ICON_TONES.map(tone => (
-                        <button key={tone.id} onClick={() => u("trustBadgeIconTone", tone.id)} style={{
-                            flex: 1, padding: "8px", background: c.trustBadgeIconTone === tone.id ? T.primaryGlow : T.input,
-                            border: `2px solid ${c.trustBadgeIconTone === tone.id ? T.primary : T.border}`,
-                            borderRadius: 6, cursor: "pointer", color: T.text, fontSize: 11, fontWeight: 600,
-                        }}>{tone.label}</button>
-                    ))}
-                </div>
-            </Field>
-
             {/* AI Image Generation */}
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${T.border}` }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 10 }}>🎨 Brand Assets (Use Current Design Colors)</div>
