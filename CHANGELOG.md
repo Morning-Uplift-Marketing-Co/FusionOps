@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.9] - 2026-03-08
+### Fixed
+- **Pages custom-domain binding during deploy**: `deploy-lp.yml` now passes `--domain` for root and `www` to `wrangler pages deploy`, so Cloudflare Pages associates the custom domains during deployment instead of relying only on the later API attach step.
+
 ## [2.7.8] - 2026-03-08
 ### Fixed
 - **Fresh Pages project slug for `joracreditz.com`**: Switched deploy config from `lp-joracreditz-com` to `lp-jora-creditz-main` to avoid reuse of the previously deleted Cloudflare Pages project slug.
