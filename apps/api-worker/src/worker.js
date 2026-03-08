@@ -965,6 +965,31 @@ export default {
       }
     }
 
+    // ═══ TEMPLATE THUMBNAIL — manual upload ═══
+    // POST /api/templates/:id/upload-thumb → accept image file → store in R2
+    const thumbUploadMatch = path.match(/^\/api\/templates\/([^/]+)\/upload-thumb$/);
+    if (thumbUploadMatch && method === 'POST') {
+      const id = decodeURIComponent(thumbUploadMatch[1]);
+      try {
+        const db = env.DB;
+        const formData = await request.formData();
+        const file = formData.get('image');
+        if (!file || typeof file === 'string') return json({ error: 'No image file provided' }, 400);
+        const contentType = file.type || 'image/png';
+        if (!contentType.startsWith('image/')) return json({ error: 'File must be an image' }, 400);
+        const buffer = await file.arrayBuffer();
+        await env.THUMBS.put(`thumbs/${id}.png`, buffer, { httpMetadata: { contentType: 'image/png' } });
+        try { await db.prepare('ALTER TABLE templates ADD COLUMN thumbnail_url TEXT').run(); } catch (_e) {}
+        try { await db.prepare('ALTER TABLE templates ADD COLUMN thumbnail_generated_at TEXT').run(); } catch (_e) {}
+        const thumbUrl = `/api/templates/${encodeURIComponent(id)}/thumb`;
+        await db.prepare(`UPDATE templates SET thumbnail_url = ?, thumbnail_generated_at = datetime('now'), updated_at = datetime('now') WHERE id = ?`)
+          .bind(thumbUrl, id).run();
+        return json({ ok: true, thumbUrl });
+      } catch (e) {
+        return json({ error: e.message }, 500);
+      }
+    }
+
     // ═══ TEMPLATE THUMBNAIL — generate via Browser Rendering ═══
     // POST /api/templates/:id/generate-thumb → screenshot template HTML → store in R2
     const thumbGenMatch = path.match(/^\/api\/templates\/([^/]+)\/generate-thumb$/);
