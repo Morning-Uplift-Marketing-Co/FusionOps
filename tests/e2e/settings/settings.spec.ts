@@ -372,7 +372,7 @@ test.describe('Settings - Save Functionality', () => {
     const input = page.getByPlaceholder(/sk-ant-/i);
     await input.fill('sk-ant-test-key-12345');
 
-    const saveBtn = input.locator('..').getByRole('button').filter({ hasText: /Save/i });
+    const saveBtn = page.getByRole('button').filter({ hasText: /Save/i }).first();
     if (await saveBtn.isVisible()) {
       await saveBtn.click();
       await page.waitForTimeout(500);
