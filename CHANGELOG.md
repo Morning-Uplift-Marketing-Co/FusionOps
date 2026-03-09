@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.30] - 2026-03-09
+### Fixed
+- **Google Ads tracking**: Add `gclid` parameter detection for click_id tracking
+- **fpPixel tracking**: Now captures Google Click ID (gclid) as primary click_id
+- **Parameter priority**: gclid > vlcid > clickid > click_id > cid > cpid
+- **Affects**: pet-orange-white template (BaseLayout.astro + index.astro)
+
 ## [2.7.29] - 2026-03-09
 ### Changed
 - **Template cleanup**: Removed 14 unused templates, keeping only production-ready templates
