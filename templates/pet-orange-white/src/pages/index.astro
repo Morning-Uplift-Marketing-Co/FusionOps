@@ -535,7 +535,8 @@ const ctaHref  = voluumClickUrl || '#apply';
 
       const current = new URLSearchParams(window.location.search);
       current.set("zip", zip);
-      const clickId = current.get("gclid") || current.get("vlcid") || current.get("click_id") || current.get("cid") || current.get("cpid") || "";
+      var _c = function(v) { return (v && /^\{.*\}$/.test(v)) ? '' : (v || ''); };
+      const clickId = _c(current.get("gclid")) || _c(current.get("vlcid")) || _c(current.get("click_id")) || _c(current.get("cid")) || _c(current.get("cpid")) || "";
       if (typeof window.__fpPixel === 'function') {
         window.__fpPixel('form_submit', { zip: zip, click_id: clickId });
       }
