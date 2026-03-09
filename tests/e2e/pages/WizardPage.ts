@@ -1,4 +1,5 @@
-import { Page, Locator, expect } from '@playwright/test';
+import type { Page, Locator } from '@playwright/test';
+import { expect } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 /**
@@ -99,9 +100,9 @@ export class WizardPage extends BasePage {
 
     // Header elements
     this.title = page.getByText(/Create New LP|Create New Campaign/i);
-    this.stepIndicator = page.locator('text=/Step \\d\\/7/');
-    this.progressBar = page.locator('[style*="width:"][class*="bg-"], [class*="progress"]');
-    this.stepLabel = page.locator('.text-\\[hsl\\(var\\(--muted-foreground\\)\\)\\], text=/Brand|Product|Template|Design|Copy|Tracking|Review/i');
+    this.stepIndicator = page.getByText(/Step \d\/7/i);
+    this.progressBar = page.locator('[class*="progress"]').first();
+    this.stepLabel = page.locator('.text-[hsl(var(--muted-foreground))], text=/Brand|Product|Template|Design|Copy|Tracking|Review/i');
 
     // Navigation
     this.cancelButton = page.getByRole('button').filter({ hasText: /Cancel/i });
@@ -110,7 +111,7 @@ export class WizardPage extends BasePage {
     this.buildButton = page.getByRole('button').filter({ hasText: /Build|Save|Update/i });
 
     // Validation errors
-    this.validationErrors = page.locator('.bg-\\[hsl\\(var\\(--destructive\\)\\)/8\\], text=/⚠️|Please fix/i');
+    this.validationErrors = page.locator('[class*="destructive"]').or(page.getByText(/⚠️|Please fix|required/i));
 
     // Step 1: Brand
     this.brandNameInput = page.locator('input').filter({ hasText: '' }).nth(0);
