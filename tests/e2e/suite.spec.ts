@@ -33,13 +33,13 @@ test.describe('Smoke Tests - Critical Paths', () => {
   test('should open wizard from dashboard', async ({ page }) => {
     await page.goto('/');
 
-    const createBtn = page.getByRole('button').filter({ hasText: /Create LP|Create/i });
+    const createBtn = page.locator('button').filter({ hasText: /\+ Create New LP|\+ Create LP/i }).first();
     await createBtn.click();
 
     await expect(page.getByText(/Brand Information|Create New LP/i).first()).toBeVisible({ timeout: 5000 });
 
     // Cancel to return
-    const cancelBtn = page.getByRole('button').filter({ hasText: /Cancel|Back/i });
+    const cancelBtn = page.getByRole('button').filter({ hasText: /Cancel|Back/i }).first();
     await cancelBtn.click();
   });
 
@@ -129,17 +129,17 @@ test.describe('Smoke Tests - Error Handling', () => {
   test('should handle empty wizard form validation', async ({ page }) => {
     await page.goto('/');
 
-    const createBtn = page.getByRole('button').filter({ hasText: /Create/i });
+    const createBtn = page.locator('button').filter({ hasText: /\+ Create New LP|\+ Create LP/i }).first();
     await createBtn.click();
 
     // Try to proceed without filling form
-    await page.getByRole('button').filter({ hasText: /Next/i }).click();
+    await page.locator('button').filter({ hasText: 'Next →' }).click();
 
     // Should show validation errors
     const hasErrors = await page.getByText(/required|invalid/i).isVisible().catch(() => false);
 
     // Cancel out
-    const cancelBtn = page.getByRole('button').filter({ hasText: /Cancel|Back/i });
+    const cancelBtn = page.getByRole('button').filter({ hasText: /Cancel|Back/i }).first();
     await cancelBtn.click();
   });
 
