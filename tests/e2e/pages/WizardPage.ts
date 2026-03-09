@@ -105,7 +105,7 @@ export class WizardPage extends BasePage {
     this.stepLabel = page.locator('.text-[hsl(var(--muted-foreground))], text=/Brand|Product|Template|Design|Copy|Tracking|Review/i');
 
     // Navigation
-    this.cancelButton = page.getByRole('button').filter({ hasText: /Cancel/i });
+    this.cancelButton = page.getByRole('button').filter({ hasText: /Cancel|Back/i }).first();
     this.backButton = page.getByRole('button').filter({ hasText: /Back|←/i });
     this.nextButton = page.getByRole('button').filter({ hasText: /Next|→/i });
     this.buildButton = page.getByRole('button').filter({ hasText: /Build|Save|Update/i });
@@ -169,7 +169,7 @@ export class WizardPage extends BasePage {
     // Step 7: Review
     this.configurationSummary = page.locator('text=/Configuration/i');
     this.astroProjectButton = page.getByRole('button').filter({ hasText: /Astro Project/i });
-    this.astroFileTree = page.locator('text=/\\.astro|\\.css|package\\.json/i');
+    this.astroFileTree = page.getByText(/\.astro|\.css|package\.json/i).first();
 
     // Preview
     this.mobilePreview = page.locator('[class*="mock-phone"], [class*="preview"], iframe');
@@ -455,7 +455,7 @@ export class WizardPage extends BasePage {
     // Step 1: Brand
     await this.completeStepBrand({
       brand: 'E2E Test Brand',
-      domain: 'test-example.com',
+      domain: 'testbrand.com',
     });
     await this.clickNext();
 
