@@ -1,4 +1,5 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import { DashboardPage } from '../pages/DashboardPage';
 import { WizardPage } from '../pages/WizardPage';
 import { VALID_BRAND_DATA, VALID_TRACKING_DATA } from '../fixtures/wizard-data';
@@ -159,21 +160,21 @@ test.describe('LP Wizard - Step 6: Tracking & Conversion', () => {
 
   test.describe('First-Party Pixel', () => {
     test('should display First-Party Pixel card', async ({ page }) => {
-      await expect(page.getByText(/First-Party Pixel/i)).toBeVisible();
+      await expect(page.getByText(/First-Party Pixel/i).first()).toBeVisible();
     });
 
     test('should show Auto badge indicating automatic configuration', async ({ page }) => {
-      await expect(page.getByText(/Auto/i)).toBeVisible();
+      await expect(page.getByText(/Auto/i).first()).toBeVisible();
     });
 
     test('should display information about pixel endpoint', async ({ page }) => {
-      await expect(page.getByText(/\{domain\}/i)).toBeVisible();
+      await expect(page.getByText(/\{domain\}/i).first()).toBeVisible();
     });
   });
 
   test.describe('Affiliate Form - LeadsGate', () => {
     test('should display affiliate network buttons', async ({ page }) => {
-      await expect(page.getByText(/LeadsGate/i)).toBeVisible();
+      await expect(page.getByText(/LeadsGate/i).first()).toBeVisible();
     });
 
     test('should select LeadsGate network', async ({ page }) => {
@@ -237,7 +238,7 @@ test.describe('LP Wizard - Step 6: Tracking & Conversion', () => {
         await page.waitForTimeout(300);
 
         // Redirect URL field should appear
-        await expect(page.getByPlaceholder(/https/i)).toBeVisible();
+        await expect(page.getByPlaceholder(/https/i).first()).toBeVisible();
       }
     });
 
@@ -264,7 +265,7 @@ test.describe('LP Wizard - Step 6: Tracking & Conversion', () => {
         await zeroParallelBtn.click();
         await page.waitForTimeout(300);
 
-        const redirectInput = page.getByPlaceholder(/https/i);
+        const redirectInput = page.getByPlaceholder(/https/i).first();
         if (await redirectInput.isVisible()) {
           await redirectInput.fill('https://offers.example.com/click?pid=123');
           await expect(redirectInput).toHaveValue(/https:/);
@@ -360,7 +361,7 @@ test.describe('LP Wizard - Step 6: Tracking & Conversion', () => {
       await page.waitForTimeout(300);
 
       // Look for cost model options
-      await expect(page.getByText(/CPC|CPA|RevShare/i)).toBeVisible();
+      await expect(page.getByText(/CPC|CPA|RevShare/i).first()).toBeVisible();
     });
 
     test('should cancel create campaign form', async ({ page }) => {
@@ -459,15 +460,15 @@ test.describe('LP Wizard - Step 6: Tracking & Conversion', () => {
   test.describe('UI Elements', () => {
     test('should display all section cards with icons', async ({ page }) => {
       // Check for main section headers
-      await expect(page.getByText(/Tracking Mode/i)).toBeVisible();
-      await expect(page.getByText(/Google Ads Conversion/i)).toBeVisible();
-      await expect(page.getByText(/First-Party Pixel/i)).toBeVisible();
-      await expect(page.getByText(/Affiliate Form/i)).toBeVisible();
+      await expect(page.getByText(/Tracking Mode/i).first()).toBeVisible();
+      await expect(page.getByText(/Google Ads Conversion/i).first()).toBeVisible();
+      await expect(page.getByText(/First-Party Pixel/i).first()).toBeVisible();
+      await expect(page.getByText(/Affiliate Form/i).first()).toBeVisible();
     });
 
     test('should have proper button states for selected options', async ({ page }) => {
       // Check that a selected network button has different styling
-      const leadsGateBtn = page.locator('button').filter({ hasText: /LeadsGate/i });
+      const leadsGateBtn = page.locator('button').filter({ hasText: /LeadsGate/i }).first();
       const initialClass = await leadsGateBtn.getAttribute('class') || '';
 
       await leadsGateBtn.click();
