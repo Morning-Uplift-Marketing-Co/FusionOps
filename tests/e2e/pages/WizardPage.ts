@@ -209,7 +209,7 @@ export class WizardPage extends BasePage {
    */
   async clickNext() {
     await this.nextButton.click();
-    await this.page.waitForTimeout(300);
+    await this.page.waitForTimeout(2000);
   }
 
   /**
@@ -217,7 +217,7 @@ export class WizardPage extends BasePage {
    */
   async clickBack() {
     await this.backButton.click();
-    await this.page.waitForTimeout(300);
+    await this.page.waitForTimeout(2000);
   }
 
   /**
