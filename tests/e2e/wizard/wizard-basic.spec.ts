@@ -13,8 +13,8 @@ test.describe('LP Wizard - Basic Navigation', () => {
   test('should load the application', async ({ page }) => {
     await page.goto('/');
 
-    // Wait for page to load
-    await page.waitForLoadState('domcontentloaded');
+    // Wait for page to fully load including React hydration
+    await page.waitForLoadState('networkidle');
 
     // Take screenshot to see what's on the page
     await page.screenshot({ path: 'test-artifacts/screenshots/01-homepage-loaded.png' });
@@ -62,7 +62,7 @@ test.describe('LP Wizard - Basic Navigation', () => {
 
   test('should display wizard header with step indicator', async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('domcontentloaded');
+    await page.waitForLoadState('networkidle');
 
     // Navigate to wizard via sidebar
     const nav = page.locator('nav');
@@ -179,7 +179,7 @@ test.describe('LP Wizard - Step 1: Brand Information', () => {
 test.describe('LP Wizard - Multi-Step Flow', () => {
   test('should navigate through first 3 steps', async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('domcontentloaded');
+    await page.waitForLoadState('networkidle');
 
     // Navigate to wizard
     const nav = page.locator('nav');
@@ -240,7 +240,7 @@ test.describe('LP Wizard - Multi-Step Flow', () => {
 test.describe('LP Wizard - Screenshot Tour', () => {
   test('should capture screenshots of all major wizard states', async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('domcontentloaded');
+    await page.waitForLoadState('networkidle');
 
     // Screenshot 1: Dashboard
     await page.screenshot({ path: 'test-artifacts/tour/01-dashboard.png', fullPage: true });
