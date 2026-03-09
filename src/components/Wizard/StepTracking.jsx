@@ -122,6 +122,9 @@ export function StepTracking({ c, u }) {
   const [dnsResult, setDnsResult] = useState(null); // { success, message } or null
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [verifyResult, setVerifyResult] = useState(null);
+  // Quick DNS update state (collapsed view)
+  const [quickDnsLoading, setQuickDnsLoading] = useState(false);
+  const [quickDnsResult, setQuickDnsResult] = useState(null); // { success, message }
   // Collapse Voluum script section if already configured (edit mode)
   const voluumAlreadyConfigured = !!(c.voluumLanderScript && c.voluumId);
   const [editVoluum, setEditVoluum] = useState(false);
@@ -798,13 +801,50 @@ export function StepTracking({ c, u }) {
                       onChange={e => {
                         const sub = e.target.value.trim();
                         u("voluumTrackingDomain", sub ? `link.${sub}` : "");
+                        setQuickDnsResult(null);
                       }}
                       className="flex-1 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--input))] px-2.5 py-1.5 text-[11px] font-mono text-[hsl(var(--foreground))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]/50"
                       placeholder={c.domain || "scratchpaypet.tech"}
                     />
+                    <button
+                      type="button"
+                      disabled={quickDnsLoading || !c.voluumTrackingDomain || !c.voluumCfCname}
+                      onClick={async () => {
+                        setQuickDnsLoading(true);
+                        setQuickDnsResult(null);
+                        try {
+                          const s = LS.get("settings") || {};
+                          const cfProfiles = Array.isArray(s.cfProfiles) ? s.cfProfiles : [];
+                          const cfProfile = cfProfiles.find(p => p.id === c.cfProfileId);
+                          const cfAccountId = cfProfile?.accountId || s.cfAccountId;
+                          const cfApiToken = cfProfile?.apiToken || s.cfApiToken;
+                          if (!cfAccountId || !cfApiToken) throw new Error("Cloudflare credentials not found");
+                          const zone = await getOrCreateZone(c.domain, cfAccountId, cfApiToken);
+                          if (!zone.success || !zone.zoneId) throw new Error(zone.error || "Zone not found");
+                          const td = c.voluumTrackingDomain || `link.${c.domain}`;
+                          const r = await upsertDnsRecord({
+                            zoneId: zone.zoneId, cfAccountId, cfApiToken,
+                            domain: c.domain,
+                            type: "CNAME", name: td,
+                            content: c.voluumCfCname, proxied: false,
+                          });
+                          setQuickDnsResult({ success: r.success, message: r.success ? `✅ ${td} → ${c.voluumCfCname.slice(0,30)}...` : `❌ ${r.error}` });
+                        } catch (e) {
+                          setQuickDnsResult({ success: false, message: `❌ ${e.message}` });
+                        } finally {
+                          setQuickDnsLoading(false);
+                        }
+                      }}
+                      className="px-2.5 py-1.5 text-[10px] rounded-lg bg-[hsl(var(--primary))/15] border border-[hsl(var(--primary))/40] text-[hsl(var(--primary))] font-semibold cursor-pointer whitespace-nowrap disabled:opacity-40"
+                    >
+                      {quickDnsLoading ? "⏳" : "🌐 Update DNS"}
+                    </button>
                   </div>
-                  <div className="text-[10px] text-[hsl(var(--muted-foreground))]/60">
-                    Full domain: <span className="font-mono">{c.voluumTrackingDomain || `link.${c.domain}`}</span>
+                  <div className="text-[10px] text-[hsl(var(--muted-foreground))]/60 flex items-center gap-1.5">
+                    <span>Full domain: <span className="font-mono">{c.voluumTrackingDomain || `link.${c.domain}`}</span></span>
+                    {quickDnsResult && (
+                      <span className={quickDnsResult.success ? "text-green-500" : "text-red-400"}>{quickDnsResult.message}</span>
+                    )}
                   </div>
                 </div>
                 <div className="space-y-1">
