@@ -203,7 +203,7 @@ test.describe('LP Wizard - Multi-Step Flow', () => {
       await textInputs.nth(0).fill('Test Brand');
     }
     if (textInputCount > 1) {
-      await textInputs.nth(1).fill('test-example.com');
+      await textInputs.nth(1).fill('testbrand.com');
     }
 
     await page.screenshot({ path: 'test-artifacts/screenshots/08-flow-step1.png' });
@@ -270,7 +270,7 @@ test.describe('LP Wizard - Screenshot Tour', () => {
       await textInputs.nth(0).fill('E2E Test Brand');
     }
     if (textInputCount > 1) {
-      await textInputs.nth(1).fill('e2e-test.example.com');
+      await textInputs.nth(1).fill('testbrand.com');
     }
 
     const nextBtn = page.getByRole('button').filter({ hasText: 'Next' });
