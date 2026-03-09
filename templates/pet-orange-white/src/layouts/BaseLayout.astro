@@ -78,7 +78,7 @@ const cssVars = `--primary:${hsl(...pal[0] as [number,number,number])};--seconda
     <script data-cfasync="false" is:inline>
       (function(){
         var p = new URLSearchParams(window.location.search);
-        var cid = p.get('vlcid') || p.get('clickid') || p.get('click_id') || p.get('cid') || p.get('cpid') || '';
+        var cid = p.get('gclid') || p.get('vlcid') || p.get('clickid') || p.get('click_id') || p.get('cid') || p.get('cpid') || '';
         if (cid) {
           window.__fpClickId = cid;
           try { sessionStorage.setItem('voluum_cpid', cid); } catch(_){}
