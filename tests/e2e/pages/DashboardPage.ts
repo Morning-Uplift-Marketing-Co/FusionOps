@@ -31,8 +31,8 @@ export class DashboardPage extends BasePage {
   constructor(page: Page) {
     super(page);
 
-    // Main create button
-    this.createLPButton = page.getByRole('button').filter({ hasText: /Create|New LP/i });
+    // Main create button - use exact text to avoid matching sidebar + Create LP button
+    this.createLPButton = page.locator('button').filter({ hasText: /\+ Create New LP|\+ Create LP/i }).first();
 
     // Stats
     this.buildsCount = page.locator('text=/Builds/');
