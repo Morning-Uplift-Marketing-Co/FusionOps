@@ -146,6 +146,11 @@ export function StepTracking({ c, u }) {
     if (normalizedTrackingDomain && normalizedTrackingDomain !== c.voluumTrackingDomain) {
       u("voluumTrackingDomain", normalizedTrackingDomain);
     }
+    // Auto-fix stale CTA click URL whenever tracking domain changes
+    const correctClickUrl = normalizedTrackingDomain ? `https://${normalizedTrackingDomain}/click` : "";
+    if (correctClickUrl && c.voluumClickUrl !== correctClickUrl) {
+      u("voluumClickUrl", correctClickUrl);
+    }
 
     if (c.voluumLanderScript) {
       const normalized = normalizeVoluumScriptHost(c.voluumLanderScript, c.domain);
