@@ -208,16 +208,28 @@ export class WizardPage extends BasePage {
    * Click Next button
    */
   async clickNext() {
+    const currentStep = await this.getCurrentStep();
     await this.nextButton.click();
-    await this.page.waitForTimeout(2000);
+    // Wait for step indicator to show the next step
+    await this.page.waitForFunction(
+      (step) => document.body.innerText.includes(`Step ${step + 1}/7`),
+      currentStep,
+      { timeout: 10000 }
+    ).catch(() => this.page.waitForTimeout(2000));
   }
 
   /**
    * Click Back button
    */
   async clickBack() {
+    const currentStep = await this.getCurrentStep();
     await this.backButton.click();
-    await this.page.waitForTimeout(2000);
+    // Wait for step indicator to show the previous step
+    await this.page.waitForFunction(
+      (step) => document.body.innerText.includes(`Step ${step - 1}/7`),
+      currentStep,
+      { timeout: 10000 }
+    ).catch(() => this.page.waitForTimeout(2000));
   }
 
   /**
