@@ -268,15 +268,19 @@ export class WizardPage extends BasePage {
     tagline?: string;
     email?: string;
   }) {
-    // Fill brand name (first input)
+    // Use triple-click to select all before filling to clear pre-existing values
     const inputs = this.page.locator('input');
+    await inputs.nth(0).click({ clickCount: 3 });
     await inputs.nth(0).fill(data.brand);
+    await inputs.nth(1).click({ clickCount: 3 });
     await inputs.nth(1).fill(data.domain);
 
     if (data.tagline) {
+      await inputs.nth(2).click({ clickCount: 3 });
       await inputs.nth(2).fill(data.tagline);
     }
     if (data.email) {
+      await inputs.nth(3).click({ clickCount: 3 });
       await inputs.nth(3).fill(data.email);
     }
   }
