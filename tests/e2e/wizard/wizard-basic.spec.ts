@@ -200,11 +200,9 @@ test.describe('LP Wizard - Multi-Step Flow', () => {
     const textInputCount = await textInputs.count();
 
     if (textInputCount > 0) {
-      await textInputs.nth(0).click({ clickCount: 3 });
       await textInputs.nth(0).fill('Test Brand');
     }
     if (textInputCount > 1) {
-      await textInputs.nth(1).click({ clickCount: 3 });
       await textInputs.nth(1).fill('testbrand.com');
     }
 
@@ -269,11 +267,9 @@ test.describe('LP Wizard - Screenshot Tour', () => {
     const textInputCount = await textInputs.count();
 
     if (textInputCount > 0) {
-      await textInputs.nth(0).click({ clickCount: 3 });
       await textInputs.nth(0).fill('E2E Test Brand');
     }
     if (textInputCount > 1) {
-      await textInputs.nth(1).click({ clickCount: 3 });
       await textInputs.nth(1).fill('testbrand.com');
     }
 
