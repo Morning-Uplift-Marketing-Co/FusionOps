@@ -5,7 +5,7 @@
  * Provides consistent ways to interact with the application.
  */
 
-import { Page, Locator } from '@playwright/test';
+import type { Page, Locator } from '@playwright/test';
 
 /**
  * Application-specific locators and helpers
@@ -24,7 +24,7 @@ export class AppHelpers {
       case 'sites':
         await this.page.goto('/#sites');
         // Or click the Sites navigation
-        const sitesNav = this.page.getByRole('link', 'button').filter({ hasText: /Sites/i });
+        const sitesNav = this.page.locator('a, button').filter({ hasText: /Sites/i }).first();
         if (await sitesNav.isVisible()) {
           await sitesNav.click();
         }
@@ -348,14 +348,14 @@ export class WizardHelpers {
     await inputs.nth(1).fill(data.domain);
 
     if (data.tagline) {
-      const taglineInput = this.page.getByPlaceholderText(/Fast. Simple. Trusted./i);
+      const taglineInput = this.page.getByPlaceholder(/Fast. Simple. Trusted./i);
       if (await taglineInput.isVisible()) {
         await taglineInput.fill(data.tagline);
       }
     }
 
     if (data.email) {
-      const emailInput = this.page.getByPlaceholderText(/@/i);
+      const emailInput = this.page.getByPlaceholder(/@/i);
       if (await emailInput.isVisible()) {
         await emailInput.fill(data.email);
       }
@@ -422,13 +422,13 @@ export class WizardHelpers {
    * Complete wizard Step 5: Tracking & Conversion
    */
   async completeStep5(data: { redirectUrl: string; aid?: string }): Promise<void> {
-    const redirectInput = this.page.getByPlaceholderText(/https/i);
+    const redirectInput = this.page.getByPlaceholder(/https/i);
     if (await redirectInput.isVisible()) {
       await redirectInput.fill(data.redirectUrl);
     }
 
     if (data.aid) {
-      const aidInput = this.page.getByPlaceholderText(/14881/i);
+      const aidInput = this.page.getByPlaceholder(/14881/i);
       if (await aidInput.isVisible()) {
         await aidInput.fill(data.aid);
       }
@@ -515,7 +515,7 @@ export class SitesHelpers {
    * Search for sites
    */
   async searchSites(query: string): Promise<void> {
-    const searchInput = this.page.getByPlaceholderText(/Search sites/i);
+    const searchInput = this.page.getByPlaceholder(/Search sites/i);
     await searchInput.fill(query);
     await this.page.waitForTimeout(500);
   }
@@ -524,7 +524,7 @@ export class SitesHelpers {
    * Clear search
    */
   async clearSearch(): Promise<void> {
-    const searchInput = this.page.getByPlaceholderText(/Search sites/i);
+    const searchInput = this.page.getByPlaceholder(/Search sites/i);
     await searchInput.fill('');
     await this.page.waitForTimeout(300);
   }

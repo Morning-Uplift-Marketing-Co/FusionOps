@@ -784,17 +784,40 @@ export function StepTracking({ c, u }) {
           <CardContent>
             {voluumAlreadyConfigured && !editVoluum ? (
               /* ── Collapsed summary (edit mode, already configured) ── */
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5 text-[11px] text-[hsl(var(--muted-foreground))]">
-                  <div className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--success))]" />
-                  Lander script installed for <span className="font-mono font-semibold text-[hsl(var(--foreground))]">vls.{c.domain}</span>
-                </div>
-                {c.voluumClickUrl && (
-                  <div className="flex items-center gap-1.5 text-[11px] text-[hsl(var(--muted-foreground))]">
-                    <div className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--success))]" />
-                    CTA → <span className="font-mono font-semibold text-[hsl(var(--foreground))]">{c.voluumClickUrl}</span>
+              <div className="space-y-2.5">
+                <div className="space-y-1">
+                  <div className="text-[10px] text-[hsl(var(--muted-foreground))] font-medium">Tracking Domain</div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={c.voluumTrackingDomain || `link.${c.domain}`}
+                      onChange={e => u("voluumTrackingDomain", e.target.value)}
+                      className="flex-1 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--input))] px-2.5 py-1.5 text-[11px] font-mono text-[hsl(var(--foreground))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]/50"
+                      placeholder={`link.${c.domain || "domain.com"}`}
+                    />
                   </div>
-                )}
+                </div>
+                <div className="space-y-1">
+                  <div className="text-[10px] text-[hsl(var(--muted-foreground))] font-medium">CTA Click URL</div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={c.voluumClickUrl || ""}
+                      onChange={e => u("voluumClickUrl", e.target.value)}
+                      className="flex-1 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--input))] px-2.5 py-1.5 text-[11px] font-mono text-[hsl(var(--foreground))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]/50"
+                      placeholder={`https://link.${c.domain || "domain.com"}/click`}
+                    />
+                    {c.domain && (
+                      <button
+                        type="button"
+                        onClick={() => u("voluumClickUrl", `https://link.${c.domain}/click`)}
+                        className="px-3 py-1.5 text-[10px] rounded-lg bg-[hsl(var(--primary))/15] border border-[hsl(var(--primary))/40] text-[hsl(var(--primary))] font-semibold cursor-pointer whitespace-nowrap"
+                      >
+                        Auto-fill
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             ) : (
               /* ── Full form (first setup or editing) ── */
@@ -816,12 +839,12 @@ export function StepTracking({ c, u }) {
                       <Inp
                         value={c.voluumClickUrl || ""}
                         onChange={v => u("voluumClickUrl", v)}
-                        placeholder={c.voluumCampaignId ? `https://vls.${c.domain || "domain.com"}/${c.voluumCampaignId}` : `https://vls.${c.domain || "domain.com"}/{campaign-id}`}
+                        placeholder={`https://link.${c.domain || "domain.com"}/click`}
                       />
-                      {!c.voluumClickUrl && c.domain && c.voluumCampaignId && (
+                      {!c.voluumClickUrl && c.domain && (
                         <button
                           type="button"
-                          onClick={() => u("voluumClickUrl", `https://vls.${c.domain}/${c.voluumCampaignId}`)}
+                          onClick={() => u("voluumClickUrl", `https://link.${c.domain}/click`)}
                           className="px-3 py-1.5 text-[10px] rounded-lg bg-[hsl(var(--primary))/15] border border-[hsl(var(--primary))/40] text-[hsl(var(--primary))] font-semibold cursor-pointer whitespace-nowrap"
                         >
                           Use Default

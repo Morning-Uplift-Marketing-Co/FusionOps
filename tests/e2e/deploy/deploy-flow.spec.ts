@@ -27,10 +27,10 @@ test.describe('Deploy Flow - Deploy Dropdown', () => {
     await page.goto('/');
 
     // Wait for sites page to load
-    await expect(page.getByText(/My Sites|Dashboard/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/My Sites|Dashboard/i).first()).toBeVisible({ timeout: 10000 });
 
     // Navigate to sites if on dashboard
-    const sitesLink = page.getByRole('link', 'button').filter({ hasText: /Sites/i });
+    const sitesLink = page.locator('a, button').filter({ hasText: /Sites/i }).first();
     if (await sitesLink.isVisible()) {
       await sitesLink.click();
     }
@@ -73,7 +73,7 @@ test.describe('Deploy Flow - Deploy Dropdown Menu', () => {
     await page.waitForTimeout(500);
 
     // Navigate to sites if on dashboard
-    const sitesLink = page.getByRole('link', 'button').filter({ hasText: /Sites/i });
+    const sitesLink = page.locator('a, button').filter({ hasText: /Sites/i }).first();
     if (await sitesLink.isVisible()) {
       await sitesLink.click();
       await page.waitForTimeout(500);
@@ -154,7 +154,7 @@ test.describe('Deploy Flow - Deploy Targets', () => {
     await page.waitForTimeout(500);
 
     // Navigate to sites if on dashboard
-    const sitesLink = page.getByRole('link', 'button').filter({ hasText: /Sites/i });
+    const sitesLink = page.locator('a, button').filter({ hasText: /Sites/i }).first();
     if (await sitesLink.isVisible()) {
       await sitesLink.click();
       await page.waitForTimeout(500);
@@ -341,7 +341,7 @@ test.describe('Deploy Flow - Deploy Action', () => {
     await page.waitForTimeout(500);
 
     // Navigate to sites if on dashboard
-    const sitesLink = page.getByRole('link', 'button').filter({ hasText: /Sites/i });
+    const sitesLink = page.locator('a, button').filter({ hasText: /Sites/i }).first();
     if (await sitesLink.isVisible()) {
       await sitesLink.click();
       await page.waitForTimeout(500);

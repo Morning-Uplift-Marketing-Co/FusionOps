@@ -23,7 +23,7 @@ test.describe('Smoke Tests - Critical Paths', () => {
     await expect(page.getByText(/Dashboard/i)).toBeVisible();
 
     // Navigate to sites
-    const sitesLink = page.getByRole('link', 'button').filter({ hasText: /Sites/i });
+    const sitesLink = page.locator('a, button').filter({ hasText: /Sites/i }).first();
     if (await sitesLink.isVisible()) {
       await sitesLink.click();
       await expect(page.getByText(/My Sites/i)).toBeVisible({ timeout: 5000 });
@@ -75,7 +75,7 @@ test.describe('Smoke Tests - Critical Paths', () => {
     await page.getByRole('button').filter({ hasText: /Next/i }).click();
 
     // Step 5 - add redirect
-    const redirectInput = page.getByPlaceholderText(/https/i);
+    const redirectInput = page.getByPlaceholder(/https/i);
     if (await redirectInput.isVisible()) {
       await redirectInput.fill(data.redirectUrl);
     }
@@ -94,19 +94,19 @@ test.describe('Smoke Tests - Navigation', () => {
   test('should navigate to Settings', async ({ page }) => {
     await page.goto('/');
 
-    const settingsBtn = page.getByRole('button').filter({ hasText: /Settings/i });
+    const settingsBtn = page.getByRole('button').filter({ hasText: /Settings/i }).first();
     await settingsBtn.click();
 
-    await expect(page.getByText(/Settings|API keys/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/Settings|API keys/i).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('should navigate back from Settings', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('button').filter({ hasText: /Settings/i }).click();
+    await page.getByRole('button').filter({ hasText: /Settings/i }).first().click();
 
-    await expect(page.getByText(/Settings/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/Settings/i).first()).toBeVisible({ timeout: 5000 });
 
-    const dashboardBtn = page.getByRole('link', 'button').filter({ hasText: /Dashboard/i });
+    const dashboardBtn = page.locator('a, button').filter({ hasText: /Dashboard/i }).first();
     if (await dashboardBtn.isVisible()) {
       await dashboardBtn.click();
       await expect(page.getByText(/Dashboard/i)).toBeVisible({ timeout: 5000 });
@@ -136,11 +136,11 @@ test.describe('Smoke Tests - Error Handling', () => {
     await page.goto('/');
 
     // Navigate to sites
-    const sitesLink = page.getByRole('link', 'button').filter({ hasText: /Sites/i });
+    const sitesLink = page.locator('a, button').filter({ hasText: /Sites/i }).first();
     if (await sitesLink.isVisible()) {
       await sitesLink.click();
 
-      const searchInput = page.getByPlaceholderText(/Search sites/i);
+      const searchInput = page.getByPlaceholder(/Search sites/i);
       await searchInput.fill('xyznonexistent123456789');
 
       // Should handle gracefully (no crash)
