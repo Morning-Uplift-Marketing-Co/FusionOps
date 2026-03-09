@@ -193,6 +193,10 @@ test.describe('LP Wizard - Multi-Step Flow', () => {
       }
     }
 
+    // Click + Create New LP to open the wizard
+    const createBtn = page.locator('button').filter({ hasText: /Create New LP|Create LP/ }).first();
+    if (await createBtn.isVisible({ timeout: 5000 })) await createBtn.click();
+
     // Wait for wizard to open and load
     await page.getByRole('heading', { name: /Brand Information/i }).waitFor({ timeout: 10000 });
 
@@ -257,6 +261,10 @@ test.describe('LP Wizard - Screenshot Tour', () => {
         break;
       }
     }
+
+    // Click + Create New LP to open the wizard
+    const createBtn = page.locator('button').filter({ hasText: /Create New LP|Create LP/ }).first();
+    if (await createBtn.isVisible({ timeout: 5000 })) await createBtn.click();
 
     // Wait for wizard to open and load
     await page.getByRole('heading', { name: /Brand Information/i }).waitFor({ timeout: 10000 });
