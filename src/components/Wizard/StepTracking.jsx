@@ -133,7 +133,6 @@ export function StepTracking({ c, u }) {
 
   const mode = c.trackingMode || "minimal";
   const isVoluum = mode === "voluum";
-  const pixelBaseUrl = resolvePixelBaseUrl(c.url, c.domain);
   const cleanDomain = String(c.domain || "").trim().replace(/^https?:\/\//i, "").replace(/\/+$/, "");
   const pixelEndpoint = cleanDomain ? `https://t.${cleanDomain}/e` : "";
 
@@ -369,7 +368,7 @@ export function StepTracking({ c, u }) {
               <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-3 mt-1 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Tracking Domain</span>
-                  <span className="text-[11px] font-mono text-[hsl(var(--foreground))]">{c.voluumTrackingDomain || (c.domain ? `vls.${c.domain}` : "—")}</span>
+                  <span className="text-[11px] font-mono text-[hsl(var(--foreground))]">{c.voluumTrackingDomain || (c.domain ? `link.${c.domain}` : "—")}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Campaign ID</span>
@@ -386,8 +385,8 @@ export function StepTracking({ c, u }) {
                 <div className="pt-1">
                   <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider block mb-1.5">Postback URL</span>
                   <div className="flex items-center gap-2">
-                    <code className="flex-1 text-[9px] font-mono bg-[hsl(var(--input))] border border-[hsl(var(--border))] rounded px-2 py-1.5 text-purple-400 break-all cursor-pointer" onClick={() => navigator.clipboard?.writeText(`https://${c.voluumTrackingDomain || (c.domain ? `vls.${c.domain}` : 'TRACKING_DOMAIN')}/postback?cid={click_id}&payout={price}`)}>
-                      https://{c.voluumTrackingDomain || (c.domain ? `vls.${c.domain}` : 'TRACKING_DOMAIN')}/postback?cid={'{click_id}'}&payout={'{price}'}
+                    <code className="flex-1 text-[9px] font-mono bg-[hsl(var(--input))] border border-[hsl(var(--border))] rounded px-2 py-1.5 text-purple-400 break-all cursor-pointer" onClick={() => navigator.clipboard?.writeText(`https://${c.voluumTrackingDomain || (c.domain ? `link.${c.domain}` : 'TRACKING_DOMAIN')}/postback?cid={click_id}&payout={price}`)}>
+                      https://{c.voluumTrackingDomain || (c.domain ? `link.${c.domain}` : 'TRACKING_DOMAIN')}/postback?cid={'{click_id}'}&payout={'{price}'}
                     </code>
                   </div>
                 </div>
@@ -496,7 +495,7 @@ export function StepTracking({ c, u }) {
                           if (!zone.success || !zone.zoneId) throw new Error(zone.error || "Failed to get zone");
 
                           const results = [];
-                          const trkSub = (c.voluumTrackingDomain || `vls.${c.domain}`).split(".")[0];
+                          const trkSub = (c.voluumTrackingDomain || `link.${c.domain}`).split(".")[0];
 
                           // 1. Tracking CNAME: trk.domain → CloudFront
                           const r1 = await upsertDnsRecord({
