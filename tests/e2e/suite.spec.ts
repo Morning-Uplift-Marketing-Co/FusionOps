@@ -47,7 +47,10 @@ test.describe('Smoke Tests - Critical Paths', () => {
     await page.goto('/');
 
     const createBtn = page.getByRole('button').filter({ hasText: /Create/i });
-    await createBtn.click();
+    await createBtn.first().click();
+
+    // Wait for wizard to open
+    await page.getByRole('heading', { name: /Brand Information/i }).waitFor({ timeout: 10000 });
 
     const data = testData.minimalWizardData();
     const nextBtn = page.getByRole('button').filter({ hasText: /Next/i });

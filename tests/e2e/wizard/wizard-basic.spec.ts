@@ -193,7 +193,8 @@ test.describe('LP Wizard - Multi-Step Flow', () => {
       }
     }
 
-    await page.waitForTimeout(500);
+    // Wait for wizard to open and load
+    await page.getByRole('heading', { name: /Brand Information/i }).waitFor({ timeout: 10000 });
 
     // Step 1: Fill Brand - use non-number, non-checkbox inputs only
     const textInputs = page.locator('input:not([type="number"]):not([type="checkbox"])');
@@ -257,7 +258,8 @@ test.describe('LP Wizard - Screenshot Tour', () => {
       }
     }
 
-    await page.waitForTimeout(500);
+    // Wait for wizard to open and load
+    await page.getByRole('heading', { name: /Brand Information/i }).waitFor({ timeout: 10000 });
 
     // Screenshot 2: Wizard Step 1
     await page.screenshot({ path: 'test-artifacts/tour/02-wizard-step1.png', fullPage: true });
