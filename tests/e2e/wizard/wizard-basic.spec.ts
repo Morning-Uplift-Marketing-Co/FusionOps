@@ -185,17 +185,9 @@ test.describe('LP Wizard - Multi-Step Flow', () => {
     const nav = page.locator('nav');
     const navButtons = nav.locator('button');
 
-    for (let i = 0; i < await navButtons.count(); i++) {
-      const text = await navButtons.nth(i).textContent();
-      if (text?.includes('LP Wizard') || text?.includes('Wizard')) {
-        await navButtons.nth(i).click();
-        break;
-      }
-    }
-
-    // Click + Create New LP to open the wizard
-    const createBtn = page.locator('button').filter({ hasText: /Create New LP|Create LP/ }).first();
-    if (await createBtn.isVisible({ timeout: 5000 })) await createBtn.click();
+    // Click LP Wizard in sidebar, then + Create New LP
+    await page.locator('nav button').filter({ hasText: /LP Wizard/i }).click();
+    await page.locator('button').filter({ hasText: /\+ Create New LP|\+ Create LP/i }).first().click();
 
     // Wait for wizard to open and load
     await page.getByRole('heading', { name: /Brand Information/i }).waitFor({ timeout: 10000 });
@@ -254,17 +246,9 @@ test.describe('LP Wizard - Screenshot Tour', () => {
     const nav = page.locator('nav');
     const navButtons = nav.locator('button');
 
-    for (let i = 0; i < await navButtons.count(); i++) {
-      const text = await navButtons.nth(i).textContent();
-      if (text?.includes('LP Wizard') || text?.includes('Wizard')) {
-        await navButtons.nth(i).click();
-        break;
-      }
-    }
-
-    // Click + Create New LP to open the wizard
-    const createBtn = page.locator('button').filter({ hasText: /Create New LP|Create LP/ }).first();
-    if (await createBtn.isVisible({ timeout: 5000 })) await createBtn.click();
+    // Click LP Wizard in sidebar, then + Create New LP
+    await page.locator('nav button').filter({ hasText: /LP Wizard/i }).click();
+    await page.locator('button').filter({ hasText: /\+ Create New LP|\+ Create LP/i }).first().click();
 
     // Wait for wizard to open and load
     await page.getByRole('heading', { name: /Brand Information/i }).waitFor({ timeout: 10000 });
