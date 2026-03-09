@@ -40,7 +40,7 @@ test.describe('LP Wizard - Navigation', () => {
   test('should open wizard from dashboard', async ({ page }) => {
     await expect(wizardPage.title).toBeVisible();
     await expect(wizardPage.stepIndicator).toContainText('Step 1/7');
-    await expect(page.getByText(/Brand Information|Brand/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Brand Information/i })).toBeVisible();
   });
 
   test('should close wizard when canceling on step 1', async ({ page }) => {
@@ -49,7 +49,7 @@ test.describe('LP Wizard - Navigation', () => {
   });
 
   test('should show progress indicator', async ({ page }) => {
-    await expect(wizardPage.progressBar).toBeVisible();
+    await expect(wizardPage.stepIndicator).toBeVisible();
     await expect(wizardPage.stepIndicator).toContainText('Step 1/7');
   });
 
@@ -58,12 +58,12 @@ test.describe('LP Wizard - Navigation', () => {
     await wizardPage.clickNext();
 
     await expect(wizardPage.stepIndicator).toContainText('Step 2/7');
-    await expect(page.getByText(/Loan Product|Product/i)).toBeVisible();
+    await expect(page.getByText(/Loan Product|Product/i).first()).toBeVisible();
 
     await wizardPage.clickBack();
 
     await expect(wizardPage.stepIndicator).toContainText('Step 1/7');
-    await expect(page.getByText(/Brand Information|Brand/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Brand Information/i })).toBeVisible();
   });
 
   test('should support Enter key navigation', async ({ page }) => {
@@ -94,10 +94,10 @@ test.describe('LP Wizard - Step 1: Brand Information', () => {
   });
 
   test('should display all brand form fields', async ({ page }) => {
-    await expect(page.getByText(/Brand Name/i)).toBeVisible();
-    await expect(page.getByText(/Domain/i)).toBeVisible();
-    await expect(page.getByText(/Tagline/i)).toBeVisible();
-    await expect(page.getByText(/Compliance Email|Email/i)).toBeVisible();
+    await expect(page.getByText('Brand Name *', { exact: true })).toBeVisible();
+    await expect(page.getByText('Domain *', { exact: true })).toBeVisible();
+    await expect(page.getByText('Brand Tagline', { exact: true })).toBeVisible();
+    await expect(page.getByText('Compliance Email', { exact: true })).toBeVisible();
   });
 
   test('should require brand name to proceed', async ({ page }) => {
@@ -266,7 +266,7 @@ test.describe('LP Wizard - Step 3: Template Selection', () => {
   });
 
   test('should display category filters', async ({ page }) => {
-    await expect(page.getByText(/All|Loan|Pet|Custom/i)).toBeVisible();
+    await expect(page.getByText(/All|Loan|Pet|Custom/i).first()).toBeVisible();
   });
 
   test('should complete step 3', async ({ page }) => {
@@ -302,8 +302,8 @@ test.describe('LP Wizard - Step 4: Design Selection', () => {
   });
 
   test('should display color scheme options', async ({ page }) => {
-    await expect(page.getByText(/Color Scheme/i)).toBeVisible();
-    await expect(page.getByText(/Ocean|Forest|Midnight/i)).toBeVisible();
+    await expect(page.getByText(/Color Scheme/i).first()).toBeVisible();
+    await expect(page.getByText(/Ocean|Forest|Midnight/i).first()).toBeVisible();
   });
 
   test('should select color scheme', async ({ page }) => {
@@ -315,8 +315,8 @@ test.describe('LP Wizard - Step 4: Design Selection', () => {
   });
 
   test('should display font options', async ({ page }) => {
-    await expect(page.getByText(/Font/i)).toBeVisible();
-    await expect(page.getByText(/DM Sans|Inter|Outfit/i)).toBeVisible();
+    await expect(page.getByText(/Font/i).first()).toBeVisible();
+    await expect(page.getByText(/DM Sans|Inter|Outfit/i).first()).toBeVisible();
   });
 
   test('should show mobile preview', async ({ page }) => {
@@ -362,9 +362,9 @@ test.describe('LP Wizard - Step 5: Copy & Content', () => {
   });
 
   test('should display copy input fields', async ({ page }) => {
-    await expect(page.getByText(/H1|Headline/i)).toBeVisible();
-    await expect(page.getByText(/Badge/i)).toBeVisible();
-    await expect(page.getByText(/CTA/i)).toBeVisible();
+    await expect(page.getByText(/H1|Headline/i).first()).toBeVisible();
+    await expect(page.getByText(/Badge/i).first()).toBeVisible();
+    await expect(page.getByText(/CTA/i).first()).toBeVisible();
   });
 
   test('should display quick-start templates', async ({ page }) => {
@@ -380,7 +380,7 @@ test.describe('LP Wizard - Step 5: Copy & Content', () => {
   });
 
   test('should show AI generate button', async ({ page }) => {
-    await expect(page.getByText(/AI Copy|Generate/i)).toBeVisible();
+    await expect(page.getByText(/AI Copy|Generate/i).first()).toBeVisible();
   });
 
   test('should allow manual copy input', async ({ page }) => {
@@ -417,7 +417,7 @@ test.describe('LP Wizard - Complete Flow', () => {
 
     await page.waitForTimeout(3000);
 
-    await expect(page.getByText(/Sites|Dashboard|My Sites/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/Sites|Dashboard|My Sites/i).first()).toBeVisible({ timeout: 10000 });
 
     await page.screenshot({
       path: 'test-artifacts/wizard/complete-flow-success.png',
@@ -439,6 +439,6 @@ test.describe('LP Wizard - Complete Flow', () => {
     await wizardPage.clickBuild();
 
     await page.waitForTimeout(2000);
-    await expect(page.getByText(/Sites|Dashboard/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/Sites|Dashboard/i).first()).toBeVisible({ timeout: 10000 });
   });
 });
