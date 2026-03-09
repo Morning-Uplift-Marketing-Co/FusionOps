@@ -356,7 +356,7 @@ test.describe('LP Wizard - Complete Flow', () => {
       await page.waitForTimeout(300);
 
       // Verify some file indicators
-      await expect(page.locator('text=/\\.astro|\\.css|package\\.json/i')).toBeVisible();
+      await expect(page.getByText(/\.astro|\.css|package\.json/i).first()).toBeVisible();
     }
   });
 
