@@ -64,7 +64,8 @@ const ctaHref        = voluumClickUrl || '#apply';
         } catch(_) {}
       }
       var _urlP = new URLSearchParams(window.location.search);
-      var _cid = _urlP.get('gclid') || _urlP.get('vlcid') || _urlP.get('clickid') || _urlP.get('click_id') || _urlP.get('cid') || _urlP.get('cpid') || '';
+      var _clean = function(v) { return (v && /^\{.*\}$/.test(v)) ? '' : (v || ''); };
+      var _cid = _clean(_urlP.get('gclid')) || _clean(_urlP.get('vlcid')) || _clean(_urlP.get('clickid')) || _clean(_urlP.get('click_id')) || _clean(_urlP.get('cid')) || _clean(_urlP.get('cpid')) || '';
       window.__fpClickId = _cid;
       if (!window.__fpPageTracked) { window.__fpPageTracked = true; fpPixel('pv', _cid ? { click_id: _cid } : {}); }
       window.__fpPixel = fpPixel;
