@@ -209,10 +209,10 @@ test.describe('LP Wizard - Multi-Step Flow', () => {
 
     await page.screenshot({ path: 'test-artifacts/screenshots/08-flow-step1.png' });
 
-    // Click Next
-    const nextBtn = page.getByRole('button').filter({ hasText: 'Next' });
+    // Click Next → (exact text to avoid matching sidebar buttons)
+    const nextBtn = page.locator('button').filter({ hasText: 'Next →' });
     await nextBtn.first().click();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1000);
 
     // Step 2: Product
     await page.screenshot({ path: 'test-artifacts/screenshots/09-flow-step2.png' });
@@ -225,7 +225,7 @@ test.describe('LP Wizard - Multi-Step Flow', () => {
 
     // Click Next
     await nextBtn.first().click();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1000);
 
     // Step 3: Template
     await page.screenshot({ path: 'test-artifacts/screenshots/10-flow-step3.png' });
@@ -275,9 +275,10 @@ test.describe('LP Wizard - Screenshot Tour', () => {
       await textInputs.nth(1).fill('testbrand.com');
     }
 
-    const nextBtn = page.getByRole('button').filter({ hasText: 'Next' });
+    // Use exact 'Next →' text to avoid matching sidebar buttons
+    const nextBtn = page.locator('button').filter({ hasText: 'Next →' });
     await nextBtn.first().click();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1000);
 
     // Screenshot 3: Wizard Step 2 (Product)
     await page.screenshot({ path: 'test-artifacts/tour/03-wizard-step2.png', fullPage: true });

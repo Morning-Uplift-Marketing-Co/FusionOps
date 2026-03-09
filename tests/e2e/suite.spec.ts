@@ -53,7 +53,8 @@ test.describe('Smoke Tests - Critical Paths', () => {
     await page.getByRole('heading', { name: /Brand Information/i }).waitFor({ timeout: 10000 });
 
     const data = testData.minimalWizardData();
-    const nextBtn = page.getByRole('button').filter({ hasText: /Next/i });
+    // Scope nextBtn to wizard footer only (avoid matching sidebar buttons)
+    const nextBtn = page.locator('button').filter({ hasText: /Next →/ });
 
     // Step 1: Brand - use text inputs only (exclude number inputs)
     const textInputs = page.locator('input:not([type="number"]):not([type="checkbox"])');
@@ -69,7 +70,7 @@ test.describe('Smoke Tests - Critical Paths', () => {
     await page.waitForTimeout(1000);
 
     // Step 3: Template - select first available
-    const templateBtn = page.locator('button').filter({ hasText: /Classic|pet-orange|template/i }).first();
+    const templateBtn = page.locator('button').filter({ hasText: /Classic LP|pet-orange/i }).first();
     if (await templateBtn.isVisible()) await templateBtn.click();
     await nextBtn.click();
     await page.waitForTimeout(1000);
@@ -92,7 +93,7 @@ test.describe('Smoke Tests - Critical Paths', () => {
 
     // Step 7: Review
     await expect(page.getByText(/Step 7|Review/i).first()).toBeVisible({ timeout: 5000 });
-    const buildBtn = page.getByRole('button').filter({ hasText: /Build|Save/i }).first();
+    const buildBtn = page.locator('button').filter({ hasText: /Build|Save/i }).first();
     if (await buildBtn.isVisible()) await buildBtn.click();
 
     // Should return to sites/dashboard
