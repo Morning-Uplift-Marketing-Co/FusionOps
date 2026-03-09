@@ -91,11 +91,11 @@ function normalizeVoluumScriptHost(script = "", domain = "") {
 function normalizeTrackingDomain(rawTrackingDomain = "", domain = "") {
   const cleanDomain = String(domain || "").trim();
   const raw = String(rawTrackingDomain || "").trim();
-  // If already correct link.{domain}, keep it
-  if (cleanDomain && raw === `link.${cleanDomain}`) return raw;
-  // Always enforce link.{domain} when domain is known
-  if (cleanDomain) return `link.${cleanDomain}`;
-  return raw.replace(/^(trk|vls|cdn)\./i, "link.");
+  if (!cleanDomain) return raw.replace(/^(trk|vls)\./i, "link.");
+  // If raw already ends with .{domain}, it's valid — keep it as-is
+  if (raw.endsWith(`.${cleanDomain}`) && raw.length > cleanDomain.length + 1) return raw;
+  // Otherwise default to link.{domain}
+  return `link.${cleanDomain}`;
 }
 
 function resolvePixelBaseUrl(url = "", domain = "") {
@@ -146,10 +146,12 @@ export function StepTracking({ c, u }) {
     if (normalizedTrackingDomain && normalizedTrackingDomain !== c.voluumTrackingDomain) {
       u("voluumTrackingDomain", normalizedTrackingDomain);
     }
-    // Auto-fix stale CTA click URL whenever tracking domain changes
-    const correctClickUrl = normalizedTrackingDomain ? `https://${normalizedTrackingDomain}/click` : "";
-    if (correctClickUrl && c.voluumClickUrl !== correctClickUrl) {
-      u("voluumClickUrl", correctClickUrl);
+    // Auto-fix CTA click URL only if it points to the wrong domain entirely
+    if (normalizedTrackingDomain && c.voluumClickUrl) {
+      const clickDomain = c.voluumClickUrl.replace(/^https?:\/\//, "").split("/")[0];
+      if (clickDomain && !clickDomain.endsWith(`.${c.domain}`) && clickDomain !== c.domain) {
+        u("voluumClickUrl", `https://${normalizedTrackingDomain}/click`);
+      }
     }
 
     if (c.voluumLanderScript) {
@@ -799,22 +801,23 @@ export function StepTracking({ c, u }) {
                 <div className="space-y-1">
                   <div className="text-[10px] text-[hsl(var(--muted-foreground))] font-medium">Tracking Subdomain</div>
                   <div className="flex gap-2 items-center">
-                    <span className="text-[11px] font-mono text-[hsl(var(--muted-foreground))] select-none">link.</span>
                     <input
                       type="text"
                       value={(() => {
                         const td = c.voluumTrackingDomain || `link.${c.domain}`;
-                        // Strip any subdomain prefix (link./cdn./trk./vls.) — show only the base domain
-                        return td.replace(/^(link|cdn|trk|vls)\./, "");
+                        // Extract only the subdomain word (e.g. "link" or "cdn")
+                        return td.replace(new RegExp(`\.${c.domain}$`), "").replace(/^https?:\/\//, "");
                       })()}
                       onChange={e => {
-                        const sub = e.target.value.trim();
-                        u("voluumTrackingDomain", sub ? `link.${sub}` : "");
+                        const sub = e.target.value.trim().replace(/\..+$/, ""); // strip any dot suffix typed
+                        u("voluumTrackingDomain", sub && c.domain ? `${sub}.${c.domain}` : "");
                         setQuickDnsResult(null);
                       }}
+                      style={{ width: "80px", minWidth: 0, flexShrink: 0 }}
                       className="flex-1 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--input))] px-2.5 py-1.5 text-[11px] font-mono text-[hsl(var(--foreground))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]/50"
-                      placeholder={c.domain || "scratchpaypet.tech"}
+                      placeholder="link"
                     />
+                    <span className="text-[11px] font-mono text-[hsl(var(--muted-foreground))] select-none flex-1 truncate">.{c.domain || "scratchpaypet.tech"}</span>
                     <button
                       type="button"
                       disabled={quickDnsLoading || !c.voluumTrackingDomain || !c.voluumCfCname}
@@ -869,16 +872,25 @@ export function StepTracking({ c, u }) {
                     <button
                       type="button"
                       onClick={() => {
-                        // Always use link.{domain} — never use a stale/bad voluumTrackingDomain
-                        const td = c.domain ? `link.${c.domain}` : (c.voluumTrackingDomain || "");
+                        const td = c.voluumTrackingDomain || (c.domain ? `link.${c.domain}` : "");
                         if (!td) return;
-                        u("voluumTrackingDomain", td);
                         u("voluumClickUrl", `https://${td}/click`);
-                        if (c.domain) u("voluumLanderScript", buildVoluumLanderScript(c.domain));
                       }}
                       className="px-3 py-1.5 text-[10px] rounded-lg bg-[hsl(var(--primary))/15] border border-[hsl(var(--primary))/40] text-[hsl(var(--primary))] font-semibold cursor-pointer whitespace-nowrap"
                     >
                       Auto-fill
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const td = c.voluumTrackingDomain || (c.domain ? `link.${c.domain}` : "");
+                        if (!td) return;
+                        u("voluumClickUrl", `https://${td}/click`);
+                        if (td) u("voluumLanderScript", buildVoluumLanderScript(td));
+                      }}
+                      className="px-3 py-1.5 text-[10px] rounded-lg bg-[hsl(var(--muted))/40] border border-[hsl(var(--border))] text-[hsl(var(--foreground))] font-semibold cursor-pointer whitespace-nowrap"
+                    >
+                      Regen Script
                     </button>
                   </div>
                 </div>
