@@ -90,8 +90,12 @@ function normalizeVoluumScriptHost(script = "", domain = "") {
 
 function normalizeTrackingDomain(rawTrackingDomain = "", domain = "") {
   const cleanDomain = String(domain || "").trim();
+  const raw = String(rawTrackingDomain || "").trim();
+  // If already correct link.{domain}, keep it
+  if (cleanDomain && raw === `link.${cleanDomain}`) return raw;
+  // Always enforce link.{domain} when domain is known
   if (cleanDomain) return `link.${cleanDomain}`;
-  return String(rawTrackingDomain || "").trim().replace(/^(trk|vls)\./i, "link.");
+  return raw.replace(/^(trk|vls|cdn)\./i, "link.");
 }
 
 function resolvePixelBaseUrl(url = "", domain = "") {
@@ -795,7 +799,8 @@ export function StepTracking({ c, u }) {
                       type="text"
                       value={(() => {
                         const td = c.voluumTrackingDomain || `link.${c.domain}`;
-                        return td.replace(/^link\./, "");
+                        // Strip any subdomain prefix (link./cdn./trk./vls.) — show only the base domain
+                        return td.replace(/^(link|cdn|trk|vls)\./, "");
                       })()}
                       onChange={e => {
                         const sub = e.target.value.trim();
@@ -859,11 +864,12 @@ export function StepTracking({ c, u }) {
                     <button
                       type="button"
                       onClick={() => {
-                        const td = c.voluumTrackingDomain || `link.${c.domain}`;
+                        // Always use link.{domain} — never use a stale/bad voluumTrackingDomain
+                        const td = c.domain ? `link.${c.domain}` : (c.voluumTrackingDomain || "");
                         if (!td) return;
+                        u("voluumTrackingDomain", td);
                         u("voluumClickUrl", `https://${td}/click`);
-                        const script = buildVoluumLanderScript(td.replace(/^link\./, "") ? td.replace(/^link\./, "") + "." + c.domain?.split(".").slice(1).join(".") : c.domain);
-                        if (script) u("voluumLanderScript", buildVoluumLanderScript(c.domain));
+                        if (c.domain) u("voluumLanderScript", buildVoluumLanderScript(c.domain));
                       }}
                       className="px-3 py-1.5 text-[10px] rounded-lg bg-[hsl(var(--primary))/15] border border-[hsl(var(--primary))/40] text-[hsl(var(--primary))] font-semibold cursor-pointer whitespace-nowrap"
                     >
