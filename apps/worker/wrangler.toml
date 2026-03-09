@@ -28,10 +28,6 @@ preview_database_id = "5219aeec-c6d8-42e4-9a40-15573c6e53a4"
 # [[routes]]
 # pattern = "api.yourdomain1.com/*"
 # zone_name = "yourdomain1.com"
-#
-# [[routes]]
-# pattern = "api.yourdomain2.com/*"
-# zone_name = "yourdomain2.com"
 
 # --- Staging environment override ---
 [env.staging]
