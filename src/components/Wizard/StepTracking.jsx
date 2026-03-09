@@ -60,9 +60,10 @@ export function clearVoluumCache() {
   _campaignCacheToken = null;
 }
 
-function buildVoluumLanderScript(domain) {
+function buildVoluumLanderScript(domain, trackingDomain) {
   if (!domain) return "";
-  const host = `link.${domain}`;
+  // Accept full tracking domain (e.g. cdn.scratchpaypet.tech) or default to link.{domain}
+  const host = trackingDomain || `link.${domain}`;
   return `<meta http-equiv="delegate-ch" content="sec-ch-ua https://${host}; sec-ch-ua-mobile https://${host}; sec-ch-ua-arch https://${host}; sec-ch-ua-model https://${host}; sec-ch-ua-platform https://${host}; sec-ch-ua-platform-version https://${host}; sec-ch-ua-bitness https://${host}; sec-ch-ua-full-version-list https://${host}; sec-ch-ua-full-version https://${host}"><style>.dtpcnt{opacity: 0;}</style>
 <script>
     (function(e,d,k,n,u,v,g,w,C,f,p,x,D,c,q,r,h,t,y,G,z){function A(){for(var a=d.querySelectorAll(".dtpcnt"),b=0,l=a.length;b<l;b++)a[b][w]=a[b][w].replace(/(^|\\s+)dtpcnt($|\\s+)/g,"")}function E(a,b,l,F){var m=new Date;m.setTime(m.getTime()+(F||864E5));d.cookie=a+"="+b+"; "+l+"samesite=Strict; expires="+m.toGMTString()+"; path=/";k.setItem(a,b);k.setItem(a+"-expires",m.getTime())}function B(a){var b=d.cookie.match(new RegExp("(^| )"+a+"=([^;]+)"));return b?b.pop():k.getItem(a+"-expires")&&+k.getItem(a+"-expires")>(new Date).getTime()?k.getItem(a):null}z="https:"===e.location.protocol?"secure; ":"";e[f]||(e[f]=function(){(e[f].q=e[f].q||[]).push(arguments)},r=d[u],d[u]=function(){r&&r.apply(this,arguments);if(e[f]&&!e[f].hasOwnProperty("params")&&/loaded|interactive|complete/.test(d.readyState))for(;c=d[v][p++];)/\\/?click\\/?($|(\\/[0-9]+)?$)/.test(c.pathname)&&(c[g]="javascrip"+e.postMessage.toString().slice(4,5)+":"+f+'.l="'+c[g]+'",void 0')},setTimeout(function(){(t=RegExp("[?&]cpid(=([^&#]*)|&|#|$)").exec(e.location.href))&&t[2]&&(h=t[2],y=B("vl-"+h));var a=B("vl-cep"),b=location[g];if("savedCep"===D&&a&&(!h||"undefined"===typeof h)&&0>b.indexOf("cep=")){var l=-1<b.indexOf("?")?"&":"?";b+=l+a}c=d.createElement("script");q=d.scripts[0];c.defer=1;c.src=x+(-1===x.indexOf("?")?"?":"&")+"lpref="+n(d.referrer)+"&lpurl="+n(b)+"&lpt="+n(d.title)+"&vtm="+(new Date).getTime()+(y?"&uw=no":"");c[C]=function(){for(p=0;c=d[v][p++];)/dtpCallback\\.l/.test(c[g])&&(c[g]=decodeURIComponent(c[g]).match(/dtpCallback\\.l="([^"]+)/)[1]);A()};q.parentNode.insertBefore(c,q);h&&E("vl-"+h,"1",z)},0),setTimeout(A,7E3))})(window,document,localStorage,encodeURIComponent,"onreadystatechange","links","href","className","onerror","dtpCallback",0,"https://${host}/d/.js","savedCep");
@@ -161,7 +162,7 @@ export function StepTracking({ c, u }) {
       }
       return;
     }
-    const defaultScript = buildVoluumLanderScript((c.domain || "").trim());
+    const defaultScript = buildVoluumLanderScript((c.domain || "").trim(), c.voluumTrackingDomain);
     if (defaultScript) {
       u("voluumLanderScript", defaultScript);
     }
@@ -886,7 +887,7 @@ export function StepTracking({ c, u }) {
                         const td = c.voluumTrackingDomain || (c.domain ? `link.${c.domain}` : "");
                         if (!td) return;
                         u("voluumClickUrl", `https://${td}/click`);
-                        if (td) u("voluumLanderScript", buildVoluumLanderScript(td));
+                        u("voluumLanderScript", buildVoluumLanderScript(c.domain, td));
                       }}
                       className="px-3 py-1.5 text-[10px] rounded-lg bg-[hsl(var(--muted))/40] border border-[hsl(var(--border))] text-[hsl(var(--foreground))] font-semibold cursor-pointer whitespace-nowrap"
                     >
@@ -898,7 +899,22 @@ export function StepTracking({ c, u }) {
             ) : (
               /* ── Full form (first setup or editing) ── */
               <>
-                <div className="text-[12px] font-semibold mb-2">Install Lander Tracking Script</div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-[12px] font-semibold">Install Lander Tracking Script</div>
+                  {c.domain && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const td = c.voluumTrackingDomain || `link.${c.domain}`;
+                        u("voluumLanderScript", buildVoluumLanderScript(c.domain, td));
+                        u("voluumClickUrl", `https://${td}/click`);
+                      }}
+                      className="px-2.5 py-1 text-[10px] rounded-lg bg-[hsl(var(--muted))/40] border border-[hsl(var(--border))] text-[hsl(var(--foreground))] font-semibold cursor-pointer whitespace-nowrap"
+                    >
+                      🔄 Regen Script
+                    </button>
+                  )}
+                </div>
                 <p className="text-[11px] text-[hsl(var(--muted-foreground))] leading-relaxed mb-2">
                   Paste your Voluum Lander Tracking Script into your lander page&apos;s HTML. Place it at the bottom of the <code className="text-[10px] font-mono bg-[hsl(var(--muted))/30] px-1 py-0.5 rounded">&lt;head&gt;</code> tag section.
                 </p>
@@ -906,7 +922,7 @@ export function StepTracking({ c, u }) {
                   value={c.voluumLanderScript || ""}
                   onChange={(e) => u("voluumLanderScript", normalizeVoluumScriptHost(e.target.value, c.domain))}
                   rows={9}
-                  placeholder={buildVoluumLanderScript((c.domain || "").trim()) || "<script>/* Voluum Lander Tracking Script */</script>"}
+                  placeholder={buildVoluumLanderScript((c.domain || "").trim(), c.voluumTrackingDomain) || "<script>/* Voluum Lander Tracking Script */</script>"}
                   className="w-full rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--input))] px-3 py-2 text-[11px] font-mono text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]/50 resize-y"
                 />
                 <div className="mt-3 space-y-2">
