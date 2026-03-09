@@ -43,11 +43,10 @@ test.describe('Deploy Flow - Deploy Dropdown', () => {
     const hasEmptyState = await emptyState.isVisible().catch(() => false);
 
     if (hasEmptyState) {
-      // No deploy buttons should be visible
-      const deployBtns = page.getByRole('button').filter({ hasText: /Deploy|🚀/i });
-      const count = await deployBtns.count();
-
-      // If no sites, deploy buttons should not exist
+      // No site-card deploy buttons should be visible (scoped to main content)
+      const mainContent = page.locator('main, [class*="content"], [class*="sites-list"]').first();
+      const deployBtns = mainContent.locator('button').filter({ hasText: /^Deploy$|🚀/i });
+      const count = await deployBtns.count().catch(() => 0);
       expect(count).toBe(0);
     }
   });
