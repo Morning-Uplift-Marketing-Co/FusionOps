@@ -28,9 +28,14 @@ export default {
       });
     }
 
-    // --- Beacon tracking endpoint ---
+    // --- Beacon tracking endpoint (internal API) ---
     if (path === '/track' && request.method === 'POST') {
       return handleTrack(request, env, ctx);
+    }
+
+    // --- First-party pixel endpoint (LP sendBeacon → t.{domain}/e) ---
+    if (path === '/e' && (request.method === 'POST' || request.method === 'GET')) {
+      return handlePixel(request, env, ctx);
     }
 
     // --- LeadsGate callback ---
@@ -128,6 +133,65 @@ async function handleTrack(
           .run();
       } catch {
         // Fire-and-forget: swallow errors for beacon tracking
+      }
+    })()
+  );
+
+  return response;
+}
+
+// ============================================================
+// First-Party Pixel Handler
+// ============================================================
+// Accepts sendBeacon events from LP pages at t.{domain}/e
+// Payload: URLSearchParams with e, sid, cid, gid, ts, url, ref
+// Returns 204 immediately — processes async via waitUntil
+// ============================================================
+
+async function handlePixel(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext
+): Promise<Response> {
+  // Return 204 immediately — never block the beacon
+  const response = new Response(null, { status: 204, headers: corsHeaders(request) });
+
+  ctx.waitUntil(
+    (async () => {
+      try {
+        let params: URLSearchParams;
+        if (request.method === 'POST') {
+          const body = await request.text();
+          // sendBeacon sends URLSearchParams or JSON
+          try {
+            params = new URLSearchParams(body);
+          } catch {
+            const data = JSON.parse(body);
+            params = new URLSearchParams(data);
+          }
+        } else {
+          params = new URL(request.url).searchParams;
+        }
+
+        const event = params.get('e') || 'unknown';
+        const sid = params.get('sid') || '';
+        const cid = params.get('cid') || '';
+        const gid = params.get('gid') || '';
+        const ts = params.get('ts') || String(Date.now());
+        const pageUrl = params.get('url') || '';
+        const hostname = new URL(request.url).hostname;
+
+        const payload = JSON.stringify({ e: event, sid, cid, gid, ts, url: pageUrl, domain: hostname });
+
+        await env.DB
+          .prepare(
+            `INSERT INTO lead_callbacks (account_id, type, click_id, raw_payload)
+             VALUES (?, ?, ?, ?)`
+          )
+          .bind(hostname, `pixel:${event}`, cid || sid, payload)
+          .run();
+      } catch {
+        // Fire-and-forget: swallow errors
       }
     })()
   );
