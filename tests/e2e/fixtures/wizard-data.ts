@@ -6,9 +6,9 @@
 
 export const VALID_BRAND_DATA = {
   brand: 'Test Loan Company',
-  domain: 'test-loan.example.com',
+  domain: 'testloan.com',
   tagline: 'Fast. Simple. Trusted.',
-  email: 'support@test-loan.example.com',
+  email: 'support@testloan.com',
 };
 
 export const INVALID_BRAND_DATA = {
