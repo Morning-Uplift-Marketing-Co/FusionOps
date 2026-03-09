@@ -16,9 +16,15 @@ import { test, expect } from '@playwright/test';
  * Page: src/components/Sites.jsx
  */
 
+async function navigateToSites(page: any) {
+  await page.goto('/');
+  await page.locator('nav button').filter({ hasText: /My Sites/i }).click();
+  await page.waitForTimeout(500);
+}
+
 test.describe('Sites Management - Page Load', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await navigateToSites(page);
   });
 
   test('should display sites list page', async ({ page }) => {
@@ -41,7 +47,7 @@ test.describe('Sites Management - Page Load', () => {
   });
 
   test('should display search input', async ({ page }) => {
-    const searchInput = page.getByPlaceholderText(/Search sites/i);
+    const searchInput = page.getByPlaceholder(/Search sites/i);
     await expect(searchInput).toBeVisible();
   });
 
@@ -71,12 +77,11 @@ test.describe('Sites Management - Page Load', () => {
 
 test.describe('Sites Management - Search and Filter', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForTimeout(500);
+    await navigateToSites(page);
   });
 
   test('should filter sites by search term', async ({ page }) => {
-    const searchInput = page.getByPlaceholderText(/Search sites/i);
+    const searchInput = page.getByPlaceholder(/Search sites/i);
 
     // Type search term
     await searchInput.fill('test');
@@ -184,8 +189,7 @@ test.describe('Sites Management - Search and Filter', () => {
 
 test.describe('Sites Management - Site Actions', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForTimeout(500);
+    await navigateToSites(page);
   });
 
   test('should open preview modal', async ({ page }) => {
@@ -269,8 +273,7 @@ test.describe('Sites Management - Site Actions', () => {
 
 test.describe('Sites Management - Download Options', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForTimeout(500);
+    await navigateToSites(page);
   });
 
   test('should open download dropdown', async ({ page }) => {
@@ -354,8 +357,7 @@ test.describe('Sites Management - Download Options', () => {
 
 test.describe('Sites Management - Deploy Flow', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForTimeout(500);
+    await navigateToSites(page);
   });
 
   test('should open deploy dropdown', async ({ page }) => {
@@ -425,8 +427,7 @@ test.describe('Sites Management - Deploy Flow', () => {
 
 test.describe('Sites Management - Bulk Actions', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForTimeout(500);
+    await navigateToSites(page);
   });
 
   test('should display Delete All button when sites exist', async ({ page }) => {
@@ -482,8 +483,7 @@ test.describe('Sites Management - Bulk Actions', () => {
 
 test.describe('Sites Management - Site Card Display', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForTimeout(500);
+    await navigateToSites(page);
   });
 
   test('should display site cards with required info', async ({ page }) => {
