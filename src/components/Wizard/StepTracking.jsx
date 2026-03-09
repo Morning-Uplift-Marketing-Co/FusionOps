@@ -786,15 +786,25 @@ export function StepTracking({ c, u }) {
               /* ── Collapsed summary (edit mode, already configured) ── */
               <div className="space-y-2.5">
                 <div className="space-y-1">
-                  <div className="text-[10px] text-[hsl(var(--muted-foreground))] font-medium">Tracking Domain</div>
-                  <div className="flex gap-2">
+                  <div className="text-[10px] text-[hsl(var(--muted-foreground))] font-medium">Tracking Subdomain</div>
+                  <div className="flex gap-2 items-center">
+                    <span className="text-[11px] font-mono text-[hsl(var(--muted-foreground))] select-none">link.</span>
                     <input
                       type="text"
-                      value={c.voluumTrackingDomain || `link.${c.domain}`}
-                      onChange={e => u("voluumTrackingDomain", e.target.value)}
+                      value={(() => {
+                        const td = c.voluumTrackingDomain || `link.${c.domain}`;
+                        return td.replace(/^link\./, "");
+                      })()}
+                      onChange={e => {
+                        const sub = e.target.value.trim();
+                        u("voluumTrackingDomain", sub ? `link.${sub}` : "");
+                      }}
                       className="flex-1 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--input))] px-2.5 py-1.5 text-[11px] font-mono text-[hsl(var(--foreground))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]/50"
-                      placeholder={`link.${c.domain || "domain.com"}`}
+                      placeholder={c.domain || "scratchpaypet.tech"}
                     />
+                  </div>
+                  <div className="text-[10px] text-[hsl(var(--muted-foreground))]/60">
+                    Full domain: <span className="font-mono">{c.voluumTrackingDomain || `link.${c.domain}`}</span>
                   </div>
                 </div>
                 <div className="space-y-1">
@@ -805,17 +815,21 @@ export function StepTracking({ c, u }) {
                       value={c.voluumClickUrl || ""}
                       onChange={e => u("voluumClickUrl", e.target.value)}
                       className="flex-1 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--input))] px-2.5 py-1.5 text-[11px] font-mono text-[hsl(var(--foreground))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]/50"
-                      placeholder={`https://link.${c.domain || "domain.com"}/click`}
+                      placeholder={`https://${c.voluumTrackingDomain || `link.${c.domain || "domain.com"}`}/click`}
                     />
-                    {c.domain && (
-                      <button
-                        type="button"
-                        onClick={() => u("voluumClickUrl", `https://link.${c.domain}/click`)}
-                        className="px-3 py-1.5 text-[10px] rounded-lg bg-[hsl(var(--primary))/15] border border-[hsl(var(--primary))/40] text-[hsl(var(--primary))] font-semibold cursor-pointer whitespace-nowrap"
-                      >
-                        Auto-fill
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const td = c.voluumTrackingDomain || `link.${c.domain}`;
+                        if (!td) return;
+                        u("voluumClickUrl", `https://${td}/click`);
+                        const script = buildVoluumLanderScript(td.replace(/^link\./, "") ? td.replace(/^link\./, "") + "." + c.domain?.split(".").slice(1).join(".") : c.domain);
+                        if (script) u("voluumLanderScript", buildVoluumLanderScript(c.domain));
+                      }}
+                      className="px-3 py-1.5 text-[10px] rounded-lg bg-[hsl(var(--primary))/15] border border-[hsl(var(--primary))/40] text-[hsl(var(--primary))] font-semibold cursor-pointer whitespace-nowrap"
+                    >
+                      Auto-fill
+                    </button>
                   </div>
                 </div>
               </div>
@@ -841,13 +855,16 @@ export function StepTracking({ c, u }) {
                         onChange={v => u("voluumClickUrl", v)}
                         placeholder={`https://link.${c.domain || "domain.com"}/click`}
                       />
-                      {!c.voluumClickUrl && c.domain && (
+                      {c.domain && (
                         <button
                           type="button"
-                          onClick={() => u("voluumClickUrl", `https://link.${c.domain}/click`)}
+                          onClick={() => {
+                            const td = c.voluumTrackingDomain || `link.${c.domain}`;
+                            u("voluumClickUrl", `https://${td}/click`);
+                          }}
                           className="px-3 py-1.5 text-[10px] rounded-lg bg-[hsl(var(--primary))/15] border border-[hsl(var(--primary))/40] text-[hsl(var(--primary))] font-semibold cursor-pointer whitespace-nowrap"
                         >
-                          Use Default
+                          Auto-fill
                         </button>
                       )}
                     </div>
