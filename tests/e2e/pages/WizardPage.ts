@@ -101,7 +101,7 @@ export class WizardPage extends BasePage {
     // Header elements
     this.title = page.getByText(/Create New LP|Create New Campaign/i);
     this.stepIndicator = page.getByText(/Step \d\/7/i);
-    this.progressBar = page.locator('[class*="progress"]').first();
+    this.progressBar = page.getByText(/Step \d\/7/i).locator('xpath=..');
     this.stepLabel = page.locator('.text-[hsl(var(--muted-foreground))], text=/Brand|Product|Template|Design|Copy|Tracking|Review/i');
 
     // Navigation
