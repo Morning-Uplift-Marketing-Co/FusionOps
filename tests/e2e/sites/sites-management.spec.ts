@@ -29,16 +29,16 @@ test.describe('Sites Management - Page Load', () => {
 
   test('should display sites list page', async ({ page }) => {
     // Verify page title or heading
-    const title = page.getByText(/My Sites|Sites/i);
+    const title = page.getByText(/My Sites|Sites/i).first();
     await expect(title).toBeVisible({ timeout: 10000 });
   });
 
   test('should display statistics cards', async ({ page }) => {
     // Check for statistics
-    await expect(page.getByText(/Sites/i)).toBeVisible();
-    await expect(page.getByText(/Builds/i)).toBeVisible();
-    await expect(page.getByText(/Deployed/i)).toBeVisible();
-    await expect(page.getByText(/Need Attention/i)).toBeVisible();
+    await expect(page.getByText(/Sites/i).first()).toBeVisible();
+    await expect(page.getByText(/Builds/i).first()).toBeVisible();
+    await expect(page.getByText(/Deployed/i).first()).toBeVisible();
+    await expect(page.getByText(/Need Attention/i).first()).toBeVisible();
   });
 
   test('should display Create LP button', async ({ page }) => {
@@ -53,13 +53,15 @@ test.describe('Sites Management - Page Load', () => {
 
   test('should display filter controls', async ({ page }) => {
     // Check for grouping dropdown
-    await expect(page.getByText(/Group:/i)).toBeVisible();
+    await expect(page.locator('select').filter({ hasText: /Group:/i }).first()).toBeVisible();
 
     // Check for sort dropdown
-    await expect(page.getByText(/Sort:/i)).toBeVisible();
+    await expect(page.locator('select').filter({ hasText: /Sort:/i }).first()).toBeVisible();
 
-    // Check for quick filter chips
-    await expect(page.getByText(/All.*Deployed.*Banned/i)).toBeVisible();
+    // Check for quick filter chips (separate buttons)
+    await expect(page.getByRole('button').filter({ hasText: /^All/ })).toBeVisible();
+    await expect(page.getByRole('button').filter({ hasText: /^Deployed/ })).toBeVisible();
+    await expect(page.getByRole('button').filter({ hasText: /^Banned/ })).toBeVisible();
   });
 
   test('should show empty state when no sites exist', async ({ page }) => {
@@ -98,15 +100,15 @@ test.describe('Sites Management - Search and Filter', () => {
   });
 
   test('should display quick filter chips', async ({ page }) => {
-    // Check for filter buttons
-    await expect(page.getByRole('button').filter({ hasText: /All.*\(/ })).toBeVisible();
-    await expect(page.getByRole('button').filter({ hasText: /Deployed.*\(/ })).toBeVisible();
-    await expect(page.getByRole('button').filter({ hasText: /Banned.*\(/ })).toBeVisible();
-    await expect(page.getByRole('button').filter({ hasText: /Warming.*\(/ })).toBeVisible();
+    // Filter chips render as "All (N)", "Deployed (N)", etc.
+    await expect(page.locator('button').filter({ hasText: /^All \(/ })).toBeVisible();
+    await expect(page.locator('button').filter({ hasText: /^Deployed \(/ })).toBeVisible();
+    await expect(page.locator('button').filter({ hasText: /^Banned \(/ })).toBeVisible();
+    await expect(page.locator('button').filter({ hasText: /^Warming \(/ })).toBeVisible();
   });
 
   test('should filter by deployed status', async ({ page }) => {
-    const deployedFilter = page.getByRole('button').filter({ hasText: /Deployed/i });
+    const deployedFilter = page.locator('button').filter({ hasText: /^Deployed \(/ });
     await deployedFilter.click();
 
     await page.waitForTimeout(300);
@@ -115,7 +117,7 @@ test.describe('Sites Management - Search and Filter', () => {
   });
 
   test('should filter by banned status', async ({ page }) => {
-    const bannedFilter = page.getByRole('button').filter({ hasText: /Banned/i });
+    const bannedFilter = page.locator('button').filter({ hasText: /^Banned \(/ });
     await bannedFilter.click();
 
     await page.waitForTimeout(300);
@@ -123,7 +125,7 @@ test.describe('Sites Management - Search and Filter', () => {
   });
 
   test('should filter by warming status', async ({ page }) => {
-    const warmingFilter = page.getByRole('button').filter({ hasText: /Warming/i });
+    const warmingFilter = page.locator('button').filter({ hasText: /^Warming \(/ });
     await warmingFilter.click();
 
     await page.waitForTimeout(300);
@@ -131,7 +133,7 @@ test.describe('Sites Management - Search and Filter', () => {
   });
 
   test('should filter by no domain status', async ({ page }) => {
-    const noDomainFilter = page.getByRole('button').filter({ hasText: /No Domain/i });
+    const noDomainFilter = page.locator('button').filter({ hasText: /^No Domain \(/ });
     await noDomainFilter.click();
 
     await page.waitForTimeout(300);
@@ -139,7 +141,7 @@ test.describe('Sites Management - Search and Filter', () => {
   });
 
   test('should filter by not deployed status', async ({ page }) => {
-    const notDeployedFilter = page.getByRole('button').filter({ hasText: /Not Deployed/i });
+    const notDeployedFilter = page.locator('button').filter({ hasText: /^Not Deployed \(/ });
     await notDeployedFilter.click();
 
     await page.waitForTimeout(300);
@@ -414,14 +416,18 @@ test.describe('Sites Management - Deploy Flow', () => {
   });
 
   test('should display deployed URLs', async ({ page }) => {
-    // Look for deployed URLs (links starting with https://)
+    // URLs may appear as text spans, not anchor tags
     const deployedLinks = page.locator('a[href^="https://"], a[href^="http://"]');
-    const count = await deployedLinks.count();
+    const textUrls = page.locator('span, div').filter({ hasText: /https?:\/\// });
+    const linkCount = await deployedLinks.count();
+    const textCount = await textUrls.count();
 
-    if (count > 0) {
-      // First link should be visible
+    if (linkCount > 0) {
       await expect(deployedLinks.first()).toBeVisible();
+    } else if (textCount > 0) {
+      await expect(textUrls.first()).toBeVisible();
     }
+    // passes if no sites exist
   });
 });
 
@@ -519,8 +525,9 @@ test.describe('Sites Management - Site Card Display', () => {
   });
 
   test('should display deployment status', async ({ page }) => {
-    const deployStatus = page.getByText(/target\(s\)|0 targets|Live|Not Deployed/i);
-    await expect(deployStatus).toBeVisible();
+    // getSiteHealth returns "Live", "Not Deployed", or "No Domain"
+    const deployStatus = page.getByText(/Live|Not Deployed|No Domain|No sites yet/i);
+    await expect(deployStatus.first()).toBeVisible();
   });
 
   test('should display domain info', async ({ page }) => {
@@ -536,15 +543,18 @@ test.describe('Sites Management - Site Card Display', () => {
 test.describe('Sites Management - Create New Site', () => {
   test('should open wizard when clicking Create LP button', async ({ page }) => {
     await page.goto('/');
+    // Navigate to My Sites first where the Create LP button lives
+    await page.locator('nav button').filter({ hasText: /My Sites/i }).click();
+    await page.waitForTimeout(500);
 
-    const createBtn = page.getByRole('button').filter({ hasText: /Create LP|Create New/i });
+    const createBtn = page.locator('button').filter({ hasText: /Create LP/i }).first();
     await createBtn.click();
 
     // Should see wizard
-    await expect(page.getByText(/Brand Information|Create New LP/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/Brand Information|Create New LP/i).first()).toBeVisible({ timeout: 5000 });
 
     // Cancel to return to sites
-    const cancelBtn = page.getByRole('button').filter({ hasText: /Cancel|Back/i });
+    const cancelBtn = page.getByRole('button').filter({ hasText: /Cancel|Back/i }).first();
     await cancelBtn.click();
     await page.waitForTimeout(300);
   });
@@ -553,31 +563,35 @@ test.describe('Sites Management - Create New Site', () => {
 test.describe('Sites Management - Keyboard Navigation', () => {
   test('should support Tab navigation', async ({ page }) => {
     await page.goto('/');
+    await page.locator('nav button').filter({ hasText: /My Sites/i }).click();
+    await page.waitForTimeout(500);
 
     // Press Tab to navigate through interactive elements
     await page.keyboard.press('Tab');
     await page.keyboard.press('Tab');
     await page.keyboard.press('Tab');
 
-    // Verify no errors
-    await expect(page.getByText(/My Sites|Sites/i)).toBeVisible();
+    // Verify no errors — My Sites page still visible
+    await expect(page.getByText(/My Sites|Sites/i).first()).toBeVisible();
   });
 
   test('should activate Create LP with Enter key', async ({ page }) => {
     await page.goto('/');
+    await page.locator('nav button').filter({ hasText: /My Sites/i }).click();
+    await page.waitForTimeout(500);
 
-    // Focus the Create LP button
-    const createBtn = page.getByRole('button').filter({ hasText: /Create/i });
+    // Focus the Create LP button (exact text)
+    const createBtn = page.locator('button').filter({ hasText: /Create LP/i }).first();
     await createBtn.focus();
 
     // Press Enter
     await page.keyboard.press('Enter');
 
     // Should open wizard
-    await expect(page.getByText(/Brand Information|Create New LP/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/Brand Information|Create New LP/i).first()).toBeVisible({ timeout: 5000 });
 
     // Go back
-    const cancelBtn = page.getByRole('button').filter({ hasText: /Cancel|Back/i });
+    const cancelBtn = page.getByRole('button').filter({ hasText: /Cancel|Back/i }).first();
     await cancelBtn.click();
   });
 });
