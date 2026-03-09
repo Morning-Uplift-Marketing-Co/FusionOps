@@ -12,7 +12,7 @@ import { test, expect } from './fixtures/fixtures';
 test.describe('Smoke Tests - Critical Paths', () => {
   test('should load application', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByText(/Dashboard|My Sites/i)).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(/Dashboard|My Sites/i).first()).toBeVisible({ timeout: 15000 });
   });
 
   test('should navigate between main sections', async ({ page, app }) => {
