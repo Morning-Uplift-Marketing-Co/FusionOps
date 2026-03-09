@@ -209,15 +209,17 @@ export class WizardPage extends BasePage {
    */
   async clickNext() {
     await this.nextButton.click();
-    await this.page.waitForTimeout(3000);
+    await this.page.waitForTimeout(1000);
   }
 
   /**
    * Click Back button
    */
   async clickBack() {
+    // Handle confirm dialog that appears when wizard has unsaved changes
+    this.page.once('dialog', dialog => dialog.accept());
     await this.backButton.click();
-    await this.page.waitForTimeout(3000);
+    await this.page.waitForTimeout(1000);
   }
 
   /**
