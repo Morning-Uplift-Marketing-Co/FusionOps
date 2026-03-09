@@ -168,7 +168,7 @@ test.describe('LP Wizard - Step 6: Tracking & Conversion', () => {
     });
 
     test('should display information about pixel endpoint', async ({ page }) => {
-      await expect(page.locator('code, [class*="code"]').filter({ hasText: /https:.*\/e/ }).or(page.getByText(/sendBeacon|auto-configured|First-party/i).first())).toBeVisible();
+      await expect(page.locator('code').filter({ hasText: /https:.*\/e/ }).first()).toBeVisible();
     });
   });
 

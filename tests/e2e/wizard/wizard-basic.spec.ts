@@ -195,14 +195,16 @@ test.describe('LP Wizard - Multi-Step Flow', () => {
 
     await page.waitForTimeout(500);
 
-    // Step 1: Fill Brand - use text inputs only
-    const textInputs = page.locator('input[type="text"], input:not([type="checkbox"])');
+    // Step 1: Fill Brand - use non-number, non-checkbox inputs only
+    const textInputs = page.locator('input:not([type="number"]):not([type="checkbox"])');
     const textInputCount = await textInputs.count();
 
     if (textInputCount > 0) {
+      await textInputs.nth(0).click({ clickCount: 3 });
       await textInputs.nth(0).fill('Test Brand');
     }
     if (textInputCount > 1) {
+      await textInputs.nth(1).click({ clickCount: 3 });
       await textInputs.nth(1).fill('testbrand.com');
     }
 
@@ -262,14 +264,16 @@ test.describe('LP Wizard - Screenshot Tour', () => {
     // Screenshot 2: Wizard Step 1
     await page.screenshot({ path: 'test-artifacts/tour/02-wizard-step1.png', fullPage: true });
 
-    // Fill and proceed - use text inputs only
-    const textInputs = page.locator('input[type="text"], input:not([type="checkbox"])');
+    // Fill and proceed - use non-number, non-checkbox inputs only
+    const textInputs = page.locator('input:not([type="number"]):not([type="checkbox"])');
     const textInputCount = await textInputs.count();
 
     if (textInputCount > 0) {
+      await textInputs.nth(0).click({ clickCount: 3 });
       await textInputs.nth(0).fill('E2E Test Brand');
     }
     if (textInputCount > 1) {
+      await textInputs.nth(1).click({ clickCount: 3 });
       await textInputs.nth(1).fill('testbrand.com');
     }
 
