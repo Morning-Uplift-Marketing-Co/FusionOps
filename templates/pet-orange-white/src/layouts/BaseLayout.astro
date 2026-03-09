@@ -78,6 +78,7 @@ const cssVars = `--primary:${hsl(...pal[0] as [number,number,number])};--seconda
     <script data-cfasync="false" is:inline>
       (function(){
         var p = new URLSearchParams(window.location.search);
+        // v2.7.30: Added gclid as first priority for Google Ads tracking
         var cid = p.get('gclid') || p.get('vlcid') || p.get('clickid') || p.get('click_id') || p.get('cid') || p.get('cpid') || '';
         if (cid) {
           window.__fpClickId = cid;
