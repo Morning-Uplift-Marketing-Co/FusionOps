@@ -454,8 +454,8 @@ export class WizardPage extends BasePage {
   async completeMinimalWizard() {
     // Step 1: Brand
     await this.completeStepBrand({
-      brand: 'E2E Test Brand',
-      domain: 'testbrand.com',
+      brand: 'Minimal Test LP',
+      domain: 'minimaltestlp.com',
     });
     await this.clickNext();
 
