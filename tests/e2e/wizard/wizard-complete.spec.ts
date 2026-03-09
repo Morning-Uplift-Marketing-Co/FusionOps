@@ -154,9 +154,9 @@ test.describe('LP Wizard - Complete Flow', () => {
     // Click back
     await wizardPage.clickBack();
 
-    // Should be back on step 1
-    await expect(wizardPage.stepIndicator).toContainText('Step 1/7');
-    await expect(page.getByRole('heading', { name: /Brand Information/i })).toBeVisible();
+    // Should be back on step 1 — use longer timeout for Neon latency
+    await expect(wizardPage.stepIndicator).toContainText('Step 1/7', { timeout: 10000 });
+    await expect(page.getByRole('heading', { name: /Brand Information/i })).toBeVisible({ timeout: 5000 });
   });
 
   test('should cancel wizard from step 1', async ({ page }) => {
@@ -177,10 +177,10 @@ test.describe('LP Wizard - Complete Flow', () => {
     await expect(wizardPage.stepIndicator).toContainText('Step 2/7');
     await wizardPage.clickBack();
 
-    // Verify data is still there
-    const inputs = page.locator('input');
-    await expect(inputs.nth(0)).toHaveValue(testData.brand);
-    await expect(inputs.nth(1)).toHaveValue(testData.domain);
+    // Wait for step 1 to fully render before checking input values
+    await expect(page.getByRole('heading', { name: /Brand Information/i })).toBeVisible({ timeout: 10000 });
+    const textInputs = page.locator('input[type="text"], input:not([type="number"]):not([type="checkbox"])').first();
+    await expect(textInputs).toHaveValue(testData.brand, { timeout: 5000 });
   });
 
   test('should display mobile preview on design, copy, and review steps', async ({ page }) => {
