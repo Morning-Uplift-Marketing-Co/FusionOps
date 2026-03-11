@@ -1,0 +1,33 @@
+---
+import BaseLayout from '../layouts/Layout.astro';
+import Header from '../components/Header';
+import Hero from '../components/Hero';
+import StatsBar from '../components/StatsBar';
+import HowItWorks from '../components/HowItWorks.astro';
+import Features from '../components/Features';
+import APRComparison from '../components/APRComparison.astro';
+import EligibleExpenses from '../components/EligibleExpenses.astro';
+import Testimonials from '../components/Testimonials';
+import FAQ from '../components/FAQ';
+import ApplyForm from '../components/ApplyForm';
+import Footer from '../components/Footer.astro';
+import '../index.css';
+---
+
+<BaseLayout>
+  <div class="min-h-screen font-sans">
+    <Header client:idle />
+    <main>
+      <Hero client:load />
+      <StatsBar client:visible />
+      <HowItWorks />
+      <Features client:visible />
+      <APRComparison />
+      <EligibleExpenses />
+      <Testimonials client:visible />
+      <FAQ client:visible />
+      <ApplyForm client:visible />
+    </main>
+    <Footer />
+  </div>
+</BaseLayout>
