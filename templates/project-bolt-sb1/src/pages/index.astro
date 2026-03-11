@@ -12,6 +12,8 @@ import FAQ from '../components/FAQ';
 import ApplyForm from '../components/ApplyForm';
 import Footer from '../components/Footer.astro';
 import '../index.css';
+const voluumClickUrl = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '';
+const ctaHref = voluumClickUrl || '#apply';
 ---
 
 <BaseLayout>
@@ -30,4 +32,5 @@ import '../index.css';
     </main>
     <Footer />
   </div>
+  <a href={ctaHref} class="sr-only">Continue</a>
 </BaseLayout>
