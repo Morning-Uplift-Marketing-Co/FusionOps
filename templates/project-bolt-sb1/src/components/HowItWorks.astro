@@ -1,0 +1,78 @@
+---
+import { ClipboardList, CheckCircle, Banknote } from 'lucide-react';
+
+const steps = [
+  {
+    icon: ClipboardList,
+    step: '01',
+    title: 'Apply Online',
+    description:
+      'Fill out our simple, 3-minute application. Tell us about yourself and how much you need. No paperwork, no fax, no branch visit required.',
+    detail: 'Takes about 3 minutes',
+  },
+  {
+    icon: CheckCircle,
+    step: '02',
+    title: 'Receive Your Lending Decision',
+    description:
+      'We use a soft credit inquiry with zero impact on your credit score. All credit types considered — most applicants receive a lending decision in moments.',
+    detail: 'Decision in moments',
+  },
+  {
+    icon: Banknote,
+    step: '03',
+    title: 'Access Your Funds',
+    description:
+      'Once approved, funds are deposited directly to your account as soon as the next business day — so you can focus on your pet, not paperwork.',
+    detail: 'Funds next business day',
+  },
+];
+---
+
+<section id="how-it-works" class="py-20 lg:py-28 bg-slate-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center max-w-2xl mx-auto mb-14">
+      <span class="inline-block text-primary-soft font-semibold text-sm uppercase tracking-widest mb-3">
+        Simple Process
+      </span>
+      <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">
+        How It Works
+      </h2>
+      <p class="text-lg text-gray-500">
+        Getting financing for your pet's care is quick, easy, and stress-free. Here's how to get started.
+      </p>
+    </div>
+
+    <div class="relative">
+      <div class="hidden lg:block absolute top-16 left-[calc(16.66%+2rem)] right-[calc(16.66%+2rem)] h-0.5 bg-gradient-to-r from-teal-200 via-teal-400 to-teal-200 z-0" />
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-10">
+        {steps.map(({ icon: Icon, step, title, description, detail }, i) => (
+          <div class="group">
+            <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 h-full flex flex-col">
+              <div class="flex items-start gap-4 mb-5">
+                <div class="relative">
+                  <div class="w-14 h-14 bg-primary group-hover:bg-primary rounded-2xl flex items-center justify-center transition-colors shrink-0">
+                    <Icon size={26} class="text-primary-soft" />
+                  </div>
+                  <span class="absolute -top-2 -right-2 w-6 h-6 bg-primary text-white text-xs font-bold rounded-full flex items-center justify-center">
+                    {i + 1}
+                  </span>
+                </div>
+                <div>
+                  <span class="text-xs font-bold text-primary-soft uppercase tracking-wider">{step}</span>
+                  <h3 class="text-xl font-bold text-gray-900">{title}</h3>
+                </div>
+              </div>
+              <p class="text-gray-500 leading-relaxed flex-1 mb-5">{description}</p>
+              <div class="inline-flex items-center gap-1.5 bg-accent text-accent text-xs font-semibold px-3 py-1.5 rounded-full self-start">
+                <span class="w-1.5 h-1.5 bg-accent rounded-full" />
+                {detail}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
