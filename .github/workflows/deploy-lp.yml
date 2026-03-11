@@ -243,26 +243,37 @@ jobs:
             local fqdn="$1"
             local lookup
             lookup=$(curl -s -X GET \
-              "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?type=CNAME&name=$fqdn" \
+              "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?name=$fqdn" \
               -H "Authorization: Bearer $CF_TOKEN" \
               -H "Content-Type: application/json")
 
             local rec_id
-            rec_id=$(LOOKUP_JSON="$lookup" node -e "const r=JSON.parse(process.env.LOOKUP_JSON||'{}');const rows=r.result||[];console.log(rows[0]?.id||'')")
+            local cname_target
+            local delete_ids
+            rec_id=$(LOOKUP_JSON="$lookup" node -e "const r=JSON.parse(process.env.LOOKUP_JSON||'{}');const rows=(r.result||[]).filter(x=>x.type==='CNAME');console.log(rows[0]?.id||'')")
+            cname_target=$(LOOKUP_JSON="$lookup" node -e "const r=JSON.parse(process.env.LOOKUP_JSON||'{}');const rows=(r.result||[]).filter(x=>x.type==='CNAME');console.log((rows[0]?.content||'').toLowerCase())")
+            delete_ids=$(LOOKUP_JSON="$lookup" node -e "const r=JSON.parse(process.env.LOOKUP_JSON||'{}');const rows=(r.result||[]).filter(x=>['A','AAAA','CNAME'].includes(x.type));process.stdout.write(rows.map(x=>x.id).join(' '))")
 
-            if [ -n "$rec_id" ]; then
-              update_resp=$(curl -s -X PUT \
-                "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$rec_id" \
-                -H "Authorization: Bearer $CF_TOKEN" \
-                -H "Content-Type: application/json" \
-                -d "{\"type\":\"CNAME\",\"name\":\"$fqdn\",\"content\":\"$PAGES_HOST\",\"ttl\":3600,\"proxied\":true}")
-            else
-              update_resp=$(curl -s -X POST \
-                "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" \
-                -H "Authorization: Bearer $CF_TOKEN" \
-                -H "Content-Type: application/json" \
-                -d "{\"type\":\"CNAME\",\"name\":\"$fqdn\",\"content\":\"$PAGES_HOST\",\"ttl\":3600,\"proxied\":true}")
+            if [ -n "$rec_id" ] && [ "$cname_target" = "$(printf '%s' "$PAGES_HOST" | tr '[:upper:]' '[:lower:]')" ]; then
+              echo "DNS already points $fqdn to $PAGES_HOST"
+              return 0
             fi
+
+            if [ -n "$delete_ids" ]; then
+              for stale_id in $delete_ids; do
+                delete_resp=$(curl -s -X DELETE \
+                  "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$stale_id" \
+                  -H "Authorization: Bearer $CF_TOKEN" \
+                  -H "Content-Type: application/json")
+                DELETE_JSON="$delete_resp" node -e "const r=JSON.parse(process.env.DELETE_JSON||'{}');if(!r.success){console.error('DNS delete failed:', JSON.stringify(r));process.exit(1)};console.log('DNS delete OK:', JSON.stringify(r));"
+              done
+            fi
+
+            update_resp=$(curl -s -X POST \
+              "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" \
+              -H "Authorization: Bearer $CF_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{\"type\":\"CNAME\",\"name\":\"$fqdn\",\"content\":\"$PAGES_HOST\",\"ttl\":3600,\"proxied\":true}")
 
             UPDATE_JSON="$update_resp" node -e "const r=JSON.parse(process.env.UPDATE_JSON||'{}');if(!r.success){console.error('DNS upsert failed:', JSON.stringify(r));process.exit(1)};console.log('DNS upsert OK:', JSON.stringify(r));"
           }
