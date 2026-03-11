@@ -46,7 +46,8 @@ function getDateRange(preset) {
     return { from, to };
 }
 
-export function SpendDashboard({ apiOk, neonOk }) {
+export function SpendDashboard({ apiOk, neonOk, settings = {} }) {
+    const hideRevenue = settings.hideRevenue === true;
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [range, setRange] = useState("7d");
@@ -214,12 +215,12 @@ export function SpendDashboard({ apiOk, neonOk }) {
                     ))}
                 </TabsList>
 
-                <TabsContent value="overview"><OverviewTab stats={stats} trendData={trendData} /></TabsContent>
-                <TabsContent value="daily"><DailyLogTab dailyData={trendData} /></TabsContent>
-                <TabsContent value="account"><PerAccountTab /></TabsContent>
+                <TabsContent value="overview"><OverviewTab stats={stats} trendData={trendData} hideRevenue={hideRevenue} /></TabsContent>
+                <TabsContent value="daily"><DailyLogTab dailyData={trendData} hideRevenue={hideRevenue} /></TabsContent>
+                <TabsContent value="account"><PerAccountTab hideRevenue={hideRevenue} /></TabsContent>
                 <TabsContent value="card"><PerCardTab /></TabsContent>
-                <TabsContent value="domain"><PerDomainTab /></TabsContent>
-                <TabsContent value="pnl"><MonthlyPnLTab /></TabsContent>
+                <TabsContent value="domain"><PerDomainTab hideRevenue={hideRevenue} /></TabsContent>
+                <TabsContent value="pnl"><MonthlyPnLTab hideRevenue={hideRevenue} /></TabsContent>
                 <TabsContent value="reconcile"><ReconcileTab /></TabsContent>
                 <TabsContent value="opex"><OpexTab /></TabsContent>
             </Tabs>

@@ -7,14 +7,15 @@ import { Button } from "./ui/button";
 import { fetchLendingCardTransactions, normalizeTransactions } from "../services/lendingcard";
 
 
-export function AccountMap({ ops }) {
+export function AccountMap({ ops, settings = {} }) {
+    const hideRevenue = settings.hideRevenue === true;
     const [loading, setLoading] = useState(true);
     const [dateRange, setDateRange] = useState("today"); // today, yesterday, 7days
     const [mappedAccounts, setMappedAccounts] = useState([]);
 
     useEffect(() => {
         loadMapData();
-    }, [dateRange, ops]);
+    }, [dateRange, hideRevenue, ops]);
 
     const loadMapData = async () => {
         setLoading(true);
@@ -120,8 +121,11 @@ export function AccountMap({ ops }) {
                 };
             });
 
-            // Sort by P&L descending
-            mapped.sort((a, b) => b.metrics.pl - a.metrics.pl);
+            if (hideRevenue) {
+                mapped.sort((a, b) => (b.metrics.clicks || 0) - (a.metrics.clicks || 0));
+            } else {
+                mapped.sort((a, b) => b.metrics.pl - a.metrics.pl);
+            }
             setMappedAccounts(mapped);
 
         } catch (e) {
@@ -210,17 +214,17 @@ export function AccountMap({ ops }) {
                                     <div className="grid grid-cols-2 divide-x divide-y divide-[hsl(var(--border))] text-sm">
 
                                         {/* P&L Main Stat */}
-                                        <div className="col-span-2 p-4 flex justify-between items-center" style={{ background: isProfitable ? 'rgba(34, 197, 94, 0.05)' : 'rgba(239, 68, 68, 0.05)' }}>
+                                        <div className="col-span-2 p-4 flex justify-between items-center" style={{ background: hideRevenue ? 'transparent' : isProfitable ? 'rgba(34, 197, 94, 0.05)' : 'rgba(239, 68, 68, 0.05)' }}>
                                             <div>
-                                                <p className="text-[10px] uppercase font-bold text-[hsl(var(--muted-foreground))] tracking-wider mb-1">P&L ({dateRange})</p>
-                                                <p className={`text-2xl font-black tracking-tight font-mono ${isProfitable ? 'text-emerald-500' : 'text-red-500'}`}>
-                                                    {isProfitable ? '+' : ''}{formatCurrency(m.pl)}
+                                                <p className="text-[10px] uppercase font-bold text-[hsl(var(--muted-foreground))] tracking-wider mb-1">{hideRevenue ? "Financial View" : `P&L (${dateRange})`}</p>
+                                                <p className={`text-2xl font-black tracking-tight font-mono ${hideRevenue ? 'text-[hsl(var(--muted-foreground))]' : isProfitable ? 'text-emerald-500' : 'text-red-500'}`}>
+                                                    {hideRevenue ? "Hidden" : `${isProfitable ? '+' : ''}${formatCurrency(m.pl)}`}
                                                 </p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-[10px] uppercase font-bold text-[hsl(var(--muted-foreground))] tracking-wider mb-1">ROI</p>
-                                                <Badge variant="outline" className={isProfitable ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : 'bg-red-500/10 text-red-600 border-red-500/20'}>
-                                                    {m.roi.toFixed(1)}%
+                                                <p className="text-[10px] uppercase font-bold text-[hsl(var(--muted-foreground))] tracking-wider mb-1">{hideRevenue ? "Status" : "ROI"}</p>
+                                                <Badge variant="outline" className={hideRevenue ? 'text-[hsl(var(--muted-foreground))]' : isProfitable ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : 'bg-red-500/10 text-red-600 border-red-500/20'}>
+                                                    {hideRevenue ? "Restricted" : `${m.roi.toFixed(1)}%`}
                                                 </Badge>
                                             </div>
                                         </div>
@@ -228,7 +232,7 @@ export function AccountMap({ ops }) {
                                         {/* Financials Split */}
                                         <div className="p-4 space-y-1">
                                             <p className="text-[10px] uppercase font-bold text-[hsl(var(--muted-foreground))] tracking-wider">Revenue</p>
-                                            <p className="text-base font-semibold font-mono text-emerald-600 dark:text-emerald-400">{formatCurrency(m.revenue)}</p>
+                                            <p className={`text-base font-semibold font-mono ${hideRevenue ? "text-[hsl(var(--muted-foreground))]" : "text-emerald-600 dark:text-emerald-400"}`}>{hideRevenue ? "Hidden" : formatCurrency(m.revenue)}</p>
                                         </div>
                                         <div className="p-4 space-y-1">
                                             <p className="text-[10px] uppercase font-bold text-[hsl(var(--muted-foreground))] tracking-wider">True Cost</p>

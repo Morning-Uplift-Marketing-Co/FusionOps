@@ -1,7 +1,7 @@
 import { generateApplyPage } from "./lp-generator.js";
 import { generateAstroProject } from "./astro-generator.jsx";
 import { getTemplateGenerator, resolveTemplateId as resolveId, clearCustomTemplatesCache, fetchCustomTemplates, getCustomTemplatesCache, registry } from "./template-registry.js";
-import { detectTemplateFormat } from "./template-standard.js";
+import { detectTemplateFormat, resolveTemplateEntry } from "./template-standard.js";
 import { generatePhone } from "./phone-gen.js";
 import { generateBusinessAddress } from "./contact-gen.js";
 import { ADAPTER_RUNTIME_VERSION } from "../adapters/runtime-version.ts";
@@ -129,7 +129,11 @@ function astroToHtmlPreview(files, site, options = {}) {
   const htmlFallbackCandidates = options.htmlFallbackCandidates || ['index.html'];
 
   let indexContent = null;
-  for (const candidate of entryCandidates) {
+  const resolvedEntry = resolveTemplateEntry(files);
+  const preferredEntryCandidates = resolvedEntry.entry
+    ? [resolvedEntry.entry, ...entryCandidates.filter(candidate => candidate !== resolvedEntry.entry)]
+    : entryCandidates;
+  for (const candidate of preferredEntryCandidates) {
     const direct = files[candidate];
     if (direct) {
       indexContent = direct;

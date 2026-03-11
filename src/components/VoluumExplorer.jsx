@@ -9,6 +9,7 @@ import { LS } from "../utils";
 
 const fmt = (n) => `${Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const pct = (n) => `${Number(n || 0).toFixed(1)}%`;
+const HIDDEN_VALUE = "Hidden";
 
 const RANGE_PRESETS = [
     { id: "today", label: "Today", days: 1 },
@@ -37,7 +38,7 @@ function getDateRange(preset) {
 // Sub-views
 // ═══════════════════════════════════════
 
-function CampaignsView({ campaigns, campaignReport }) {
+function CampaignsView({ campaigns, campaignReport, hideRevenue = false }) {
     const rows = campaignReport?.rows || [];
     const campMap = new Map((campaigns || []).map(c => [c.id, c]));
 
@@ -88,12 +89,12 @@ function CampaignsView({ campaigns, campaignReport }) {
                                             <TableCell className="text-right font-mono">{(r.clicks || 0).toLocaleString()}</TableCell>
                                             <TableCell className="text-right font-mono font-semibold">{r.conversions || 0}</TableCell>
                                             <TableCell className="text-right font-mono">{fmt(r.cost)}</TableCell>
-                                            <TableCell className="text-right font-mono">{fmt(r.revenue)}</TableCell>
-                                            <TableCell className={`text-right font-mono font-semibold ${profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                                                {profit >= 0 ? "+" : ""}{fmt(profit)}
+                                            <TableCell className={`text-right font-mono ${hideRevenue ? "text-[hsl(var(--muted-foreground))]" : ""}`}>{hideRevenue ? HIDDEN_VALUE : fmt(r.revenue)}</TableCell>
+                                            <TableCell className={`text-right font-mono font-semibold ${hideRevenue ? "text-[hsl(var(--muted-foreground))]" : profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                                                {hideRevenue ? HIDDEN_VALUE : `${profit >= 0 ? "+" : ""}${fmt(profit)}`}
                                             </TableCell>
-                                            <TableCell className={`text-right font-mono ${(r.roi || 0) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                                                {pct(r.roi)}
+                                            <TableCell className={`text-right font-mono ${hideRevenue ? "text-[hsl(var(--muted-foreground))]" : (r.roi || 0) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                                                {hideRevenue ? HIDDEN_VALUE : pct(r.roi)}
                                             </TableCell>
                                         </TableRow>
                                     );
@@ -107,7 +108,7 @@ function CampaignsView({ campaigns, campaignReport }) {
     );
 }
 
-function ConversionsView({ conversions }) {
+function ConversionsView({ conversions, hideRevenue = false }) {
     const rows = conversions?.rows || [];
     const total = conversions?.totalRows || rows.length;
 
@@ -153,8 +154,8 @@ function ConversionsView({ conversions }) {
                                             {r.campaignName || r.campaignId?.slice(0, 12) || "—"}
                                         </TableCell>
                                         <TableCell className="text-sm">{r.offerName || "—"}</TableCell>
-                                        <TableCell className="text-right font-mono font-semibold text-emerald-600 dark:text-emerald-400">
-                                            {fmt(r.revenue)}
+                                        <TableCell className={`text-right font-mono font-semibold ${hideRevenue ? "text-[hsl(var(--muted-foreground))]" : "text-emerald-600 dark:text-emerald-400"}`}>
+                                            {hideRevenue ? HIDDEN_VALUE : fmt(r.revenue)}
                                         </TableCell>
                                         <TableCell className="text-right font-mono">{fmt(r.cost)}</TableCell>
                                         <TableCell>{r.country || "—"}</TableCell>
@@ -173,7 +174,7 @@ function ConversionsView({ conversions }) {
     );
 }
 
-function OffersView({ offers }) {
+function OffersView({ offers, hideRevenue = false }) {
     const rows = offers || [];
 
     return (
@@ -210,7 +211,7 @@ function OffersView({ offers }) {
                                         <TableCell className="font-medium max-w-[200px] truncate">{o.name || "—"}</TableCell>
                                         <TableCell className="text-xs font-mono max-w-[200px] truncate text-[hsl(var(--muted-foreground))]" title={o.url}>{o.url || "—"}</TableCell>
                                         <TableCell className="text-sm">{o.payoutMode || "—"}</TableCell>
-                                        <TableCell className="text-right font-mono font-semibold">{fmt(o.payout)}</TableCell>
+                                        <TableCell className={`text-right font-mono font-semibold ${hideRevenue ? "text-[hsl(var(--muted-foreground))]" : ""}`}>{hideRevenue ? HIDDEN_VALUE : fmt(o.payout)}</TableCell>
                                         <TableCell>{o.country || "—"}</TableCell>
                                         <TableCell>
                                             <Badge variant={o.status === "ACTIVE" ? "success" : "secondary"}>
@@ -228,7 +229,7 @@ function OffersView({ offers }) {
     );
 }
 
-function MatchingView({ conversions, matchResults }) {
+function MatchingView({ matchResults, hideRevenue = false }) {
     const rows = matchResults || [];
     const matched = rows.filter(r => r._matched).length;
     const unmatched = rows.length - matched;
@@ -274,11 +275,11 @@ function MatchingView({ conversions, matchResults }) {
                                 <div className="text-[10px] text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Matched</div>
                             </div>
                             <div className="rounded-lg border border-[hsl(var(--border))] p-3 text-center">
-                                <div className="text-lg font-bold">{fmt(totalRevVoluum)}</div>
+                                <div className={`text-lg font-bold ${hideRevenue ? "text-[hsl(var(--muted-foreground))]" : ""}`}>{hideRevenue ? HIDDEN_VALUE : fmt(totalRevVoluum)}</div>
                                 <div className="text-[10px] text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Voluum Rev</div>
                             </div>
                             <div className="rounded-lg border border-[hsl(var(--border))] p-3 text-center">
-                                <div className="text-lg font-bold">{fmt(totalRevAffiliate)}</div>
+                                <div className={`text-lg font-bold ${hideRevenue ? "text-[hsl(var(--muted-foreground))]" : ""}`}>{hideRevenue ? HIDDEN_VALUE : fmt(totalRevAffiliate)}</div>
                                 <div className="text-[10px] text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Affiliate Rev</div>
                             </div>
                         </div>
@@ -311,10 +312,10 @@ function MatchingView({ conversions, matchResults }) {
                                                 </TableCell>
                                                 <TableCell className="font-mono text-xs">{r.clickId?.slice(0, 16) || "—"}</TableCell>
                                                 <TableCell className="text-sm truncate max-w-[140px]">{r.campaignName || "—"}</TableCell>
-                                                <TableCell className="text-right font-mono">{fmt(r.revenue)}</TableCell>
-                                                <TableCell className="text-right font-mono">{r._matched ? fmt(affPay) : "—"}</TableCell>
-                                                <TableCell className={`text-right font-mono font-semibold ${r._matched ? (Math.abs(diff) < 0.01 ? "" : diff > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400") : "text-[hsl(var(--muted-foreground))]"}`}>
-                                                    {r._matched ? fmt(diff) : "—"}
+                                                <TableCell className={`text-right font-mono ${hideRevenue ? "text-[hsl(var(--muted-foreground))]" : ""}`}>{hideRevenue ? HIDDEN_VALUE : fmt(r.revenue)}</TableCell>
+                                                <TableCell className={`text-right font-mono ${hideRevenue ? "text-[hsl(var(--muted-foreground))]" : ""}`}>{hideRevenue ? HIDDEN_VALUE : r._matched ? fmt(affPay) : "—"}</TableCell>
+                                                <TableCell className={`text-right font-mono font-semibold ${hideRevenue ? "text-[hsl(var(--muted-foreground))]" : r._matched ? (Math.abs(diff) < 0.01 ? "" : diff > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400") : "text-[hsl(var(--muted-foreground))]"}`}>
+                                                    {hideRevenue ? HIDDEN_VALUE : r._matched ? fmt(diff) : "—"}
                                                 </TableCell>
                                             </TableRow>
                                         );
@@ -333,7 +334,8 @@ function MatchingView({ conversions, matchResults }) {
 // Main Page Component
 // ═══════════════════════════════════════
 
-export function VoluumExplorer() {
+export function VoluumExplorer({ settings = {} }) {
+    const hideRevenue = settings.hideRevenue === true;
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [data, setData] = useState(null);
@@ -490,8 +492,8 @@ export function VoluumExplorer() {
                         { label: "Clicks", value: (metrics.clicks || 0).toLocaleString() },
                         { label: "Conversions", value: (metrics.conversions || 0).toLocaleString() },
                         { label: "Cost", value: fmt(metrics.cost) },
-                        { label: "Revenue", value: fmt(metrics.revenue), color: "emerald" },
-                        { label: "ROI", value: pct(metrics.roi), color: (metrics.roi || 0) >= 0 ? "emerald" : "red" },
+                        { label: "Revenue", value: hideRevenue ? HIDDEN_VALUE : fmt(metrics.revenue), color: hideRevenue ? "" : "emerald" },
+                        { label: "ROI", value: hideRevenue ? HIDDEN_VALUE : pct(metrics.roi), color: hideRevenue ? "" : (metrics.roi || 0) >= 0 ? "emerald" : "red" },
                     ].map((k, i) => (
                         <div key={i} className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-3">
                             <div className="text-[10px] text-[hsl(var(--muted-foreground))] uppercase tracking-wider mb-1">{k.label}</div>
@@ -522,16 +524,16 @@ export function VoluumExplorer() {
                     </TabsList>
 
                     <TabsContent value="campaigns">
-                        <CampaignsView campaigns={data.campaigns} campaignReport={data.campaignReport} />
+                        <CampaignsView campaigns={data.campaigns} campaignReport={data.campaignReport} hideRevenue={hideRevenue} />
                     </TabsContent>
                     <TabsContent value="conversions">
-                        <ConversionsView conversions={data.conversions} />
+                        <ConversionsView conversions={data.conversions} hideRevenue={hideRevenue} />
                     </TabsContent>
                     <TabsContent value="offers">
-                        <OffersView offers={offers} />
+                        <OffersView offers={offers} hideRevenue={hideRevenue} />
                     </TabsContent>
                     <TabsContent value="matching">
-                        <MatchingView conversions={data.conversions} matchResults={matchResults} />
+                        <MatchingView matchResults={matchResults} hideRevenue={hideRevenue} />
                     </TabsContent>
                 </Tabs>
             )}

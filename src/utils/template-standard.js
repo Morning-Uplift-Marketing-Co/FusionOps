@@ -14,21 +14,70 @@
  * @param {Record<string, string>} files
  * @returns {"astro" | "html" | "unknown"}
  */
-export function detectTemplateFormat(files = {}) {
-  // Normalize keys: forward-slash only, strip leading slash
-  const keys = Object.keys(files).map(k => k.replace(/\\/g, '/').replace(/^\/+/, ''));
-  console.log('[TemplateStandard] detectTemplateFormat normalized keys:', keys);
+export function normalizeTemplateFiles(files = {}) {
+  const normalized = {};
+  for (const [rawPath, value] of Object.entries(files || {})) {
+    const nextPath = String(rawPath || '').replace(/\\/g, '/').replace(/^\/+/, '');
+    if (!nextPath) continue;
+    normalized[nextPath] = value;
+  }
+  return normalized;
+}
 
-  const has = (candidates) => candidates.some(p =>
+function getNormalizedKeys(files = {}) {
+  return Object.keys(normalizeTemplateFiles(files));
+}
+
+function findByCandidates(keys, candidates) {
+  return candidates.find(p =>
     keys.includes(p) ||
     keys.some(k => k.endsWith('/' + p)) ||
     keys.some(k => k === p || k.endsWith(p))
-  );
+  ) || null;
+}
 
-  if (has(['src/pages/index.astro', 'index.astro'])) return 'astro';
-  if (has(['index.html'])) return 'html';
-  console.warn('[TemplateStandard] No entry point found in keys:', keys);
-  return 'unknown';
+export function resolveTemplateEntry(files = {}) {
+  const keys = getNormalizedKeys(files);
+  console.log('[TemplateStandard] detectTemplateFormat normalized keys:', keys);
+
+  const astroCandidates = [
+    'src/pages/index.astro',
+    'pages/index.astro',
+    'index.astro',
+  ];
+  const htmlCandidates = [
+    'index.html',
+    'public/index.html',
+  ];
+
+  const astroEntry = findByCandidates(keys, astroCandidates)
+    || keys.find(k => /(^|\/)(src\/)?pages\/index\.astro$/i.test(k))
+    || keys.find(k => /(^|\/)index\.astro$/i.test(k))
+    || null;
+
+  if (astroEntry) {
+    return { format: 'astro', entry: astroEntry };
+  }
+
+  const htmlEntry = findByCandidates(keys, htmlCandidates)
+    || keys.find(k => /(^|\/)index\.html$/i.test(k))
+    || null;
+
+  if (htmlEntry) {
+    return { format: 'html', entry: htmlEntry };
+  }
+
+  return { format: 'unknown', entry: null };
+}
+
+export function detectTemplateFormat(files = {}) {
+  const { format, entry } = resolveTemplateEntry(files);
+  if (format === 'unknown') {
+    console.warn('[TemplateStandard] No entry point found in keys:', getNormalizedKeys(files));
+  } else {
+    console.log('[TemplateStandard] Detected format:', format, 'entry:', entry);
+  }
+  return format;
 }
 
 /**
@@ -37,8 +86,9 @@ export function detectTemplateFormat(files = {}) {
  * @returns {{ ok: boolean, format: string, errors: string[], warnings: string[], detected: object }}
  */
 export function validateAstroStandard(files = {}) {
-  const keys = Object.keys(files || {}).map(k => k.replace(/\\/g, '/').replace(/^\/+/, ''));
-  const format = detectTemplateFormat(files);
+  const normalizedFiles = normalizeTemplateFiles(files);
+  const keys = Object.keys(normalizedFiles);
+  const { format, entry } = resolveTemplateEntry(normalizedFiles);
 
   const has = (candidates) => candidates.some(p =>
     keys.includes(p) || keys.some(k => k.endsWith('/' + p))
@@ -63,7 +113,7 @@ export function validateAstroStandard(files = {}) {
   ];
   const hasTrackingFile = has(trackingFiles);
   const layoutKey = keys.find(k => k.endsWith('Layout.astro'));
-  const layoutContent = layoutKey ? String(files[layoutKey] || '') : '';
+  const layoutContent = layoutKey ? String(normalizedFiles[layoutKey] || '') : '';
   const hasTrackingInLayout =
     layoutContent.includes('__trackingConfig') ||
     layoutContent.includes('gtag') ||
@@ -88,6 +138,7 @@ export function validateAstroStandard(files = {}) {
     warnings,
     detected: {
       format,
+      entry,
       pageIndex: true,
       pageApply: hasApply,
       layout: hasLayout,
