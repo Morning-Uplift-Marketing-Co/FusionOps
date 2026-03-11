@@ -3,6 +3,11 @@ import '../index.css';
 
 const brand = import.meta.env.PUBLIC_BRAND || 'Imported Template';
 const domain = import.meta.env.PUBLIC_DOMAIN || 'example.com';
+const conversionId = import.meta.env.PUBLIC_CONVERSIONID || '';
+const formStartLabel = import.meta.env.PUBLIC_FORMSTARTLABEL || '';
+const formSubmitLabel = import.meta.env.PUBLIC_FORMSUBMITLABEL || '';
+const voluumDomain = import.meta.env.PUBLIC_VOLUUMDOMAIN || '';
+const voluumClickUrl = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '';
 const primaryColor = import.meta.env.PUBLIC_PRIMARYCOLOR || '#2563eb';
 const accentColor = import.meta.env.PUBLIC_ACCENTCOLOR || '#f59e0b';
 const colorId = import.meta.env.PUBLIC_COLORID || 'ocean';
@@ -32,8 +37,54 @@ const wizardThemeStyle = `--wizard-primary:${primaryColor};--wizard-primary-stro
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonicalUrl} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    {conversionId && (
+      <script data-cfasync="false" is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${conversionId}`}></script>
+    )}
+    {voluumDomain && (
+      <script data-cfasync="false" is:inline define:vars={{ voluumDomain }}>
+        (function(){
+          var p = new URLSearchParams(window.location.search);
+          var cpid = p.get('cpid') || p.get('cid') || p.get('click_id') || p.get('vlcid') || '';
+          if (cpid) { try { sessionStorage.setItem('voluum_cpid', cpid); } catch(_){} }
+          var s = document.createElement('script');
+          s.async = true; s.setAttribute('data-cfasync','false');
+          s.src = 'https://' + voluumDomain + '/dtpCallback.js';
+          document.head.appendChild(s);
+        })();
+      </script>
+    )}
+    <script data-cfasync="false" is:inline define:vars={{ conversionId, formStartLabel, formSubmitLabel }}>
+      (function(){
+        function gtag(){window.dataLayer=window.dataLayer||[];window.dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', conversionId);
+        window.__gtagConversionId = conversionId;
+        window.__formStartLabel = formStartLabel;
+        window.__formSubmitLabel = formSubmitLabel;
+      })();
+    </script>
   </head>
   <body style={wizardThemeStyle} data-color-id={colorId} data-font-id={fontId} data-radius={radius}>
+    <script data-cfasync="false" is:inline define:vars={{ domain }}>
+      (function(){
+        function fpPixel(eventName, extra) {
+          try {
+            var endpoint = 'https://t.' + window.location.hostname + '/e';
+            var payload = Object.assign({ e: eventName, d: window.location.hostname, ts: Date.now() }, extra || {});
+            navigator.sendBeacon(endpoint, JSON.stringify(payload));
+          } catch(_) {}
+        }
+        var p = new URLSearchParams(window.location.search);
+        var cid = p.get('gclid') || p.get('vlcid') || p.get('clickid') || p.get('click_id') || p.get('cid') || p.get('cpid') || '';
+        window.__fpClickId = cid || '';
+        if (!window.__fpPageTracked) {
+          window.__fpPageTracked = true;
+          fpPixel('pv', cid ? { click_id: cid } : {});
+        }
+        window.__fpPixel = fpPixel;
+      })();
+    </script>
     <slot />
   </body>
 </html>
