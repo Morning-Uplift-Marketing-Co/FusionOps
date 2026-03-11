@@ -5,6 +5,7 @@
  */
 
 import { api } from '../services/api';
+import { detectTemplateFormat, normalizeTemplateFiles, validateAstroStandard } from './template-standard.js';
 
 import { getTemplates as getModuleTemplates, getTemplate as getModuleTemplate } from '#lp-template-generator/core/template-registry.js';
 
@@ -172,24 +173,26 @@ let customTemplatesPromise = null;
 
 function parseTemplateFiles(raw) {
   if (!raw) return {};
-  if (typeof raw === 'object') return raw;
+  if (typeof raw === 'object') return normalizeTemplateFiles(raw);
   if (typeof raw === 'string') {
-    try { return JSON.parse(raw); } catch { return {}; }
+    try { return normalizeTemplateFiles(JSON.parse(raw)); } catch { return {}; }
   }
   return {};
 }
 
 function detectTemplateHealth(files) {
-  const keys = Object.keys(files || {});
+  const normalizedFiles = normalizeTemplateFiles(files);
+  const keys = Object.keys(normalizedFiles || {});
   // Empty files = GitHub Actions template (built on CI, not stored locally) — mark usable
   if (keys.length === 0) return { usable: true, entry: 'ci', reason: '' };
-  const hasAstroIndex = keys.some(k => k === 'src/pages/index.astro' || k.endsWith('/src/pages/index.astro') || k.endsWith('index.astro'));
-  const hasHtmlIndex = keys.some(k => k === 'index.html' || k.endsWith('/index.html'));
-  const usable = hasAstroIndex || hasHtmlIndex;
+  const validation = validateAstroStandard(normalizedFiles);
+  const format = detectTemplateFormat(normalizedFiles);
+  const usable = validation.ok;
   return {
     usable,
-    entry: hasAstroIndex ? 'astro' : (hasHtmlIndex ? 'html' : 'none'),
-    reason: usable ? '' : 'Missing index entry (need src/pages/index.astro or index.html)',
+    entry: usable ? format : 'none',
+    reason: usable ? '' : (validation.errors[0] || 'Missing index entry (need src/pages/index.astro or index.html)'),
+    warnings: validation.warnings || [],
   };
 }
 
@@ -209,9 +212,13 @@ export async function fetchCustomTemplates(force = false) {
       if (response && Array.isArray(response)) {
         customTemplatesCache = response.map((t) => {
           const files = parseTemplateFiles(t.files);
+          const validation = validateAstroStandard(files);
+          const format = t.format || detectTemplateFormat(files);
           return normalizeTemplateRecord({
             files,
             health: detectTemplateHealth(files),
+            format,
+            validation,
             id: t.template_id || t.id,
             dbId: t.id,
             name: t.name,

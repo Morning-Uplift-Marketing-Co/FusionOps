@@ -3,7 +3,7 @@ import { THEME as T } from "../../../constants";
 import { Field } from "../../ui/field";
 import { InputField as Inp } from "../../ui/input-field";
 import JSZip from 'jszip';
-import { validateAstroStandard, detectTemplateFormat } from "../../../utils/template-standard";
+import { validateAstroStandard, detectTemplateFormat, normalizeTemplateFiles } from "../../../utils/template-standard";
 
 export function StepTemplateFromZip({ c, u, onGenerate }) {
     const [dragging, setDragging] = useState(false);
@@ -30,6 +30,30 @@ export function StepTemplateFromZip({ c, u, onGenerate }) {
     const handleIdChange = (val) => {
         setIdManuallyEdited(true);
         u("newFolderId", val.toLowerCase().replace(/[^a-z0-9-]/g, "-"));
+    };
+
+    const stripSingleRootWrappers = (inputFiles) => {
+        let current = normalizeTemplateFiles(inputFiles);
+        while (true) {
+            const paths = Object.keys(current);
+            if (paths.length === 0) return current;
+            const topLevel = [...new Set(paths.map((p) => p.split('/')[0]).filter(Boolean))];
+            if (topLevel.length !== 1) return current;
+            const root = topLevel[0];
+            const hasNested = paths.some((p) => p.startsWith(root + '/'));
+            if (!hasNested) return current;
+            const next = {};
+            for (const [p, content] of Object.entries(current)) {
+                const trimmed = p.startsWith(root + '/') ? p.slice(root.length + 1) : p;
+                if (trimmed) next[trimmed] = content;
+            }
+            const nextKeys = Object.keys(next);
+            if (nextKeys.length === 0 || (nextKeys.length === paths.length && nextKeys.every((k) => paths.includes(k)))) {
+                return current;
+            }
+            current = next;
+            if (detectTemplateFormat(current) !== 'unknown') return current;
+        }
     };
 
     const handleFile = async (file) => {
@@ -62,34 +86,13 @@ export function StepTemplateFromZip({ c, u, onGenerate }) {
                 files[path] = content;
             }
 
-            // Strip common root prefix — derive from ALL paths, not just the first
-            const filePaths = Object.keys(files);
-            if (filePaths.length > 0) {
-                // Sort so nested paths come first — flat files like package.json would otherwise
-                // be picked as rootCandidate (their split('/')[0] is just the filename with no subdir)
-                const sortedPaths = [...filePaths].sort((a, b) => b.split('/').length - a.split('/').length);
-                // Find the top-level directory that every path shares (if any)
-                const rootCandidate = sortedPaths[0].split('/')[0];
-                const allShareRoot = rootCandidate &&
-                    filePaths.every(p => p === rootCandidate || p.startsWith(rootCandidate + '/'));
-                // Only strip if the root is a directory (at least one path has a slash after it)
-                const rootIsDir = filePaths.some(p => p.startsWith(rootCandidate + '/'));
-                if (allShareRoot && rootIsDir) {
-                    const newFiles = {};
-                    for (const [p, content] of Object.entries(files)) {
-                        const newPath = p.startsWith(rootCandidate + '/') ? p.substring(rootCandidate.length + 1) : p;
-                        if (newPath) newFiles[newPath] = content;
-                    }
-                    Object.keys(files).forEach(k => delete files[k]);
-                    Object.assign(files, newFiles);
-                }
-            }
+            const normalizedFiles = stripSingleRootWrappers(files);
 
             // Detect format first
-            const format = detectTemplateFormat(files);
+            const format = detectTemplateFormat(normalizedFiles);
 
             // Validate
-            const check = validateAstroStandard(files);
+            const check = validateAstroStandard(normalizedFiles);
 
             if (!check.ok) {
                 setParseError(check.errors.join('\n'));
@@ -100,13 +103,13 @@ export function StepTemplateFromZip({ c, u, onGenerate }) {
             // Warnings are OK — show them but allow import
             setParseWarnings(check.warnings || []);
             setDetectedFormat(format);
-            setParsedFiles(files);
+            setParsedFiles(normalizedFiles);
 
             // Store format in template metadata
             u("templateFormat", format);
 
-            const sourceCode = `// Uploaded from ZIP: ${file.name}\n// Format: ${format}\n// Files: ${Object.keys(files).length}\n// Date: ${new Date().toISOString()}`;
-            onGenerate({ sourceCode, files, format });
+            const sourceCode = `// Uploaded from ZIP: ${file.name}\n// Format: ${format}\n// Files: ${Object.keys(normalizedFiles).length}\n// Date: ${new Date().toISOString()}`;
+            onGenerate({ sourceCode, files: normalizedFiles, format, validation: check });
         } catch (err) {
             setParseError(`Failed to parse ZIP: ${err.message}`);
         } finally {

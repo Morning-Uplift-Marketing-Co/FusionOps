@@ -36,6 +36,7 @@ const statusCls = {
 };
 
 export function Dashboard({ sites, stats, ops, setPage, startCreate, settings = {}, apiOk, neonOk }) {
+    const hideRevenue = settings.hideRevenue === true;
     const recent = sites.slice(0, 5);
     const risks = useMemo(() => detectRisks(ops), [ops]);
     const [txFilter, setTxFilter] = useState("");
@@ -161,14 +162,22 @@ export function Dashboard({ sites, stats, ops, setPage, startCreate, settings = 
                         <CardTitle className="text-base font-semibold">Total Revenue</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold tracking-tight">${(stats.spend * 3.2 || 15231.89).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                        <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">+20.1% from last month</p>
+                        <div className="text-3xl font-bold tracking-tight">{hideRevenue ? "Hidden" : `$${(stats.spend * 3.2 || 15231.89).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</div>
+                        <p className={`text-xs mt-1 ${hideRevenue ? "text-[hsl(var(--muted-foreground))]" : "text-emerald-600 dark:text-emerald-400"}`}>
+                            {hideRevenue ? "Employee view is masking revenue metrics" : "+20.1% from last month"}
+                        </p>
                         <div className="h-[140px] mt-4">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={REV_DATA}>
-                                    <Line type="monotone" dataKey="v" stroke="hsl(var(--foreground))" strokeWidth={2} dot={false} />
-                                </LineChart>
-                            </ResponsiveContainer>
+                            {hideRevenue ? (
+                                <div className="h-full rounded-lg border border-dashed border-[hsl(var(--border))] flex items-center justify-center text-xs text-[hsl(var(--muted-foreground))]">
+                                    Revenue trend hidden
+                                </div>
+                            ) : (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={REV_DATA}>
+                                        <Line type="monotone" dataKey="v" stroke="hsl(var(--foreground))" strokeWidth={2} dot={false} />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            )}
                         </div>
                     </CardContent>
                 </Card>

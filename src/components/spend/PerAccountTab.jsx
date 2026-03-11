@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "../ui/table";
 
 const fmt = (n) => `$${Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const HIDDEN_VALUE = "Hidden";
 
 const MOCK = [
     { account: "Acc-01", vertical: "Loan US", spend: 4200, trueCost: 4805, revenue: 7800, pl: 2995, roi: 62.3 },
@@ -12,7 +13,7 @@ const MOCK = [
     { account: "Acc-09", vertical: "Loan US", spend: 1800, trueCost: 2060, revenue: 1500, pl: -560, roi: -27.2 },
 ];
 
-export function PerAccountTab({ accountData }) {
+export function PerAccountTab({ accountData, hideRevenue = false }) {
     const rows = accountData?.length > 0 ? accountData : MOCK;
     const totals = rows.reduce((a, r) => ({ spend: a.spend + r.spend, trueCost: a.trueCost + r.trueCost, revenue: a.revenue + r.revenue, pl: a.pl + r.pl }), { spend: 0, trueCost: 0, revenue: 0, pl: 0 });
     const totalRoi = totals.trueCost > 0 ? ((totals.revenue - totals.trueCost) / totals.trueCost * 100) : 0;
@@ -46,16 +47,16 @@ export function PerAccountTab({ accountData }) {
                                 <TableCell className="text-[hsl(var(--muted-foreground))]">{r.vertical}</TableCell>
                                 <TableCell className="text-right font-mono">{fmt(r.spend)}</TableCell>
                                 <TableCell className="text-right font-mono">{fmt(r.trueCost)}</TableCell>
-                                <TableCell className="text-right font-mono">{fmt(r.revenue)}</TableCell>
-                                <TableCell className={`text-right font-mono font-semibold ${r.pl >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-                                    {r.pl >= 0 ? '+' : ''}{fmt(r.pl)}
+                                <TableCell className={`text-right font-mono ${hideRevenue ? "text-[hsl(var(--muted-foreground))]" : ""}`}>{hideRevenue ? HIDDEN_VALUE : fmt(r.revenue)}</TableCell>
+                                <TableCell className={`text-right font-mono font-semibold ${hideRevenue ? "text-[hsl(var(--muted-foreground))]" : r.pl >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                                    {hideRevenue ? HIDDEN_VALUE : `${r.pl >= 0 ? '+' : ''}${fmt(r.pl)}`}
                                 </TableCell>
-                                <TableCell className="text-right font-mono">{r.roi.toFixed(1)}%</TableCell>
+                                <TableCell className="text-right font-mono">{hideRevenue ? HIDDEN_VALUE : `${r.roi.toFixed(1)}%`}</TableCell>
                                 <TableCell>
-                                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${r.roi >= 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400'
+                                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${hideRevenue ? 'border border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))]' : r.roi >= 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400'
                                             : 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400'
                                         }`}>
-                                        {r.roi >= 0 ? 'Profitable' : 'Loss'}
+                                        {hideRevenue ? 'Restricted' : r.roi >= 0 ? 'Profitable' : 'Loss'}
                                     </span>
                                 </TableCell>
                             </TableRow>
@@ -67,9 +68,9 @@ export function PerAccountTab({ accountData }) {
                             <TableCell></TableCell>
                             <TableCell className="text-right font-mono font-bold">{fmt(totals.spend)}</TableCell>
                             <TableCell className="text-right font-mono font-bold">{fmt(totals.trueCost)}</TableCell>
-                            <TableCell className="text-right font-mono font-bold">{fmt(totals.revenue)}</TableCell>
-                            <TableCell className={`text-right font-mono font-bold ${totals.pl >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>{totals.pl >= 0 ? '+' : ''}{fmt(totals.pl)}</TableCell>
-                            <TableCell className="text-right font-mono font-bold">{totalRoi.toFixed(1)}%</TableCell>
+                            <TableCell className={`text-right font-mono font-bold ${hideRevenue ? "text-[hsl(var(--muted-foreground))]" : ""}`}>{hideRevenue ? HIDDEN_VALUE : fmt(totals.revenue)}</TableCell>
+                            <TableCell className={`text-right font-mono font-bold ${hideRevenue ? "text-[hsl(var(--muted-foreground))]" : totals.pl >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>{hideRevenue ? HIDDEN_VALUE : `${totals.pl >= 0 ? '+' : ''}${fmt(totals.pl)}`}</TableCell>
+                            <TableCell className="text-right font-mono font-bold">{hideRevenue ? HIDDEN_VALUE : `${totalRoi.toFixed(1)}%`}</TableCell>
                             <TableCell></TableCell>
                         </TableRow>
                     </TableFooter>

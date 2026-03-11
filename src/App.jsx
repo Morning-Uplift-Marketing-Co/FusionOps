@@ -892,9 +892,9 @@ useEffect(() => {
         <TopBar stats={stats} settings={settings} deploys={deploys} apiOk={apiOk} neonOk={neonOk} onReconnectNeon={recoverNeonConnection} />
         <div style={{ padding: "24px 28px" }}>
           {page === "dashboard" && <Dashboard sites={sites} stats={stats} ops={ops} setPage={setPage} startCreate={startCreate} settings={settings} apiOk={apiOk} neonOk={neonOk} />}
-          {page === "spend" && <SpendDashboard apiOk={apiOk} neonOk={neonOk} />}
-          {page === "voluum" && <VoluumExplorer />}
-          {page === "account-map" && <AccountMap apiOk={apiOk} neonOk={neonOk} ops={ops} />}
+          {page === "spend" && <SpendDashboard apiOk={apiOk} neonOk={neonOk} settings={settings} />}
+          {page === "voluum" && <VoluumExplorer settings={settings} />}
+          {page === "account-map" && <AccountMap apiOk={apiOk} neonOk={neonOk} ops={ops} settings={settings} />}
           {page === "sites" && <Sites sites={sites} del={delSite} notify={notify} startCreate={startCreate} startDuplicate={startDuplicate} settings={settings} addDeploy={addDeploy} ops={ops} updateSite={updateSite} />}
           {page === "create" && wizData && <Wizard config={wizData} setConfig={setWizData} addSite={addSite} addDeploy={addDeploy} setPage={setPage} settings={settings} notify={notify} cfAccounts={ops.cfAccounts} registrarAccounts={ops.registrarAccounts} />}
           {page === "variant" && <VariantStudio notify={notify} sites={sites} addSite={addSite} registry={registry} setRegistry={setRegistry} apiOk={apiOk} />}
@@ -937,6 +937,7 @@ useEffect(() => {
             description: templateData.templateDescription,
             category: templateData.category || 'general',
             badge: templateData.badge || 'New',
+            format: templateData.templateFormat || null,
             sourceCode: templateData.generatedCode,
             files: templateData.generatedFiles || {},
           };

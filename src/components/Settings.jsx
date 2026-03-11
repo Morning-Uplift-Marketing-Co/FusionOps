@@ -77,6 +77,7 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
     const [ipqsApiKey, setIpqsApiKey] = useState(settings.ipqsApiKey || "");
     const [proxyCheckEnabled, setProxyCheckEnabled] = useState(settings.proxyCheckEnabled !== false);
     const [proxyMinScore, setProxyMinScore] = useState(settings.proxyMinScore || 70);
+    const [hideRevenue, setHideRevenue] = useState(settings.hideRevenue === true);
 
 
     const [testing, setTesting] = useState(null);
@@ -468,6 +469,31 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                 }
                 return null;
             })()}
+
+            <Card className="mb-6">
+                <CardHeader>
+                    <CardTitle>Access Visibility</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-3">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={hideRevenue}
+                            onChange={e => setHideRevenue(e.target.checked)}
+                            className="mt-0.5 rounded border-[hsl(var(--border))]"
+                        />
+                        <div>
+                            <div className="text-sm font-medium">Hide revenue and profit in employee view</div>
+                            <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
+                                Masks revenue, payout, profit, and ROI across dashboards without changing the underlying data.
+                            </p>
+                        </div>
+                    </label>
+                    <Button onClick={() => save({ hideRevenue })} disabled={saving} className="text-xs self-start">
+                        {saving ? "Saving..." : "💾 Save"}
+                    </Button>
+                </CardContent>
+            </Card>
 
             <div className="flex flex-wrap gap-3 mb-6">
                 <div className={`flex items-center gap-2 text-[11px] px-3 py-2 rounded-lg border shadow-sm ${neonOk ? "bg-[rgba(16,185,129,0.1)] text-[hsl(var(--success))] border-[rgba(16,185,129,0.2)]" : "bg-[rgba(239,68,68,0.1)] text-[hsl(var(--destructive))] border-[rgba(239,68,68,0.2)]"}`}>

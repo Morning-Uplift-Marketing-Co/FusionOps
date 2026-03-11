@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 
 const fmt = (n) => `$${Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const HIDDEN_VALUE = "Hidden";
 
 const MOCK = [
     { date: "2/22", account: "Acc-01", domain: "bearloannow", spend: 320, vat: 22.40, lcFee: 11.98, revenue: 520 },
@@ -11,7 +12,7 @@ const MOCK = [
     { date: "2/20", account: "Acc-05", domain: "vetpay", spend: 220, vat: 15.40, lcFee: 8.23, revenue: 310 },
 ];
 
-export function DailyLogTab({ dailyData }) {
+export function DailyLogTab({ dailyData, hideRevenue = false }) {
     const rows = dailyData?.length > 0 ? dailyData : MOCK;
 
     return (
@@ -50,9 +51,11 @@ export function DailyLogTab({ dailyData }) {
                                     <TableCell className="text-right font-mono">{fmt(spend)}</TableCell>
                                     <TableCell className="text-right font-mono text-[hsl(var(--muted-foreground))]">{fmt(vat)}</TableCell>
                                     <TableCell className="text-right font-mono text-[hsl(var(--muted-foreground))]">{fmt(lcFee)}</TableCell>
-                                    <TableCell className="text-right font-mono text-emerald-600 dark:text-emerald-400">{fmt(r.revenue)}</TableCell>
-                                    <TableCell className={`text-right font-mono font-semibold ${pl >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-                                        {pl >= 0 ? '+' : ''}{fmt(pl)}
+                                    <TableCell className={`text-right font-mono ${hideRevenue ? "text-[hsl(var(--muted-foreground))]" : "text-emerald-600 dark:text-emerald-400"}`}>
+                                        {hideRevenue ? HIDDEN_VALUE : fmt(r.revenue)}
+                                    </TableCell>
+                                    <TableCell className={`text-right font-mono font-semibold ${hideRevenue ? "text-[hsl(var(--muted-foreground))]" : pl >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                                        {hideRevenue ? HIDDEN_VALUE : `${pl >= 0 ? '+' : ''}${fmt(pl)}`}
                                     </TableCell>
                                 </TableRow>
                             );
