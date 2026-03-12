@@ -1,0 +1,139 @@
+---
+const aid = import.meta.env.PUBLIC_AID || '';
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Apply</title>
+  <link rel="dns-prefetch" href="//apikeep.com" />
+  <style>html,body{height:100%;min-height:100vh;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}body{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:24px 16px 48px;}#_lg_form_{width:100%;max-width:640px;}</style>
+</head>
+<body>
+<script data-cfasync="false">
+window.dataLayer = window.dataLayer || [];
+
+function fpPixel(eventName, extra) {
+  try {
+    var endpoint = 'https://t.' + window.location.hostname + '/e';
+    var payload = Object.assign({ e: eventName, d: window.location.hostname, ts: Math.floor(Date.now()/1000) }, extra || {});
+    var q = new URLSearchParams();
+    Object.keys(payload || {}).forEach(function(k){
+      var v = payload[k];
+      if (v !== undefined && v !== null) q.set(k, String(v));
+    });
+    var i = new Image(1, 1);
+    i.src = endpoint + '?' + q.toString();
+  } catch(_) {}
+}
+
+var SafeStorage = {
+  _mem: {},
+  set: function(k, v) { try { sessionStorage.setItem(k, v); } catch (e) { this._mem[k] = v; } },
+  get: function(k) { try { return sessionStorage.getItem(k); } catch (e) { return this._mem[k] || null; } }
+};
+
+function getCookie(name) {
+  var match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  return match ? match.pop() : null;
+}
+
+function getVoluumClickId() {
+  var urlParams = new URLSearchParams(window.location.search);
+  var fromUrl = urlParams.get('vlcid') || urlParams.get('clickid') || urlParams.get('cid') || urlParams.get('click_id') || '';
+  var fromStorage = SafeStorage.get('vlcid') || SafeStorage.get('voluum_cid') || '';
+  var fromCookie = getCookie('vlcid') || '';
+  var cpid = urlParams.get('cpid') || '';
+  return fromUrl || fromStorage || fromCookie || cpid || '';
+}
+
+var _lg_form_init_ = {
+  aid: "{aid}",
+  template: "fresh",
+  ref: window.location.hostname,
+  click_id: getVoluumClickId(),
+
+  hooks: {
+    onFormLoad: function() {
+      var cid = getVoluumClickId();
+      fpPixel('lg_form_load', { click_id: cid });
+      window.dataLayer.push({ 'event': 'leadsgate_form_start', 'clickId': cid, 'timestamp': new Date().toISOString() });
+    },
+
+    onStepChange: function(data) {
+      var cid = getVoluumClickId();
+      var step = data && data.step ? data.step : data;
+      fpPixel('lg_step', { step: step, click_id: cid });
+      window.dataLayer.push({ 'event': 'leadsgate_form_progress', 'step': step, 'clickId': cid });
+    },
+
+    onSubmit: function() {
+      var cid = getVoluumClickId();
+      fpPixel('lg_submit', { click_id: cid });
+      window.dataLayer.push({ 'event': 'leadsgate_form_submit', 'clickId': cid, 'timestamp': new Date().toISOString() });
+    },
+
+    onLeadSold: function(data) {
+      var cid = getVoluumClickId();
+      var leadId = data && data.leadId;
+      var payout = (data && data.price) || 50.00;
+      fpPixel('lg_success', { click_id: cid, lead_id: leadId, status: 'approved', payout: payout });
+      window.dataLayer.push({ 'event': 'lead_conversion_approved', 'transactionId': leadId, 'conversionValue': payout, 'clickId': cid });
+      window.dataLayer.push({ 'event': 'lead_conversion_all', 'leadStatus': 'approved', 'transactionId': leadId, 'conversionValue': payout, 'clickId': cid });
+    },
+
+    onLeadRejected: function(data) {
+      var cid = getVoluumClickId();
+      var leadId = data && data.leadId;
+      var payout = (data && data.price) || 5.00;
+      fpPixel('lg_success', { click_id: cid, lead_id: leadId, status: 'declined', payout: payout });
+      window.dataLayer.push({ 'event': 'lead_declined', 'transactionId': leadId, 'conversionValue': payout, 'clickId': cid });
+      window.dataLayer.push({ 'event': 'lead_conversion_all', 'leadStatus': 'declined', 'transactionId': leadId, 'conversionValue': payout, 'clickId': cid });
+    },
+
+    onLeadFinished: function(data) {
+      var cid = getVoluumClickId();
+      var leadId = data && data.leadId;
+      var payout = (data && data.price) || 0;
+      fpPixel('lg_finished', { click_id: cid, lead_id: leadId, payout: payout });
+      window.dataLayer.push({ 'event': 'lead_pending', 'transactionId': leadId, 'conversionValue': payout, 'clickId': cid });
+      window.dataLayer.push({ 'event': 'lead_conversion_all', 'leadStatus': 'pending', 'transactionId': leadId, 'conversionValue': payout, 'clickId': cid });
+    }
+  }
+};
+
+(function() {
+  var p = new URLSearchParams(window.location.search);
+  var cid = p.get('clickid') || p.get('vlcid') || p.get('click_id') || p.get('cid') || p.get('cpid') || '';
+  fpPixel('pv', cid ? { click_id: cid } : {});
+
+  var formLoadFired = false;
+  var lgDiv = document.getElementById('_lg_form_');
+  if (lgDiv) {
+    var obs = new MutationObserver(function() {
+      if (!formLoadFired && lgDiv.children.length > 0) {
+        formLoadFired = true;
+        obs.disconnect();
+        fpPixel('lg_form_load', { click_id: getVoluumClickId(), source: 'observer' });
+      }
+    });
+    obs.observe(lgDiv, { childList: true, subtree: true });
+    setTimeout(function() {
+      if (!formLoadFired) { formLoadFired = true; obs.disconnect(); fpPixel('lg_form_load', { click_id: getVoluumClickId(), source: 'timeout' }); }
+    }, 10000);
+  }
+})();
+
+var script = document.createElement('script');
+script.setAttribute('data-cfasync', 'false');
+script.type = 'text/javascript';
+script.async = true;
+script.src = 'https://apikeep.com/form/applicationInit.js';
+document.body.appendChild(script);
+</script>
+
+<div id="_lg_form_"></div>
+</body>
+</html>
