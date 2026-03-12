@@ -33,6 +33,11 @@ function extractHost(value) {
   }
 }
 
+const TRUSTED_PAGES_SUFFIXES = [
+  '.fusionops-web.pages.dev',
+  '.fusionops.pages.dev',
+];
+
 function buildAllowedHosts(env, requestHost) {
   const configured = String(env?.ALLOWED_ORIGINS || '')
     .split(',')
@@ -42,6 +47,7 @@ function buildAllowedHosts(env, requestHost) {
     'localhost',
     '127.0.0.1',
     '::1',
+    'fusionops-web.pages.dev',
     'main.fusionops.pages.dev',
     'fusionops.pages.dev',
     extractHost(env?.APP_ORIGIN || ''),
@@ -57,7 +63,8 @@ function isTrustedOriginRequest(request, url, env) {
   const refererHost = extractHost(request.headers.get('Referer') || '');
   const sourceHost = originHost || refererHost;
   if (!sourceHost) return false;
-  return allowed.has(sourceHost);
+  if (allowed.has(sourceHost)) return true;
+  return TRUSTED_PAGES_SUFFIXES.some((suffix) => sourceHost.endsWith(suffix));
 }
 
 function getNeonSql(env) {
@@ -1763,13 +1770,16 @@ export default {
 
     // Auth check:
     // - MCP routes use their own x-mcp-secret header auth (skip global Bearer check).
-    // - Preferred: strict Bearer auth via API_SECRET.
-    // - Fallback (when API_SECRET missing): only allow trusted browser origins.
+    // - Preferred: Bearer auth via API_SECRET.
+    // - Browser UI fallback: allow trusted origins for /api routes (localhost/pages).
+    // - If API_SECRET is missing, still require trusted origin for non-public routes.
     const isMcpRoute = path.startsWith('/api/mcp/');
     if (env.API_SECRET && !isMcpRoute) {
       const auth = request.headers.get('Authorization');
-      if (!auth || auth !== `Bearer ${env.API_SECRET}`) {
-        return json({ error: 'Unauthorized' }, 401);
+      const hasValidBearer = !!auth && auth === `Bearer ${env.API_SECRET}`;
+      const isTrustedApiOrigin = path.startsWith('/api/') && isTrustedOriginRequest(request, url, env);
+      if (!hasValidBearer && !isTrustedApiOrigin) {
+        return json({ error: 'Unauthorized (missing/invalid Bearer and untrusted origin)' }, 401);
       }
     } else if (path.startsWith('/api/') && !isMcpRoute) {
       const publicNoAuth = new Set(['/api/openapi.json']);
