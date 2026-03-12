@@ -2,7 +2,7 @@
  * Unit tests for template-registry.js
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
     getAllTemplates,
     getTemplateById,
@@ -12,7 +12,7 @@ import {
 } from '../template-registry.js';
 
 // Mock the module templates
-vi.mock('../../../packages/lp-template-generator/src/core/template-registry.js', () => ({
+vi.mock('#lp-template-generator/core/template-registry.js', () => ({
     getTemplates: () => [
         { id: 'classic', name: 'Classic LP', description: 'Classic template', category: 'general', badge: 'Stable' },
         { id: 'pdl-loans-v1', name: 'PDL Loans V1', description: 'PDL template', category: 'pdl', badge: 'Popular' },
@@ -40,9 +40,9 @@ describe('template-registry', () => {
             expect(classic.source).toBe('module');
 
             // Check legacy templates are included
-            const astrodeck = templates.find(t => t.id === 'astrodeck-loan');
-            expect(astrodeck).toBeDefined();
-            expect(astrodeck.source).toBe('legacy');
+            const legacy = templates.find(t => t.id === 'astro-test002');
+            expect(legacy).toBeDefined();
+            expect(legacy.source).toBe('legacy');
         });
 
         it('should include badge for templates', () => {
@@ -79,10 +79,10 @@ describe('template-registry', () => {
         });
 
         it('should return legacy templates', () => {
-            const template = getTemplateById('lander-core');
+            const template = getTemplateById('astro-test002');
 
             expect(template).toBeDefined();
-            expect(template.id).toBe('lander-core');
+            expect(template.id).toBe('astro-test002');
             expect(template.source).toBe('legacy');
         });
     });
@@ -91,8 +91,7 @@ describe('template-registry', () => {
         it('should return true for existing templates', () => {
             expect(hasTemplate('classic')).toBe(true);
             expect(hasTemplate('pdl-loans-v1')).toBe(true);
-            expect(hasTemplate('astrodeck-loan')).toBe(true);
-            expect(hasTemplate('lander-core')).toBe(true);
+            expect(hasTemplate('astro-test002')).toBe(true);
         });
 
         it('should return true for aliased templates', () => {
@@ -107,7 +106,7 @@ describe('template-registry', () => {
     describe('resolveTemplateId', () => {
         it('should return same ID for non-aliased templates', () => {
             expect(resolveTemplateId('classic')).toBe('classic');
-            expect(resolveTemplateId('lander-core')).toBe('lander-core');
+            expect(resolveTemplateId('astro-test002')).toBe('astro-test002');
         });
 
         it('should resolve aliases to canonical IDs', () => {
@@ -129,7 +128,7 @@ describe('template-registry', () => {
         });
 
         it('should return legacy type for legacy templates', () => {
-            const info = getTemplateGenerator('lander-core', 'astro');
+            const info = getTemplateGenerator('astro-test002', 'astro');
 
             expect(info).toBeDefined();
             expect(info.type).toBe('legacy');
@@ -143,8 +142,8 @@ describe('template-registry', () => {
         });
 
         it('should support different generator types', () => {
-            const astroInfo = getTemplateGenerator('lander-core', 'astro');
-            const htmlInfo = getTemplateGenerator('lander-core', 'html');
+            const astroInfo = getTemplateGenerator('astro-test002', 'astro');
+            const htmlInfo = getTemplateGenerator('astro-test002', 'html');
 
             expect(astroInfo.generator).toBeDefined();
             expect(htmlInfo.generator).toBeDefined();
