@@ -61,6 +61,8 @@ The workflow should stay aligned with these important wizard state fields:
 - `newFolderId`
 - `sourceTemplate`
 - `colorId`
+- `primaryColor`
+- `accentColor`
 - `fontId`
 - `heroStyle`
 - `layout`
@@ -134,7 +136,7 @@ const conversionId      = import.meta.env.PUBLIC_CONVERSIONID      || '';
 const formStartLabel    = import.meta.env.PUBLIC_FORMSTARTLABEL   || '';
 const formSubmitLabel   = import.meta.env.PUBLIC_FORMSUBMITLABEL  || '';
 const voluumId          = import.meta.env.PUBLIC_VOLUUMID          || '';
-const voluumDomain      = import.meta.env.PUBLIC_VOLUUMDOMAIN      || 'track.vlm.icu';
+const voluumDomain      = import.meta.env.PUBLIC_VOLUUMDOMAIN      || '';
 const voluumClickUrl    = import.meta.env.PUBLIC_VOLUUM_CLICK_URL  || '';
 const ctaHref           = voluumClickUrl || '#apply';
 const colorId           = import.meta.env.PUBLIC_COLORID           || 'ocean';
@@ -190,10 +192,10 @@ const COLOR_MAP = {
   ocean:    { p:[217,91,35],  s:[158,64,42],  a:[15,92,62],   bg:[210,40,98],  fg:[222,47,11] },
   forest:   { p:[152,68,28],  s:[45,93,47],   a:[350,80,55],  bg:[140,20,97],  fg:[150,40,10] },
   midnight: { p:[235,70,42],  s:[170,60,45],  a:[25,95,58],   bg:[230,25,97],  fg:[235,50,12] },
-  ruby:     { p:[350,72,42],  s:[25,90,55],   a:[200,75,45],  bg:[350,20,97],  fg:[350,45,12] },
-  slate:    { p:[215,25,35],  s:[160,55,42],  a:[25,88,58],   bg:[215,15,97],  fg:[215,30,12] },
-  coral:    { p:[16,80,50],   s:[195,65,42],  a:[280,55,55],  bg:[16,30,97],   fg:[16,50,12]  },
-  teal:     { p:[175,65,38],  s:[280,55,48],  a:[35,90,55],   bg:[175,25,97],  fg:[175,45,11] },
+  ruby:     { p:[350,75,38],  s:[200,70,45],  a:[40,90,55],   bg:[350,15,97],  fg:[350,40,12] },
+  slate:    { p:[215,25,35],  s:[160,50,42],  a:[15,85,55],   bg:[210,15,97],  fg:[215,30,12] },
+  coral:    { p:[12,76,42],   s:[185,60,40],  a:[265,65,55],  bg:[20,30,97],   fg:[15,40,12]  },
+  teal:     { p:[180,65,30],  s:[280,55,55],  a:[35,90,55],   bg:[175,20,97],  fg:[180,40,10] },
   plum:     { p:[270,55,40],  s:[150,55,42],  a:[20,88,58],   bg:[270,15,97],  fg:[270,40,12] },
 };
 const FONT_MAP = {
@@ -202,14 +204,19 @@ const FONT_MAP = {
   'outfit':        { import: 'Outfit:wght@400;500;600;700',                       family: '"Outfit", system-ui, sans-serif' },
   'manrope':       { import: 'Manrope:wght@400;500;600;700',                      family: '"Manrope", system-ui, sans-serif' },
   'inter':         { import: 'Inter:wght@400;500;600;700',                        family: '"Inter", system-ui, sans-serif' },
+  'sora':          { import: 'Sora:wght@400;500;600;700',                        family: '"Sora", system-ui, sans-serif' },
+  'figtree':       { import: 'Figtree:wght@400;500;600;700',                      family: '"Figtree", system-ui, sans-serif' },
   'space-grotesk': { import: 'Space+Grotesk:wght@400;500;600;700',               family: '"Space Grotesk", system-ui, sans-serif' },
 };
 const RADIUS_MAP = { sharp:'0rem', subtle:'0.375rem', rounded:'0.75rem', pill:'1.5rem' };
-const pal  = COLOR_MAP[colorId]   || COLOR_MAP['ocean'];
-const font = FONT_MAP[fontId]     || FONT_MAP['dm-sans'];
-const rad  = RADIUS_MAP[radiusId] || '0.75rem';
+const pal  = colorId === 'custom' ? null : (COLOR_MAP[colorId] || COLOR_MAP['ocean']);
+// When colorId === 'custom': use primaryColor/accentColor hex directly (set by wizard Custom picker)
+// When preset: derive from COLOR_MAP HSL values as usual
 const hsl  = (h,s,l) => `${h} ${s}% ${l}%`;
-const cssVars = `--primary:${hsl(...pal.p)};--secondary:${hsl(...pal.s)};--accent:${hsl(...pal.a)};--background:${hsl(...pal.bg)};--foreground:${hsl(...pal.fg)};--radius:${rad};`;
+// colorId === "custom": inject hex vars; preset: use HSL from COLOR_MAP
+const cssVars = pal
+  ? `--primary:${hsl(...pal.p)};--secondary:${hsl(...pal.s)};--accent:${hsl(...pal.a)};--background:${hsl(...pal.bg)};--foreground:${hsl(...pal.fg)};--radius:${rad};`
+  : `--primary-custom:${primaryColor};--accent-custom:${accentColor};--radius:${rad};`;
 ---
 
 <!-- In HTML <head> — replace font link + body style: -->
@@ -371,7 +378,7 @@ if (typeof window.__fpPixel === 'function') { window.__fpPixel('form_start', { a
 
 Cloudflare must have for each domain:
 - DNS A record: `t.{domain}` → `192.0.2.1` (Proxied = ON)
-- Workers Route: `t.{domain}/*` → `lp-factory-api` worker script (**NOT** `lp-factory-pixel` — that doesn't exist)
+- Workers Route: `t.{domain}/*`  `lp-factory-pixel` worker script
 
 Both are automatically provisioned by `ensurePixelSubdomain()` on every Cloudflare Pages deploy.
 After deploy, the system health-checks `https://t.{domain}/e` — if non-2xx, a warning is shown in the wizard.
