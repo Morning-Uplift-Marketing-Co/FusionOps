@@ -1,4 +1,4 @@
-export const APP_VERSION = "V3-1.2";
+export const APP_VERSION = "2.9.0";
 
 export const LOAN_TYPES = [
     { id: "personal", label: "Personal Finance", icon: "💳" },
