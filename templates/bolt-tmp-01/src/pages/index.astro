@@ -51,11 +51,12 @@ import '../index.css';
       <HowItWorks />
       <Features client:visible />
       <APRComparison />
-      <EligibleExpenses />
+      <EligibleExpenses ctaHref={ctaHref} />
       <Testimonials client:visible />
       <FAQ client:visible />
       <ApplyForm client:visible />
     </main>
-    <Footer />
+    <Footer ctaHref={ctaHref} />
   </div>
+  <a href={ctaHref} class="sr-only">{cta}</a>
 </Layout>
