@@ -1713,14 +1713,16 @@ export default {
     }
 
     // Auth check:
+    // - MCP routes use their own x-mcp-secret header auth (skip global Bearer check).
     // - Preferred: strict Bearer auth via API_SECRET.
     // - Fallback (when API_SECRET missing): only allow trusted browser origins.
-    if (env.API_SECRET) {
+    const isMcpRoute = path.startsWith('/api/mcp/');
+    if (env.API_SECRET && !isMcpRoute) {
       const auth = request.headers.get('Authorization');
       if (!auth || auth !== `Bearer ${env.API_SECRET}`) {
         return json({ error: 'Unauthorized' }, 401);
       }
-    } else if (path.startsWith('/api/')) {
+    } else if (path.startsWith('/api/') && !isMcpRoute) {
       const publicNoAuth = new Set(['/api/openapi.json']);
       const isAiRoute = path.startsWith('/api/ai/');
       const isSettingsRoute = path === '/api/settings';
