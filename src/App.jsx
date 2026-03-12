@@ -858,7 +858,7 @@ useEffect(() => {
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", fontFamily: "'Inter','DM Sans',system-ui,sans-serif", background: T.bg || '#0a0a0a' }}>
       <div style={{ textAlign: "center" }}>
         <div style={{ fontSize: 48, marginBottom: 12, animation: "pulse 1.5s infinite" }}>⚡</div>
-        <div style={{ fontSize: 18, fontWeight: 700, color: T.text }}>FusionOps V2</div>
+        <div style={{ fontSize: 18, fontWeight: 700, color: T.text }}>FusionOps 3.0</div>
         <div style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>
           Connecting... {neonOk ? '✅ Neon' : '⏳ Neon'} | {apiOk ? '✅ API' : '⏳ API'}
         </div>
