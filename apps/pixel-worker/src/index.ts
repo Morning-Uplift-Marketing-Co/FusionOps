@@ -32,9 +32,12 @@ export default {
       });
     }
 
-    // Pixel endpoint — POST /e
+    // Pixel endpoint — POST /e (sendBeacon) or GET /e (legacy image pixel)
     if (url.pathname === '/e' && request.method === 'POST') {
       return handlePixelEvent(request, env, ctx);
+    }
+    if (url.pathname === '/e' && request.method === 'GET') {
+      return new Response(null, { status: 204, headers: corsHeaders(request) });
     }
 
     // Vary 404 messages per domain to prevent fingerprinting

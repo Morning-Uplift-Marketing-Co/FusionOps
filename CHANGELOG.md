@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.8.0] - 2026-03-12
+### Features
+- **project-bolt-sb1 template**: New Bolt Astro template with full tracking stack support
+  - `src/layouts/Layout.astro`: GTM script injection, Voluum dtpCallback, first-party fpPixel via `sendBeacon` to `t.{domain}/e`
+  - `src/pages/e.ts`: Pixel endpoint (POST + GET → 204)
+  - `src/pages/robots.txt.ts`: Dynamic robots.txt with sitemap URL from `PUBLIC_DOMAIN`
+  - `public/_headers`: Security headers (HSTS, X-Frame-Options, Cache-Control, etc.)
+  - `src/pages/index.astro`: `ctaHref` wired from `PUBLIC_VOLUUM_CLICK_URL`
+  - `src/lib/supabase.ts`: Conditional `createClient` — only initializes when `PUBLIC_SUPABASE_URL` + `PUBLIC_SUPABASE_ANON_KEY` are present
+  - `src/components/ApplyForm.tsx`: Fallback to `ctaHref` redirect when Supabase is not configured
+- **Dashboard UI**: Updated Sites, TemplateGenerator, Wizard/StepTracking, constants, services/voluum, global styles
+
+### Fixed
+- **scratchpayeasy.com deployment**: Removed blocking CF Worker route `lp-worker-scratchpayeasy-com-268846` that was intercepting all requests and serving old LP Factory template instead of `project-bolt-sb1`
+- **scratchpayeasy.com DNS**: Attached custom domain to CF Pages project `lp-scratchpayeasy-com`; CNAME updated to latest deployment hash
+- **pixel-worker `lp-factory-pixel`**: Added `GET /e` handler returning 204 — previously only `POST /e` was handled, causing 404 for legacy image-pixel requests
+
+### Tracking Verified (`scratchpayeasy.com`)
+- GTM + gtag conversionId `AW-102123548` ✅
+- Voluum dtpCallback + cpid capture ✅
+- fpPixel + sendBeacon ✅
+- `t.scratchpayeasy.com/e` POST 204 ✅ / GET 204 ✅
+- robots.txt, security headers, Cache-Control ✅
+
 ## [2.7.34] - 2026-03-09
 ### Fixed
 - **E2E tests**: Achieved 292/292 passing (100%) — fixed all remaining failures
