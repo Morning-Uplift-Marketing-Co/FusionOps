@@ -5,13 +5,12 @@ import { cn } from "../lib/utils";
 
 const CHANGELOG = [
     {
-        version: "V3-1.2",
-        date: "2026-03-04",
+        version: "2.9.0",
+        date: "2026-03-13",
         changes: [
-            "🗂️ Template Manager — new inventory page with filters, lifecycle controls, version history, publish/rollback, usage impact, and default-template selection",
-            "🧪 Tracking Monitor UX — live monitor now normalizes URLs and shows explicit fallback when iframe is blocked by X-Frame-Options/CSP",
-            "🔐 Security hardening — removed secret VITE token fallbacks from frontend boot defaults",
-            "🛡️ API guardrail — tightened worker auth behavior when API_SECRET is not configured to reduce accidental public exposure",
+            "� FusionOps V2 branding update — standardized product naming across UI and changelog surfaces",
+            "�️ Template Manager + registry updates shipped in dashboard latest bundle",
+            "� MCP auth flow fixed — /api/mcp routes now use x-mcp-secret path cleanly with updated docs",
         ],
     },
     {
@@ -124,7 +123,7 @@ export function Sidebar({ page, setPage, siteCount, startCreate, startTemplateGe
                     >⚡</div>
                     {!collapsed && (
                         <div>
-                            <div className="text-[15px] font-bold whitespace-nowrap">FusionOps</div>
+                            <div className="text-[15px] font-bold whitespace-nowrap">FusionOps V2</div>
                             <div
                                 className="text-[10px] text-[hsl(var(--muted-foreground))] cursor-pointer"
                                 onClick={() => setShowLog(true)}
@@ -194,7 +193,7 @@ export function Sidebar({ page, setPage, siteCount, startCreate, startTemplateGe
                         <div className="flex items-center justify-between px-5 py-4 border-b border-[hsl(var(--border))]">
                             <div>
                                 <div className="text-base font-bold">📋 Changelog</div>
-                                <div className="text-[11px] text-[hsl(var(--muted-foreground))] mt-0.5">FusionOps v{APP_VERSION}</div>
+                                <div className="text-[11px] text-[hsl(var(--muted-foreground))] mt-0.5">FusionOps v2</div>
                             </div>
                             <button
                                 onClick={() => setShowLog(false)}

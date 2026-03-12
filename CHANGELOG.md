@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.9.0] - 2026-03-13
+### Changed
+- **FusionOps V2 branding**: Standardized product naming in UI surfaces to `FusionOps V2` and `FusionOps v2`.
+- **Dashboard latest bundle**: Updated Template Manager + template registry behavior and aligned related unit tests.
+
+### Fixed
+- **MCP auth flow**: `/api/mcp/*` now bypasses global `API_SECRET` Bearer guard and uses `x-mcp-secret` (`MCP_SHARED_SECRET`) as intended.
+- **MCP docs**: Updated online flow docs for secret setup and test commands.
+
 ## [2.8.0] - 2026-03-12
 ### Features
 - **project-bolt-sb1 template**: New Bolt Astro template with full tracking stack support
