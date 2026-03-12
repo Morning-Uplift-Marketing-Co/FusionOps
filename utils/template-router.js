@@ -88,7 +88,9 @@ function astroToHtmlPreview(files, site) {
     phone: site.phone || '',
     headline: site.h1 || site.brand || 'Your Headline',
     subheadline: site.sub || site.tagline || 'Your subheadline here',
-    leadsGateFormId: site.leadsGateFormId || site.aid || ''
+    leadsGateFormId: site.leadsGateFormId || site.aid || '',
+    primaryColor: site.colorId === 'custom' && site.primaryColor ? site.primaryColor : (colorObj.p ? `hsl(${colorObj.p[0]}, ${colorObj.p[1]}%, ${colorObj.p[2]}%)` : '#3b82f6'),
+    accentColor: site.colorId === 'custom' && site.accentColor ? site.accentColor : (colorObj.a ? `hsl(${colorObj.a[0]}, ${colorObj.a[1]}%, ${colorObj.a[2]}%)` : '#f97316'),
   };
 
   // Basic Astro to HTML conversion for preview
@@ -135,8 +137,12 @@ function astroToHtmlPreview(files, site) {
   // Pre-process ${} variables inside <style> blocks before protecting them
   // This ensures CSS custom properties like --color-primary: ${primaryColor} get resolved
   const _colorObj2 = getColorObj(site.colorId);
-  const _primaryColor = _colorObj2.p ? `hsl(${_colorObj2.p[0]}, ${_colorObj2.p[1]}%, ${_colorObj2.p[2]}%)` : '#3b82f6';
-  const _accentColor = _colorObj2.a ? `hsl(${_colorObj2.a[0]}, ${_colorObj2.a[1]}%, ${_colorObj2.a[2]}%)` : '#f97316';
+  const _primaryColor = site.colorId === 'custom' && site.primaryColor
+    ? site.primaryColor
+    : (_colorObj2.p ? `hsl(${_colorObj2.p[0]}, ${_colorObj2.p[1]}%, ${_colorObj2.p[2]}%)` : '#3b82f6');
+  const _accentColor = site.colorId === 'custom' && site.accentColor
+    ? site.accentColor
+    : (_colorObj2.a ? `hsl(${_colorObj2.a[0]}, ${_colorObj2.a[1]}%, ${_colorObj2.a[2]}%)` : '#f97316');
   html = html.replace(/(<style\b[^>]*>)([\s\S]*?)(<\/style>)/gi, (m, open, body, close) => {
     const resolved = body.replace(/\$\{primaryColor\}/g, _primaryColor)
                          .replace(/\$\{accentColor\}/g, _accentColor);
@@ -295,8 +301,8 @@ function astroToHtmlPreview(files, site) {
     html = html.replace(/<script\b[^>]*>\s*window\.tailwind\s*=[\s\S]*?<\/script>/g, '');
   }
 
-  const _p = colorObj.p ? `hsl(${colorObj.p[0]} ${colorObj.p[1]}% ${colorObj.p[2]}%)` : '#2563EB';
-  const _a = colorObj.a ? `hsl(${colorObj.a[0]} ${colorObj.a[1]}% ${colorObj.a[2]}%)` : '#F97316';
+  const _p = site.colorId === 'custom' && site.primaryColor ? site.primaryColor : (colorObj.p ? `hsl(${colorObj.p[0]} ${colorObj.p[1]}% ${colorObj.p[2]}%)` : '#2563EB');
+  const _a = site.colorId === 'custom' && site.accentColor ? site.accentColor : (colorObj.a ? `hsl(${colorObj.a[0]} ${colorObj.a[1]}% ${colorObj.a[2]}%)` : '#F97316');
   const _s = colorObj.s ? `hsl(${colorObj.s[0]} ${colorObj.s[1]}% ${colorObj.s[2]}%)` : '#10B981';
   const tailwindConfigScript = `<script>window.tailwind = window.tailwind || {}; window.tailwind.config = {theme: {extend: {colors: {primary: '${_p}', accent: '${_a}', secondary: '${_s}'}, boxShadow: {cta: '0 4px 14px 0 hsl(40 90% 55% / 0.4)', card: '0 10px 15px -3px hsl(350 75% 38% / 0.08), 0 4px 6px -4px hsl(350 75% 38% / 0.06)'}} } } };</script>`;
   const tailwindCdnScript = `<script src="https://cdn.tailwindcss.com"></script>`;
