@@ -31,7 +31,11 @@ if (STANDALONE) {
   (async () => {
     console.log("\n═══ FusionOps E2E Test Suite ═══\n");
 
-    const browser = await chromium.launch({ headless: false, slowMo: 300 });
+    const browser = await chromium.launch({
+      headless: false,
+      slowMo: 300,
+      executablePath: process.env.CHROME_DEV_PATH || "C:\\Program Files\\Google\\Chrome Dev\\Application\\chrome.exe",
+    });
     const ctx = await browser.newContext({ viewport: { width: 1400, height: 900 } });
     const page = await ctx.newPage();
 
