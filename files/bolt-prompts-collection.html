@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Bolt.new Prompts Collection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            overflow-x: auto;
+            flex-wrap: wrap;
+        }
+        
+        .tab {
+            padding: 16px 24px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #495057;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+        }
+        
+        .tab:hover {
+            background: #e9ecef;
+            color: #667eea;
+        }
+        
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            background: white;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .prompt-section {
+            display: none;
+        }
+        
+        .prompt-section.active {
+            display: block;
+        }
+        
+        .prompt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        
+        .prompt-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #212529;
+        }
+        
+        .prompt-meta {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .badge-primary {
+            background: #e7f1ff;
+            color: #0066cc;
+        }
+        
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .badge-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .copy-btn {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .copy-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .copy-btn:active {
+            transform: translateY(0);
+        }
+        
+        .prompt-description {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .prompt-description h3 {
+            margin-bottom: 8px;
+            color: #495057;
+            font-size: 16px;
+        }
+        
+        .prompt-description p {
+            color: #6c757d;
+            line-height: 1.6;
+        }
+        
+        .prompt-box {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 24px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #212529;
+            white-space: pre-wrap;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #28a745;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            display: none;
+            animation: slideIn 0.3s;
+            z-index: 1000;
+        }
+        
+        .toast.show {
+            display: block;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @media (max-width: 768px) {
+            .tabs {
+                flex-wrap: nowrap;
+            }
+            
+            .tab {
+                font-size: 12px;
+                padding: 12px 15px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .prompt-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Bolt.new Prompts Collection</h1>
+            <p>คอลเลกชันพร้อมต์สำหรับสร้าง Astro Landing Page Template แบบครบถ้วนและพร้อมใช้งาน</p>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showPrompt(0)">📖 How to Use</button>
+            <button class="tab" onclick="showPrompt(1)">Generic Full</button>
+            <button class="tab" onclick="showPrompt(2)">Shorter</button>
+            <button class="tab" onclick="showPrompt(3)">Thai</button>
+            <button class="tab" onclick="showPrompt(4)">Ultra-Strict</button>
+            <button class="tab" onclick="showPrompt(5)">Server Upload</button>
+            <button class="tab" onclick="showPrompt(6)">Thai Ultra-Strict</button>
+            <button class="tab" onclick="showPrompt(7)">Repo-Specific</button>
+        </div>
+        
+        <div class="content">
+            <!-- Tab 0: How to Use Guide -->
+            <div class="prompt-section active" data-index="0">
+                <div class="prompt-header">
+                    <div>
+                        <div class="prompt-title">📖 How to Select and Use Bolt Prompts</div>
+                        <div class="prompt-meta">
+                            <span class="badge badge-info">คู่มือการใช้งาน</span>
+                            <span class="badge badge-success">เริ่มต้นที่นี่</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="background: #fff3cd; padding: 20px; border-radius: 8px; border-left: 4px solid #ffc107; margin-bottom: 20px;">
+                    <h3 style="margin: 0 0 10px 0; color: #856404; font-size: 16px;">💡 เริ่มต้นที่นี่</h3>
+                    <p style="margin: 0; color: #856404; font-size: 14px; line-height: 1.6;">
+                        คู่มือนี้จะช่วยคุณเลือกพร้อมต์ที่เหมาะสมและใช้งาน Bolt.new ให้ได้ผลลัพธ์ที่ดีที่สุด อ่านส่วน "เลือกพร้อมต์ที่เหมาะสม" ก่อนเริ่มใช้งาน
+                    </p>
+                </div>
+
+                <div style="max-height: 600px; overflow-y: auto; padding-right: 10px;">
+                    <h2 style="color: #667eea; margin-top: 0;">🎯 เลือกพร้อมต์ที่เหมาะสม</h2>
+                    
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h3 style="font-size: 16px; margin-top: 0;">Decision Tree - ตัดสินใจง่าย ๆ</h3>
+                        <div style="font-family: monospace; font-size: 13px; line-height: 1.8; color: #495057;">
+                            <strong>1. ต้องการภาษาไทยหรือไม่?</strong><br>
+                            &nbsp;&nbsp;✅ ใช่ → ต้องการความเข้มงวดสูงสุดไหม?<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;✅ ใช่ → ใช้ <strong>"Thai Ultra-Strict"</strong><br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;❌ ไม่ → ใช้ <strong>"Thai Version"</strong><br>
+                            &nbsp;&nbsp;❌ ไม่ → ไปข้อ 2<br><br>
+                            
+                            <strong>2. สร้างสำหรับโปรเจกต์นี้โดยเฉพาะ?</strong><br>
+                            &nbsp;&nbsp;✅ ใช่ → ใช้ <strong>"Repo-Specific"</strong><br>
+                            &nbsp;&nbsp;❌ ไม่ → ไปข้อ 3<br><br>
+                            
+                            <strong>3. ต้องอัปโหลดเข้าระบบ template บนเซิร์ฟเวอร์?</strong><br>
+                            &nbsp;&nbsp;✅ ใช่ → ใช้ <strong>"Server Upload"</strong><br>
+                            &nbsp;&nbsp;❌ ไม่ → ไปข้อ 4<br><br>
+                            
+                            <strong>4. สร้างเฉพาะ lead-generation page เท่านั้น?</strong><br>
+                            &nbsp;&nbsp;✅ ใช่ → ใช้ <strong>"Ultra-Strict Lead-Gen"</strong><br>
+                            &nbsp;&nbsp;❌ ไม่ → ไปข้อ 5<br><br>
+                            
+                            <strong>5. ต้องการพร้อมต์แบบกระชับ?</strong><br>
+                            &nbsp;&nbsp;✅ ใช่ → ใช้ <strong>"Shorter"</strong><br>
+                            &nbsp;&nbsp;❌ ไม่ → ใช้ <strong>"Generic Full"</strong>
+                        </div>
+                    </div>
+
+                    <h2 style="color: #667eea; margin-top: 30px;">🚀 ขั้นตอนการใช้งาน</h2>
+
+                    <div style="background: #e7f1ff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #0066cc;">
+                        <h4 style="margin: 0 0 10px 0; color: #0066cc;">ขั้นตอนที่ 1: เลือกพร้อมต์</h4>
+                        <ol style="margin: 0; padding-left: 20px; font-size: 14px; color: #495057;">
+                            <li>ใช้ Decision Tree ด้านบนเพื่อเลือกพร้อมต์ที่เหมาะสม</li>
+                            <li>คลิกที่แท็บพร้อมต์ที่ต้องการ</li>
+                            <li>อ่านคำอธิบายเพื่อยืนยันว่าตรงกับความต้องการ</li>
+                        </ol>
+                    </div>
+
+                    <div style="background: #e7f1ff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #0066cc;">
+                        <h4 style="margin: 0 0 10px 0; color: #0066cc;">ขั้นตอนที่ 2: คัดลอกพร้อมต์</h4>
+                        <ol style="margin: 0; padding-left: 20px; font-size: 14px; color: #495057;">
+                            <li>คลิกปุ่ม <strong>"📋 Copy Prompt"</strong></li>
+                            <li>จะเห็นข้อความแจ้งเตือน "✅ คัดลอกพร้อมต์สำเร็จ!"</li>
+                            <li>พร้อมต์อยู่ใน clipboard แล้ว</li>
+                        </ol>
+                    </div>
+
+                    <div style="background: #e7f1ff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #0066cc;">
+                        <h4 style="margin: 0 0 10px 0; color: #0066cc;">ขั้นตอนที่ 3: ใช้ Bolt.new</h4>
+                        <ol style="margin: 0; padding-left: 20px; font-size: 14px; color: #495057;">
+                            <li>ไปที่ <a href="https://bolt.new" target="_blank" style="color: #667eea;">bolt.new</a></li>
+                            <li>เลือก <strong>Claude Agent</strong> (แนะนำสำหรับ production)</li>
+                            <li>วางพร้อมต์ที่คัดลอกมา</li>
+                            <li>วางคำขอเฉพาะของคุณด้านล่าง</li>
+                            <li>กด Send</li>
+                        </ol>
+                    </div>
+
+                    <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; margin-top: 20px;">
+                        <h4 style="margin: 0 0 10px 0; color: #856404; font-size: 14px;">💡 เคล็ดลับ</h4>
+                        <p style="margin: 0; font-size: 13px; color: #856404; line-height: 1.6;">
+                            ถ้ายังไม่แน่ใจว่าจะใช้พร้อมต์ไหน: เริ่มจาก <strong>Generic Full</strong> → ถ้าต้องการผ่าน validation ของโปรเจกต์นี้ ใช้ <strong>Repo-Specific</strong> → ถ้า Bolt เพิ่มฟีเจอร์ที่ไม่ต้องการ ใช้ <strong>Ultra-Strict</strong>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prompt 1: Generic Full -->
+            <div class="prompt-section" data-index="1">
+                <div class="prompt-header">
+                    <div>
+                        <div class="prompt-title">Generic Full Version</div>
+                        <div class="prompt-meta">
+                            <span class="badge badge-primary">ใช้ทั่วไป</span>
+                            <span class="badge badge-success">ครบถ้วน</span>
+                        </div>
+                    </div>
+                    <button class="copy-btn" onclick="copyPrompt(1)">📋 Copy Prompt</button>
+                </div>
+                
+                <div class="prompt-description">
+                    <h3>📝 คำอธิบาย</h3>
+                    <p>เวอร์ชันมาตรฐานที่ครบถ้วนสำหรับใช้กับ Bolt ทั่วไป เน้นความสมบูรณ์และ production-ready พร้อมกฎเกณฑ์ที่ชัดเจน</p>
+                </div>
+                
+                <div class="prompt-box" id="prompt-1">You are Bolt. Generate a COMPLETE, production-usable, reusable template that solves the stated problem fully on the first pass, with no expected follow-up edits, no missing support files, no vague TODOs, and no undocumented assumptions.
+
+Your goal is NOT to produce a quick prototype.
+Your goal is to produce a fully structured, immediately usable template that is robust, maintainable, and ready for real use.
+
+## PRIMARY OBJECTIVE
+
+Create a comprehensive Astro landing-page template that:
+1. Fully resolves the target use case
+2. Includes all required files, structure, and logic
+3. Includes sensible defaults and fallback behavior
+4. Is production-ready and immediately deployable
+5. Requires zero manual fixes or additions
+
+## CORE REQUIREMENTS
+
+### Framework & Stack
+- Use Astro (latest) as the primary framework
+- Tailwind CSS for styling
+- React islands ONLY for interactive components (client:load or client:visible)
+- Minimal JavaScript, static-first approach
+- No unnecessary dependencies
+
+### Performance
+- Target: PageSpeed Insights 95+ on mobile and desktop
+- Mobile-first responsive design
+- Optimized images and assets
+- Efficient font loading
+- No render-blocking resources
+
+### Code Quality
+- No TODO comments
+- No placeholder content (use realistic copy, not lorem ipsum)
+- All imports must be valid
+- No missing files or broken references
+- Complete implementation of all sections
+- Proper error handling
+
+### File Structure
+Ensure these files exist:
+- src/pages/index.astro
+- src/layouts/Layout.astro
+- package.json with all dependencies
+- astro.config.mjs with proper configuration
+- README.md with setup instructions
+
+## DELIVERABLES
+
+Provide a complete, working template including:
+1. All source files
+2. Configuration files
+3. Package.json with exact dependencies
+4. Clear documentation
+5. No placeholders or incomplete sections
+
+Return ONLY the final, complete template that is ready to use immediately.</div>
+            </div>
+
+            <!-- Prompt 2: Shorter -->
+            <div class="prompt-section" data-index="2">
+                <div class="prompt-header">
+                    <div>
+                        <div class="prompt-title">Shorter Version</div>
+                        <div class="prompt-meta">
+                            <span class="badge badge-primary">กระชับ</span>
+                            <span class="badge badge-success">รวดเร็ว</span>
+                        </div>
+                    </div>
+                    <button class="copy-btn" onclick="copyPrompt(2)">📋 Copy Prompt</button>
+                </div>
+                
+                <div class="prompt-description">
+                    <h3>📝 คำอธิบาย</h3>
+                    <p>เวอร์ชันกระชับ เหมาะสำหรับใช้งานเร็ว ๆ ครอบคลุมประเด็นสำคัญแต่ไม่ยาวเกินไป</p>
+                </div>
+                
+                <div class="prompt-box" id="prompt-2">Generate a COMPLETE, production-ready Astro landing-page template.
+
+Requirements:
+- Astro + Tailwind CSS
+- Mobile-first, responsive
+- PageSpeed 95+
+- No TODOs, no placeholders
+- All files included
+- Ready to deploy
+
+Deliverables:
+- src/pages/index.astro
+- src/layouts/Layout.astro
+- package.json
+- astro.config.mjs
+- Complete, working code
+
+Return the final template ready to use immediately.</div>
+            </div>
+
+            <!-- Prompt 3: Thai -->
+            <div class="prompt-section" data-index="3">
+                <div class="prompt-header">
+                    <div>
+                        <div class="prompt-title">Thai Version</div>
+                        <div class="prompt-meta">
+                            <span class="badge badge-info">ภาษาไทย</span>
+                            <span class="badge badge-success">ครบถ้วน</span>
+                        </div>
+                    </div>
+                    <button class="copy-btn" onclick="copyPrompt(3)">📋 Copy Prompt</button>
+                </div>
+                
+                <div class="prompt-description">
+                    <h3>📝 คำอธิบาย</h3>
+                    <p>เวอร์ชันภาษาไทยฉบับเต็ม เหมาะสำหรับทีมไทยหรืออ่านเข้าใจง่าย</p>
+                </div>
+                
+                <div class="prompt-box" id="prompt-3">คุณคือ Bolt ให้สร้าง Astro landing-page template แบบ COMPLETE และพร้อมใช้งานจริงทันที
+
+เป้าหมายหลัก:
+- ต้องเป็น production-ready
+- ต้อง reusable สำหรับหลายแบรนด์/หลายแคมเปญ
+- ต้อง mobile-first
+- ต้องพร้อมใช้งานทันทีโดยไม่ต้องมานั่งแก้ต่อ
+- ต้องตั้งเป้า PageSpeed Insights 95+ ทั้ง mobile และ desktop
+
+กฎสำคัญ:
+- ห้ามมี TODO comments
+- ห้ามมี placeholder content (ใช้ content จริง ไม่ใช่ lorem ipsum)
+- ไฟล์ต้องครบทุกไฟล์
+- import ต้องถูกต้องหมด
+- ทุก section ต้องสมบูรณ์
+
+ไฟล์ที่ต้องมี:
+- src/pages/index.astro
+- src/layouts/Layout.astro
+- package.json (พร้อม dependencies ครบ)
+- astro.config.mjs
+
+ส่งมาเป็น template ที่สมบูรณ์และพร้อมใช้งานทันที</div>
+            </div>
+
+            <!-- Prompt 4: Ultra-Strict -->
+            <div class="prompt-section" data-index="4">
+                <div class="prompt-header">
+                    <div>
+                        <div class="prompt-title">Ultra-Strict Lead-Gen Only</div>
+                        <div class="prompt-meta">
+                            <span class="badge badge-warning">เข้มงวดสูงสุด</span>
+                            <span class="badge badge-primary">Lead-Gen เท่านั้น</span>
+                        </div>
+                    </div>
+                    <button class="copy-btn" onclick="copyPrompt(4)">📋 Copy Prompt</button>
+                </div>
+                
+                <div class="prompt-description">
+                    <h3>📝 คำอธิบาย</h3>
+                    <p>เวอร์ชันเข้มงวดสูงสุด เจาะจงสำหรับ lead-generation landing page เท่านั้น ไม่ยอมให้หลุด scope</p>
+                </div>
+                
+                <div class="prompt-box" id="prompt-4">You are Bolt. Generate a COMPLETE Astro lead-generation landing-page template only.
+
+This is NOT a generic site template.
+This is NOT a SaaS app.
+This is NOT a dashboard.
+This is NOT an e-commerce site.
+
+It must be a production-ready lead-gen landing page built for campaign use and immediate deployment.
+
+## HARD REQUIREMENTS
+
+1. Single-page landing page focused on lead generation
+2. Form submission (client-side validation only, no backend)
+3. Clear call-to-action throughout
+4. Trust signals and social proof
+5. Mobile-first, responsive design
+6. PageSpeed 95+
+
+## FORBIDDEN
+
+Do NOT include:
+- User authentication
+- Database connections
+- Payment processing
+- Blog functionality
+- Dashboard features
+- Admin panels
+- Multi-page navigation
+- SaaS features
+
+## DELIVERABLES
+
+- src/pages/index.astro (landing page only)
+- src/layouts/Layout.astro
+- Form components with validation
+- package.json
+- astro.config.mjs
+
+Return a complete, focused lead-gen template ready for immediate use.</div>
+            </div>
+
+            <!-- Prompt 5: Server Upload -->
+            <div class="prompt-section" data-index="5">
+                <div class="prompt-header">
+                    <div>
+                        <div class="prompt-title">Server Upload Version</div>
+                        <div class="prompt-meta">
+                            <span class="badge badge-info">Template Package</span>
+                            <span class="badge badge-success">Import-Ready</span>
+                        </div>
+                    </div>
+                    <button class="copy-btn" onclick="copyPrompt(5)">📋 Copy Prompt</button>
+                </div>
+                
+                <div class="prompt-description">
+                    <h3>📝 คำอธิบาย</h3>
+                    <p>เวอร์ชันสำหรับสร้าง template package ที่พร้อมอัปโหลดเข้าระบบ template บนเซิร์ฟเวอร์</p>
+                </div>
+                
+                <div class="prompt-box" id="prompt-5">Generate a COMPLETE Astro landing-page template package designed to be added to a server-side template system.
+
+This template must be suitable for storage, upload, import, and reuse in a template-management workflow.
+
+## PRIMARY GOAL
+
+Create a reusable Astro template package that:
+- Is complete and production-usable
+- Can be stored or uploaded to a server/template system
+- Has a clean, importable file structure
+- Is easy to register in a template catalog
+- Includes metadata for categorization
+
+## TEMPLATE METADATA
+
+Include a metadata file (template.json) with:
+- id: unique template identifier
+- name: display name
+- description: brief description
+- category: template category (e.g., "loan", "healthcare", "finance")
+- badge: optional badge (e.g., "New", "Popular", "Premium")
+- preview: path to preview image (optional)
+- created: creation date
+- updated: last update date
+
+## FILE STRUCTURE
+
+Organize files for easy import:
+```
+template-name/
+  src/
+    pages/
+    layouts/
+    components/
+  public/
+  package.json
+  astro.config.mjs
+  template.json (metadata)
+  README.md
+```
+
+## DELIVERABLES
+
+- Complete template with all source files
+- template.json with metadata
+- README.md with usage instructions
+- Clean folder structure ready for zip/upload
+
+Return a complete template package ready for server upload.</div>
+            </div>
+
+            <!-- Prompt 6: Thai Ultra-Strict -->
+            <div class="prompt-section" data-index="6">
+                <div class="prompt-header">
+                    <div>
+                        <div class="prompt-title">Thai Ultra-Strict Version</div>
+                        <div class="prompt-meta">
+                            <span class="badge badge-warning">เข้มงวดสูงสุด</span>
+                            <span class="badge badge-info">ภาษาไทย</span>
+                        </div>
+                    </div>
+                    <button class="copy-btn" onclick="copyPrompt(6)">📋 Copy Prompt</button>
+                </div>
+                
+                <div class="prompt-description">
+                    <h3>📝 คำอธิบาย</h3>
+                    <p>เวอร์ชันภาษาไทยแบบเข้มงวดสูงสุด บังคับ Bolt ให้ไม่หลุด scope และทำงานให้ครบถ้วนที่สุด</p>
+                </div>
+                
+                <div class="prompt-box" id="prompt-6">คุณคือ Bolt ให้สร้าง Astro template สำหรับหน้า Lead Generation Landing Page แบบ "เข้มงวดมาก" และ "พร้อมใช้งานจริงทันที" เท่านั้น
+
+งานนี้ไม่ใช่:
+- prototype
+- demo
+- SaaS app
+- dashboard
+- blog
+- e-commerce
+- เว็บทั่วไป
+
+งานนี้คือ: หน้า landing page เดียวสำหรับเก็บ leads เท่านั้น
+
+## ข้อกำหนดเข้มงวด
+
+1. หน้าเดียว (single page) เท่านั้น
+2. มีฟอร์มเก็บข้อมูล (client-side validation)
+3. มี CTA ชัดเจน
+4. mobile-first
+5. PageSpeed 95+
+6. ไม่มี TODO
+7. ไม่มี placeholder content
+
+## ห้ามใส่
+
+- ระบบ login/authentication
+- database
+- payment
+- blog
+- dashboard
+- admin panel
+- หลายหน้า
+- ฟีเจอร์ SaaS
+
+## ส่งมา
+
+- src/pages/index.astro (หน้าเดียว)
+- src/layouts/Layout.astro
+- ฟอร์มพร้อม validation
+- package.json
+- astro.config.mjs
+
+ส่งมาเป็น template ที่สมบูรณ์และพร้อมใช้งานทันที ห้ามหลุด scope</div>
+            </div>
+
+            <!-- Prompt 7: Repo-Specific -->
+            <div class="prompt-section" data-index="7">
+                <div class="prompt-header">
+                    <div>
+                        <div class="prompt-title">Repo-Specific Version</div>
+                        <div class="prompt-meta">
+                            <span class="badge badge-warning">ผูกกับ Repo นี้</span>
+                            <span class="badge badge-primary">ละเอียดสูงสุด</span>
+                        </div>
+                    </div>
+                    <button class="copy-btn" onclick="copyPrompt(7)">📋 Copy Prompt</button>
+                </div>
+                
+                <div class="prompt-description">
+                    <h3>📝 คำอธิบาย</h3>
+                    <p>เวอร์ชันที่ผูกกับโครงสร้างโปรเจกต์นี้แบบละเอียดที่สุด อิงตาม validation scripts, file paths, และ workflow จริง</p>
+                </div>
+                
+                <div class="prompt-box" id="prompt-7">Generate a COMPLETE Astro landing-page template package designed specifically for this repo's template-import workflow.
+
+This template must align with the exact file structure, validation rules, and operational expectations of this project's template system.
+
+## REQUIRED FILES
+
+You MUST create these exact files:
+
+1. src/pages/index.astro
+2. src/layouts/Layout.astro
+3. src/pages/e.ts (first-party pixel endpoint)
+4. src/pages/robots.txt.ts (robots.txt route)
+5. public/_headers (Cloudflare security headers)
+6. package.json
+7. astro.config.mjs
+
+## LAYOUT.ASTRO REQUIREMENTS
+
+In src/layouts/Layout.astro, you MUST include:
+
+### Environment Variables
+```astro
+const colorId = import.meta.env.PUBLIC_COLORID || 'default';
+const fontId = import.meta.env.PUBLIC_FONTID || 'inter';
+const voluumDomain = import.meta.env.PUBLIC_VOLUUMDOMAIN || '';
+const voluumClickUrl = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '';
+```
+
+### fpPixel Tracking Block
+In <head>:
+```html
+<script data-cfasync="false" is:inline>
+(function(){
+  var p = new URLSearchParams(window.location.search);
+  var cid = p.get('vlcid') || p.get('clickid') || p.get('click_id') || p.get('cid') || p.get('cpid') || '';
+  if (cid) {
+    window.__fpClickId = cid;
+    try { sessionStorage.setItem('voluum_cpid', cid); } catch(_){}
+  }
+  window.__fpPixel = function(eventName, extra) {
+    try {
+      var endpoint = 'https://t.' + window.location.hostname + '/e';
+      var payload = Object.assign({ e: eventName, d: window.location.hostname, ts: Math.floor(Date.now()/1000) }, extra || {});
+      navigator.sendBeacon(endpoint, JSON.stringify(payload));
+    } catch(_) {}
+  };
+  window.__fpPixel('pv', cid ? { click_id: cid } : {});
+})();
+</script>
+```
+
+### Voluum dtpCallback Block
+In <head>:
+```html
+{voluumDomain && (
+  <script data-cfasync="false" is:inline define:vars={{ voluumDomain }}>
+  (function(){
+    var p = new URLSearchParams(window.location.search);
+    var cpid = p.get('cpid') || p.get('cid') || p.get('click_id') || p.get('vlcid') || '';
+    if (cpid) { try { sessionStorage.setItem('voluum_cpid', cpid); } catch(_){} }
+    var s = document.createElement('script');
+    s.async = true; s.setAttribute('data-cfasync','false');
+    s.src = 'https://' + voluumDomain + '/dtpCallback.js';
+    document.head.appendChild(s);
+  })();
+  </script>
+)}
+```
+
+## INDEX.ASTRO REQUIREMENTS
+
+In src/pages/index.astro:
+
+### CTA Wiring
+```astro
+const voluumClickUrl = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '';
+const ctaHref = voluumClickUrl || '#apply';
+```
+
+All CTA links must use: `<a href={ctaHref}>Apply Now</a>`
+
+## ENDPOINT FILES
+
+### src/pages/e.ts
+```typescript
+export async function GET() {
+  const gif = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+  return new Response(gif, {
+    status: 200,
+    headers: {
+      'Content-Type': 'image/gif',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+    },
+  });
+}
+```
+
+### src/pages/robots.txt.ts
+```typescript
+export async function GET() {
+  const robotsTxt = `User-agent: *\nAllow: /`;
+  return new Response(robotsTxt, {
+    status: 200,
+    headers: { 'Content-Type': 'text/plain' },
+  });
+}
+```
+
+### public/_headers
+```
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+```
+
+## VALIDATION CHECKLIST
+
+Before finalizing, verify:
+- ✅ All 7 required files exist
+- ✅ Layout reads environment variables
+- ✅ fpPixel block is present
+- ✅ Voluum dtpCallback is present
+- ✅ CTA links use ctaHref
+- ✅ e.ts returns proper pixel
+- ✅ robots.txt.ts returns proper content
+- ✅ _headers has security headers
+- ✅ No TODOs
+- ✅ No broken imports
+
+Return a complete template that passes all validation checks.</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast">✅ คัดลอกพร้อมต์สำเร็จ!</div>
+    
+    <script>
+        function showPrompt(index) {
+            // Hide all sections
+            const sections = document.querySelectorAll('.prompt-section');
+            sections.forEach(section => section.classList.remove('active'));
+            
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Show selected section
+            const selectedSection = document.querySelector(`.prompt-section[data-index="${index}"]`);
+            if (selectedSection) {
+                selectedSection.classList.add('active');
+            }
+            
+            // Add active class to selected tab
+            tabs[index].classList.add('active');
+        }
+        
+        function copyPrompt(index) {
+            const promptBox = document.getElementById(`prompt-${index}`);
+            if (!promptBox) return;
+            
+            const text = promptBox.textContent;
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(text).then(() => {
+                // Show toast
+                const toast = document.getElementById('toast');
+                toast.classList.add('show');
+                
+                // Hide toast after 3 seconds
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('ไม่สามารถคัดลอกได้ กรุณาลองอีกครั้ง');
+            });
+        }
+    </script>
+</body>
+</html>
