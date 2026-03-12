@@ -473,7 +473,16 @@ export function hasTemplate(id) {
   if (!id) return false;
   const resolvedId = TEMPLATE_ALIASES[id] || id;
   if (customTemplatesCache?.some(t => t.id === resolvedId)) return true;
-  return !!MODULE_TEMPLATES_FALLBACK.find(t => t.id === resolvedId) || LEGACY_TEMPLATES.some(t => t.id === resolvedId);
+  if (MODULE_TEMPLATES_FALLBACK.some(t => t.id === resolvedId)) return true;
+  if (LEGACY_TEMPLATES.some(t => t.id === resolvedId)) return true;
+  if (getModuleTemplate) {
+    try {
+      return !!getModuleTemplate(resolvedId);
+    } catch (_e) {
+      return false;
+    }
+  }
+  return false;
 }
 
 /**
@@ -491,11 +500,22 @@ export function getTemplateGenerator(id, type = 'astro') {
   if (MODULE_TEMPLATES_FALLBACK.find(t => t.id === resolvedId)) {
     return { type: 'module', id: resolvedId };
   }
+  if (getModuleTemplate) {
+    try {
+      if (getModuleTemplate(resolvedId)) return { type: 'module', id: resolvedId };
+    } catch (_e) {
+      // fall through
+    }
+  }
 
-  // Legacy templates have explicit generators
+  // Legacy templates can optionally include generators map.
+  // Keep a safe fallback to avoid runtime errors for metadata-only legacy entries.
   const legacy = LEGACY_TEMPLATES.find(t => t.id === resolvedId);
   if (legacy) {
-    return { type: 'legacy', generator: legacy.generators[type] };
+    const generator = legacy.generators?.[type]
+      || legacy.generators?.astro
+      || (() => '');
+    return { type: 'legacy', generator };
   }
 
   return null;

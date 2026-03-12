@@ -21,7 +21,7 @@ describe('Deployers Module', () => {
 
   describe('DEPLOY_TARGETS', () => {
     it('should have all expected deploy targets', () => {
-      expect(DEPLOY_TARGETS).toHaveLength(7);
+      expect(DEPLOY_TARGETS).toHaveLength(8);
     });
 
     it('should have required target IDs', () => {
@@ -33,12 +33,13 @@ describe('Deployers Module', () => {
       expect(targetIds).toContain('s3-cloudfront');
       expect(targetIds).toContain('vps-ssh');
       expect(targetIds).toContain('git-push');
+      expect(targetIds).toContain('github-actions');
     });
 
     it('should have unique priorities', () => {
       const priorities = DEPLOY_TARGETS.map(t => t.priority);
       const uniquePriorities = new Set(priorities);
-      expect(uniquePriorities.size).toBe(7);
+      expect(uniquePriorities.size).toBe(8);
     });
   });
 
@@ -46,7 +47,7 @@ describe('Deployers Module', () => {
     it('should return all targets with configured flag', () => {
       const settings = {};
       const available = getAvailableTargets(settings);
-      expect(available).toHaveLength(7);
+      expect(available).toHaveLength(8);
       available.forEach(target => {
         expect(target).toHaveProperty('configured');
         expect(typeof target.configured).toBe('boolean');
