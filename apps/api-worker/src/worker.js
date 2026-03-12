@@ -217,6 +217,48 @@ function nameserversMatch(a, b) {
   return left.every((value, idx) => value === right[idx]);
 }
 
+const CF_NS_RETRY_ATTEMPTS = 6;
+const CF_NS_RETRY_DELAY_MS = 2000;
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function pollCloudflareNameservers(zoneId, headers, options = {}) {
+  const attempts = Number(options.attempts || CF_NS_RETRY_ATTEMPTS);
+  const delayMs = Number(options.delayMs || CF_NS_RETRY_DELAY_MS);
+  let lastError = "";
+  let latestZone = null;
+
+  for (let i = 0; i < attempts; i++) {
+    if (i > 0) {
+      await sleep(delayMs);
+    }
+
+    const zoneRes = await fetch(`https://api.cloudflare.com/client/v4/zones/${zoneId}`, { headers });
+    const zoneData = await zoneRes.json().catch(() => ({}));
+
+    if (!zoneRes.ok || zoneData?.success === false) {
+      lastError = zoneData?.errors?.[0]?.message || `Cloudflare zone lookup failed (${zoneRes.status})`;
+      continue;
+    }
+
+    latestZone = zoneData?.result || latestZone;
+    const nameservers = normalizeNameservers(latestZone?.name_servers || latestZone?.nameServers);
+    if (nameservers.length >= 2) {
+      return { success: true, nameservers, zone: latestZone };
+    }
+
+    lastError = "Cloudflare nameservers are not ready yet";
+  }
+
+  return {
+    success: false,
+    error: lastError || "Cloudflare nameservers are not ready yet",
+    zone: latestZone,
+  };
+}
+
 function extractInternetBsNameservers(payload) {
   const out = [];
   const walk = (obj) => {
@@ -332,17 +374,24 @@ async function ensureCloudflareZoneAndNameservers(accountId, apiToken, domain) {
   }
 
   let nameservers = normalizeNameservers(zone?.name_servers || zone?.nameServers);
+  let latestZone = zone;
   if (nameservers.length < 2 && zone?.id) {
-    const zoneRes = await fetch(`https://api.cloudflare.com/client/v4/zones/${zone.id}`, { headers });
-    const zoneData = await zoneRes.json();
-    nameservers = normalizeNameservers(zoneData?.result?.name_servers || zoneData?.result?.nameServers);
+    const nsPoll = await pollCloudflareNameservers(zone.id, headers);
+    if (!nsPoll.success) {
+      return {
+        success: false,
+        error: `${nsPoll.error}. Retry in 10-30 seconds.`,
+      };
+    }
+    nameservers = nsPoll.nameservers;
+    latestZone = nsPoll.zone || zone;
   }
 
   if (nameservers.length < 2) {
-    return { success: false, error: "Cloudflare nameservers are not ready yet. Retry in a few seconds." };
+    return { success: false, error: "Cloudflare nameservers are not ready yet. Retry in 10-30 seconds." };
   }
 
-  return { success: true, zoneId: zone.id, nameservers };
+  return { success: true, zoneId: zone.id, nameservers, zone: latestZone };
 }
 
 async function updateInternetBsNameservers(db, accountId, domain, nameservers) {
@@ -384,7 +433,7 @@ async function updateInternetBsNameservers(db, accountId, domain, nameservers) {
 async function autoSyncInternetBsNameserversForSite(db, body) {
   try {
     const domain = String(body?.domain || "").trim().toLowerCase();
-    const registrarAccountId = body?.internetbsAccountId;
+    const registrarAccountId = body?.internetbsAccountId || body?.registrarAccountId || body?.accountId;
     const cfAccountRef = body?.cfAccountId;
 
     if (!domain || !registrarAccountId || !cfAccountRef) {
@@ -3687,7 +3736,26 @@ export default {
         });
         const checkData = await checkRes.json();
         if (checkData.success && checkData.result?.[0]) {
-          return json({ success: true, exists: true, zoneId: checkData.result[0].id, zone: checkData.result[0] });
+          let zone = checkData.result[0];
+          let nameservers = normalizeNameservers(zone?.name_servers || zone?.nameServers);
+          if (nameservers.length < 2 && zone?.id) {
+            const nsPoll = await pollCloudflareNameservers(zone.id, {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            }, { attempts: 4, delayMs: 1500 });
+            if (nsPoll.success) {
+              zone = nsPoll.zone || zone;
+              nameservers = nsPoll.nameservers;
+            }
+          }
+          return json({
+            success: true,
+            exists: true,
+            zoneId: zone.id,
+            zone,
+            nameservers,
+            warning: nameservers.length < 2 ? 'Cloudflare nameservers are not ready yet. Retry in 10-30 seconds.' : undefined,
+          });
         }
 
         // Create zone
@@ -3700,7 +3768,26 @@ export default {
         if (!createData.success) {
           return json({ success: false, error: createData.errors?.[0]?.message || 'Zone creation failed' }, 400);
         }
-        return json({ success: true, exists: false, zoneId: createData.result.id, zone: createData.result });
+        let zone = createData.result;
+        let nameservers = normalizeNameservers(zone?.name_servers || zone?.nameServers);
+        if (nameservers.length < 2 && zone?.id) {
+          const nsPoll = await pollCloudflareNameservers(zone.id, {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          }, { attempts: 4, delayMs: 1500 });
+          if (nsPoll.success) {
+            zone = nsPoll.zone || zone;
+            nameservers = nsPoll.nameservers;
+          }
+        }
+        return json({
+          success: true,
+          exists: false,
+          zoneId: zone.id,
+          zone,
+          nameservers,
+          warning: nameservers.length < 2 ? 'Cloudflare nameservers are not ready yet. Retry in 10-30 seconds.' : undefined,
+        });
       }
 
       if (path === '/api/automation/cf/dns' && method === 'GET') {
