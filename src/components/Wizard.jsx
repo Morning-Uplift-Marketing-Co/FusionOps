@@ -591,6 +591,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
             {showPreview ? (
                 <div className="grid gap-6 items-start" style={{ gridTemplateColumns: "1fr 460px" }}>
                     <Card className="p-7 mb-4" ref={cardRef}>
+                        <div style={{ zoom: '115%' }}>
                         {step === 1 && <StepBrand c={config} u={upd} settings={settings} cfAccounts={cfAccounts} registrarAccounts={registrarAccounts} capabilities={capabilities} />}
                         {step === 2 && <StepProduct c={config} u={upd} capabilities={capabilities} />}
                         {step === 3 && <StepTemplate c={config} u={upd} capabilities={capabilities} />}
@@ -598,6 +599,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                         {step === 5 && <StepCopy c={config} u={upd} onAiGenerate={handleAiGenerate} aiLoading={aiLoading} onAiMeta={handleAiMeta} aiMetaLoading={aiMetaLoading} onAiReviews={handleAiReviews} aiReviewsLoading={aiReviewsLoading} capabilities={capabilities} />}
                         {step === 6 && <StepTracking c={config} u={upd} capabilities={capabilities} />}
                         {step === 7 && <StepReview c={config} building={building} capabilities={capabilities} />}
+                        </div>
                         {step === 7 && (
                             <div className="mt-4 p-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))/30]">
                                 <label className="flex items-center gap-2 text-sm font-medium mb-2">
@@ -634,6 +636,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                 </div>
             ) : (
                 <Card className="p-7 mb-4 max-w-[780px] mx-auto" ref={cardRef}>
+                    <div style={{ zoom: '115%' }}>
                     {step === 1 && <StepBrand c={config} u={upd} settings={settings} cfAccounts={cfAccounts} registrarAccounts={registrarAccounts} capabilities={capabilities} />}
                     {step === 2 && <StepProduct c={config} u={upd} capabilities={capabilities} />}
                     {step === 3 && <StepTemplate c={config} u={upd} capabilities={capabilities} />}
@@ -641,6 +644,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                     {step === 5 && <StepCopy c={config} u={upd} onAiGenerate={handleAiGenerate} aiLoading={aiLoading} onAiMeta={handleAiMeta} aiMetaLoading={aiMetaLoading} onAiReviews={handleAiReviews} aiReviewsLoading={aiReviewsLoading} capabilities={capabilities} />}
                     {step === 6 && <StepTracking c={config} u={upd} capabilities={capabilities} />}
                     {step === 7 && <StepReview c={config} building={building} capabilities={capabilities} />}
+                    </div>
                     {step === 7 && (
                         <div className="mt-4 p-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))/30]">
                             <label className="flex items-center gap-2 text-sm font-medium mb-2">
