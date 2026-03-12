@@ -102,6 +102,7 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         // Chrome-specific settings
         launchOptions: {
+          executablePath: process.env.CHROME_DEV_PATH || 'C:\\Program Files\\Google\\Chrome Dev\\Application\\chrome.exe',
           args: process.env.DEBUG ? ['--start-maximized'] : []
         },
         // Context options

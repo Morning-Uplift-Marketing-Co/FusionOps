@@ -15,7 +15,7 @@ function calcMonthly(principal: number, annualRate: number, months: number) {
   return (principal * r) / (1 - Math.pow(1 + r, -months));
 }
 
-const lenders = [
+const lenders = ([
   {
     name: brand,
     highlight: true,
@@ -60,7 +60,7 @@ const lenders = [
     sameDay: false,
     note: 'Deferred interest risk',
   },
-];
+]).map(l => ({ ...l, monthly: calcMonthly(LOAN_AMOUNT, l.reprApr, TERM_MONTHS), total: calcMonthly(LOAN_AMOUNT, l.reprApr, TERM_MONTHS) * TERM_MONTHS }));
 ---
 
 <section class="py-20 lg:py-28 bg-gray-50">
@@ -96,15 +96,8 @@ const lenders = [
           </tr>
         </thead>
         <tbody>
-          {lenders.map((l) => {
-            const monthly = calcMonthly(LOAN_AMOUNT, l.reprApr, TERM_MONTHS);
-            const total = monthly * TERM_MONTHS;
-            return (
-              <tr class={`border-t border-gray-100 transition-colors ${
-                  l.highlight
-                    ? 'bg-teal-50 border-l-4 border-l-teal-600'
-                    : 'bg-white hover:bg-gray-50'
-                }`}>
+          {lenders.map((l) => (
+              <tr class={`border-t border-gray-100 transition-colors ${l.highlight ? 'bg-teal-50 border-l-4 border-l-teal-600' : 'bg-white hover:bg-gray-50'}`}>
                 <td class="px-6 py-5">
                   <div class={`font-bold ${l.highlight ? 'text-teal-800' : 'text-gray-800'}`}>
                     {l.name}
@@ -124,12 +117,12 @@ const lenders = [
                 </td>
                 <td class="px-4 py-5 text-center">
                   <span class={`font-extrabold text-lg ${l.highlight ? 'text-amber-500' : 'text-gray-800'}`}>
-                    ${monthly.toFixed(2)}
+                    ${l.monthly.toFixed(2)}
                   </span>
                 </td>
                 <td class="px-4 py-5 text-center">
                   <span class={`font-semibold ${l.highlight ? 'text-teal-700' : 'text-gray-700'}`}>
-                    ${total.toFixed(2)}
+                    ${l.total.toFixed(2)}
                   </span>
                 </td>
                 <td class="px-4 py-5 text-center">
@@ -154,8 +147,7 @@ const lenders = [
                   )}
                 </td>
               </tr>
-            );
-          })}
+          ))}
         </tbody>
       </table>
     </div>
