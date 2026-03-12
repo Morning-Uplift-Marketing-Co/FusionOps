@@ -64,6 +64,11 @@ function FormContent({ modal = false }: ApplyFormProps) {
       return;
     }
     setFormState('loading');
+    if (!supabase) {
+      const ctaHref = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '#apply';
+      window.location.href = ctaHref;
+      return;
+    }
     try {
       const { error } = await supabase.from('loan_applications').insert([form]);
       if (error) throw error;
