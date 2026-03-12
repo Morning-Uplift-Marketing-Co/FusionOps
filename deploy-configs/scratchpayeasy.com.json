@@ -1,5 +1,5 @@
 {
-  "templateId": "bolt-tmp-01",
+  "templateId": "bolt-tmp-02",
   "cfPagesProject": "lp-scratchpayeasy-com",
   "cfApiToken": "",
   "cfAccountId": "",
@@ -36,5 +36,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-12T04:14:14.659Z"
+  "deployedAt": "2026-03-12T04:29:14.003Z"
 }
