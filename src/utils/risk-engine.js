@@ -1,5 +1,5 @@
 /**
- * FusionOps V2 — Risk Detection Engine
+ * FusionOps 3.0 — Risk Detection Engine
  * Pure functions that analyze ops data for correlation risks.
  */
 

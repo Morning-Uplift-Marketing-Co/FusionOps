@@ -7,9 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.9.0] - 2026-03-13
+## [3.0.0] - 2026-03-13
 ### Changed
-- **FusionOps V2 branding**: Standardized product naming in UI surfaces to `FusionOps V2` and `FusionOps v2`.
+- **FusionOps 3.0 branding**: Standardized product naming in UI surfaces to `FusionOps 3.0`.
 - **Dashboard latest bundle**: Updated Template Manager + template registry behavior and aligned related unit tests.
 
 ### Fixed

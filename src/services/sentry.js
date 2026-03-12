@@ -1,5 +1,5 @@
 /**
- * Sentry SDK initialization for FusionOps V2
+ * Sentry SDK initialization for FusionOps 3.0
  * 
  * DSN from: https://sentry.io → Projects → FusionOps → Settings → Client Keys
  */
