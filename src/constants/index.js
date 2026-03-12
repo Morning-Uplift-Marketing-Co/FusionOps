@@ -113,6 +113,7 @@ export const WIZARD_DEFAULTS = {
     domainProvider: "", domainProviderAccountId: "",
     trackingMode: "minimal",
     voluumCampaignId: "", voluumCampaignName: "", voluumTrackingDomain: "",
+    voluumLanderTrackingUrl: "", voluumLanderId: "", voluumOfferId: "",
     deployOnBuild: true,
     deployTarget: "cf-pages",
     aid: "14881", network: "LeadsGate",

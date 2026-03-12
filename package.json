@@ -19,6 +19,7 @@
     "test:report": "playwright show-report",
     "deploy:org": "node scripts/deploy-org.js",
     "pack-template": "node scripts/pack-template.mjs",
+    "prepare-bolt-astro-import": "node scripts/prepare-bolt-astro-import.mjs",
     "convert-template": "node scripts/convert-template.mjs",
     "release": "standard-version"
   },

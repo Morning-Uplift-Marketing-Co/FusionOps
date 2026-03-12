@@ -6,6 +6,7 @@ import { makeThemeJson, htmlToZip, astroProjectToZip } from "../utils/lp-generat
 import { generateHtmlByTemplate, generateAstroProjectByTemplate, generateApplyPageByTemplate, generateDeployAssetsByTemplate } from "../utils/template-router";
 
 import { deployTo, DEPLOY_TARGETS, getAvailableTargets, checkDeployStatus, deleteProject } from "../utils/deployers";
+import { buildLanderTrackingUrl } from "../services/voluum";
 import { InputField as Inp } from "./ui/input-field";
 import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
@@ -274,6 +275,16 @@ export function Sites({ sites, del, notify, startCreate, startDuplicate, setting
         a.click();
         URL.revokeObjectURL(a.href);
         notify(`Downloaded apply-${site.id}.html`);
+    };
+
+    const copyToClipboard = async (text, successMessage) => {
+        if (!text) return;
+        try {
+            await navigator.clipboard?.writeText(text);
+            notify(successMessage || "Copied to clipboard");
+        } catch (e) {
+            notify(`Copy failed: ${e.message}`, "danger");
+        }
     };
 
     const exportJson = (site) => {
@@ -696,6 +707,11 @@ export function Sites({ sites, del, notify, startCreate, startDuplicate, setting
                                     const policyTone = getPolicyTone(policyStatus);
                                     const googleAdsLabel = getGoogleAdsAccountLabel(s);
                                     const cloudflareLabel = getCloudflareAccountLabel(s);
+                                    const landerTrackingUrl = s.voluumLanderTrackingUrl || buildLanderTrackingUrl({
+                                        domain: s.domain,
+                                        campaignId: s.voluumCampaignId || s.voluumId || "",
+                                        landerId: s.voluumLanderId || "",
+                                    });
 
                                     return (
                                         <Card key={s.id} className="p-4 flex gap-4 relative">
@@ -750,7 +766,26 @@ export function Sites({ sites, del, notify, startCreate, startDuplicate, setting
                                                 />
 
                                                 <div className="flex flex-wrap gap-1.5 mt-3">
-                                                    <Button variant="ghost" onClick={() => setPreview(s)} className="px-2.5 py-1.5 text-[10px] h-auto">👁 Preview</Button>
+                                                    {!!landerTrackingUrl && (
+                                                        <>
+                                                            <Button
+                                                                variant="ghost"
+                                                                title={landerTrackingUrl}
+                                                                onClick={() => window.open(landerTrackingUrl, "_blank", "noopener,noreferrer")}
+                                                                className="px-2.5 py-1.5 text-[10px] h-auto"
+                                                            >
+                                                                🧪 Open Test
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                title={landerTrackingUrl}
+                                                                onClick={() => copyToClipboard(landerTrackingUrl, `Copied Lander Tracking URL for ${s.brand}`)}
+                                                                className="px-2.5 py-1.5 text-[10px] h-auto"
+                                                            >
+                                                                📋 Copy to Google Ads
+                                                            </Button>
+                                                        </>
+                                                    )}
                                                     <Button variant="ghost" onClick={() => startCreate(s)} className="px-2.5 py-1.5 text-[10px] h-auto">🔄 Edit & Redeploy</Button>
                                                     {startDuplicate && <Button variant="ghost" onClick={() => startDuplicate(s)} className="px-2.5 py-1.5 text-[10px] h-auto">📋 Duplicate</Button>}
 

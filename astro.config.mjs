@@ -6,8 +6,9 @@ import path from 'node:path';
 import tailwindcss from '@tailwindcss/vite';
 
 try {
+  const isHostedBuild = Boolean(process.env.NETLIFY || process.env.CI);
   const lockPath = path.resolve(process.cwd(), '.env.lock');
-  if (fs.existsSync(lockPath)) {
+  if (!isHostedBuild && fs.existsSync(lockPath)) {
     const raw = fs.readFileSync(lockPath, 'utf8');
     for (const line of raw.split(/\r?\n/)) {
       const trimmed = line.trim();

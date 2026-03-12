@@ -10,8 +10,6 @@ tests/e2e/
 │   └── wizard-flow.spec.ts  # Complete wizard journey tests
 ├── sites/                   # Sites management tests
 │   └── sites-management.spec.ts
-├── dashboard/               # Dashboard tests
-│   └── dashboard.spec.ts
 ├── settings/                # Settings page tests
 │   └── settings.spec.ts
 ├── deploy/                  # Deploy flow tests
@@ -103,14 +101,6 @@ npx playwright test --trace on
 - Download options
 - Preview modal
 - Bulk actions
-
-### Dashboard (`dashboard/dashboard.spec.ts`)
-- Dashboard metrics display
-- Quick actions
-- Recent sites
-- System health indicators
-- Risk alerts
-- Navigation
 
 ### Settings (`settings/settings.spec.ts`)
 - Database configuration (Neon, D1)

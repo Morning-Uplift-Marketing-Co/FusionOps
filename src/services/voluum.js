@@ -112,6 +112,54 @@ function formatVoluumDate(dateStr) {
     return `${yyyy}-${mm}-${dd}T${hh}:00:00Z`;
 }
 
+function normalizeHost(value = "") {
+    return String(value || "").trim().replace(/^https?:\/\//i, "").replace(/\/+$/, "");
+}
+
+export function normalizeTrackingDomain(rawTrackingDomain = "", domain = "") {
+    const cleanDomain = normalizeHost(domain);
+    const raw = normalizeHost(rawTrackingDomain).replace(/^(trk|vls)\./i, "link.");
+    if (!cleanDomain) return raw;
+    if (raw.endsWith(`.${cleanDomain}`) && raw.length > cleanDomain.length + 1) return raw;
+    return `link.${cleanDomain}`;
+}
+
+export function buildLanderTrackingUrl({ domain = "", campaignId = "", landerId = "", existingUrl = "" } = {}) {
+    const cleanDomain = normalizeHost(domain);
+    const base = cleanDomain
+        ? `https://${cleanDomain}`
+        : (() => {
+            const normalizedExisting = String(existingUrl || "").trim();
+            if (!normalizedExisting) return "";
+            return /^[a-z][a-z0-9+.-]*:\/\//i.test(normalizedExisting) ? normalizedExisting : `https://${normalizedExisting}`;
+        })();
+    if (!base) return "";
+
+    const url = new URL(base);
+    const params = new URLSearchParams(url.search);
+    [
+        ["gclid", "{gclid}"],
+        ["gbraid", "{gbraid}"],
+        ["wbraid", "{wbraid}"],
+        ["campaignid", "{campaignid}"],
+        ["adgroupid", "{adgroupid}"],
+        ["loc_physicall_ms", "{loc_physical_ms}"],
+        ["loc_interest_ms", "{loc_interest_ms}"],
+        ["matchtype", "{matchtype}"],
+        ["network", "{network}"],
+        ["creative", "{creative}"],
+        ["keyword", "{keyword}"],
+        ["placement", "{placement}"],
+        ["targetid", "{targetid}"],
+    ].forEach(([key, value]) => {
+        if (!params.has(key)) params.set(key, value);
+    });
+    if (campaignId && !params.has("cpid")) params.set("cpid", campaignId);
+    if (landerId && !params.has("lpid")) params.set("lpid", landerId);
+    url.search = params.toString();
+    return url.toString();
+}
+
 // ═══════════════════════════════════════════════════════════════
 // DATA FETCHERS — for matching / merging with external sources
 // ═══════════════════════════════════════════════════════════════
@@ -155,6 +203,14 @@ export async function fetchCampaigns(token, { activeOnly = true } = {}) {
         costModel: c.costModel || "",
         createdAt: c.createdDate || "",
         workspace: c.workspace || null,
+        landerId: c.directTrackingLanderId || c.directTrackingLander?.id || c.landerId || c.lander?.id || "",
+        offerId: c.redirectTarget?.inlineFlow?.defaultPaths?.[0]?.offers?.[0]?.offer?.id || c.offerId || c.offer?.id || "",
+        landerTrackingUrl: buildLanderTrackingUrl({
+            domain: c.url || "",
+            campaignId: c.id,
+            landerId: c.directTrackingLanderId || c.directTrackingLander?.id || c.landerId || c.lander?.id || "",
+            existingUrl: c.url || "",
+        }),
     }));
 }
 
@@ -205,6 +261,7 @@ export async function createCampaign(token, campaignData) {
     const domain = campaignData.domain || "example.com";
     const country = campaignData.country || "US";
     const campaignName = campaignData.name || "New Campaign";
+    const trackingDomain = normalizeTrackingDomain(campaignData.trackingDomain, domain);
 
     // Ensure workspace ID is set - critical for entity consistency
     if (!workspaceId) {
@@ -255,6 +312,7 @@ export async function createCampaign(token, campaignData) {
         trafficSource: { id: trafficSourceId },
         directTracking: true,
         directTrackingLanderId: landerId,
+        preferredTrackingDomain: trackingDomain,
         redirectTarget: {
             inlineFlow: {
                 name: `${country} - inline path`,
@@ -291,18 +349,24 @@ export async function createCampaign(token, campaignData) {
 
     const campaignResponseData = await voluumProxy(token, "POST", "/campaign", campaignBody);
     if (campaignResponseData?.id) {
-        const trackingDomain = campaignResponseData.preferredTrackingDomain || `link.${domain}`;
+        const resolvedTrackingDomain = normalizeTrackingDomain(campaignResponseData.preferredTrackingDomain || trackingDomain, domain);
         const campaignId = campaignResponseData.id;
+        const landerTrackingUrl = buildLanderTrackingUrl({
+            domain,
+            campaignId,
+            landerId,
+            existingUrl: campaignResponseData.url || `https://${domain}`,
+        });
         return {
             id: campaignId,
             name: campaignResponseData.name || campaignResponseData.namePostfix || campaignId,
-            trackingDomain: trackingDomain,
+            trackingDomain: resolvedTrackingDomain,
             status: campaignResponseData.status || "ACTIVE",
             url: campaignResponseData.url || `https://${domain}`,
             landerId: landerId,
             offerId: offerId,
-            landerTrackingUrl: campaignResponseData.url || `https://${domain}`,
-            clickUrl: `https://${trackingDomain}/${campaignId}`,
+            landerTrackingUrl,
+            clickUrl: `https://${resolvedTrackingDomain}/click`,
         };
     }
     // Surface Voluum field-level validation errors

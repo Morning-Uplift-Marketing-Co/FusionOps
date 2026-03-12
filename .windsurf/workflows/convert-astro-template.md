@@ -1,9 +1,108 @@
----
-description: Convert existing Astro template to accept dynamic variables from Wizard (import.meta.env.PUBLIC_*)
----
-
 ## Goal
-Convert any Astro landing page template so all hardcoded text/color values are replaced with `import.meta.env.PUBLIC_*` variables — making it compatible with the GitHub Actions deploy pipeline.
+Convert any Astro landing page template so all hardcoded text/color values are replaced with `import.meta.env.PUBLIC_*` variables  making it compatible with the GitHub Actions deploy pipeline.
+
+
+
+## Wizard Structure Mapping
+This workflow must stay aligned with the actual `TemplateGeneratorModal` structure in the app.
+
+### Mode selector
+### Which Wizard mode to use
+- Use `blank` when the Astro template is being created inside the system from the Wizard itself.
+- Use `from-template` when starting from a template that already exists in the system.
+- Use `from-zip` when the Astro template was created externally with tools like `bolt` and then packaged for import.
+The wizard has 3 modes:
+- `blank` = create a new Astro template from scratch
+- `from-template` = clone from an existing template in the system
+- `from-zip` = import a ZIP that contains template files
+
+### Blank Canvas flow
+The `blank` mode uses these steps:
+1. `info` -> `StepTemplateInfo`
+2. `design` -> `StepTemplateDesign`
+3. `features` -> `StepTemplateFeatures`
+4. `code` -> `StepTemplateCode`
+5. `review` -> `StepTemplateReview`
+
+In this mode, the generator should:
+- collect template metadata from info/design/features steps
+- generate Astro files in the code step
+- validate Astro structure before entering review
+- carry `generatedFiles`, `templateFormat`, and `templateValidation` into review
+
+### Clone Template flow
+The `from-template` mode uses these steps:
+1. `from-dir` -> `StepTemplateFromDir`
+2. `review` -> `StepTemplateReview`
+
+In this mode, the wizard should preserve the imported template file map and pass it directly into review/save flow.
+
+### ZIP Import flow
+The `from-zip` mode uses these steps:
+1. `from-zip` -> `StepTemplateFromZip`
+2. `review` -> `StepTemplateReview`
+
+In this mode, the wizard should:
+- parse the ZIP
+- normalize paths
+- strip single-root wrapper folders if needed
+- detect template format
+- validate Astro structure
+- pass `sourceCode`, `files`, `format`, and `validation` into review
+
+### Wizard state fields
+The workflow should stay aligned with these important wizard state fields:
+- `mode`
+- `step`
+- `templateName`
+- `templateDescription`
+- `category`
+- `badge`
+- `newFolderId`
+- `sourceTemplate`
+- `colorId`
+- `fontId`
+- `heroStyle`
+- `layout`
+- `hasHeroForm`
+- `hasCalculator`
+- `hasTestimonials`
+- `hasFAQ`
+- `hasTrustBadges`
+- `hasDarkMode`
+- `customCss`
+- `customJs`
+- `includeTracking`
+- `templateFormat`
+- `templateValidation`
+- `generatedCode`
+- `generatedFiles`
+
+### Review step expectations
+The workflow should assume that `StepTemplateReview` is the final checkpoint before save.
+At this point the template should already have:
+- `generatedCode`
+- `generatedFiles`
+- `templateFormat`
+- `templateValidation`
+
+The review step should be able to support:
+- AI description generation
+- final metadata edits
+- save to DB
+- Astro ZIP export when file map exists
+
+### Save flow expectations
+The wizard save flow should persist a template payload with:
+- `name`
+- `description`
+- `category`
+- `badge`
+- `format`
+- `sourceCode`
+- `files`
+
+This workflow must remain compatible with the actual Wizard structure above. If the Wizard step IDs, modes, or saved state shape change in code, this workflow should be updated too.
 
 ## Step 1: Read the target template file
 
@@ -553,3 +652,7 @@ The wizard renders a live HTML preview of the template using `astroToHtmlPreview
 4. **Font**: declare `font-family` on `body` using `var(--font-family)` or set it from `PUBLIC_FONTID`. The preview injector overrides `body { font-family: ... !important }` based on the wizard's Font selection.
 
 The preview engine auto-substitutes all `{varName}` expressions where `varName` was declared from `import.meta.env.PUBLIC_*` in any `.astro` file in the template bundle.
+
+
+
+
