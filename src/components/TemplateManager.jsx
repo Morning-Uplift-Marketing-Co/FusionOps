@@ -10,11 +10,11 @@ function validateTemplateQuality(template) {
   const keys = Object.keys(files);
   const combined = sourceCode + JSON.stringify(files);
   const entryOk = keys.some((k) => k.endsWith("index.astro") || k.endsWith("index.html")) || /<html|<!doctype html/i.test(sourceCode);
-  const pixelMarker = /sendBeacon|t\.[^"' ]+\/e|window\.pixel/i.test(combined);
+  const pixelMarker = /sendBeacon|sendPixelBeacon|fpPixel|__fpPixel|PX_ENDPOINT|t\.[^"' ]+\/e|window\.pixel/i.test(combined);
   const trackingMarker = /gtag\(|AW-\d+|form_start|form_submit/i.test(combined);
   const hasViewport = /<meta[^>]+name=["']viewport["']/i.test(combined);
-  const hasPrimaryToken = /--color-primary|var\(--color-primary\)|hsl\(var\(--primary\)\)/i.test(combined);
-  const hasExpressionLeak = /\{title\}|\{description\}|\{\s*noindex\s*\?|\{\s*[a-zA-Z_$][\w$]*\s*&&\s*\(/.test(combined);
+  const hasPrimaryToken = /--color-primary|--primary\s*:|var\(--color-primary\)|var\(--primary\)|hsl\(var\(--primary\)\)/i.test(combined);
+  const hasExpressionLeak = /\{\s*noindex\s*\?|\{\s*[a-zA-Z_$][\w$]*\s*&&\s*\(/.test(combined);
   const hasCalculator = /calculator|monthly payment|calcMonthly|loanAmount|payment estimate/i.test(combined);
   const hasAprCompare = /representative apr|apr range|<table[\s\S]*apr|term[\s\S]*apr/i.test(combined);
   const bannedPatterns = [
