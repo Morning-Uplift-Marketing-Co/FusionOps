@@ -111,10 +111,9 @@ FUSIONOPS_API_URL=https://lp-factory-api.<account>.workers.dev
 FUSIONOPS_MCP_SECRET=your-shared-secret
 ```
 
-### API Worker (`wrangler.toml` vars)
-```toml
-[vars]
-MCP_SHARED_SECRET = "your-shared-secret"
+### API Worker (Cloudflare Worker secret)
+```bash
+npx wrangler secret put MCP_SHARED_SECRET
 ```
 
 ---
@@ -122,6 +121,7 @@ MCP_SHARED_SECRET = "your-shared-secret"
 ## Security
 
 - `x-mcp-secret` header ใช้ shared secret ระหว่าง MCP server กับ API worker
+- เส้นทาง `/api/mcp/*` ใช้ `x-mcp-secret` โดยตรง และข้าม global Bearer check (`API_SECRET`)
 - MCP server มี Bearer token auth สำหรับ Bolt/Windsurf connections
 - CORS บน MCP server อนุญาตเฉพาะ `main.fusionops.pages.dev` + localhost
 
@@ -159,7 +159,8 @@ curl -X POST https://mcp.fusions.dev/api/templates \
 
 ### 3. List templates from API Worker
 ```bash
-curl https://lp-factory-api.<account>.workers.dev/api/mcp/templates
+curl https://lp-factory-api.<account>.workers.dev/api/mcp/templates \
+  -H "x-mcp-secret: your-secret"
 ```
 
 ### 4. List templates from MCP server REST
@@ -172,7 +173,7 @@ curl https://mcp.fusions.dev/api/templates
 ## Deployment Checklist
 
 - [ ] Set `FUSIONOPS_API_URL` in MCP server `.env`
-- [ ] Set `FUSIONOPS_MCP_SECRET` in both MCP server and wrangler.toml
+- [ ] Set `FUSIONOPS_MCP_SECRET` in MCP server and set `MCP_SHARED_SECRET` via `wrangler secret put`
 - [ ] Deploy API worker: `cd apps/api-worker && wrangler deploy`
 - [ ] Restart MCP server (or redeploy on fusionprime)
 - [ ] Test end-to-end: Bolt → save_template → verify in Template Manager
