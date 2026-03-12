@@ -5,12 +5,12 @@ import { cn } from "../lib/utils";
 
 const CHANGELOG = [
     {
-        version: "2.9.0",
+        version: "3.0.0",
         date: "2026-03-13",
         changes: [
-            "� FusionOps V2 branding update — standardized product naming across UI and changelog surfaces",
-            "�️ Template Manager + registry updates shipped in dashboard latest bundle",
-            "� MCP auth flow fixed — /api/mcp routes now use x-mcp-secret path cleanly with updated docs",
+            "🚀 FusionOps 3.0 branding update — standardized product naming across UI and changelog surfaces",
+            "📦 Template Manager + registry updates shipped in dashboard latest bundle",
+            "🔒 MCP auth flow fixed — /api/mcp routes now use x-mcp-secret path cleanly with updated docs",
         ],
     },
     {
@@ -65,7 +65,7 @@ const CHANGELOG = [
         version: "2.0.0",
         date: "2026-02-15",
         changes: [
-            "🚀 Launched FusionOps V2 — all-in-one PPC landing page platform",
+            "🚀 Launched FusionOps 3.0 — all-in-one PPC landing page platform",
             "🏢 Ops Center: manage domains, DNS, registrars, deployers",
             "🎨 Variant Studio: A/B test color, font, layout combos",
             "☁️ Multi-deployer: CF Workers, CF Pages, Vercel, Netlify",
@@ -123,7 +123,7 @@ export function Sidebar({ page, setPage, siteCount, startCreate, startTemplateGe
                     >⚡</div>
                     {!collapsed && (
                         <div>
-                            <div className="text-[15px] font-bold whitespace-nowrap">FusionOps V2</div>
+                            <div className="text-[15px] font-bold whitespace-nowrap">FusionOps 3.0</div>
                             <div
                                 className="text-[10px] text-[hsl(var(--muted-foreground))] cursor-pointer"
                                 onClick={() => setShowLog(true)}
@@ -193,7 +193,7 @@ export function Sidebar({ page, setPage, siteCount, startCreate, startTemplateGe
                         <div className="flex items-center justify-between px-5 py-4 border-b border-[hsl(var(--border))]">
                             <div>
                                 <div className="text-base font-bold">📋 Changelog</div>
-                                <div className="text-[11px] text-[hsl(var(--muted-foreground))] mt-0.5">FusionOps v2</div>
+                                <div className="text-[11px] text-[hsl(var(--muted-foreground))] mt-0.5">FusionOps 3.0</div>
                             </div>
                             <button
                                 onClick={() => setShowLog(false)}
