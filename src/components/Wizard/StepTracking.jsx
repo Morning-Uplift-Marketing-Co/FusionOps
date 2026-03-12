@@ -5,7 +5,14 @@ import { Field } from "../ui/field";
 import { InputField as Inp, SelectField } from "../ui/input-field";
 import { cn } from "../../lib/utils";
 import { NETWORKS_AFF } from "../../constants";
-import { fetchVoluumSession, createCampaign as createVoluumCampaign, fetchCampaigns as fetchVoluumCampaigns, fetchTrafficSources as fetchVoluumTrafficSources } from "../../services/voluum";
+import {
+  fetchVoluumSession,
+  createCampaign as createVoluumCampaign,
+  fetchCampaigns as fetchVoluumCampaigns,
+  fetchTrafficSources as fetchVoluumTrafficSources,
+  normalizeTrackingDomain,
+  buildLanderTrackingUrl,
+} from "../../services/voluum";
 import { LS } from "../../utils";
 import { getOrCreateZone, upsertDnsRecord } from "../../services/cloudflare-dns";
 
@@ -87,16 +94,6 @@ function normalizeVoluumScriptHost(script = "", domain = "") {
   }
 
   return normalized;
-}
-
-function normalizeTrackingDomain(rawTrackingDomain = "", domain = "") {
-  const cleanDomain = String(domain || "").trim();
-  const raw = String(rawTrackingDomain || "").trim();
-  if (!cleanDomain) return raw.replace(/^(trk|vls)\./i, "link.");
-  // If raw already ends with .{domain}, it's valid — keep it as-is
-  if (raw.endsWith(`.${cleanDomain}`) && raw.length > cleanDomain.length + 1) return raw;
-  // Otherwise default to link.{domain}
-  return `link.${cleanDomain}`;
 }
 
 function resolvePixelBaseUrl(url = "", domain = "") {
@@ -245,9 +242,9 @@ export function StepTracking({ c, u }) {
       u("voluumLanderId", created.landerId || "");
       u("voluumOfferId", created.offerId || "");
       u("voluumLanderTrackingUrl", created.landerTrackingUrl || created.url || "");
-      u("voluumClickUrl", created.clickUrl || `https://${trackingDomain}/${created.id}`);
+      u("voluumClickUrl", created.clickUrl || `https://${trackingDomain}/click`);
       u("voluumId", created.id);
-      u("voluumDomain", trackingDomain);
+      u("voluumDomain", created.trackingDomain || trackingDomain);
       setShowCreate(false);
       setNewCamp({ name: "", country: "US", costModel: "CPC", costValue: 0, trafficSourceId: "", redirectUrl: c.url || c.redirectUrl || "" });
       clearVoluumCache();
@@ -262,12 +259,22 @@ export function StepTracking({ c, u }) {
   const handleCampaignSelect = (campaignId) => {
     const camp = campaigns.find(c => c.id === campaignId);
     const trackingDomain = normalizeTrackingDomain(camp?.trackingDomain || "", c.domain);
+    const landerId = camp?.landerId || c.voluumLanderId || "";
+    const landerTrackingUrl = buildLanderTrackingUrl({
+      domain: c.domain,
+      campaignId,
+      landerId,
+      existingUrl: camp?.landerTrackingUrl || camp?.url || "",
+    });
     u("voluumCampaignId", campaignId);
     u("voluumCampaignName", camp?.name || "");
     u("voluumTrackingDomain", trackingDomain);
+    u("voluumLanderId", landerId);
+    u("voluumOfferId", camp?.offerId || c.voluumOfferId || "");
+    u("voluumLanderTrackingUrl", landerTrackingUrl);
     u("voluumId", campaignId);
     u("voluumDomain", trackingDomain);
-    u("voluumClickUrl", `https://${trackingDomain}/${campaignId}`);
+    u("voluumClickUrl", `https://${trackingDomain}/click`);
   };
 
   return (

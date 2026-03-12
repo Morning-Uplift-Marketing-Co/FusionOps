@@ -27,7 +27,7 @@
 | File | Lines | Description |
 |------|-------|-------------|
 | `BasePage.ts` | 130 | Base page object with common utilities (navigation, waiting, screenshots) |
-| `DashboardPage.ts` | 115 | Dashboard navigation and LP Wizard entry point |
+| `DashboardPage.ts` | 115 | Shared navigation helper for entering the LP Wizard from the homepage |
 | `WizardPage.ts` | 415 | Complete wizard flow page object with all 7 steps |
 
 ### 2. Test Fixtures (`tests/e2e/fixtures/`)

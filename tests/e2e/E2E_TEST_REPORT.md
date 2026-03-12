@@ -36,7 +36,7 @@
 - Wizard opens successfully when LP Wizard link is clicked
 
 **Screenshot Evidence:**
-- `01-homepage-loaded.png` - Dashboard loaded
+- `01-homepage-loaded.png` - Application homepage loaded
 - `02-wizard-opened.png` - Wizard modal opened
 - `03-wizard-step1.png` - Step 1 visible
 
@@ -65,7 +65,7 @@
 ### 4. Screenshot Tour
 - **Status:** PARTIAL
 - **Screenshots Captured:**
-  - Dashboard (`01-dashboard.png`)
+  - Application homepage (`01-dashboard.png`)
   - Wizard Step 1 (`02-wizard-step1.png`)
 
 ---

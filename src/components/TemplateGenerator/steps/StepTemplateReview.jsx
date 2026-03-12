@@ -1,11 +1,15 @@
 import { THEME as T } from "../../../constants";
 import { Button } from "../../ui/button";
 import { COLORS, FONTS } from "../../../constants";
+import { astroProjectToZip } from "../../../utils/lp-generator";
 
 export function StepTemplateReview({ c, u, onGenDesc, descLoading }) {
     const isCloneMode = !!c.sourceTemplate || (!c.colorId && !!c.generatedFiles);
     const selectedColor = COLORS.find((x) => x.id === c.colorId);
     const selectedFont = FONTS.find((x) => x.id === c.fontId);
+    const fileCount = Object.keys(c.generatedFiles || {}).length;
+    const isAstroProject = (c.templateFormat === "astro" || fileCount > 0) && !!c.generatedFiles;
+    const validationWarnings = c.templateValidation?.warnings || [];
 
     const features = [
         { key: "hasHeroForm", name: "Hero Form", icon: "📝" },
@@ -38,6 +42,19 @@ export function StepTemplateReview({ c, u, onGenDesc, descLoading }) {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         }
+    };
+
+    const downloadProjectZip = async () => {
+        if (!c.generatedFiles || fileCount === 0) return;
+        const blob = await astroProjectToZip(c.generatedFiles);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${(c.templateName || "template").toLowerCase().replace(/[^a-z0-9]/g, "-")}-astro.zip`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     };
 
     return (
@@ -121,6 +138,14 @@ export function StepTemplateReview({ c, u, onGenDesc, descLoading }) {
                             <span style={{ padding: "4px 8px", background: T.card2, borderRadius: 6 }}>
                                 📁 {c.category || 'general'}
                             </span>
+                            <span style={{ padding: "4px 8px", background: T.card2, borderRadius: 6 }}>
+                                🧩 {c.templateFormat || 'unknown'}
+                            </span>
+                            {fileCount > 0 && (
+                                <span style={{ padding: "4px 8px", background: T.card2, borderRadius: 6 }}>
+                                    📦 {fileCount} files
+                                </span>
+                            )}
                             {c.sourceTemplate ? (
                                 <span style={{ padding: "4px 8px", background: T.card2, borderRadius: 6 }}>
                                     📂 Cloned from: {c.sourceTemplate}
@@ -214,8 +239,40 @@ export function StepTemplateReview({ c, u, onGenDesc, descLoading }) {
                     >
                         💾 Download File
                     </Button>
+                    {isAstroProject && (
+                        <Button
+                            onClick={downloadProjectZip}
+                            disabled={fileCount === 0}
+                            variant="ghost"
+                            size="sm"
+                            style={{ fontSize: 12 }}
+                        >
+                            📦 Download Astro ZIP
+                        </Button>
+                    )}
                 </div>
             </div>
+
+            {validationWarnings.length > 0 && (
+                <div style={{
+                    marginBottom: 16,
+                    padding: 16,
+                    background: "rgba(245, 158, 11, 0.08)",
+                    borderRadius: 12,
+                    border: "1px solid rgba(245, 158, 11, 0.25)",
+                }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#f59e0b", marginBottom: 8 }}>
+                        Validation Warnings
+                    </div>
+                    <div style={{ display: "grid", gap: 6 }}>
+                        {validationWarnings.map((warning, index) => (
+                            <div key={`${warning}-${index}`} style={{ fontSize: 12, color: T.muted }}>
+                                {warning}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Next Steps */}
             <div style={{
