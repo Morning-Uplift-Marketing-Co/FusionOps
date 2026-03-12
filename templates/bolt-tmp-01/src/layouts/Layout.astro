@@ -56,9 +56,9 @@ const RADIUS_MAP = { sharp:'0rem', subtle:'0.375rem', rounded:'0.75rem', pill:'1
 const pal  = colorId === 'custom' ? null : (COLOR_MAP[colorId] || COLOR_MAP['ocean']);
 const font = FONT_MAP[fontId] || FONT_MAP['dm-sans'];
 const rad  = RADIUS_MAP[radiusId] || RADIUS_MAP['rounded'];
-const hsl  = (h,s,l) => `${h} ${s}% ${l}%`;
+const hsl  = (h: number, s: number, l: number) => `${h} ${s}% ${l}%`;
 const cssVars = pal
-  ? `--primary:${hsl(...pal.p)};--secondary:${hsl(...pal.s)};--accent:${hsl(...pal.a)};--background:${hsl(...pal.bg)};--foreground:${hsl(...pal.fg)};--radius:${rad};`
+  ? `--primary:${hsl(pal.p[0],pal.p[1],pal.p[2])};--secondary:${hsl(pal.s[0],pal.s[1],pal.s[2])};--accent:${hsl(pal.a[0],pal.a[1],pal.a[2])};--background:${hsl(pal.bg[0],pal.bg[1],pal.bg[2])};--foreground:${hsl(pal.fg[0],pal.fg[1],pal.fg[2])};--radius:${rad};`
   : `--primary-custom:${primaryColor};--accent-custom:${accentColor};--radius:${rad};`;
 
 const {

@@ -1,32 +1,6 @@
 ---
-const brand          = import.meta.env.PUBLIC_BRAND          || 'Your Brand';
-const domain         = import.meta.env.PUBLIC_DOMAIN         || 'example.com';
-const h1             = import.meta.env.PUBLIC_H1             || 'Get Up to $5,000 Today';
-const sub            = import.meta.env.PUBLIC_SUB            || 'Fast approval. No hard credit check.';
-const cta            = import.meta.env.PUBLIC_CTA            || 'Apply Now';
-const phone          = import.meta.env.PUBLIC_PHONE          || '';
-const email          = import.meta.env.PUBLIC_EMAIL          || `support@${import.meta.env.PUBLIC_DOMAIN || 'example.com'}`;
-const address        = import.meta.env.PUBLIC_ADDRESS        || '';
-const aid            = import.meta.env.PUBLIC_AID            || '';
-const amountMin      = import.meta.env.PUBLIC_AMOUNTMIN      || '100';
-const amountMax      = import.meta.env.PUBLIC_AMOUNTMAX      || '5000';
-const amountMinRaw   = String(Number((amountMin).replace(/[^0-9.]/g,'')) || 100);
-const amountMaxRaw   = String(Number((amountMax).replace(/[^0-9.]/g,'')) || 5000);
-const primaryColor   = import.meta.env.PUBLIC_PRIMARYCOLOR   || '#3b5bdb';
-const accentColor    = import.meta.env.PUBLIC_ACCENTCOLOR    || '#f97316';
-const aprMin         = import.meta.env.PUBLIC_APRMIN         || '5.99';
-const aprMax         = import.meta.env.PUBLIC_APRMAX         || '35.99';
-const conversionId      = import.meta.env.PUBLIC_CONVERSIONID      || '';
-const formStartLabel    = import.meta.env.PUBLIC_FORMSTARTLABEL   || '';
-const formSubmitLabel   = import.meta.env.PUBLIC_FORMSUBMITLABEL  || '';
-const voluumId          = import.meta.env.PUBLIC_VOLUUMID          || '';
-const voluumDomain      = import.meta.env.PUBLIC_VOLUUMDOMAIN      || '';
-const voluumClickUrl    = import.meta.env.PUBLIC_VOLUUM_CLICK_URL  || '';
-const ctaHref           = voluumClickUrl || '#apply';
-const colorId           = import.meta.env.PUBLIC_COLORID           || 'ocean';
-const fontId            = import.meta.env.PUBLIC_FONTID            || 'dm-sans';
-const radiusId          = import.meta.env.PUBLIC_RADIUS            || 'rounded';
-
+import { ctaHref as _ctaHref } from '../env';
+const ctaHref = _ctaHref;
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header';
 import Hero from '../components/Hero';
@@ -55,8 +29,8 @@ import '../index.css';
       <Testimonials client:visible />
       <FAQ client:visible />
       <ApplyForm client:visible />
+      <a href={ctaHref} class="sr-only focus:not-sr-only">Apply Now</a>
     </main>
     <Footer ctaHref={ctaHref} />
   </div>
-  <a href={ctaHref} class="sr-only">{cta}</a>
 </Layout>
