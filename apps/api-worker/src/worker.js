@@ -847,8 +847,34 @@ const PROXY_TARGETS = {
   '/api/proxy/netlify/': 'https://api.netlify.com/api/v1/',
 };
 
-const MLX_CACHE_TTL_SUCCESS = 60;   // seconds for 2xx responses
-const MLX_CACHE_TTL_RATE_LIMIT = 20; // seconds for 429/503 responses
+const MLX_CACHE_TTL_SUCCESS = 60000;    // ms for 2xx responses
+const MLX_CACHE_TTL_RATE_LIMIT = 20000;  // ms for 429/503 responses
+
+// In-memory TTL cache for MLX GET proxy responses
+// Persists across requests within the same Worker isolate
+const mlxCache = new Map(); // key -> { body, status, headers, expiresAt }
+
+function mlxCacheKey(requestUrl, authHeader) {
+  return `${requestUrl}|${authHeader || ''}`;
+}
+
+function mlxCacheGet(key) {
+  const entry = mlxCache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    mlxCache.delete(key);
+    return null;
+  }
+  return entry;
+}
+
+function mlxCacheSet(key, body, status, headers, ttlMs) {
+  if (mlxCache.size > 200) {
+    // Evict oldest entry to cap memory usage
+    mlxCache.delete(mlxCache.keys().next().value);
+  }
+  mlxCache.set(key, { body, status, headers, expiresAt: Date.now() + ttlMs });
+}
 
 async function handleProxy(request, url) {
   let targetBase = null;
@@ -865,14 +891,13 @@ async function handleProxy(request, url) {
   // Cache GET requests to MLX proxy to avoid upstream rate limits
   const isMlxGet = targetBase === 'https://api.multilogin.com/' && request.method === 'GET';
   if (isMlxGet) {
-    const cache = caches.default;
-    const cacheKey = new Request(request.url, { headers: { 'Authorization': request.headers.get('Authorization') || '' } });
-    const cached = await cache.match(cacheKey);
+    const cKey = mlxCacheKey(request.url, request.headers.get('Authorization'));
+    const cached = mlxCacheGet(cKey);
     if (cached) {
-      const resCopy = new Response(cached.body, cached);
-      resCopy.headers.set('X-Cache', 'HIT');
-      for (const [k, v] of Object.entries(corsHeaders)) resCopy.headers.set(k, v);
-      return resCopy;
+      const cachedHeaders = new Headers(cached.headers);
+      cachedHeaders.set('X-Cache', 'HIT');
+      for (const [k, v] of Object.entries(corsHeaders)) cachedHeaders.set(k, v);
+      return new Response(cached.body, { status: cached.status, headers: cachedHeaders });
     }
   }
 
@@ -943,29 +968,26 @@ async function handleProxy(request, url) {
     for (const [k, v] of Object.entries(corsHeaders)) {
       responseHeaders.set(k, v);
     }
-    responseHeaders.set('X-Cache', 'MISS');
 
-    const finalRes = new Response(proxyRes.body, {
+    // For MLX GET: read body as text once, cache it, then return from string
+    if (isMlxGet) {
+      const bodyText = await proxyRes.text();
+      const isSuccess = proxyRes.status >= 200 && proxyRes.status < 300;
+      const isRateLimit = proxyRes.status === 429 || proxyRes.status === 503;
+      const ttlMs = isSuccess ? MLX_CACHE_TTL_SUCCESS : isRateLimit ? MLX_CACHE_TTL_RATE_LIMIT : 0;
+      if (ttlMs > 0) {
+        const cKey = mlxCacheKey(request.url, request.headers.get('Authorization'));
+        mlxCacheSet(cKey, bodyText, proxyRes.status, responseHeaders, ttlMs);
+      }
+      responseHeaders.set('X-Cache', 'MISS');
+      return new Response(bodyText, { status: proxyRes.status, headers: responseHeaders });
+    }
+
+    return new Response(proxyRes.body, {
       status: proxyRes.status,
       statusText: proxyRes.statusText,
       headers: responseHeaders,
     });
-
-    // Store in Cloudflare cache for MLX GET requests
-    if (isMlxGet) {
-      const isSuccess = proxyRes.status >= 200 && proxyRes.status < 300;
-      const isRateLimit = proxyRes.status === 429 || proxyRes.status === 503;
-      const ttl = isSuccess ? MLX_CACHE_TTL_SUCCESS : isRateLimit ? MLX_CACHE_TTL_RATE_LIMIT : 0;
-      if (ttl > 0) {
-        const cacheHeaders = new Headers(responseHeaders);
-        cacheHeaders.set('Cache-Control', `public, max-age=${ttl}`);
-        const toCache = new Response(finalRes.clone().body, { status: proxyRes.status, headers: cacheHeaders });
-        const cacheKey = new Request(request.url, { headers: { 'Authorization': request.headers.get('Authorization') || '' } });
-        caches.default.put(cacheKey, toCache).catch(() => {});
-      }
-    }
-
-    return finalRes;
   } catch (e) {
     return json({ error: e.message }, 502);
   }
