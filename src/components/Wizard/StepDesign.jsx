@@ -349,7 +349,66 @@ export function StepDesign({ c, u, notify }) {
                             <div style={{ fontSize: 10, color: T.text, fontWeight: 600 }}>{cp.name}</div>
                         </button>
                     ))}
+                    {/* Custom color option */}
+                    <button onClick={() => u("colorId", "custom")} style={{
+                        padding: "10px", background: c.colorId === "custom" ? T.primaryGlow : T.input,
+                        border: `2px solid ${c.colorId === "custom" ? T.primary : T.border}`, borderRadius: 8, cursor: "pointer",
+                    }}>
+                        <div style={{ display: "flex", justifyContent: "center", gap: 3, marginBottom: 4 }}>
+                            <div style={{ width: 16, height: 16, borderRadius: 4, background: c.primaryColor || "#3b5bdb", border: `1px solid ${T.border}` }} />
+                            <div style={{ width: 16, height: 16, borderRadius: 4, background: "linear-gradient(135deg,#f97316,#a855f7)", border: `1px solid ${T.border}` }} />
+                            <div style={{ width: 16, height: 16, borderRadius: 4, background: c.accentColor || "#f97316", border: `1px solid ${T.border}` }} />
+                        </div>
+                        <div style={{ fontSize: 10, color: T.text, fontWeight: 600 }}>Custom</div>
+                    </button>
                 </div>
+                {/* Custom color pickers — shown when colorId === "custom" */}
+                {c.colorId === "custom" && (
+                    <div style={{ marginTop: 10, padding: 12, background: T.input, borderRadius: 8, border: `1px solid ${T.border}` }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: T.text, marginBottom: 8 }}>Custom Colors</div>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                            <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                                <span style={{ fontSize: 10, color: T.muted, fontWeight: 600 }}>Primary</span>
+                                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                    <input
+                                        type="color"
+                                        value={c.primaryColor || "#3b5bdb"}
+                                        onChange={e => u("primaryColor", e.target.value)}
+                                        style={{ width: 36, height: 28, border: "none", borderRadius: 4, cursor: "pointer", padding: 1 }}
+                                    />
+                                    <input
+                                        type="text"
+                                        value={c.primaryColor || "#3b5bdb"}
+                                        onChange={e => { if (/^#[0-9a-fA-F]{0,6}$/.test(e.target.value)) u("primaryColor", e.target.value); }}
+                                        maxLength={7}
+                                        style={{ flex: 1, padding: "4px 6px", background: T.surface || "#111", border: `1px solid ${T.border}`, borderRadius: 4, color: T.text, fontSize: 11, fontFamily: "monospace" }}
+                                    />
+                                </div>
+                            </label>
+                            <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                                <span style={{ fontSize: 10, color: T.muted, fontWeight: 600 }}>Accent</span>
+                                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                    <input
+                                        type="color"
+                                        value={c.accentColor || "#f97316"}
+                                        onChange={e => u("accentColor", e.target.value)}
+                                        style={{ width: 36, height: 28, border: "none", borderRadius: 4, cursor: "pointer", padding: 1 }}
+                                    />
+                                    <input
+                                        type="text"
+                                        value={c.accentColor || "#f97316"}
+                                        onChange={e => { if (/^#[0-9a-fA-F]{0,6}$/.test(e.target.value)) u("accentColor", e.target.value); }}
+                                        maxLength={7}
+                                        style={{ flex: 1, padding: "4px 6px", background: T.surface || "#111", border: `1px solid ${T.border}`, borderRadius: 4, color: T.text, fontSize: 11, fontFamily: "monospace" }}
+                                    />
+                                </div>
+                            </label>
+                        </div>
+                        <div style={{ marginTop: 8, fontSize: 10, color: T.muted }}>
+                            ค่าเหล่านี้จะถูกส่งเป็น <code style={{ color: T.primary }}>PUBLIC_PRIMARYCOLOR</code> / <code style={{ color: T.primary }}>PUBLIC_ACCENTCOLOR</code> ใน deploy config
+                        </div>
+                    </div>
+                )}
             </Field>
             <Field label="Font">
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6 }}>

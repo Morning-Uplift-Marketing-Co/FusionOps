@@ -104,7 +104,7 @@ export const WIZARD_DEFAULTS = {
     brand: "", domain: "", tagline: "", email: "",
     templateId: "classic",
     loanType: "personal", amountMin: 100, amountMax: 5000, aprMin: 5.99, aprMax: 35.99,
-    colorId: "ocean", fontId: "dm-sans", layout: "hero-left", radius: "rounded",
+    colorId: "ocean", primaryColor: "#3b5bdb", accentColor: "#f97316", fontId: "dm-sans", layout: "hero-left", radius: "rounded",
     trustBadgeStyle: "both",
     trustBadgeIconTone: "primary",
     h1: "", badge: "", cta: "", sub: "",
