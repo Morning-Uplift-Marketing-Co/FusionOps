@@ -4,14 +4,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
 
-let supabaseInstance: SupabaseClient | null = null;
-
-export const supabase = (() => {
-  if (!supabaseInstance) {
-    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey);
-  }
-  return supabaseInstance;
-})();
+export const supabase: SupabaseClient | null =
+  supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
 
 export interface LoanApplication {
   first_name: string;
