@@ -491,8 +491,8 @@ function getTemplateQualityGateReport({ files = {}, sourceCode = '', category = 
   const keys = Object.keys(fileMap);
   const combined = source + JSON.stringify(fileMap);
   const hasEntry = keys.some((k) => k.endsWith('index.astro') || k.endsWith('index.html')) || /<html|<!doctype html/i.test(source);
-  const hasPixelMarker = /sendBeacon|t\.[^"' ]+\/e|window\.__fusionopsTrack|window\.pixel/i.test(combined);
-  const hasAstroLeak = /\{title\}|\{description\}|\{\s*noindex\s*\?|\{\s*[a-zA-Z_$][\w$]*\s*&&\s*\(/.test(combined);
+  const hasPixelMarker = /sendBeacon|sendPixelBeacon|fpPixel|__fpPixel|PX_ENDPOINT|t\.[^"' ]+\/e|window\.__fusionopsTrack|window\.pixel/i.test(combined);
+  const hasAstroLeak = /\{\s*noindex\s*\?|\{\s*[a-zA-Z_$][\w$]*\s*&&\s*\(/.test(combined);
   const hasViewport = /<meta[^>]+name=["']viewport["']/i.test(combined);
   const hasCta = /<button|href=["']#apply["']|type=["']submit["']/i.test(combined);
   const hasCalculator = /calculator|monthly payment|calcMonthly|loanAmount|payment estimate/i.test(combined);
@@ -1908,6 +1908,115 @@ export default {
         const id = path.split('/').pop();
         await db.prepare('DELETE FROM variants WHERE id = ?').bind(id).run();
         return json({ success: true });
+      }
+
+      // ═══ MCP ONLINE TEMPLATE IMPORT ═══
+      // POST /api/mcp/templates — receive a template from MCP server (fusion-mcp / Bolt.new)
+      if (path === '/api/mcp/templates' && method === 'POST') {
+        await ensureTemplateManagerSchema(db);
+        const body = await request.json();
+
+        // Validate MCP shared secret (optional, set MCP_SHARED_SECRET in wrangler.toml)
+        const mcpSecret = env.MCP_SHARED_SECRET || '';
+        if (mcpSecret) {
+          const incomingSecret = request.headers.get('x-mcp-secret') || '';
+          if (incomingSecret !== mcpSecret) {
+            return json({ error: 'Invalid MCP secret' }, 401);
+          }
+        }
+
+        // Required fields
+        const templateId = String(body.templateId || body.template_id || '').trim();
+        const name = String(body.name || '').trim();
+        if (!templateId || !name) {
+          return json({ error: 'templateId and name are required' }, 400);
+        }
+        if (!isValidTemplateId(templateId)) {
+          return json({ error: 'Invalid templateId. Use letters, numbers, and hyphens (2-64 chars).' }, 400);
+        }
+
+        const id = body.id || uid();
+        const now = new Date().toISOString();
+        const filesJson = body.files ? JSON.stringify(body.files) : '{}';
+        const status = 'draft';
+        const source = String(body.source || 'mcp').toLowerCase();
+        const badge = String(body.badge || (source === 'bolt' ? 'Bolt' : 'MCP')).trim() || (source === 'bolt' ? 'Bolt' : 'MCP');
+
+        // Check duplicate
+        const existing = await db.prepare(
+          'SELECT id FROM templates WHERE template_id = ? AND COALESCE(is_deleted, 0) = 0'
+        ).bind(templateId).first();
+
+        if (existing) {
+          // Update existing template
+          await db.prepare(`
+            UPDATE templates SET
+              name = ?, description = ?, category = ?, badge = ?,
+              source_code = ?, files = ?, updated_at = ?
+            WHERE id = ?
+          `).bind(
+            name,
+            body.description || '',
+            body.category || 'general',
+            badge,
+            body.sourceCode || body.source_code || '',
+            filesJson,
+            now,
+            existing.id
+          ).run();
+
+          const updated = await db.prepare('SELECT * FROM templates WHERE id = ?').bind(existing.id).first();
+          if (updated) {
+            await createTemplateVersionSnapshot(db, updated, `Updated via MCP (${source})`);
+          }
+          return json({ id: existing.id, action: 'updated', success: true });
+        }
+
+        // Insert new template
+        try {
+          await db.prepare(`
+            INSERT INTO templates (
+              id, template_id, name, description, category, badge,
+              source_code, files, created_at, updated_at, is_deleted, status, current_version, archived_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, 1, ?)
+          `).bind(
+            id, templateId, name,
+            body.description || '',
+            body.category || 'general',
+            badge,
+            body.sourceCode || body.source_code || '',
+            filesJson, now, now, status, null
+          ).run();
+        } catch (insertErr) {
+          if (String(insertErr?.message || '').includes('UNIQUE constraint failed')) {
+            return json({ error: `Template ID "${templateId}" already exists.` }, 400);
+          }
+          throw insertErr;
+        }
+
+        const templateRow = await db.prepare('SELECT * FROM templates WHERE id = ?').bind(id).first();
+        if (templateRow) {
+          await createTemplateVersionSnapshot(db, templateRow, `Imported via MCP (${source})`);
+        }
+
+        return json({ id, action: 'created', success: true }, 201);
+      }
+
+      // GET /api/mcp/templates — list templates (lightweight, for MCP server to poll)
+      if (path === '/api/mcp/templates' && method === 'GET') {
+        await ensureTemplateManagerSchema(db);
+        const mcpSecret = env.MCP_SHARED_SECRET || '';
+        if (mcpSecret) {
+          const incomingSecret = request.headers.get('x-mcp-secret') || '';
+          if (incomingSecret !== mcpSecret) {
+            return json({ error: 'Invalid MCP secret' }, 401);
+          }
+        }
+        const { results } = await db.prepare(
+          'SELECT id, template_id, name, description, category, badge, status, created_at, updated_at FROM templates WHERE COALESCE(is_deleted, 0) = 0 ORDER BY created_at DESC'
+        ).all();
+        return json({ ok: true, data: results || [], total: (results || []).length });
       }
 
       // ═══ TEMPLATES ═══
