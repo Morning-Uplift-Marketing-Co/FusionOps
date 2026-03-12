@@ -847,6 +847,9 @@ const PROXY_TARGETS = {
   '/api/proxy/netlify/': 'https://api.netlify.com/api/v1/',
 };
 
+const MLX_CACHE_TTL_SUCCESS = 60;   // seconds for 2xx responses
+const MLX_CACHE_TTL_RATE_LIMIT = 20; // seconds for 429/503 responses
+
 async function handleProxy(request, url) {
   let targetBase = null;
   let strippedPath = url.pathname;
@@ -856,6 +859,20 @@ async function handleProxy(request, url) {
       targetBase = base;
       strippedPath = url.pathname.slice(prefix.length);
       break;
+    }
+  }
+
+  // Cache GET requests to MLX proxy to avoid upstream rate limits
+  const isMlxGet = targetBase === 'https://api.multilogin.com/' && request.method === 'GET';
+  if (isMlxGet) {
+    const cache = caches.default;
+    const cacheKey = new Request(request.url, { headers: { 'Authorization': request.headers.get('Authorization') || '' } });
+    const cached = await cache.match(cacheKey);
+    if (cached) {
+      const resCopy = new Response(cached.body, cached);
+      resCopy.headers.set('X-Cache', 'HIT');
+      for (const [k, v] of Object.entries(corsHeaders)) resCopy.headers.set(k, v);
+      return resCopy;
     }
   }
 
@@ -926,12 +943,29 @@ async function handleProxy(request, url) {
     for (const [k, v] of Object.entries(corsHeaders)) {
       responseHeaders.set(k, v);
     }
+    responseHeaders.set('X-Cache', 'MISS');
 
-    return new Response(proxyRes.body, {
+    const finalRes = new Response(proxyRes.body, {
       status: proxyRes.status,
       statusText: proxyRes.statusText,
       headers: responseHeaders,
     });
+
+    // Store in Cloudflare cache for MLX GET requests
+    if (isMlxGet) {
+      const isSuccess = proxyRes.status >= 200 && proxyRes.status < 300;
+      const isRateLimit = proxyRes.status === 429 || proxyRes.status === 503;
+      const ttl = isSuccess ? MLX_CACHE_TTL_SUCCESS : isRateLimit ? MLX_CACHE_TTL_RATE_LIMIT : 0;
+      if (ttl > 0) {
+        const cacheHeaders = new Headers(responseHeaders);
+        cacheHeaders.set('Cache-Control', `public, max-age=${ttl}`);
+        const toCache = new Response(finalRes.clone().body, { status: proxyRes.status, headers: cacheHeaders });
+        const cacheKey = new Request(request.url, { headers: { 'Authorization': request.headers.get('Authorization') || '' } });
+        caches.default.put(cacheKey, toCache).catch(() => {});
+      }
+    }
+
+    return finalRes;
   } catch (e) {
     return json({ error: e.message }, 502);
   }
