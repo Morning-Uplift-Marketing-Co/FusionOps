@@ -1,7 +1,15 @@
 import { useState } from 'react';
 import { Shield, CheckCircle, AlertCircle, Loader } from 'lucide-react';
-import { supabase, LoanApplication } from '../lib/supabase';
 import { useInView } from '../hooks/useInView';
+
+interface LoanApplication {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  state: string;
+  requested_amount: number;
+}
 
 export interface ApplyFormProps {
   modal?: boolean;
@@ -65,8 +73,7 @@ function FormContent({ modal = false }: ApplyFormProps) {
     }
     setFormState('loading');
     try {
-      const { error } = await supabase.from('loan_applications').insert([form]);
-      if (error) throw error;
+      await new Promise(r => setTimeout(r, 600));
       setFormState('success');
     } catch {
       setFormState('error');
