@@ -1,5 +1,5 @@
 {
-  "templateId": "pet-orange-white",
+  "templateId": "bolt-test-02",
   "cfPagesProject": "lp-jora-creditz-main",
   "cfApiToken": "",
   "cfAccountId": "",
@@ -36,5 +36,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-13T10:13:23.506Z"
+  "deployedAt": "2026-03-13T23:37:25.587Z"
 }
