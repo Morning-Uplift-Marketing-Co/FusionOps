@@ -18,10 +18,22 @@
 
 function getSettings() {
   try {
-    return JSON.parse(localStorage.getItem("lp_settings") || "{}");
+    const host = typeof window !== "undefined" ? `${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}` : "";
+    const namespaced = host ? localStorage.getItem(`lpf2:${host}:settings`) : null;
+    const legacy = localStorage.getItem("lpf2-settings");
+    const old = localStorage.getItem("lp_settings");
+    return JSON.parse(namespaced || legacy || old || "{}");
   } catch {
     return {};
   }
+}
+
+function resolveWorkerBase() {
+  const fromWindow = typeof window !== "undefined" ? window.__LP_API__ : "";
+  const fromEnv = typeof import.meta !== "undefined" && import.meta.env ? import.meta.env.VITE_API_BASE : "";
+  const DEFAULT = "https://lp-factory-api.misty-feather-556e.workers.dev/api";
+  const apiBase = String(fromWindow || fromEnv || DEFAULT).replace(/\/+$/, "");
+  return apiBase.endsWith("/api") ? apiBase.slice(0, -4) : apiBase;
 }
 
 /* ────────────────── Check 1: IP Blacklist ────────────────── */
@@ -172,8 +184,7 @@ function runGeoCheck(ipApiData, expectedCountry, expectedState) {
  */
 async function runDnsLeakCheck(proxyConfig) {
   try {
-    const apiBase = getSettings().apiBase || "";
-    const workerBase = apiBase.endsWith("/api") ? apiBase.slice(0, -4) : apiBase;
+    const workerBase = resolveWorkerBase();
 
     const res = await fetch(`${workerBase}/api/proxy/dns-check`, {
       method: "POST",
@@ -214,8 +225,7 @@ async function runDnsLeakCheck(proxyConfig) {
  */
 async function runLatencyCheck(proxyConfig) {
   try {
-    const apiBase = getSettings().apiBase || "";
-    const workerBase = apiBase.endsWith("/api") ? apiBase.slice(0, -4) : apiBase;
+    const workerBase = resolveWorkerBase();
 
     const start = performance.now();
     const res = await fetch(`${workerBase}/api/proxy/latency-check`, {
