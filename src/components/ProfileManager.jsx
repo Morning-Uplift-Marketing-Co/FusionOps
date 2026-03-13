@@ -44,6 +44,7 @@ export function ProfileManager({ settings = {}, ops = {} }) {
   // ── State ──
   const [mlProfiles, setMlProfiles] = useState([]);
   const [d1Profiles, setD1Profiles] = useState([]);
+  const [d1Accounts, setD1Accounts] = useState([]);
   const [lcCards, setLcCards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -58,7 +59,7 @@ export function ProfileManager({ settings = {}, ops = {} }) {
   const [sortDir, setSortDir] = useState("asc");
   const [expandedRow, setExpandedRow] = useState(null);
   const [linkModal, setLinkModal] = useState(null); // { profileId, profileName }
-  const [linkForm, setLinkForm] = useState({ cardUuid: "", provider: "", label: "" });
+  const [linkForm, setLinkForm] = useState({ cardUuid: "", provider: "", label: "", siteId: "" });
   const [linking, setLinking] = useState(false);
   const [linkResult, setLinkResult] = useState(null);
   const flashTimer = useRef(null);
@@ -70,13 +71,20 @@ export function ProfileManager({ settings = {}, ops = {} }) {
   }, []);
 
   // ── Load data ──
+  // Sites from ops.domains (synced from App.jsx)
+  const sites = useMemo(() => {
+    const raw = ops?.domains || [];
+    return Array.isArray(raw) ? raw : [];
+  }, [ops?.domains]);
+
   const loadAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [mlRes, d1Res, lcRes] = await Promise.allSettled([
+      const [mlRes, d1Res, lcRes, accRes] = await Promise.allSettled([
         multiloginApi.getProfiles(),
         d1Service.query("SELECT * FROM ops_profiles ORDER BY created_at DESC"),
         leadingCardsApi.getCards(),
+        d1Service.query("SELECT * FROM ops_accounts WHERE status = 'active' ORDER BY created_at DESC"),
       ]);
       const mlData = mlRes.status === "fulfilled" ? (mlRes.value?.data?.profiles || (Array.isArray(mlRes.value) ? mlRes.value : [])) : [];
       setMlProfiles(Array.isArray(mlData) ? mlData : []);
@@ -84,6 +92,8 @@ export function ProfileManager({ settings = {}, ops = {} }) {
       setD1Profiles(Array.isArray(d1Data) ? d1Data : []);
       const lcData = lcRes.status === "fulfilled" ? (lcRes.value?.data || lcRes.value || []) : [];
       setLcCards(Array.isArray(lcData) ? lcData : []);
+      const accData = accRes.status === "fulfilled" ? (accRes.value?.results || accRes.value || []) : [];
+      setD1Accounts(Array.isArray(accData) ? accData : []);
     } catch (e) {
       console.error("[ProfileManager] loadAll:", e);
     } finally {
@@ -164,20 +174,48 @@ export function ProfileManager({ settings = {}, ops = {} }) {
       }
     }
 
-    // Merge lending card names
+    // Build account map (profile_id → account)
+    const accountByProfile = new Map();
+    for (const acc of d1Accounts) {
+      if (acc.profile_id) accountByProfile.set(acc.profile_id, acc);
+    }
+
+    // Merge lending card names + site info
     const cardMap = new Map();
     for (const c of lcCards) {
       cardMap.set(c.uuid || c.id, c);
     }
+
+    // Build site map (id → site)
+    const siteMap = new Map();
+    for (const s of sites) {
+      siteMap.set(s.id, s);
+    }
+
     for (const [, profile] of map) {
+      // Card name
       if (profile.lendingCard && cardMap.has(profile.lendingCard)) {
         const card = cardMap.get(profile.lendingCard);
         profile.lendingCardName = card.label || card.name || card.card_number?.slice(-4) || profile.lendingCardName;
       }
+
+      // Site info from account
+      const acc = accountByProfile.get(profile.id) || accountByProfile.get(profile.mlId);
+      if (acc) {
+        profile.siteId = acc.site_id || acc.siteId || "";
+        profile.siteDomain = acc.site_domain || acc.siteDomain || "";
+        // If we have site_id but no domain, look it up
+        if (profile.siteId && !profile.siteDomain && siteMap.has(profile.siteId)) {
+          profile.siteDomain = siteMap.get(profile.siteId).domain || "";
+        }
+      } else {
+        profile.siteId = "";
+        profile.siteDomain = "";
+      }
     }
 
     return [...map.values()];
-  }, [mlProfiles, d1Profiles, lcCards]);
+  }, [mlProfiles, d1Profiles, d1Accounts, lcCards, sites]);
 
   // ── Filter & sort ──
   const groups = useMemo(() => {
@@ -196,7 +234,8 @@ export function ProfileManager({ settings = {}, ops = {} }) {
         (p.id || "").toLowerCase().includes(q) ||
         (p.ip || "").includes(q) ||
         (p.lendingCardName || "").toLowerCase().includes(q) ||
-        (p.accountId || "").toLowerCase().includes(q)
+        (p.accountId || "").toLowerCase().includes(q) ||
+        (p.siteDomain || "").toLowerCase().includes(q)
       );
     }
     // Sort
@@ -207,6 +246,7 @@ export function ProfileManager({ settings = {}, ops = {} }) {
         case "ip": av = a.ip || ""; bv = b.ip || ""; break;
         case "card": av = a.lendingCardName || ""; bv = b.lendingCardName || ""; break;
         case "score": av = a.trustScore ?? -1; bv = b.trustScore ?? -1; break;
+        case "site": av = a.siteDomain || ""; bv = b.siteDomain || ""; break;
         case "status": av = a.status; bv = b.status; break;
         case "date": av = a.createdAt || ""; bv = b.createdAt || ""; break;
         default: av = 0; bv = 0;
@@ -299,7 +339,7 @@ export function ProfileManager({ settings = {}, ops = {} }) {
   // ── Link / Unlink ──
   const openLinkModal = (profile) => {
     setLinkModal({ profileId: profile.id, profileName: profile.name, mlId: profile.mlId });
-    setLinkForm({ cardUuid: "", provider: "", label: profile.name || "" });
+    setLinkForm({ cardUuid: "", provider: "", label: profile.name || "", siteId: profile.siteId || "" });
     setLinkResult(null);
   };
 
@@ -311,11 +351,14 @@ export function ProfileManager({ settings = {}, ops = {} }) {
     setLinking(true);
     setLinkResult(null);
     try {
+      const selectedSite = sites.find(s => s.id === linkForm.siteId);
       const res = await profileLinker.linkProfileCardProxy({
         profileId: linkModal.profileId,
         cardUuid: linkForm.cardUuid,
         provider: linkForm.provider || undefined,
         label: linkForm.label || linkModal.profileName,
+        siteId: linkForm.siteId || undefined,
+        siteDomain: selectedSite?.domain || undefined,
       });
       setLinkResult(res);
       if (res.success) {
@@ -418,7 +461,7 @@ export function ProfileManager({ settings = {}, ops = {} }) {
   // ──────── Row action menu ────────
   const [menuOpen, setMenuOpen] = useState(null);
   const [showQuickLink, setShowQuickLink] = useState(false);
-  const [quickLinkForm, setQuickLinkForm] = useState({ profileId: "", cardUuid: "", provider: "", label: "" });
+  const [quickLinkForm, setQuickLinkForm] = useState({ profileId: "", cardUuid: "", provider: "", label: "", siteId: "" });
   const [quickLinking, setQuickLinking] = useState(false);
 
   const handleQuickLink = async () => {
@@ -429,15 +472,18 @@ export function ProfileManager({ settings = {}, ops = {} }) {
     const profile = mergedProfiles.find(p => p.id === quickLinkForm.profileId);
     setQuickLinking(true);
     try {
+      const selectedSite = sites.find(s => s.id === quickLinkForm.siteId);
       const res = await profileLinker.linkProfileCardProxy({
         profileId: quickLinkForm.profileId,
         cardUuid: quickLinkForm.cardUuid,
         provider: quickLinkForm.provider || undefined,
         label: quickLinkForm.label || profile?.name || "",
+        siteId: quickLinkForm.siteId || undefined,
+        siteDomain: selectedSite?.domain || undefined,
       });
       if (res.success) {
         showFlash(`✅ Linked: ${profile?.name} → IP ${res.resolvedIp} (Score: ${res.qualityResult?.score || "—"})`);
-        setQuickLinkForm({ profileId: "", cardUuid: "", provider: "", label: "" });
+        setQuickLinkForm({ profileId: "", cardUuid: "", provider: "", label: "", siteId: "" });
         setShowQuickLink(false);
         await loadAll();
       } else {
@@ -486,7 +532,7 @@ export function ProfileManager({ settings = {}, ops = {} }) {
               <span className="text-sm font-bold">🔗 Quick Link: Profile + Card + Proxy</span>
               <button className="ml-auto text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]" onClick={() => setShowQuickLink(false)}>✕ Close</button>
             </div>
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-5 gap-3">
               {/* Profile select */}
               <div>
                 <label className="text-[10px] font-medium text-[hsl(var(--muted-foreground))] block mb-1">👤 Profile *</label>
@@ -522,9 +568,26 @@ export function ProfileManager({ settings = {}, ops = {} }) {
                 </select>
               </div>
 
+              {/* Site select */}
+              <div>
+                <label className="text-[10px] font-medium text-[hsl(var(--muted-foreground))] block mb-1">🌐 Site</label>
+                <select
+                  value={quickLinkForm.siteId}
+                  onChange={e => setQuickLinkForm(f => ({ ...f, siteId: e.target.value }))}
+                  className="w-full h-8 px-2 text-xs rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
+                >
+                  <option value="">No site</option>
+                  {sites.map(s => (
+                    <option key={s.id} value={s.id}>
+                      {s.domain || s.brand || s.id.slice(0, 10)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Provider select */}
               <div>
-                <label className="text-[10px] font-medium text-[hsl(var(--muted-foreground))] block mb-1">🌐 Provider</label>
+                <label className="text-[10px] font-medium text-[hsl(var(--muted-foreground))] block mb-1">🛡️ Provider</label>
                 <select
                   value={quickLinkForm.provider}
                   onChange={e => setQuickLinkForm(f => ({ ...f, provider: e.target.value }))}
@@ -550,7 +613,7 @@ export function ProfileManager({ settings = {}, ops = {} }) {
               </div>
             </div>
             <p className="text-[10px] text-[hsl(var(--muted-foreground))] mt-2">
-              Auto-resolves proxy IP → runs IP quality pipeline (ASN + Fraud + Timezone) → assigns to MLX profile → saves to D1
+              Auto-resolves proxy IP → runs IP quality pipeline (ASN + Fraud + Timezone) → assigns to MLX profile → links site → saves to D1
             </p>
           </CardContent>
         </Card>
@@ -646,6 +709,7 @@ export function ProfileManager({ settings = {}, ops = {} }) {
               <SortHeader col="card">Lending Card</SortHeader>
               <SortHeader col="ip">IP</SortHeader>
               <SortHeader col="score">Score</SortHeader>
+              <SortHeader col="site">Site</SortHeader>
               <TableHead className="text-xs">Platform</TableHead>
               <SortHeader col="status">Status</SortHeader>
               <SortHeader col="date">Created</SortHeader>
@@ -657,13 +721,13 @@ export function ProfileManager({ settings = {}, ops = {} }) {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={13} className="text-center py-12 text-sm text-[hsl(var(--muted-foreground))]">
+                <TableCell colSpan={14} className="text-center py-12 text-sm text-[hsl(var(--muted-foreground))]">
                   ⏳ Loading profiles...
                 </TableCell>
               </TableRow>
             ) : paginated.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={13} className="text-center py-12 text-sm text-[hsl(var(--muted-foreground))]">
+                <TableCell colSpan={14} className="text-center py-12 text-sm text-[hsl(var(--muted-foreground))]">
                   No profiles found. Click "Sync MLX" to fetch profiles.
                 </TableCell>
               </TableRow>
@@ -736,6 +800,17 @@ export function ProfileManager({ settings = {}, ops = {} }) {
                   {/* Score */}
                   <TableCell className="py-2 text-center">
                     <TrustBadge score={profile.trustScore} />
+                  </TableCell>
+
+                  {/* Site */}
+                  <TableCell className="py-2">
+                    {profile.siteDomain ? (
+                      <Badge variant="outline" className="text-[10px] font-mono bg-violet-500/10 text-violet-400 border-violet-500/20 max-w-[120px] truncate">
+                        🌐 {profile.siteDomain}
+                      </Badge>
+                    ) : (
+                      <span className="text-[10px] text-slate-500">—</span>
+                    )}
                   </TableCell>
 
                   {/* Platform */}
@@ -993,6 +1068,29 @@ export function ProfileManager({ settings = {}, ops = {} }) {
                 </select>
                 <p className="text-[10px] text-[hsl(var(--muted-foreground))] mt-1">
                   Auto = tries NodeMaven → SmartProxy → SOAX → Bright Data until quality passes
+                </p>
+              </div>
+
+              {/* Site Selection */}
+              <div>
+                <label className="text-xs font-medium text-[hsl(var(--muted-foreground))] block mb-1">🌐 Landing Page / Site</label>
+                <select
+                  value={linkForm.siteId}
+                  onChange={e => setLinkForm(f => ({ ...f, siteId: e.target.value }))}
+                  className="w-full h-8 px-3 text-xs rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
+                >
+                  <option value="">No site linked</option>
+                  {sites.map(s => (
+                    <option key={s.id} value={s.id}>
+                      {s.domain ? `${s.domain}` : ""}{s.brand ? ` — ${s.brand}` : ""}{!s.domain && !s.brand ? s.id.slice(0, 12) : ""}
+                    </option>
+                  ))}
+                </select>
+                {sites.length === 0 && (
+                  <p className="text-[10px] text-amber-400 mt-1">No sites created yet. Create a site first in the Sites tab.</p>
+                )}
+                <p className="text-[10px] text-[hsl(var(--muted-foreground))] mt-1">
+                  Link this profile to a specific landing page for ad campaigns
                 </p>
               </div>
 
