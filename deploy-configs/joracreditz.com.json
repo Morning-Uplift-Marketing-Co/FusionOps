@@ -1,5 +1,5 @@
 {
-  "templateId": "installment-001",
+  "templateId": "bolt-tmp-02",
   "cfPagesProject": "lp-jora-creditz-main",
   "cfApiToken": "",
   "cfAccountId": "",
@@ -36,5 +36,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-13T09:32:00.891Z"
+  "deployedAt": "2026-03-13T09:34:12.204Z"
 }
