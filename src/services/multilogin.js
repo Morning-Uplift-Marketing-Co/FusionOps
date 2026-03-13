@@ -104,9 +104,25 @@ let _token = null;
 let _tokenSetAt = 0;
 const TOKEN_TTL_MS = 25 * 60 * 1000; // refresh 5 min before 30-min expiry
 
+function _persistSettings(s) {
+    try {
+        const json = JSON.stringify(s);
+        const host = typeof window !== "undefined" ? `${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}` : "";
+        if (host) localStorage.setItem(`lpf2:${host}:settings`, json);
+        localStorage.setItem("lpf2-settings", json);
+    } catch {}
+}
+
 function setToken(t) {
     _token = t;
     _tokenSetAt = Date.now();
+    // Persist token + timestamp so page reload preserves expiry knowledge
+    try {
+        const s = getSettings();
+        s.mlToken = t;
+        s.mlTokenSetAt = _tokenSetAt;
+        _persistSettings(s);
+    } catch {}
 }
 
 function getToken() {
@@ -116,6 +132,17 @@ function getToken() {
 function isTokenExpired() {
     if (!_token) return true;
     return (Date.now() - _tokenSetAt) > TOKEN_TTL_MS;
+}
+
+/** Load saved token + its timestamp from localStorage into memory */
+function _loadSavedToken() {
+    const s = getSettings();
+    if (s.mlToken) {
+        _token = s.mlToken;
+        _tokenSetAt = s.mlTokenSetAt || 0;
+        return _token;
+    }
+    return null;
 }
 
 /* ────────────────── Settings access ─────────────── */
@@ -142,9 +169,51 @@ function authHeaders(token) {
     return { ...HEADERS_JSON, "Authorization": `Bearer ${token || _token}` };
 }
 
-async function mlxFetch(url, opts = {}) {
+/**
+ * Internal refresh: try refresh-token endpoint, then fallback to auto-signin.
+ * Returns true if a new valid token was obtained.
+ */
+async function _doRefresh() {
+    const t = _token || getSavedToken();
+    if (t) {
+        // _retried=true prevents recursive 401 retry on the refresh call itself
+        const res = await mlxFetch(`${getMLXBase()}/user/refresh-token`, {
+            method: "POST", headers: authHeaders(t),
+        }, true);
+        if (res.data?.token) {
+            console.log("[MLX] Token refreshed");
+            setToken(res.data.token);
+            return true;
+        }
+    }
+    // Fallback: auto-signin with saved credentials
+    const s = getSettings();
+    if (s.mlEmail && s.mlPassword) {
+        const res = await mlxFetch(`${getMLXBase()}/user/signin`, {
+            method: "POST",
+            headers: HEADERS_JSON,
+            body: JSON.stringify({ email: s.mlEmail, password: md5(s.mlPassword) }),
+        }, true);
+        if (res.data?.token) {
+            console.log("[MLX] Auto-signin succeeded");
+            setToken(res.data.token);
+            return true;
+        }
+    }
+    return false;
+}
+
+async function mlxFetch(url, opts = {}, _retried = false) {
     try {
         const r = await fetch(url, { ...opts, signal: AbortSignal.timeout(15000) });
+        // 401 → try refresh + retry once
+        if (r.status === 401 && !_retried) {
+            const refreshed = await _doRefresh();
+            if (refreshed) {
+                const newOpts = { ...opts, headers: { ...opts.headers, Authorization: `Bearer ${_token}` } };
+                return mlxFetch(url, newOpts, true);
+            }
+        }
         if (!r.ok) {
             const text = await r.text().catch(() => "");
             return { error: `HTTP ${r.status}`, detail: text, status: r.status };
@@ -205,25 +274,16 @@ async function refreshToken(token) {
  * Returns the current token string or null.
  */
 async function ensureToken() {
-    // Prefer in-memory token
+    // Prefer in-memory token that hasn't expired
     if (_token && !isTokenExpired()) return _token;
-    // Try saved token from settings
-    const saved = getSavedToken();
-    if (saved && !_token) {
-        setToken(saved);
-        return saved;
+    // Try loading saved token + timestamp from localStorage
+    if (!_token) {
+        const loaded = _loadSavedToken();
+        if (loaded && !isTokenExpired()) return loaded;
     }
-    // Try refresh
-    if (_token || saved) {
-        const res = await refreshToken(_token || saved);
-        if (res.data?.token) return res.data.token;
-    }
-    // Try auto-signin from settings
-    const s = getSettings();
-    if (s.mlEmail && s.mlPassword) {
-        const res = await signin(s.mlEmail, s.mlPassword);
-        if (res.data?.token) return res.data.token;
-    }
+    // Token expired or missing — try refresh then auto-signin
+    const refreshed = await _doRefresh();
+    if (refreshed) return _token;
     return null;
 }
 
