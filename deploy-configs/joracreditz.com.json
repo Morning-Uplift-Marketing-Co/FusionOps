@@ -1,5 +1,5 @@
 {
-  "templateId": "installment-loans-101",
+  "templateId": "tmp-simple-astro-import",
   "cfPagesProject": "lp-jora-creditz-main",
   "cfApiToken": "",
   "cfAccountId": "",
@@ -36,5 +36,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-13T09:46:36.951Z"
+  "deployedAt": "2026-03-13T09:48:33.913Z"
 }
