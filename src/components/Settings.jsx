@@ -77,6 +77,22 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
     const [ipqsApiKey, setIpqsApiKey] = useState(settings.ipqsApiKey || "");
     const [proxyCheckEnabled, setProxyCheckEnabled] = useState(settings.proxyCheckEnabled !== false);
     const [proxyMinScore, setProxyMinScore] = useState(settings.proxyMinScore || 70);
+
+    // Proxy Providers (fallback)
+    const [spProxyUser, setSpProxyUser] = useState(settings.spProxyUser || "");
+    const [spProxyPassword, setSpProxyPassword] = useState(settings.spProxyPassword || "");
+    const [soaxProxyUser, setSoaxProxyUser] = useState(settings.soaxProxyUser || "");
+    const [soaxProxyPassword, setSoaxProxyPassword] = useState(settings.soaxProxyPassword || "");
+    const [bdCustomer, setBdCustomer] = useState(settings.bdCustomer || "");
+    const [bdZone, setBdZone] = useState(settings.bdZone || "");
+    const [bdPassword, setBdPassword] = useState(settings.bdPassword || "");
+    const [proxyPrimaryProvider, setProxyPrimaryProvider] = useState(settings.proxyPrimaryProvider || "nodemaven");
+
+    // IP Quality APIs
+    const [ipinfoToken, setIpinfoToken] = useState(settings.ipinfoToken || "");
+    const [scamalyticsKey, setScamalyticsKey] = useState(settings.scamalyticsKey || "");
+    const [ip2locationKey, setIp2locationKey] = useState(settings.ip2locationKey || "");
+
     const [hideRevenue, setHideRevenue] = useState(settings.hideRevenue === true);
 
 
@@ -816,6 +832,66 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                                     }} disabled={testing === "nm" || !nmProxyUser} className="px-2 h-7 text-[10px]">{testing === "nm" ? "⏳ Testing..." : "🔑 Test Connection"}</Button>
                                     <Button onClick={() => save({ nmProxyUser, nmProxyPassword, ipqsApiKey, proxyCheckEnabled, proxyMinScore })} disabled={saving} className="px-2 h-7 text-[10px]">{saving ? "Saving..." : "💾 Save"}</Button>
                                 </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="mb-4">
+                            <CardHeader><CardTitle>🔄 Proxy Providers (Fallback)</CardTitle></CardHeader>
+                            <CardContent className="flex flex-col gap-3">
+                                <p className="text-[10px] text-[hsl(var(--muted-foreground))] -mt-2">Backup residential proxy providers — auto-fallback when primary fails quality check</p>
+                                <div>
+                                    <Lbl>Primary Provider</Lbl>
+                                    <Sel value={proxyPrimaryProvider} onChange={setProxyPrimaryProvider} options={[
+                                        { value: "nodemaven", label: "NodeMaven" },
+                                        { value: "smartproxy", label: "SmartProxy" },
+                                        { value: "soax", label: "SOAX" },
+                                        { value: "brightdata", label: "Bright Data" },
+                                    ]} />
+                                </div>
+                                <div className="border border-[hsl(var(--border))] rounded-lg p-3 space-y-2">
+                                    <div className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wide">SmartProxy</div>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div><Lbl>Username</Lbl><Inp value={spProxyUser} onChange={setSpProxyUser} placeholder="sp-username" /></div>
+                                        <div><Lbl>Password</Lbl><Inp type="password" value={spProxyPassword} onChange={setSpProxyPassword} placeholder="password" /></div>
+                                    </div>
+                                </div>
+                                <div className="border border-[hsl(var(--border))] rounded-lg p-3 space-y-2">
+                                    <div className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wide">SOAX</div>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div><Lbl>Username</Lbl><Inp value={soaxProxyUser} onChange={setSoaxProxyUser} placeholder="soax-username" /></div>
+                                        <div><Lbl>Password</Lbl><Inp type="password" value={soaxProxyPassword} onChange={setSoaxProxyPassword} placeholder="password" /></div>
+                                    </div>
+                                </div>
+                                <div className="border border-[hsl(var(--border))] rounded-lg p-3 space-y-2">
+                                    <div className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wide">Bright Data</div>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <div><Lbl>Customer ID</Lbl><Inp value={bdCustomer} onChange={setBdCustomer} placeholder="lum-customer-xxx" /></div>
+                                        <div><Lbl>Zone</Lbl><Inp value={bdZone} onChange={setBdZone} placeholder="residential" /></div>
+                                        <div><Lbl>Password</Lbl><Inp type="password" value={bdPassword} onChange={setBdPassword} placeholder="password" /></div>
+                                    </div>
+                                </div>
+                                <Button onClick={() => save({ spProxyUser, spProxyPassword, soaxProxyUser, soaxProxyPassword, bdCustomer, bdZone, bdPassword, proxyPrimaryProvider })} disabled={saving} className="px-2 h-7 text-[10px] self-start">{saving ? "Saving..." : "💾 Save Providers"}</Button>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="mb-4">
+                            <CardHeader><CardTitle>🔬 IP Quality APIs</CardTitle></CardHeader>
+                            <CardContent className="flex flex-col gap-3">
+                                <p className="text-[10px] text-[hsl(var(--muted-foreground))] -mt-2">API keys for IP quality pipeline — ASN check, fraud detection, proxy/VPN detection, timezone verification</p>
+                                <div className="border border-[hsl(var(--border))] rounded-lg p-3 space-y-2">
+                                    <div className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wide">IPinfo <span className="font-normal opacity-60">— ASN, ISP, Timezone, Geo</span></div>
+                                    <Inp type="password" value={ipinfoToken} onChange={setIpinfoToken} placeholder="ipinfo.io access token" />
+                                </div>
+                                <div className="border border-[hsl(var(--border))] rounded-lg p-3 space-y-2">
+                                    <div className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wide">Scamalytics <span className="font-normal opacity-60">— Fraud Score</span></div>
+                                    <Inp type="password" value={scamalyticsKey} onChange={setScamalyticsKey} placeholder="scamalytics.com API key" />
+                                </div>
+                                <div className="border border-[hsl(var(--border))] rounded-lg p-3 space-y-2">
+                                    <div className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wide">IP2Location <span className="font-normal opacity-60">— Proxy/VPN Detection</span></div>
+                                    <Inp type="password" value={ip2locationKey} onChange={setIp2locationKey} placeholder="ip2location.io API key" />
+                                </div>
+                                <p className="text-[9px] text-[hsl(var(--muted-foreground))] italic">All optional — pipeline falls back to IPQS + ip-api.com when keys are missing</p>
+                                <Button onClick={() => save({ ipinfoToken, scamalyticsKey, ip2locationKey })} disabled={saving} className="px-2 h-7 text-[10px] self-start">{saving ? "Saving..." : "💾 Save API Keys"}</Button>
                             </CardContent>
                         </Card>
 
