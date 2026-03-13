@@ -29,7 +29,12 @@ const DEFAULT_FILTER = "medium";
 
 function getSettings() {
   try {
-    return JSON.parse(localStorage.getItem("lp_settings") || "{}");
+    // App stores settings under multiple keys — try all in priority order
+    const host = typeof window !== "undefined" ? `${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}` : "";
+    const namespaced = host ? localStorage.getItem(`lpf2:${host}:settings`) : null;
+    const legacy = localStorage.getItem("lpf2-settings");
+    const old = localStorage.getItem("lp_settings");
+    return JSON.parse(namespaced || legacy || old || "{}");
   } catch {
     return {};
   }
@@ -41,6 +46,14 @@ function getCredentials() {
     user: s.nmProxyUser || "",
     password: s.nmProxyPassword || "",
   };
+}
+
+function resolveWorkerBase() {
+  const fromWindow = typeof window !== "undefined" ? window.__LP_API__ : "";
+  const fromEnv = typeof import.meta !== "undefined" && import.meta.env ? import.meta.env.VITE_API_BASE : "";
+  const DEFAULT = "https://lp-factory-api.misty-feather-556e.workers.dev/api";
+  const apiBase = String(fromWindow || fromEnv || DEFAULT).replace(/\/+$/, "");
+  return apiBase.endsWith("/api") ? apiBase.slice(0, -4) : apiBase;
 }
 
 /* ────────────────── Session ID Generator ────────────────── */
@@ -172,8 +185,7 @@ async function resolveIP(proxyConfig) {
 
   try {
     // Route through our Worker which will connect via the proxy
-    const apiBase = getSettings().apiBase || "";
-    const workerBase = apiBase.endsWith("/api") ? apiBase.slice(0, -4) : apiBase;
+    const workerBase = resolveWorkerBase();
 
     const res = await fetch(`${workerBase}/api/proxy/resolve-ip`, {
       method: "POST",
