@@ -327,7 +327,7 @@ export async function linkProfileCardProxy(opts) {
   const geoString = `${geo.city || ""}, ${geo.state || ""}, ${geo.country || ""}`.replace(/^, |, $/g, "").replace(/, ,/g, ",");
 
   // Update ops_profiles
-  await execute(
+  const profileUpdate = await execute(
     `UPDATE ops_profiles SET
       proxy_provider = ?, proxy_geo_country = ?, proxy_geo_state = ?,
       proxy_geo_city = ?, proxy_session_id = ?, last_ip = ?,
@@ -342,20 +342,51 @@ export async function linkProfileCardProxy(opts) {
       profileId,
     ]
   );
+  if (!profileUpdate.success) {
+    console.warn("[profile-linker] ops_profiles update failed:", profileUpdate.error);
+  }
 
-  // Upsert ops_accounts
+  // Check if site columns exist (migration 0006 may not have run yet)
+  let hasSiteColumns = false;
+  try {
+    const colCheck = await query("PRAGMA table_info(ops_accounts)");
+    if (colCheck.success && Array.isArray(colCheck.results)) {
+      hasSiteColumns = colCheck.results.some(c => c.name === "site_id");
+    }
+  } catch { /* migration not applied yet — safe to skip site columns */ }
+
+  // Upsert ops_accounts (backward compatible: skip site columns if migration not applied)
   const existing = await query("SELECT id FROM ops_accounts WHERE id = ?", [accountId]);
+  let accountUpdate;
   if (existing.success && existing.results.length > 0) {
-    await execute(
-      `UPDATE ops_accounts SET profile_id = ?, card_uuid = ?, proxy_ip = ?, site_id = ?, site_domain = ?, status = 'active' WHERE id = ?`,
-      [profileId, cardUuid, resolvedIp, siteId || "", siteDomain || "", accountId]
-    );
+    if (hasSiteColumns) {
+      accountUpdate = await execute(
+        `UPDATE ops_accounts SET profile_id = ?, card_uuid = ?, proxy_ip = ?, site_id = ?, site_domain = ?, status = 'active' WHERE id = ?`,
+        [profileId, cardUuid, resolvedIp, siteId || "", siteDomain || "", accountId]
+      );
+    } else {
+      accountUpdate = await execute(
+        `UPDATE ops_accounts SET profile_id = ?, card_uuid = ?, proxy_ip = ?, status = 'active' WHERE id = ?`,
+        [profileId, cardUuid, resolvedIp, accountId]
+      );
+    }
   } else {
-    await execute(
-      `INSERT INTO ops_accounts (id, label, profile_id, card_uuid, proxy_ip, site_id, site_domain, status, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?)`,
-      [accountId, label || `Account ${accountId.slice(0, 6)}`, profileId, cardUuid, resolvedIp, siteId || "", siteDomain || "", now()]
-    );
+    if (hasSiteColumns) {
+      accountUpdate = await execute(
+        `INSERT INTO ops_accounts (id, label, profile_id, card_uuid, proxy_ip, site_id, site_domain, status, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?)`,
+        [accountId, label || `Account ${accountId.slice(0, 6)}`, profileId, cardUuid, resolvedIp, siteId || "", siteDomain || "", now()]
+      );
+    } else {
+      accountUpdate = await execute(
+        `INSERT INTO ops_accounts (id, label, profile_id, card_uuid, proxy_ip, status, created_at)
+         VALUES (?, ?, ?, ?, ?, 'active', ?)`,
+        [accountId, label || `Account ${accountId.slice(0, 6)}`, profileId, cardUuid, resolvedIp, now()]
+      );
+    }
+  }
+  if (!accountUpdate?.success) {
+    console.warn("[profile-linker] ops_accounts upsert failed:", accountUpdate?.error);
   }
 
   // Step 7: Audit log
