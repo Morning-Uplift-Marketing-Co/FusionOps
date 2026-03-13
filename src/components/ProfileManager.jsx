@@ -90,7 +90,7 @@ export function ProfileManager({ settings = {}, ops = {} }) {
       setMlProfiles(Array.isArray(mlData) ? mlData : []);
       const d1Data = d1Res.status === "fulfilled" ? (d1Res.value?.results || d1Res.value || []) : [];
       setD1Profiles(Array.isArray(d1Data) ? d1Data : []);
-      const lcData = lcRes.status === "fulfilled" ? (lcRes.value?.data || lcRes.value || []) : [];
+      const lcData = lcRes.status === "fulfilled" ? (lcRes.value?.results || lcRes.value?.data || (Array.isArray(lcRes.value) ? lcRes.value : [])) : [];
       setLcCards(Array.isArray(lcData) ? lcData : []);
       const accData = accRes.status === "fulfilled" ? (accRes.value?.results || accRes.value || []) : [];
       setD1Accounts(Array.isArray(accData) ? accData : []);

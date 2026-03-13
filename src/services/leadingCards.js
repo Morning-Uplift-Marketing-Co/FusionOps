@@ -3,7 +3,19 @@ import { api } from "./api";
 export const leadingCardsApi = {
     async getCards(params = {}) {
         const query = new URLSearchParams(params).toString();
-        return api.get(`/lc/cards${query ? '?' + query : ''}`);
+        const first = await api.get(`/lc/cards${query ? '?' + query : ''}`);
+        // Auto-paginate: fetch remaining pages if total_pages > 1
+        if (first?.total_pages > 1 && first?.results) {
+            const all = [...first.results];
+            for (let p = 2; p <= first.total_pages; p++) {
+                try {
+                    const next = await api.get(`/lc/cards?page=${p}${query ? '&' + query : ''}`);
+                    if (next?.results) all.push(...next.results);
+                } catch (_) { break; }
+            }
+            return { ...first, results: all, count: all.length };
+        }
+        return first;
     },
     async getCardDetail(uuid) {
         return api.get(`/lc/cards/${uuid}`);
