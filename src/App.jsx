@@ -31,6 +31,8 @@ import { RealtimeEventsDashboard } from "./components/RealtimeEventsDashboard";
 import { VoluumExplorer } from "./components/VoluumExplorer";
 import { AccountVerificationBanner } from "./components/ui/AccountVerificationBanner";
 import { ApiHealthCheck } from "./components/ApiHealthCheck";
+import { ProxyHealthTab } from "./components/ProxyHealthTab";
+import { ProfileManager } from "./components/ProfileManager";
 import { TemplateManager } from "./components/TemplateManager";
 
 // Neon connection string — stored in settings or hardcoded for now
@@ -904,6 +906,7 @@ useEffect(() => {
           {page === "sites" && <Sites sites={sites} del={delSite} notify={notify} startCreate={startCreate} startDuplicate={startDuplicate} settings={settings} addDeploy={addDeploy} ops={ops} updateSite={updateSite} />}
           {page === "create" && wizData && <Wizard config={wizData} setConfig={setWizData} addSite={addSite} addDeploy={addDeploy} setPage={setPage} settings={settings} notify={notify} cfAccounts={ops.cfAccounts} registrarAccounts={ops.registrarAccounts} />}
           {page === "variant" && <VariantStudio notify={notify} sites={sites} addSite={addSite} registry={registry} setRegistry={setRegistry} apiOk={apiOk} />}
+          {page === "profile-manager" && <ProfileManager settings={settings} ops={ops} />}
           {page === "ops" && <OpsCenter data={ops} add={opsAdd} del={opsDel} upd={opsUpd} settings={settings} />}
           {page === "deploys" && <DeployHistory deploys={deploys} />}
           {page === "tracking" && <TrackingDashboard settings={settings} sites={sites} />}
@@ -921,6 +924,7 @@ useEffect(() => {
               }}
             />
           )}
+          {page === "proxy-health" && <ProxyHealthTab profiles={ops.profiles} settings={settings} standalone />}
           {page === "error-log" && <ErrorLog />}
           {page === "api-health" && <ApiHealthCheck />}
           {page === "settings" && <Settings settings={settings} setSettings={handleSaveSettings} stats={stats} apiOk={apiOk} neonOk={neonOk} />}
