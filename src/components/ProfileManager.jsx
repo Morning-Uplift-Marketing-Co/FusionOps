@@ -412,8 +412,43 @@ export function ProfileManager({ settings = {}, ops = {} }) {
     </TableHead>
   );
 
+  // ── Unlinked profiles for quick-link ──
+  const unlinkedProfiles = useMemo(() => mergedProfiles.filter(p => !p.lendingCard), [mergedProfiles]);
+
   // ──────── Row action menu ────────
   const [menuOpen, setMenuOpen] = useState(null);
+  const [showQuickLink, setShowQuickLink] = useState(false);
+  const [quickLinkForm, setQuickLinkForm] = useState({ profileId: "", cardUuid: "", provider: "", label: "" });
+  const [quickLinking, setQuickLinking] = useState(false);
+
+  const handleQuickLink = async () => {
+    if (!quickLinkForm.profileId || !quickLinkForm.cardUuid) {
+      showFlash("Select both a profile and a card", "error");
+      return;
+    }
+    const profile = mergedProfiles.find(p => p.id === quickLinkForm.profileId);
+    setQuickLinking(true);
+    try {
+      const res = await profileLinker.linkProfileCardProxy({
+        profileId: quickLinkForm.profileId,
+        cardUuid: quickLinkForm.cardUuid,
+        provider: quickLinkForm.provider || undefined,
+        label: quickLinkForm.label || profile?.name || "",
+      });
+      if (res.success) {
+        showFlash(`✅ Linked: ${profile?.name} → IP ${res.resolvedIp} (Score: ${res.qualityResult?.score || "—"})`);
+        setQuickLinkForm({ profileId: "", cardUuid: "", provider: "", label: "" });
+        setShowQuickLink(false);
+        await loadAll();
+      } else {
+        showFlash(`❌ Link failed: ${res.error}`, "error");
+      }
+    } catch (e) {
+      showFlash(`Link failed: ${e.message}`, "error");
+    } finally {
+      setQuickLinking(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -426,6 +461,14 @@ export function ProfileManager({ settings = {}, ops = {} }) {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            className="h-8 text-xs bg-amber-600 hover:bg-amber-700 text-white px-3"
+            onClick={() => setShowQuickLink(!showQuickLink)}
+            disabled={unlinkedProfiles.length === 0}
+          >
+            🔗 Link Profile {unlinkedProfiles.length > 0 && <Badge className="ml-1 bg-amber-800 text-amber-200 text-[9px] px-1">{unlinkedProfiles.length}</Badge>}
+          </Button>
           <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing} className="h-8 text-xs">
             {syncing ? "⏳ Syncing..." : "🔄 Sync MLX"}
           </Button>
@@ -434,6 +477,84 @@ export function ProfileManager({ settings = {}, ops = {} }) {
           </Button>
         </div>
       </div>
+
+      {/* ── Quick Link Panel ── */}
+      {showQuickLink && (
+        <Card className="bg-[hsl(var(--card))] border-amber-500/30">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-sm font-bold">🔗 Quick Link: Profile + Card + Proxy</span>
+              <button className="ml-auto text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]" onClick={() => setShowQuickLink(false)}>✕ Close</button>
+            </div>
+            <div className="grid grid-cols-4 gap-3">
+              {/* Profile select */}
+              <div>
+                <label className="text-[10px] font-medium text-[hsl(var(--muted-foreground))] block mb-1">👤 Profile *</label>
+                <select
+                  value={quickLinkForm.profileId}
+                  onChange={e => {
+                    const p = mergedProfiles.find(x => x.id === e.target.value);
+                    setQuickLinkForm(f => ({ ...f, profileId: e.target.value, label: p?.name || "" }));
+                  }}
+                  className="w-full h-8 px-2 text-xs rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
+                >
+                  <option value="">Select profile...</option>
+                  {unlinkedProfiles.map(p => (
+                    <option key={p.id} value={p.id}>{p.name || p.id.slice(0, 10)}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Card select */}
+              <div>
+                <label className="text-[10px] font-medium text-[hsl(var(--muted-foreground))] block mb-1">💳 Card *</label>
+                <select
+                  value={quickLinkForm.cardUuid}
+                  onChange={e => setQuickLinkForm(f => ({ ...f, cardUuid: e.target.value }))}
+                  className="w-full h-8 px-2 text-xs rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
+                >
+                  <option value="">Select card...</option>
+                  {lcCards.map(c => (
+                    <option key={c.uuid || c.id} value={c.uuid || c.id}>
+                      {c.label || c.name || `****${(c.card_number || "").slice(-4)}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Provider select */}
+              <div>
+                <label className="text-[10px] font-medium text-[hsl(var(--muted-foreground))] block mb-1">🌐 Provider</label>
+                <select
+                  value={quickLinkForm.provider}
+                  onChange={e => setQuickLinkForm(f => ({ ...f, provider: e.target.value }))}
+                  className="w-full h-8 px-2 text-xs rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
+                >
+                  <option value="">Auto (fallback)</option>
+                  <option value="nodemaven">NodeMaven</option>
+                  <option value="smartproxy">SmartProxy</option>
+                  <option value="soax">SOAX</option>
+                  <option value="brightdata">Bright Data</option>
+                </select>
+              </div>
+
+              {/* Link button */}
+              <div className="flex items-end">
+                <Button
+                  className="w-full h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={handleQuickLink}
+                  disabled={quickLinking || !quickLinkForm.profileId || !quickLinkForm.cardUuid}
+                >
+                  {quickLinking ? "⏳ Linking..." : "🔗 Validate & Link"}
+                </Button>
+              </div>
+            </div>
+            <p className="text-[10px] text-[hsl(var(--muted-foreground))] mt-2">
+              Auto-resolves proxy IP → runs IP quality pipeline (ASN + Fraud + Timezone) → assigns to MLX profile → saves to D1
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* ── Flash message ── */}
       {flash && (
