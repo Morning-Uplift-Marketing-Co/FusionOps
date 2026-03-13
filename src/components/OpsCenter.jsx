@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { THEME as T, REGISTRARS } from "../constants";
 import { uid, now } from "../utils";
 import { Dot } from "./ui/dot";
-import { Card } from "./ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { InputField as Inp } from "./ui/input-field";
@@ -472,6 +472,294 @@ function D1DatabaseTab() {
                         📊 Table: {selectedTable} ({tableData.length} rows)
                     </div>
                     <ResultTable data={tableData} />
+                </Card>
+            )}
+        </div>
+    );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   LinkManagerPanel — Link Profile + Card + Proxy
+   ═══════════════════════════════════════════════════════════════════════ */
+function LinkManagerPanel({ accounts = [], profiles = [], mlProfiles = [], lcCards = [], onRefresh, flash }) {
+    const [selectedProfile, setSelectedProfile] = useState("");
+    const [selectedCard, setSelectedCard] = useState("");
+    const [linking, setLinking] = useState(false);
+    const [linkResult, setLinkResult] = useState(null);
+    const [prelaunchId, setPrelaunchId] = useState(null);
+    const [prelaunchResult, setPrelaunchResult] = useState(null);
+
+    const allProfiles = Array.isArray(mlProfiles) ? mlProfiles : [];
+    const allCards = Array.isArray(lcCards) ? lcCards : [];
+
+    // Find linked accounts with full stack info
+    const linkedStacks = accounts.filter(a => a.profileId && a.cardUuid).map(a => {
+        const profile = profiles.find(p => p.id === a.profileId) || {};
+        const card = allCards.find(c => c.uuid === a.cardUuid);
+        return { ...a, profile, card };
+    });
+
+    const handleLink = async () => {
+        if (!selectedProfile || !selectedCard) return;
+        setLinking(true);
+        setLinkResult(null);
+        try {
+            const { profileLinker } = await import("../services/profile-linker.js");
+            const result = await profileLinker.linkProfileCardProxy({
+                accountId: accounts.find(a => a.cardUuid === selectedCard)?.id || `acc_${Date.now()}`,
+                profileId: selectedProfile,
+                cardUuid: selectedCard,
+            });
+            setLinkResult(result);
+            if (!result.error) {
+                flash?.("Link created successfully");
+                onRefresh?.();
+            }
+        } catch (e) {
+            setLinkResult({ error: e?.message || "Link failed" });
+        }
+        setLinking(false);
+    };
+
+    const handlePrelaunch = async (profileId) => {
+        setPrelaunchId(profileId);
+        setPrelaunchResult(null);
+        try {
+            const { profileLinker } = await import("../services/profile-linker.js");
+            const result = await profileLinker.prelaunchCheck(profileId);
+            setPrelaunchResult(result);
+        } catch (e) {
+            setPrelaunchResult({ error: e?.message });
+        }
+        setPrelaunchId(null);
+    };
+
+    const handleUnlink = async (accountId) => {
+        try {
+            const { profileLinker } = await import("../services/profile-linker.js");
+            await profileLinker.unlinkProfile(accountId);
+            flash?.("Unlinked successfully");
+            onRefresh?.();
+        } catch (e) {
+            flash?.("Unlink failed: " + e?.message);
+        }
+    };
+
+    const handleRotate = async (profileId) => {
+        try {
+            const { profileLinker } = await import("../services/profile-linker.js");
+            const result = await profileLinker.rotateProxy(profileId);
+            if (!result.error) {
+                flash?.("Proxy rotated — new IP assigned");
+                onRefresh?.();
+            } else {
+                flash?.(result.error);
+            }
+        } catch (e) {
+            flash?.("Rotate failed: " + e?.message);
+        }
+    };
+
+    return (
+        <Card style={{ marginTop: 16, padding: 0 }}>
+            <CardHeader style={{ padding: "12px 16px" }}>
+                <CardTitle style={{ fontSize: 13, fontWeight: 700 }}>Link Manager — Profile + Card + Proxy</CardTitle>
+            </CardHeader>
+            <CardContent style={{ padding: "0 16px 16px" }}>
+                {/* Link Form */}
+                <div style={{ display: "flex", gap: 8, alignItems: "end", marginBottom: 16, padding: 12, borderRadius: 8, border: "1px solid hsl(var(--border))", background: "hsl(var(--card))" }}>
+                    <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 10, color: "hsl(var(--muted-foreground))", marginBottom: 4, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Profile</div>
+                        <select value={selectedProfile} onChange={e => setSelectedProfile(e.target.value)} style={{ width: "100%", padding: "6px 8px", fontSize: 11, borderRadius: 6, border: "1px solid hsl(var(--border))", background: "hsl(var(--background))", color: "hsl(var(--foreground))" }}>
+                            <option value="">— Select Profile —</option>
+                            {allProfiles.map(p => <option key={p.uuid || p.id} value={p.uuid || p.id}>{p.name || p.label || p.uuid}</option>)}
+                        </select>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 10, color: "hsl(var(--muted-foreground))", marginBottom: 4, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Card</div>
+                        <select value={selectedCard} onChange={e => setSelectedCard(e.target.value)} style={{ width: "100%", padding: "6px 8px", fontSize: 11, borderRadius: 6, border: "1px solid hsl(var(--border))", background: "hsl(var(--background))", color: "hsl(var(--foreground))" }}>
+                            <option value="">— Select Card —</option>
+                            {allCards.map(c => <option key={c.uuid} value={c.uuid}>**** {c.card_last_4} ({c.status})</option>)}
+                        </select>
+                    </div>
+                    <Button onClick={handleLink} disabled={linking || !selectedProfile || !selectedCard} style={{ height: 32, fontSize: 11, whiteSpace: "nowrap" }}>
+                        {linking ? "Linking..." : "Validate & Link"}
+                    </Button>
+                </div>
+
+                {/* Link Result */}
+                {linkResult && (
+                    <div style={{ padding: 10, borderRadius: 8, marginBottom: 12, fontSize: 11, background: linkResult.error ? "rgba(239,68,68,0.08)" : "rgba(16,185,129,0.08)", border: `1px solid ${linkResult.error ? "rgba(239,68,68,0.2)" : "rgba(16,185,129,0.2)"}`, color: linkResult.error ? "hsl(var(--destructive))" : "hsl(var(--success))" }}>
+                        {linkResult.error || `Linked — IP: ${linkResult.ip || "?"} | Trust: ${linkResult.trustScore || "?"} | Provider: ${linkResult.provider || "?"}`}
+                    </div>
+                )}
+
+                {/* Pre-launch Result */}
+                {prelaunchResult && (
+                    <div style={{ padding: 10, borderRadius: 8, marginBottom: 12, fontSize: 11, background: prelaunchResult.error || prelaunchResult.verdict === "REJECT" ? "rgba(239,68,68,0.08)" : "rgba(16,185,129,0.08)", border: `1px solid ${prelaunchResult.error || prelaunchResult.verdict === "REJECT" ? "rgba(239,68,68,0.2)" : "rgba(16,185,129,0.2)"}` }}>
+                        <strong>Pre-launch:</strong> {prelaunchResult.error || `${prelaunchResult.verdict} — Score: ${prelaunchResult.score || "?"}`}
+                    </div>
+                )}
+
+                {/* Linked Stacks Table */}
+                {linkedStacks.length > 0 && (
+                    <div style={{ overflowX: "auto" }}>
+                        <table style={{ width: "100%", fontSize: 11, borderCollapse: "collapse" }}>
+                            <thead>
+                                <tr style={{ borderBottom: "1px solid hsl(var(--border))" }}>
+                                    <th style={{ textAlign: "left", padding: "6px 8px", fontSize: 10, color: "hsl(var(--muted-foreground))", fontWeight: 600 }}>Account</th>
+                                    <th style={{ textAlign: "left", padding: "6px 8px", fontSize: 10, color: "hsl(var(--muted-foreground))", fontWeight: 600 }}>Profile</th>
+                                    <th style={{ textAlign: "left", padding: "6px 8px", fontSize: 10, color: "hsl(var(--muted-foreground))", fontWeight: 600 }}>Card</th>
+                                    <th style={{ textAlign: "left", padding: "6px 8px", fontSize: 10, color: "hsl(var(--muted-foreground))", fontWeight: 600 }}>Proxy IP</th>
+                                    <th style={{ textAlign: "center", padding: "6px 8px", fontSize: 10, color: "hsl(var(--muted-foreground))", fontWeight: 600 }}>Trust</th>
+                                    <th style={{ textAlign: "left", padding: "6px 8px", fontSize: 10, color: "hsl(var(--muted-foreground))", fontWeight: 600 }}>Provider</th>
+                                    <th style={{ textAlign: "right", padding: "6px 8px", fontSize: 10, color: "hsl(var(--muted-foreground))", fontWeight: 600 }}>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {linkedStacks.map(s => (
+                                    <tr key={s.id} style={{ borderBottom: "1px solid hsl(var(--border))" }}>
+                                        <td style={{ padding: "8px", fontWeight: 600 }}>{s.label || s.id?.slice(0, 8)}</td>
+                                        <td style={{ padding: "8px", color: "hsl(var(--muted-foreground))" }}>{s.profile?.name || s.profileId?.slice(0, 12) || "—"}</td>
+                                        <td style={{ padding: "8px", fontFamily: "monospace", fontSize: 10 }}>
+                                            {s.card ? `**** ${s.card.card_last_4}` : "—"}
+                                        </td>
+                                        <td style={{ padding: "8px", fontFamily: "monospace", fontSize: 10 }}>{s.proxyIp || s.profile?.last_ip || "—"}</td>
+                                        <td style={{ padding: "8px", textAlign: "center", fontWeight: 700, color: (s.profile?.last_trust_score || 0) >= 70 ? "rgb(16,185,129)" : (s.profile?.last_trust_score || 0) >= 40 ? "rgb(245,158,11)" : "rgb(239,68,68)" }}>
+                                            {s.profile?.last_trust_score || "—"}
+                                        </td>
+                                        <td style={{ padding: "8px", fontSize: 10 }}>{s.profile?.proxy_provider || "—"}</td>
+                                        <td style={{ padding: "8px", textAlign: "right" }}>
+                                            <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
+                                                <button
+                                                    onClick={() => handlePrelaunch(s.profileId)}
+                                                    disabled={!!prelaunchId}
+                                                    style={{ padding: "3px 8px", fontSize: 10, borderRadius: 4, border: "1px solid hsl(var(--border))", background: "transparent", color: "hsl(var(--foreground))", cursor: "pointer" }}
+                                                >{prelaunchId === s.profileId ? "..." : "Pre-launch"}</button>
+                                                <button
+                                                    onClick={() => handleRotate(s.profileId)}
+                                                    style={{ padding: "3px 8px", fontSize: 10, borderRadius: 4, border: "1px solid hsl(var(--border))", background: "transparent", color: "hsl(var(--foreground))", cursor: "pointer" }}
+                                                >Rotate IP</button>
+                                                <button
+                                                    onClick={() => handleUnlink(s.id)}
+                                                    style={{ padding: "3px 8px", fontSize: 10, borderRadius: 4, border: "1px solid rgba(239,68,68,0.3)", background: "transparent", color: "rgb(239,68,68)", cursor: "pointer" }}
+                                                >Unlink</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+
+                {linkedStacks.length === 0 && (
+                    <div style={{ textAlign: "center", padding: 20, color: "hsl(var(--muted-foreground))", fontSize: 12 }}>
+                        No linked stacks yet. Select a Profile + Card above to create a link.
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   AuditLogPanel — Link Audit Timeline from ops_link_audit
+   ═══════════════════════════════════════════════════════════════════════ */
+function AuditLogPanel({ logs = [] }) {
+    const [auditLogs, setAuditLogs] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [filterAction, setFilterAction] = useState("all");
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const { d1Service } = await import("../services/d1.js");
+                const rows = await d1Service.query("SELECT * FROM ops_link_audit ORDER BY created_at DESC LIMIT 100");
+                if (rows && Array.isArray(rows)) {
+                    setAuditLogs(rows);
+                }
+            } catch (e) {
+                console.warn("[AuditLog] D1 query failed, using local logs:", e?.message);
+            }
+            setLoading(false);
+        })();
+    }, []);
+
+    const actionColors = {
+        link: { bg: "rgba(16,185,129,0.08)", border: "rgba(16,185,129,0.2)", color: "rgb(16,185,129)", icon: "+" },
+        unlink: { bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.2)", color: "rgb(239,68,68)", icon: "-" },
+        rotate: { bg: "rgba(59,130,246,0.08)", border: "rgba(59,130,246,0.2)", color: "rgb(59,130,246)", icon: "~" },
+        prelaunch_pass: { bg: "rgba(16,185,129,0.08)", border: "rgba(16,185,129,0.2)", color: "rgb(16,185,129)", icon: ">" },
+        prelaunch_fail: { bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.2)", color: "rgb(239,68,68)", icon: "!" },
+    };
+
+    const getActionStyle = (action) => actionColors[action] || { bg: "rgba(100,100,100,0.08)", border: "rgba(100,100,100,0.2)", color: "hsl(var(--muted-foreground))", icon: "?" };
+
+    // Merge D1 audit logs with local logs
+    const allLogs = [
+        ...auditLogs.map(a => ({
+            id: a.id,
+            type: "audit",
+            action: a.action,
+            msg: `${a.action} — Profile: ${a.profile_id?.slice(0, 8) || "?"} | IP: ${a.proxy_ip || "?"} | Score: ${a.trust_score || "?"}`,
+            details: a.details,
+            ts: a.created_at,
+            trustScore: a.trust_score,
+            proxyIp: a.proxy_ip,
+            provider: a.proxy_provider,
+        })),
+        ...logs.map(l => ({ ...l, type: "local", action: "info" })),
+    ].sort((a, b) => new Date(b.ts || b.created_at) - new Date(a.ts || a.created_at));
+
+    const filtered = filterAction === "all" ? allLogs : allLogs.filter(l => l.action === filterAction);
+
+    return (
+        <div>
+            {/* Filter */}
+            <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+                {["all", "link", "unlink", "rotate", "prelaunch_pass", "prelaunch_fail"].map(f => (
+                    <button
+                        key={f}
+                        onClick={() => setFilterAction(f)}
+                        style={{
+                            padding: "4px 10px", fontSize: 10, borderRadius: 6, cursor: "pointer",
+                            border: `1px solid ${filterAction === f ? "hsl(var(--accent))" : "hsl(var(--border))"}`,
+                            background: filterAction === f ? "hsl(var(--accent)/.1)" : "transparent",
+                            color: filterAction === f ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))",
+                        }}
+                    >{f === "all" ? "All" : f.replace("_", " ")}</button>
+                ))}
+            </div>
+
+            {loading ? (
+                <Card style={{ textAlign: "center", padding: 40, color: "hsl(var(--muted-foreground))" }}>Loading audit logs...</Card>
+            ) : filtered.length === 0 ? (
+                <Card style={{ textAlign: "center", padding: 40, color: "hsl(var(--muted-foreground))" }}>No activity yet</Card>
+            ) : (
+                <Card style={{ padding: 0 }}>
+                    {filtered.slice(0, 100).map(log => {
+                        const style = getActionStyle(log.action);
+                        return (
+                            <div key={log.id} style={{ padding: "8px 12px", borderBottom: "1px solid hsl(var(--border))", display: "flex", alignItems: "center", gap: 10 }}>
+                                <span style={{ width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, background: style.bg, border: `1px solid ${style.border}`, color: style.color, flexShrink: 0 }}>
+                                    {style.icon}
+                                </span>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontSize: 11, color: "hsl(var(--foreground))" }}>{log.msg}</div>
+                                    {log.details && <div style={{ fontSize: 10, color: "hsl(var(--muted-foreground))", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{log.details}</div>}
+                                </div>
+                                {log.trustScore != null && log.trustScore > 0 && (
+                                    <span style={{ fontFamily: "monospace", fontSize: 11, fontWeight: 700, color: log.trustScore >= 70 ? "rgb(16,185,129)" : log.trustScore >= 40 ? "rgb(245,158,11)" : "rgb(239,68,68)" }}>
+                                        {log.trustScore}
+                                    </span>
+                                )}
+                                <span style={{ fontSize: 10, color: "hsl(var(--muted-foreground))", whiteSpace: "nowrap", flexShrink: 0 }}>
+                                    {log.ts ? new Date(log.ts).toLocaleString() : ""}
+                                </span>
+                            </div>
+                        );
+                    })}
                 </Card>
             )}
         </div>
@@ -1686,6 +1974,16 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                         })}
                 </div>
 
+                {/* ─── Link Manager: Profile + Card + Proxy ─────────────────────── */}
+                <LinkManagerPanel
+                    accounts={data.accounts}
+                    profiles={data.profiles}
+                    mlProfiles={mlProfiles}
+                    lcCards={lcCards}
+                    onRefresh={() => { /* data refresh handled by parent */ }}
+                    flash={flash}
+                />
+
                 {/* ─── Add Account Modal (Task 9) ─────────────────────── */}
                 {modal === "account" && (() => {
                     const cardOptions = lcCards.map(c => ({
@@ -2501,20 +2799,7 @@ export function OpsCenter({ data, add, del, upd, settings }) {
             {/* ═══════════════════════════════════════════════════════════
                 TAB: LOGS
                 ═══════════════════════════════════════════════════════════ */}
-            {
-                tab === "logs" && (
-                    data.logs.length === 0
-                        ? <Card style={{ textAlign: "center", padding: 40, color: T.dim }}>No activity yet</Card>
-                        : <Card style={{ padding: 12 }}>
-                            {data.logs.slice(0, 50).map(log => (
-                                <div key={log.id} style={{ padding: "5px 8px", borderBottom: `1px solid ${T.border}`, fontSize: 12, display: "flex", justifyContent: "space-between" }}>
-                                    <span style={{ color: T.muted }}>{log.msg}</span>
-                                    <span style={{ color: T.dim, fontSize: 10 }}>{new Date(log.ts).toLocaleString()}</span>
-                                </div>
-                            ))}
-                        </Card>
-                )
-            }
+            {tab === "logs" && <AuditLogPanel logs={data.logs} />}
 
             {/* ═══════════════════════════════════════════════════════════
                 MODAL: ACCOUNT CREATION WIZARD (Task 11)
