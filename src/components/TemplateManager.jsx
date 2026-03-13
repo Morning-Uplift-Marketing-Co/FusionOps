@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { THEME as T } from "../constants";
 import { api } from "../services/api";
 import { getAllTemplatesAsync, getTemplateDiagnostics, hideBuiltinTemplate } from "../utils/template-registry";
 
+/* ── Quality validation (unchanged business logic) ── */
 function validateTemplateQuality(template) {
   const files = typeof template.files === "object" && template.files ? template.files : {};
   const sourceCode = String(template.source_code || template.sourceCode || "");
@@ -17,43 +17,51 @@ function validateTemplateQuality(template) {
   const hasExpressionLeak = /\{\s*noindex\s*\?|\{\s*[a-zA-Z_$][\w$]*\s*&&\s*\(/.test(combined);
   const hasCalculator = /calculator|monthly payment|calcMonthly|loanAmount|payment estimate/i.test(combined);
   const hasAprCompare = /representative apr|apr range|<table[\s\S]*apr|term[\s\S]*apr/i.test(combined);
-  const bannedPatterns = [
-    /guaranteed approval/i,
-    /guaranteed loan/i,
-    /100%\s*approval/i,
-    /everyone approved/i,
-    /instant cash now/i,
-    /free money/i,
-    /zero risk/i,
-  ];
+  const bannedPatterns = [/guaranteed approval/i, /guaranteed loan/i, /100%\s*approval/i, /everyone approved/i, /instant cash now/i, /free money/i, /zero risk/i];
   const matchedBanned = bannedPatterns.filter((p) => p.test(combined)).map((p) => p.toString());
   const blocking = [];
   const warnings = [];
   if (!entryOk) blocking.push("Missing template entry (index.astro or index.html).");
-  if (!pixelMarker) blocking.push("Missing first-party pixel marker (sendBeacon / t.domain/e).");
-  if (hasExpressionLeak) blocking.push("Potential Astro expression leak detected ({title}/{...&&(...)}).");
-  if (matchedBanned.length > 0) blocking.push(`Policy-risk copy detected: ${matchedBanned.join(", ")}`);
+  if (!pixelMarker) blocking.push("Missing first-party pixel marker.");
+  if (hasExpressionLeak) blocking.push("Potential Astro expression leak detected.");
+  if (matchedBanned.length > 0) blocking.push(`Policy-risk copy: ${matchedBanned.join(", ")}`);
   if (/(installment|loan|pdl|pet-care)/i.test(category)) {
-    if (!hasCalculator) blocking.push("Missing Payment Calculator section for loan template.");
-    if (!hasAprCompare) blocking.push("Missing APR Compare/Representative APR section for loan template.");
+    if (!hasCalculator) blocking.push("Missing Payment Calculator for loan template.");
+    if (!hasAprCompare) blocking.push("Missing APR Compare section for loan template.");
   }
-  if (!hasViewport) warnings.push("Viewport meta not detected (mobile UX risk).");
-  if (!hasPrimaryToken) warnings.push("Primary color token not detected (--color-primary / var(--primary)).");
+  if (!hasViewport) warnings.push("Viewport meta not detected.");
+  if (!hasPrimaryToken) warnings.push("Primary color token not detected.");
   if (!trackingMarker) warnings.push("Google Ads tracking markers not detected.");
-  return {
-    pass: blocking.length === 0,
-    blocking,
-    warnings,
-  };
+  return { pass: blocking.length === 0, blocking, warnings };
 }
 
 function toDate(ts) {
   if (!ts) return "-";
   const d = new Date(ts);
   if (Number.isNaN(d.getTime())) return String(ts);
-  return d.toLocaleString();
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
+/* ── Config ── */
+const CATS = {
+  loan:        { grad: "from-indigo-600 to-purple-700", icon: "\ud83d\udcb0", label: "Loan" },
+  pet:         { grad: "from-emerald-600 to-teal-700",  icon: "\ud83d\udc3e", label: "Pet" },
+  "pet-care":  { grad: "from-emerald-600 to-teal-700",  icon: "\ud83d\udc3e", label: "Pet" },
+  custom:      { grad: "from-amber-600 to-orange-700",  icon: "\ud83c\udfa8", label: "Custom" },
+  general:     { grad: "from-slate-600 to-gray-700",    icon: "\ud83d\udcc4", label: "General" },
+  installment: { grad: "from-indigo-600 to-purple-700", icon: "\ud83d\udcb3", label: "Installment" },
+};
+const catOf = (t) => CATS[String(t.category || "").toLowerCase()] || CATS.general;
+
+const STAT = {
+  active:     { cls: "text-emerald-400", dot: "bg-emerald-400", label: "Active" },
+  draft:      { cls: "text-yellow-400",  dot: "bg-yellow-400",  label: "Draft" },
+  deprecated: { cls: "text-orange-400",  dot: "bg-orange-400",  label: "Deprecated" },
+  archived:   { cls: "text-gray-500",    dot: "bg-gray-500",    label: "Archived" },
+};
+const statOf = (s) => STAT[s] || STAT.draft;
+
+/* ── Main Component ── */
 export function TemplateManager({ sites = [], notify, onDefaultTemplateChange }) {
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -68,62 +76,34 @@ export function TemplateManager({ sites = [], notify, onDefaultTemplateChange })
   const [defaultTemplateId, setDefaultTemplateId] = useState("classic");
   const [publishing, setPublishing] = useState(false);
 
+  /* ── Data loading ── */
   const loadAll = async () => {
     setLoading(true);
     try {
-      const [allTemplates, defaultRes] = await Promise.all([
-        getAllTemplatesAsync(),
-        api.get("/templates/default"),
-      ]);
+      const [allTemplates, defaultRes] = await Promise.all([getAllTemplatesAsync(), api.get("/templates/default")]);
       setTemplates(allTemplates || []);
       if (defaultRes?.templateId) setDefaultTemplateId(defaultRes.templateId);
-      if (!selectedId && allTemplates?.length) {
-        setSelectedId(allTemplates[0].dbId || allTemplates[0].id);
-      }
-    } finally {
-      setLoading(false);
-    }
+      if (!selectedId && allTemplates?.length) setSelectedId(allTemplates[0].dbId || allTemplates[0].id);
+    } finally { setLoading(false); }
   };
+  useEffect(() => { loadAll(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const selected = useMemo(() => templates.find((t) => (t.dbId || t.id) === selectedId) || null, [templates, selectedId]);
 
   useEffect(() => {
-    loadAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const selected = useMemo(() => {
-    return templates.find((t) => (t.dbId || t.id) === selectedId) || null;
-  }, [templates, selectedId]);
-
-  useEffect(() => {
-    const loadMeta = async () => {
-      if (!selected?.dbId) {
-        setUsage({ usageCount: 0, sites: [] });
-        setVersions([]);
-        return;
-      }
-      const [u, v] = await Promise.all([
-        api.get(`/templates/${selected.dbId}/usage`),
-        api.get(`/templates/${selected.dbId}/versions`),
-      ]);
+    if (!selected?.dbId) { setUsage({ usageCount: 0, sites: [] }); setVersions([]); return; }
+    Promise.all([api.get(`/templates/${selected.dbId}/usage`), api.get(`/templates/${selected.dbId}/versions`)]).then(([u, v]) => {
       setUsage({ usageCount: u?.usageCount || 0, sites: u?.sites || [] });
       setVersions(v?.versions || []);
-    };
-    loadMeta();
+    });
   }, [selected?.dbId]);
 
-  const mergedTemplates = useMemo(() => {
-    return (templates || []).map((t) => {
-      const id = t.dbId || t.id;
-      const siteUsage = sites.filter((s) => String(s.templateId || "") === String(t.id || t.template_id || "")).length;
-      return {
-        ...t,
-        _id: id,
-        _source: t.source || (t.dbId ? "api" : "module"),
-        _status: t.status || (t.source === "api" ? "draft" : "active"),
-        _usage: Number(t.usage_count || siteUsage || 0),
-      };
-    });
-  }, [templates, sites]);
+  /* ── Derived data ── */
+  const mergedTemplates = useMemo(() => (templates || []).map((t) => {
+    const id = t.dbId || t.id;
+    const siteUsage = sites.filter((s) => String(s.templateId || "") === String(t.id || t.template_id || "")).length;
+    return { ...t, _id: id, _source: t.source || (t.dbId ? "api" : "module"), _status: t.status || (t.source === "api" ? "draft" : "active"), _usage: Number(t.usage_count || siteUsage || 0) };
+  }), [templates, sites]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -133,7 +113,6 @@ export function TemplateManager({ sites = [], notify, onDefaultTemplateChange })
       if (!q) return true;
       return [t.name, t.id, t.template_id, t.description, t.category].some((v) => String(v || "").toLowerCase().includes(q));
     });
-
     list.sort((a, b) => {
       if (sortBy === "usage") return (b._usage || 0) - (a._usage || 0);
       if (sortBy === "name") return String(a.name || "").localeCompare(String(b.name || ""));
@@ -145,297 +124,356 @@ export function TemplateManager({ sites = [], notify, onDefaultTemplateChange })
   const wizardDiagnostics = useMemo(() => getTemplateDiagnostics(mergedTemplates, { filterId: "all" }), [mergedTemplates]);
   const hiddenReasonsById = useMemo(() => {
     const map = new Map();
-    for (const item of wizardDiagnostics.hidden || []) {
-      map.set(item.id, item.reasons.join(" | "));
-    }
+    for (const item of wizardDiagnostics.hidden || []) map.set(item.id, item.reasons.join(" | "));
     return map;
   }, [wizardDiagnostics.hidden]);
 
   const selectedQuality = useMemo(() => validateTemplateQuality(selected || {}), [selected]);
 
+  /* ── Actions (unchanged logic) ── */
   const updateStatus = async (status) => {
     if (!selected?.dbId) return;
     const res = await api.put(`/templates/${selected.dbId}`, { status });
     if (res?.error) return notify?.(res.error, "danger");
-    notify?.(`Template status -> ${status}`, "success");
+    notify?.(`Status -> ${status}`, "success");
     await loadAll();
   };
-
   const createVersion = async () => {
     if (!selected?.dbId) return;
-    const note = window.prompt("Version note (optional):", "Manual snapshot") || "Manual snapshot";
+    const note = window.prompt("Version note:", "Manual snapshot") || "Manual snapshot";
     const res = await api.put(`/templates/${selected.dbId}`, { createVersion: true, note });
     if (res?.error) return notify?.(res.error, "danger");
-    notify?.(`Created version v${res.versionNumber || "?"}`, "success");
+    notify?.(`Created v${res.versionNumber || "?"}`, "success");
     await loadAll();
   };
-
   const publish = async (version = null) => {
     if (!selected?.dbId) return;
-    if (!selectedQuality.pass) {
-      notify?.("Publish blocked: fix critical validation errors first.", "danger");
-      return;
-    }
+    if (!selectedQuality.pass) { notify?.("Publish blocked: fix critical errors first.", "danger"); return; }
     setPublishing(true);
     let res;
-    try {
-      res = await api.post(`/templates/${selected.dbId}/publish`, version ? { version } : {});
-    } finally {
-      setPublishing(false);
-    }
+    try { res = await api.post(`/templates/${selected.dbId}/publish`, version ? { version } : {}); } finally { setPublishing(false); }
     if (res?.error) {
-      const backendBlocking = Array.isArray(res?.quality?.blocking) ? res.quality.blocking : [];
-      if (backendBlocking.length > 0) {
-        return notify?.(`${res.error}: ${backendBlocking.join(" | ")}`, "danger");
-      }
-      return notify?.(res.error, "danger");
+      const bb = Array.isArray(res?.quality?.blocking) ? res.quality.blocking : [];
+      return notify?.(bb.length ? `${res.error}: ${bb.join(" | ")}` : res.error, "danger");
     }
-    notify?.(`Published template${version ? ` v${version}` : ""}`, "success");
+    notify?.(`Published${version ? ` v${version}` : ""}`, "success");
     await loadAll();
   };
-
   const rollback = async (version) => {
     if (!selected?.dbId || !version) return;
-    const ok = window.confirm(`Rollback to v${version}?`);
-    if (!ok) return;
+    if (!window.confirm(`Rollback to v${version}?`)) return;
     const res = await api.post(`/templates/${selected.dbId}/rollback`, { version });
     if (res?.error) return notify?.(res.error, "danger");
     notify?.(`Rolled back to v${version}`, "success");
     await loadAll();
   };
-
   const softDelete = async () => {
     if (!selected?.dbId) return;
-    if (!window.confirm(`Delete template "${selected.name}"?`)) return;
+    if (!window.confirm(`Delete "${selected.name}"?`)) return;
     const res = await api.del(`/templates/${selected.dbId}`);
     if (res?.error) return notify?.(res.error, "danger");
-    notify?.("Template deleted", "success");
+    notify?.("Deleted", "success");
+    setSelectedId("");
     await loadAll();
   };
-
   const hideBuiltin = () => {
     if (!selected) return;
-    if (!window.confirm(`Hide "${selected.name}" from all lists? (Can restore via browser console: localStorage.removeItem('lp_hidden_builtin_templates'))`)) return;
+    if (!window.confirm(`Hide "${selected.name}" from all lists?`)) return;
     hideBuiltinTemplate(selected.id);
-    notify?.(`Hidden "${selected.name}" from template lists`, "success");
+    notify?.(`Hidden "${selected.name}"`, "success");
     setSelectedId("");
     loadAll();
   };
-
   const saveDefault = async (templateId) => {
     const res = await api.put("/templates/default", { templateId });
     if (res?.error) return notify?.(res.error, "danger");
     setDefaultTemplateId(templateId);
     onDefaultTemplateChange?.(templateId);
-    notify?.(`Default template set: ${templateId}`, "success");
+    notify?.(`Default: ${templateId}`, "success");
   };
 
+  const panelOpen = !!selected;
+
+  /* ── Render ── */
   return (
-    <div>
-      {/* ── TOOLBAR ── */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginBottom: 14 }}>
-        <div style={{ fontWeight: 700, fontSize: 15, marginRight: 4 }}>
-          Templates <span style={{ color: T.muted, fontWeight: 400, fontSize: 12 }}>({filtered.length})</span>
+    <div className="flex flex-col h-full">
+      {/* ── HEADER ── */}
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <h1 className="text-xl font-bold text-[hsl(var(--foreground))]">Template Manager</h1>
+          <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">{filtered.length} templates available</p>
         </div>
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search..."
-          style={{ padding: "7px 12px", background: T.input, color: T.text, border: `1px solid ${T.border}`, borderRadius: 8, width: 180, fontSize: 13 }}
-        />
-        <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)} style={{ padding: "7px 10px", background: T.input, color: T.text, border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 12 }}>
-          <option value="all">All Sources</option>
-          <option value="module">Module</option>
-          <option value="legacy">Legacy</option>
-          <option value="api">API Custom</option>
-        </select>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ padding: "7px 10px", background: T.input, color: T.text, border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 12 }}>
-          <option value="all">All Status</option>
-          <option value="draft">Draft</option>
-          <option value="active">Active</option>
-          <option value="deprecated">Deprecated</option>
-          <option value="archived">Archived</option>
-        </select>
-        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} style={{ padding: "7px 10px", background: T.input, color: T.text, border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 12 }}>
-          <option value="newest">Newest</option>
-          <option value="usage">Most Used</option>
-          <option value="name">Name A–Z</option>
-        </select>
-        <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
-          {["grid", "list"].map((m) => (
-            <button key={m} onClick={() => setViewMode(m)} style={{ padding: "6px 12px", background: viewMode === m ? T.primary : T.card2, color: viewMode === m ? "#fff" : T.text, border: `1px solid ${viewMode === m ? T.primary : T.border}`, borderRadius: 8, cursor: "pointer", fontSize: 12 }}>
-              {m === "grid" ? "⊞ Grid" : "☰ List"}
+        <div className="flex gap-2">
+          <button onClick={loadAll} className="px-3 py-1.5 text-xs rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))] transition-colors">
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      {/* ── TOOLBAR ── */}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <div className="relative flex-1 min-w-[180px] max-w-[280px]">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(var(--muted-foreground))] text-sm pointer-events-none">&#x1F50D;</span>
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search templates..." className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:border-[hsl(var(--primary))] transition-colors" />
+        </div>
+        <Select value={sourceFilter} onChange={setSourceFilter} options={[["all","All Sources"],["module","Module"],["legacy","Legacy"],["api","Custom"]]} />
+        <Select value={statusFilter} onChange={setStatusFilter} options={[["all","All Status"],["active","Active"],["draft","Draft"],["deprecated","Deprecated"],["archived","Archived"]]} />
+        <Select value={sortBy} onChange={setSortBy} options={[["newest","Newest"],["usage","Most Used"],["name","A \u2013 Z"]]} />
+        <div className="ml-auto flex rounded-lg border border-[hsl(var(--border))] overflow-hidden">
+          {[["grid", "\u229e"], ["list", "\u2630"]].map(([m, icon]) => (
+            <button key={m} onClick={() => setViewMode(m)} className={`px-3 py-1.5 text-xs transition-colors ${viewMode === m ? "bg-[hsl(var(--primary))] text-white" : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))]"}`}>
+              {icon} {m[0].toUpperCase() + m.slice(1)}
             </button>
           ))}
         </div>
       </div>
 
-      {/* ── FULL TEMPLATE GRID ── */}
-      {loading && <div style={{ color: T.muted, padding: 20 }}>Loading templates...</div>}
-      {!loading && (
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: viewMode === "grid" ? "repeat(auto-fill, minmax(260px, 1fr))" : "1fr",
-          gap: viewMode === "grid" ? 10 : 6,
-        }}>
-          {filtered.map((tpl) => {
-            const isSelected = selectedId === tpl._id;
-            const isDefault = defaultTemplateId === (tpl.id || tpl.template_id);
-            const hiddenHint = hiddenReasonsById.get(tpl.id);
-            const isBroken = tpl.health?.usable === false;
-            return (
-              <button
-                key={tpl._id}
-                onClick={() => setSelectedId(isSelected ? "" : tpl._id)}
-                style={{
-                  textAlign: "left",
-                  background: isSelected ? `${T.primary}18` : T.card,
-                  border: `1.5px solid ${isSelected ? T.primary : isBroken ? T.danger : T.border}`,
-                  borderRadius: 10,
-                  padding: viewMode === "grid" ? "12px 14px" : "9px 12px",
-                  color: T.text,
-                  cursor: "pointer",
-                  transition: "border-color .15s",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6 }}>
-                  <b style={{ fontSize: 13, lineHeight: 1.3 }}>{tpl.name || tpl.id}</b>
-                  <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
-                    {isDefault && <span style={{ fontSize: 9, background: T.success, color: "#fff", borderRadius: 4, padding: "2px 5px", fontWeight: 700 }}>DEFAULT</span>}
-                    {isBroken && <span style={{ fontSize: 9, background: T.danger, color: "#fff", borderRadius: 4, padding: "2px 5px", fontWeight: 700 }}>BROKEN</span>}
-                    {tpl.badge && <span style={{ fontSize: 9, background: `${T.primary}22`, color: T.primary, borderRadius: 4, padding: "2px 5px", fontWeight: 700 }}>{tpl.badge}</span>}
-                  </div>
-                </div>
-                <div style={{ fontSize: 11, color: T.muted, marginTop: 3 }}>{tpl.id || tpl.template_id}</div>
-                <div style={{ marginTop: 6, display: "flex", flexWrap: "wrap", gap: "3px 10px", fontSize: 10, color: T.muted }}>
-                  <span>{tpl._source}</span>
-                  <span>·</span>
-                  <span style={{ color: tpl._status === "active" ? T.success : T.muted }}>{tpl._status}</span>
-                  <span>·</span>
-                  <span>Usage: {tpl._usage}</span>
-                  {tpl.category && <><span>·</span><span>{tpl.category}</span></>}
-                </div>
-                {hiddenHint && (
-                  <div style={{ marginTop: 5, fontSize: 10, color: T.warning, lineHeight: 1.3 }}>⚠ {hiddenHint}</div>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* ── DETAIL PANEL (inline below selected card) ── */}
-      {selected && (
-        <div style={{ marginTop: 16, background: T.card, border: `1px solid ${T.border}`, borderRadius: 12, padding: 18 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 8, marginBottom: 14 }}>
-            <div>
-              <div style={{ fontSize: 18, fontWeight: 800 }}>{selected.name || selected.id}</div>
-              <div style={{ color: T.muted, fontSize: 12, marginTop: 3 }}>
-                {selected.id || selected.template_id} · {selected.sourceResolved || selected.source || "module"} · {selected.status || "active"} · {selected.componentSource?.label || "Internal"} ({selected.componentSource?.tier || "free"})
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <button onClick={() => saveDefault(selected.id || selected.template_id)} style={{ padding: "7px 12px", background: defaultTemplateId === (selected.id || selected.template_id) ? T.success : T.primary, color: "#fff", border: 0, borderRadius: 8, cursor: "pointer", fontSize: 12 }}>
-                {defaultTemplateId === (selected.id || selected.template_id) ? "✓ Default" : "Set Default"}
-              </button>
-              <button onClick={() => setSelectedId("")} style={{ ...btnGhost, padding: "7px 10px" }}>✕ Close</button>
-            </div>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 14 }}>
-            <Stat label="Usage Impact" value={`${usage.usageCount || selected.usage_count || 0} sites`} />
-            <Stat label="Current Version" value={`v${selected.current_version || 1}`} />
-            <Stat label="Updated" value={toDate(selected.updated_at || selected.created_at)} />
-          </div>
-
-          <div style={{ padding: 12, border: `1px solid ${selectedQuality.pass ? T.success : T.danger}`, borderRadius: 8, background: selectedQuality.pass ? "rgba(16,185,129,.08)" : "rgba(239,68,68,.08)", marginBottom: 12 }}>
-            <div style={{ fontWeight: 700, marginBottom: 6, fontSize: 13 }}>Quality Gate {selectedQuality.pass ? "✓ Pass" : "✗ Fail"}</div>
-            {selectedQuality.blocking.map((x) => <div key={x} style={{ color: T.danger, fontSize: 12 }}>- {x}</div>)}
-            {selectedQuality.warnings.map((x) => <div key={x} style={{ color: T.warning, fontSize: 12 }}>- {x}</div>)}
-            {selectedQuality.pass && selectedQuality.warnings.length === 0 && <div style={{ color: T.success, fontSize: 12 }}>All checks passed.</div>}
-          </div>
-
-          <div style={{ fontSize: 12, color: T.muted, marginBottom: 10 }}>
-            Registry: {selected.registryPath || "n/a"}
-            {selected.collisionReason ? ` · Collision: ${selected.collisionReason}` : ""}
-            {hiddenReasonsById.get(selected.id) ? ` · ⚠ Wizard excluded: ${hiddenReasonsById.get(selected.id)}` : ""}
-          </div>
-
-          {selected.dbId ? (
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
-              <button onClick={() => updateStatus("draft")} style={btnGhost}>Draft</button>
-              <button onClick={() => updateStatus("active")} style={btnGhost}>Active</button>
-              <button onClick={() => updateStatus("deprecated")} style={btnGhost}>Deprecated</button>
-              <button onClick={() => updateStatus("archived")} style={btnGhost}>Archived</button>
-              <button onClick={createVersion} style={btnGhost}>Create Version</button>
-              <button onClick={() => publish(null)} disabled={publishing} style={{ ...btnPrimary, opacity: publishing ? 0.6 : 1 }}>Publish</button>
-              <button onClick={softDelete} style={{ ...btnGhost, borderColor: T.danger, color: T.danger }}>Delete</button>
-            </div>
-          ) : (
-            <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16 }}>
-              <span style={{ fontSize: 12, color: T.muted }}>Built-in template — cannot delete from DB</span>
-              <button onClick={hideBuiltin} style={{ ...btnGhost, borderColor: T.warning, color: T.warning }}>Hide from Lists</button>
+      {/* ── CONTENT AREA (grid + optional side panel) ── */}
+      <div className="flex gap-4 flex-1 min-h-0">
+        {/* Grid / List */}
+        <div className={`flex-1 overflow-y-auto pr-1 ${panelOpen ? "max-w-[calc(100%-380px)]" : ""}`}>
+          {loading && <div className="text-[hsl(var(--muted-foreground))] text-sm py-10 text-center">Loading templates...</div>}
+          {!loading && filtered.length === 0 && <div className="text-[hsl(var(--muted-foreground))] text-sm py-10 text-center">No templates match your filters.</div>}
+          {!loading && viewMode === "grid" && (
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
+              {filtered.map((tpl) => <TemplateCard key={tpl._id} tpl={tpl} selected={selectedId === tpl._id} defaultId={defaultTemplateId} hiddenHint={hiddenReasonsById.get(tpl.id)} quality={validateTemplateQuality(tpl)} onClick={() => setSelectedId(selectedId === tpl._id ? "" : tpl._id)} />)}
             </div>
           )}
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>Version History</div>
-              {!selected.dbId && <div style={{ color: T.muted, fontSize: 12 }}>Built-in: not editable.</div>}
-              {selected.dbId && versions.length === 0 && <div style={{ color: T.muted, fontSize: 12 }}>No versions yet.</div>}
-              {selected.dbId && versions.map((v) => (
-                <div key={v.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 10px", border: `1px solid ${T.border}`, borderRadius: 8, marginBottom: 6, background: T.card2 }}>
-                  <div>
-                    <div style={{ fontSize: 12, fontWeight: 700 }}>v{v.version_number} {Number(v.version_number) === Number(selected.current_version || 1) ? "(current)" : ""}</div>
-                    <div style={{ fontSize: 11, color: T.muted }}>{v.note || "No note"} · {toDate(v.created_at)}</div>
-                  </div>
-                  <div style={{ display: "flex", gap: 4 }}>
-                    <button onClick={() => publish(v.version_number)} style={btnGhost}>Publish</button>
-                    <button onClick={() => rollback(v.version_number)} style={btnGhost}>Rollback</button>
-                  </div>
-                </div>
-              ))}
+          {!loading && viewMode === "list" && (
+            <div className="flex flex-col gap-1.5">
+              {filtered.map((tpl) => <TemplateRow key={tpl._id} tpl={tpl} selected={selectedId === tpl._id} defaultId={defaultTemplateId} quality={validateTemplateQuality(tpl)} onClick={() => setSelectedId(selectedId === tpl._id ? "" : tpl._id)} />)}
             </div>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>Usage Detail</div>
-              {(usage.sites || []).length === 0 && <div style={{ color: T.muted, fontSize: 12 }}>No active site references.</div>}
-              {(usage.sites || []).map((s) => (
-                <div key={s.siteId} style={{ fontSize: 12, padding: "5px 0", borderBottom: `1px solid ${T.border}` }}>
-                  <b>{s.brand || s.siteId}</b> <span style={{ color: T.muted }}>({s.domain || "-"})</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          )}
         </div>
-      )}
+
+        {/* Side Panel */}
+        {panelOpen && (
+          <div className="w-[360px] shrink-0 border-l border-[hsl(var(--border))] bg-[hsl(var(--card))] rounded-xl overflow-y-auto" style={{ maxHeight: "calc(100vh - 200px)" }}>
+            <SidePanel
+              tpl={selected} quality={selectedQuality} usage={usage} versions={versions}
+              defaultId={defaultTemplateId} publishing={publishing}
+              hiddenHint={hiddenReasonsById.get(selected?.id)}
+              onClose={() => setSelectedId("")}
+              onSetDefault={() => saveDefault(selected.id || selected.template_id)}
+              onUpdateStatus={updateStatus} onCreateVersion={createVersion}
+              onPublish={publish} onRollback={rollback}
+              onDelete={selected.dbId ? softDelete : hideBuiltin}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-function Stat({ label, value }) {
+/* ── Select dropdown ── */
+function Select({ value, onChange, options }) {
   return (
-    <div style={{ background: T.card2, border: `1px solid ${T.border}`, borderRadius: 8, padding: 10 }}>
-      <div style={{ fontSize: 10, color: T.muted }}>{label}</div>
-      <div style={{ fontSize: 14, fontWeight: 700 }}>{value}</div>
+    <select value={value} onChange={(e) => onChange(e.target.value)} className="px-2.5 py-2 text-xs rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-[hsl(var(--foreground))] focus:outline-none focus:border-[hsl(var(--primary))] transition-colors cursor-pointer">
+      {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+    </select>
+  );
+}
+
+/* ── Template Card (Grid) ── */
+function TemplateCard({ tpl, selected, defaultId, hiddenHint, quality, onClick }) {
+  const cat = catOf(tpl);
+  const st = statOf(tpl._status);
+  const isDefault = defaultId === (tpl.id || tpl.template_id);
+  const isBroken = tpl.health?.usable === false;
+  return (
+    <button onClick={onClick} className={`text-left rounded-xl border transition-all duration-200 overflow-hidden group hover:shadow-lg hover:shadow-black/20 ${selected ? "border-[hsl(var(--primary))] ring-1 ring-[hsl(var(--primary))]/30" : isBroken ? "border-red-500/50" : "border-[hsl(var(--border))] hover:border-[hsl(var(--primary))]/50"}`}>
+      {/* Gradient header */}
+      <div className={`h-20 bg-gradient-to-br ${cat.grad} flex items-center justify-center relative overflow-hidden`}>
+        <span className="text-3xl opacity-80 group-hover:scale-110 transition-transform duration-300">{cat.icon}</span>
+        {/* Quality indicator */}
+        <span className={`absolute top-2 right-2 w-2 h-2 rounded-full ${quality.pass ? "bg-emerald-400" : "bg-red-400"}`} title={quality.pass ? "Quality: Pass" : "Quality: Fail"} />
+        {isDefault && <span className="absolute top-2 left-2 text-[9px] font-bold bg-white/20 backdrop-blur-sm text-white px-1.5 py-0.5 rounded">DEFAULT</span>}
+        {isBroken && <span className="absolute bottom-2 right-2 text-[9px] font-bold bg-red-500/80 text-white px-1.5 py-0.5 rounded">BROKEN</span>}
+      </div>
+      {/* Info */}
+      <div className="p-3 bg-[hsl(var(--card))]">
+        <div className="font-semibold text-xs text-[hsl(var(--foreground))] truncate">{tpl.name || tpl.id}</div>
+        <div className="text-[10px] text-[hsl(var(--muted-foreground))] mt-0.5 truncate">{tpl._source} {cat.label !== "General" ? `\u00b7 ${cat.label}` : ""}</div>
+        <div className="flex items-center gap-2 mt-1.5 text-[10px]">
+          <span className={`flex items-center gap-1 ${st.cls}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
+            {st.label}
+          </span>
+          <span className="text-[hsl(var(--muted-foreground))]">{tpl._usage} {tpl._usage === 1 ? "site" : "sites"}</span>
+        </div>
+        {hiddenHint && <div className="text-[9px] text-yellow-400 mt-1 truncate" title={hiddenHint}>\u26a0 {hiddenHint}</div>}
+      </div>
+    </button>
+  );
+}
+
+/* ── Template Row (List) ── */
+function TemplateRow({ tpl, selected, defaultId, quality, onClick }) {
+  const cat = catOf(tpl);
+  const st = statOf(tpl._status);
+  const isDefault = defaultId === (tpl.id || tpl.template_id);
+  return (
+    <button onClick={onClick} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all text-left ${selected ? "border-[hsl(var(--primary))] bg-[hsl(var(--primary))]/5" : "border-[hsl(var(--border))] hover:border-[hsl(var(--primary))]/40 bg-[hsl(var(--card))]"}`}>
+      <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${cat.grad} flex items-center justify-center shrink-0`}>
+        <span className="text-lg">{cat.icon}</span>
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="font-semibold text-xs text-[hsl(var(--foreground))] truncate">{tpl.name || tpl.id}</div>
+        <div className="text-[10px] text-[hsl(var(--muted-foreground))] truncate">{tpl._source} {cat.label !== "General" ? `\u00b7 ${cat.label}` : ""} \u00b7 {tpl._usage} sites</div>
+      </div>
+      <span className={`flex items-center gap-1 text-[10px] ${st.cls}`}><span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />{st.label}</span>
+      <span className={`w-2 h-2 rounded-full shrink-0 ${quality.pass ? "bg-emerald-400" : "bg-red-400"}`} title={quality.pass ? "Pass" : "Fail"} />
+      {isDefault && <span className="text-[9px] font-bold text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded">DEFAULT</span>}
+    </button>
+  );
+}
+
+/* ── Side Panel ── */
+function SidePanel({ tpl, quality, usage, versions, defaultId, publishing, hiddenHint, onClose, onSetDefault, onUpdateStatus, onCreateVersion, onPublish, onRollback, onDelete }) {
+  const cat = catOf(tpl);
+  const st = statOf(tpl._status);
+  const isDefault = defaultId === (tpl.id || tpl.template_id);
+  const isCustom = !!tpl.dbId;
+  const [showQuality, setShowQuality] = useState(false);
+
+  return (
+    <div className="flex flex-col">
+      {/* Header gradient */}
+      <div className={`h-24 bg-gradient-to-br ${cat.grad} flex items-end p-4 relative`}>
+        <button onClick={onClose} className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/30 hover:bg-black/50 text-white flex items-center justify-center text-sm transition-colors">\u2715</button>
+        <div>
+          <div className="text-white font-bold text-sm leading-tight">{tpl.name || tpl.id}</div>
+          <div className="text-white/70 text-[10px] mt-0.5">{tpl.id || tpl.template_id}</div>
+        </div>
+      </div>
+
+      <div className="p-4 flex flex-col gap-4">
+        {/* Meta tags */}
+        <div className="flex flex-wrap gap-1.5">
+          <Tag>{tpl._source}</Tag>
+          <Tag>{cat.label}</Tag>
+          <Tag className={st.cls}><span className={`w-1.5 h-1.5 rounded-full ${st.dot} inline-block mr-1`} />{st.label}</Tag>
+          {tpl.componentSource?.tier && <Tag>{tpl.componentSource.tier}</Tag>}
+          {isDefault && <Tag className="text-emerald-400 border-emerald-400/30">DEFAULT</Tag>}
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-2">
+          <StatCard label="Usage" value={`${usage.usageCount || tpl.usage_count || 0}`} sub="sites" />
+          <StatCard label="Version" value={`v${tpl.current_version || 1}`} />
+          <StatCard label="Updated" value={toDate(tpl.updated_at || tpl.created_at)} />
+        </div>
+
+        {/* Quality Gate */}
+        <div className={`rounded-lg border p-3 cursor-pointer transition-colors ${quality.pass ? "border-emerald-500/30 bg-emerald-500/5" : "border-red-500/30 bg-red-500/5"}`} onClick={() => setShowQuality(!showQuality)}>
+          <div className="flex items-center justify-between">
+            <span className={`text-xs font-semibold ${quality.pass ? "text-emerald-400" : "text-red-400"}`}>
+              Quality Gate {quality.pass ? "\u2713 Pass" : "\u2717 Fail"}
+            </span>
+            <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{quality.blocking.length + quality.warnings.length} checks \u00b7 {showQuality ? "\u25b2" : "\u25bc"}</span>
+          </div>
+          {showQuality && (
+            <div className="mt-2 space-y-1">
+              {quality.blocking.map((x) => <div key={x} className="text-[10px] text-red-400">\u2022 {x}</div>)}
+              {quality.warnings.map((x) => <div key={x} className="text-[10px] text-yellow-400">\u2022 {x}</div>)}
+              {quality.pass && quality.warnings.length === 0 && <div className="text-[10px] text-emerald-400">All checks passed.</div>}
+            </div>
+          )}
+        </div>
+
+        {hiddenHint && <div className="text-[10px] text-yellow-400 bg-yellow-400/5 rounded-lg p-2">\u26a0 Wizard excluded: {hiddenHint}</div>}
+
+        {/* Actions */}
+        <div className="space-y-2">
+          <div className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Actions</div>
+          <div className="flex flex-wrap gap-1.5">
+            {!isDefault && <Btn onClick={onSetDefault}>Set Default</Btn>}
+            {isCustom && (
+              <>
+                <Btn onClick={() => onPublish(null)} disabled={publishing} primary>{publishing ? "Publishing..." : "Publish"}</Btn>
+                <Btn onClick={onCreateVersion}>New Version</Btn>
+              </>
+            )}
+          </div>
+          {isCustom && (
+            <div className="flex flex-wrap gap-1.5">
+              <div className="text-[10px] text-[hsl(var(--muted-foreground))] w-full mb-0.5">Status:</div>
+              {["draft", "active", "deprecated", "archived"].map((s) => (
+                <Btn key={s} onClick={() => onUpdateStatus(s)} className={tpl._status === s ? "ring-1 ring-[hsl(var(--primary))]" : ""}>
+                  {s[0].toUpperCase() + s.slice(1)}
+                </Btn>
+              ))}
+            </div>
+          )}
+          <Btn onClick={onDelete} danger>{isCustom ? "Delete Template" : "Hide from Lists"}</Btn>
+        </div>
+
+        {/* Version History */}
+        <div>
+          <div className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider mb-2">Version History</div>
+          {!isCustom && <div className="text-[10px] text-[hsl(var(--muted-foreground))]">Built-in template (not editable)</div>}
+          {isCustom && versions.length === 0 && <div className="text-[10px] text-[hsl(var(--muted-foreground))]">No versions yet.</div>}
+          {isCustom && versions.map((v) => (
+            <div key={v.id} className="flex items-center justify-between py-2 border-b border-[hsl(var(--border))] last:border-0">
+              <div>
+                <div className="text-xs font-semibold text-[hsl(var(--foreground))]">
+                  v{v.version_number} {Number(v.version_number) === Number(tpl.current_version || 1) ? <span className="text-emerald-400 text-[9px]">(current)</span> : ""}
+                </div>
+                <div className="text-[10px] text-[hsl(var(--muted-foreground))]">{v.note || "No note"} \u00b7 {toDate(v.created_at)}</div>
+              </div>
+              <div className="flex gap-1">
+                <Btn small onClick={() => onPublish(v.version_number)}>Publish</Btn>
+                <Btn small onClick={() => onRollback(v.version_number)}>Rollback</Btn>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Usage Detail */}
+        {(usage.sites || []).length > 0 && (
+          <div>
+            <div className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider mb-2">Active Sites</div>
+            {usage.sites.map((s) => (
+              <div key={s.siteId} className="flex items-center gap-2 py-1.5 border-b border-[hsl(var(--border))] last:border-0">
+                <div className="w-6 h-6 rounded bg-[hsl(var(--accent))] flex items-center justify-center text-[10px] font-bold text-[hsl(var(--foreground))]">{String(s.brand || s.siteId || "?")[0].toUpperCase()}</div>
+                <div>
+                  <div className="text-xs font-medium text-[hsl(var(--foreground))]">{s.brand || s.siteId}</div>
+                  <div className="text-[10px] text-[hsl(var(--muted-foreground))]">{s.domain || "-"}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-const btnGhost = {
-  padding: "8px 10px",
-  background: T.card2,
-  color: T.text,
-  border: `1px solid ${T.border}`,
-  borderRadius: 8,
-  cursor: "pointer",
-  fontSize: 12,
-};
+/* ── Tiny UI pieces ── */
+function Tag({ children, className = "" }) {
+  return <span className={`text-[10px] px-2 py-0.5 rounded-full border border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))] ${className}`}>{children}</span>;
+}
 
-const btnPrimary = {
-  ...btnGhost,
-  background: T.primary,
-  color: "#fff",
-  borderColor: T.primary,
-};
+function StatCard({ label, value, sub }) {
+  return (
+    <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))]/50 p-2.5 text-center">
+      <div className="text-[9px] text-[hsl(var(--muted-foreground))] uppercase tracking-wider">{label}</div>
+      <div className="text-sm font-bold text-[hsl(var(--foreground))] mt-0.5">{value}</div>
+      {sub && <div className="text-[9px] text-[hsl(var(--muted-foreground))]">{sub}</div>}
+    </div>
+  );
+}
+
+function Btn({ children, onClick, disabled, primary, danger, small, className = "" }) {
+  const base = "rounded-lg border font-medium transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
+  const size = small ? "px-2 py-1 text-[10px]" : "px-3 py-1.5 text-xs";
+  const variant = danger
+    ? "border-red-500/40 text-red-400 hover:bg-red-500/10 bg-transparent"
+    : primary
+    ? "border-[hsl(var(--primary))] bg-[hsl(var(--primary))] text-white hover:opacity-90"
+    : "border-[hsl(var(--border))] bg-[hsl(var(--card))] text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))]";
+  return <button onClick={onClick} disabled={disabled} className={`${base} ${size} ${variant} ${className}`}>{children}</button>;
+}
 
 export default TemplateManager;
