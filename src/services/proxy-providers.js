@@ -17,7 +17,11 @@ import { nodemavenApi } from "./nodemaven";
 
 function getSettings() {
   try {
-    return JSON.parse(localStorage.getItem("lp_settings") || "{}");
+    const host = typeof window !== "undefined" ? `${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}` : "";
+    const namespaced = host ? localStorage.getItem(`lpf2:${host}:settings`) : null;
+    const legacy = localStorage.getItem("lpf2-settings");
+    const old = localStorage.getItem("lp_settings");
+    return JSON.parse(namespaced || legacy || old || "{}");
   } catch {
     return {};
   }
