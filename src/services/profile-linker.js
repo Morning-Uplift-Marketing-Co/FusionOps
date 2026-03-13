@@ -160,7 +160,7 @@ async function resolveCardGeo(cardUuid) {
  * @returns {object} { success, accountId, proxyConfig, qualityResult, error }
  */
 export async function linkProfileCardProxy(opts) {
-  const { profileId, cardUuid, label } = opts;
+  const { profileId, cardUuid, label, siteId, siteDomain } = opts;
   const accountId = opts.accountId || uid();
 
   // Step 1: Validate (no conflicts)
@@ -347,14 +347,14 @@ export async function linkProfileCardProxy(opts) {
   const existing = await query("SELECT id FROM ops_accounts WHERE id = ?", [accountId]);
   if (existing.success && existing.results.length > 0) {
     await execute(
-      `UPDATE ops_accounts SET profile_id = ?, card_uuid = ?, proxy_ip = ?, status = 'active' WHERE id = ?`,
-      [profileId, cardUuid, resolvedIp, accountId]
+      `UPDATE ops_accounts SET profile_id = ?, card_uuid = ?, proxy_ip = ?, site_id = ?, site_domain = ?, status = 'active' WHERE id = ?`,
+      [profileId, cardUuid, resolvedIp, siteId || "", siteDomain || "", accountId]
     );
   } else {
     await execute(
-      `INSERT INTO ops_accounts (id, label, profile_id, card_uuid, proxy_ip, status, created_at)
-       VALUES (?, ?, ?, ?, ?, 'active', ?)`,
-      [accountId, label || `Account ${accountId.slice(0, 6)}`, profileId, cardUuid, resolvedIp, now()]
+      `INSERT INTO ops_accounts (id, label, profile_id, card_uuid, proxy_ip, site_id, site_domain, status, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?)`,
+      [accountId, label || `Account ${accountId.slice(0, 6)}`, profileId, cardUuid, resolvedIp, siteId || "", siteDomain || "", now()]
     );
   }
 
@@ -372,6 +372,8 @@ export async function linkProfileCardProxy(opts) {
       provider: proxyConfig.providerName,
       sessionId: proxyConfig.sessionId,
       qualityVerdict: qualityResult?.verdict,
+      siteId: siteId || "",
+      siteDomain: siteDomain || "",
     }),
   });
 
