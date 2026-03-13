@@ -68,7 +68,7 @@ function statusBadge(status) {
 
 async function d1Query(sql, params = []) {
     try {
-        const { d1Service } = await import("../services/d1.js");
+        const d1Service = (await import("../services/d1.js")).default;
         return await d1Service.query(sql, params);
     } catch (e) {
         console.warn("[ProxyPool] D1 query failed:", e?.message);
@@ -78,7 +78,7 @@ async function d1Query(sql, params = []) {
 
 async function d1Execute(sql, params = []) {
     try {
-        const { d1Service } = await import("../services/d1.js");
+        const d1Service = (await import("../services/d1.js")).default;
         return await d1Service.execute(sql, params);
     } catch (e) {
         console.warn("[ProxyPool] D1 execute failed:", e?.message);
@@ -146,9 +146,9 @@ export function ProxyListTab({ accounts = [], profiles = [] }) {
     /* ── Load from D1 ── */
     const loadProxies = useCallback(async () => {
         setLoading(true);
-        const rows = await d1Query("SELECT * FROM ops_proxy_pool ORDER BY created_at DESC");
-        if (rows && Array.isArray(rows)) {
-            setProxies(rows);
+        const result = await d1Query("SELECT * FROM ops_proxy_pool ORDER BY created_at DESC");
+        if (result?.success && Array.isArray(result.results)) {
+            setProxies(result.results);
         } else {
             // Fallback: load from localStorage for backward compat
             try {
@@ -189,11 +189,18 @@ export function ProxyListTab({ accounts = [], profiles = [] }) {
             `INSERT OR REPLACE INTO ops_proxy_pool (id, host, port, username, password, provider, country, city, state, asn, isp, fraud_score, trust_score, latency_ms, timezone, is_proxy, status, assigned_to, scan_details, last_scan_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [proxy.id, proxy.host, proxy.port, proxy.username, proxy.password, proxy.provider, proxy.country, proxy.city, proxy.state, proxy.asn || "", proxy.isp || "", proxy.fraud_score ?? -1, proxy.trust_score ?? -1, proxy.latency_ms ?? -1, proxy.timezone || "", proxy.is_proxy ?? -1, proxy.status || "pending", proxy.assigned_to || "", proxy.scan_details || "", proxy.last_scan_at || "", proxy.created_at || new Date().toISOString()]
         );
-        return result;
+        if (!result || !result.success) {
+            console.warn("[ProxyPool] saveProxy failed:", result?.error || "D1 unavailable");
+            return false;
+        }
+        return true;
     };
 
     const deleteProxy = async (id) => {
-        await d1Execute("DELETE FROM ops_proxy_pool WHERE id = ?", [id]);
+        const result = await d1Execute("DELETE FROM ops_proxy_pool WHERE id = ?", [id]);
+        if (!result || !result.success) {
+            console.warn("[ProxyPool] deleteProxy failed:", result?.error || "D1 unavailable");
+        }
         setProxies(prev => prev.filter(p => p.id !== id));
     };
 
@@ -208,7 +215,10 @@ export function ProxyListTab({ accounts = [], profiles = [] }) {
             scan_details: "", last_scan_at: "",
             created_at: new Date().toISOString(),
         };
-        await saveProxy(proxy);
+        const saved = await saveProxy(proxy);
+        if (!saved) {
+            console.warn("[ProxyPool] addProxy: D1 save failed, adding to local state only");
+        }
         setProxies(prev => [proxy, ...prev]);
         setShowAdd(false);
     };
@@ -217,7 +227,10 @@ export function ProxyListTab({ accounts = [], profiles = [] }) {
         const existing = proxies.find(p => p.id === editId);
         if (!existing) return;
         const updated = { ...existing, ...form };
-        await saveProxy(updated);
+        const saved = await saveProxy(updated);
+        if (!saved) {
+            console.warn("[ProxyPool] updateProxy: D1 save failed, updating local state only");
+        }
         setProxies(prev => prev.map(p => p.id === editId ? updated : p));
         setEditId(null);
     };
@@ -285,13 +298,13 @@ export function ProxyListTab({ accounts = [], profiles = [] }) {
 
             return {
                 ...proxy,
-                asn: result.steps?.find(s => s.step === "asn")?.data?.asn || proxy.asn,
-                isp: result.steps?.find(s => s.step === "asn")?.data?.isp || proxy.isp,
-                fraud_score: result.steps?.find(s => s.step === "fraud")?.data?.fraudScore ?? proxy.fraud_score,
+                asn: result.steps?.find(s => s.name === "asn")?.asn || proxy.asn,
+                isp: result.steps?.find(s => s.name === "asn")?.isp || proxy.isp,
+                fraud_score: result.steps?.find(s => s.name === "fraud")?.fraudScore ?? proxy.fraud_score,
                 trust_score: result.score ?? proxy.trust_score,
-                latency_ms: result.steps?.find(s => s.step === "latency")?.data?.latencyMs ?? proxy.latency_ms,
-                timezone: result.steps?.find(s => s.step === "timezone_geo")?.data?.ipTimezone || proxy.timezone,
-                is_proxy: result.steps?.find(s => s.step === "proxy_vpn")?.data?.isProxy ? 1 : 0,
+                latency_ms: result.steps?.find(s => s.name === "latency")?.latencyMs ?? proxy.latency_ms,
+                timezone: result.steps?.find(s => s.name === "timezone_geo")?.ipTimezone || proxy.timezone,
+                is_proxy: result.steps?.find(s => s.name === "proxy_vpn")?.isProxy ? 1 : 0,
                 status: result.verdict === "APPROVE" ? "approved" : "rejected",
                 scan_details: JSON.stringify(result),
                 last_scan_at: new Date().toISOString(),
