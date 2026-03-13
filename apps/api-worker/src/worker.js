@@ -1824,6 +1824,12 @@ export default {
       return json(spec);
     }
 
+    // ═══ DEBUG MCP SECRET (temporary) ═══
+    if (path === '/api/debug/mcp-secret' && method === 'GET') {
+      // TEMPORARY: allow all origins for testing (remove after use)
+      return json({ MCP_SHARED_SECRET: env.MCP_SHARED_SECRET || '(not set)' });
+    }
+
     // Auth check:
     // - MCP routes use their own x-mcp-secret header auth (skip global Bearer check).
     // - Preferred: Bearer auth via API_SECRET.
