@@ -6,6 +6,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from ".
 import { multiloginApi } from "../services/multilogin";
 import { leadingCardsApi } from "../services/leadingCards";
 import { nodemavenApi } from "../services/nodemaven";
+import { profileLinker } from "../services/profile-linker";
 import d1Service from "../services/d1";
 
 // ──────── Country flags ────────
@@ -56,6 +57,10 @@ export function ProfileManager({ settings = {}, ops = {} }) {
   const [sortCol, setSortCol] = useState("no");
   const [sortDir, setSortDir] = useState("asc");
   const [expandedRow, setExpandedRow] = useState(null);
+  const [linkModal, setLinkModal] = useState(null); // { profileId, profileName }
+  const [linkForm, setLinkForm] = useState({ cardUuid: "", provider: "", label: "" });
+  const [linking, setLinking] = useState(false);
+  const [linkResult, setLinkResult] = useState(null);
   const flashTimer = useRef(null);
 
   const showFlash = useCallback((msg, type = "success") => {
@@ -291,6 +296,99 @@ export function ProfileManager({ settings = {}, ops = {} }) {
     setSelected(new Set());
   };
 
+  // ── Link / Unlink ──
+  const openLinkModal = (profile) => {
+    setLinkModal({ profileId: profile.id, profileName: profile.name, mlId: profile.mlId });
+    setLinkForm({ cardUuid: "", provider: "", label: profile.name || "" });
+    setLinkResult(null);
+  };
+
+  const handleLink = async () => {
+    if (!linkModal || !linkForm.cardUuid) {
+      setLinkResult({ success: false, error: "Please select a card" });
+      return;
+    }
+    setLinking(true);
+    setLinkResult(null);
+    try {
+      const res = await profileLinker.linkProfileCardProxy({
+        profileId: linkModal.profileId,
+        cardUuid: linkForm.cardUuid,
+        provider: linkForm.provider || undefined,
+        label: linkForm.label || linkModal.profileName,
+      });
+      setLinkResult(res);
+      if (res.success) {
+        showFlash(`Linked: ${linkModal.profileName} → Card + Proxy (Score: ${res.qualityResult?.score || "—"})`);
+        await loadAll();
+        setTimeout(() => setLinkModal(null), 1500);
+      }
+    } catch (e) {
+      setLinkResult({ success: false, error: e.message });
+      showFlash(`Link failed: ${e.message}`, "error");
+    } finally {
+      setLinking(false);
+    }
+  };
+
+  const handleUnlink = async (profile) => {
+    if (!profile.accountId) {
+      showFlash("No linked account found", "error");
+      return;
+    }
+    if (!confirm(`Unlink profile "${profile.name}"? This will remove the card + proxy assignment.`)) return;
+    setActionLoading(prev => ({ ...prev, [profile.id]: "unlink" }));
+    try {
+      const res = await profileLinker.unlinkProfile(profile.accountId);
+      if (res.success) {
+        showFlash(`Unlinked: ${profile.name}`);
+        await loadAll();
+      } else {
+        showFlash(`Unlink failed: ${res.error}`, "error");
+      }
+    } catch (e) {
+      showFlash(`Unlink failed: ${e.message}`, "error");
+    } finally {
+      setActionLoading(prev => ({ ...prev, [profile.id]: null }));
+    }
+  };
+
+  const handlePrelaunch = async (profile) => {
+    if (!profile.accountId) { showFlash("No linked account — link first", "error"); return; }
+    setActionLoading(prev => ({ ...prev, [profile.id]: "prelaunch" }));
+    try {
+      const res = await profileLinker.prelaunchCheck(profile.id);
+      if (res.pass) {
+        showFlash(`✅ Pre-launch OK: ${profile.name} (Score: ${res.trustScore})`);
+      } else {
+        showFlash(`❌ Pre-launch FAIL: ${profile.name} — ${res.reason || "quality check failed"}`, "error");
+      }
+      await loadAll();
+    } catch (e) {
+      showFlash(`Pre-launch error: ${e.message}`, "error");
+    } finally {
+      setActionLoading(prev => ({ ...prev, [profile.id]: null }));
+    }
+  };
+
+  const handleRotateIP = async (profile) => {
+    if (!profile.id) return;
+    setActionLoading(prev => ({ ...prev, [profile.id]: "rotate" }));
+    try {
+      const res = await profileLinker.rotateProxy(profile.id);
+      if (res.success) {
+        showFlash(`🔄 IP rotated: ${profile.name} → ${res.newIp} (Score: ${res.qualityResult?.score || "—"})`);
+        await loadAll();
+      } else {
+        showFlash(`Rotate failed: ${res.error}`, "error");
+      }
+    } catch (e) {
+      showFlash(`Rotate failed: ${e.message}`, "error");
+    } finally {
+      setActionLoading(prev => ({ ...prev, [profile.id]: null }));
+    }
+  };
+
   // ── Stats ──
   const stats = useMemo(() => {
     const total = mergedProfiles.length;
@@ -430,20 +528,21 @@ export function ProfileManager({ settings = {}, ops = {} }) {
               <TableHead className="text-xs">Platform</TableHead>
               <SortHeader col="status">Status</SortHeader>
               <SortHeader col="date">Created</SortHeader>
+              <TableHead className="text-xs text-center">Link</TableHead>
               <TableHead className="w-16 text-xs text-center">#</TableHead>
-              <TableHead className="w-24 text-xs text-right">Action</TableHead>
+              <TableHead className="w-28 text-xs text-right">Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={12} className="text-center py-12 text-sm text-[hsl(var(--muted-foreground))]">
+                <TableCell colSpan={13} className="text-center py-12 text-sm text-[hsl(var(--muted-foreground))]">
                   ⏳ Loading profiles...
                 </TableCell>
               </TableRow>
             ) : paginated.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={12} className="text-center py-12 text-sm text-[hsl(var(--muted-foreground))]">
+                <TableCell colSpan={13} className="text-center py-12 text-sm text-[hsl(var(--muted-foreground))]">
                   No profiles found. Click "Sync MLX" to fetch profiles.
                 </TableCell>
               </TableRow>
@@ -545,6 +644,43 @@ export function ProfileManager({ settings = {}, ops = {} }) {
                     </div>
                   </TableCell>
 
+                  {/* Link Status */}
+                  <TableCell className="py-2 text-center">
+                    {profile.lendingCard ? (
+                      <div className="flex flex-col items-center gap-0.5">
+                        <Badge variant="outline" className="text-[9px] bg-emerald-500/10 text-emerald-400 border-emerald-500/20">✓ Linked</Badge>
+                        <div className="flex gap-0.5">
+                          <button
+                            className="text-[9px] text-blue-400 hover:underline"
+                            disabled={!!actionKey}
+                            onClick={() => handlePrelaunch(profile)}
+                          >{actionKey === "prelaunch" ? "⏳" : "🚀 Check"}</button>
+                          <span className="text-slate-600">|</span>
+                          <button
+                            className="text-[9px] text-violet-400 hover:underline"
+                            disabled={!!actionKey}
+                            onClick={() => handleRotateIP(profile)}
+                          >{actionKey === "rotate" ? "⏳" : "🔄 Rotate"}</button>
+                          <span className="text-slate-600">|</span>
+                          <button
+                            className="text-[9px] text-red-400 hover:underline"
+                            disabled={!!actionKey}
+                            onClick={() => handleUnlink(profile)}
+                          >{actionKey === "unlink" ? "⏳" : "✕"}</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-6 text-[10px] px-2 border-dashed border-amber-500/40 text-amber-400 hover:bg-amber-500/10"
+                        onClick={() => openLinkModal(profile)}
+                      >
+                        🔗 Link
+                      </Button>
+                    )}
+                  </TableCell>
+
                   {/* Row number */}
                   <TableCell className="py-2 text-center text-xs text-[hsl(var(--muted-foreground))]">
                     {rowNum}
@@ -582,7 +718,29 @@ export function ProfileManager({ settings = {}, ops = {} }) {
                           ⋮
                         </button>
                         {menuOpen === profile.id && (
-                          <div className="absolute right-0 top-7 z-50 w-32 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-lg py-1">
+                          <div className="absolute right-0 top-7 z-50 w-40 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-lg py-1">
+                            {!profile.lendingCard ? (
+                              <button
+                                className="w-full px-3 py-1.5 text-left text-xs text-amber-400 hover:bg-amber-500/10"
+                                onClick={() => { openLinkModal(profile); setMenuOpen(null); }}
+                              >🔗 Link Card + Proxy</button>
+                            ) : (
+                              <>
+                                <button
+                                  className="w-full px-3 py-1.5 text-left text-xs hover:bg-[hsl(var(--muted))]"
+                                  onClick={() => { handlePrelaunch(profile); setMenuOpen(null); }}
+                                >🚀 Pre-launch Check</button>
+                                <button
+                                  className="w-full px-3 py-1.5 text-left text-xs hover:bg-[hsl(var(--muted))]"
+                                  onClick={() => { handleRotateIP(profile); setMenuOpen(null); }}
+                                >🔄 Rotate IP</button>
+                                <button
+                                  className="w-full px-3 py-1.5 text-left text-xs text-red-400 hover:bg-red-500/10"
+                                  onClick={() => { handleUnlink(profile); setMenuOpen(null); }}
+                                >🔓 Unlink</button>
+                              </>
+                            )}
+                            <hr className="my-1 border-[hsl(var(--border))]" />
                             <button
                               className="w-full px-3 py-1.5 text-left text-xs hover:bg-[hsl(var(--muted))]"
                               onClick={() => { profileAction(profile.id, "clone"); setMenuOpen(null); }}
@@ -650,6 +808,121 @@ export function ProfileManager({ settings = {}, ops = {} }) {
           </select>
         </div>
       </div>
+
+      {/* ── Link Modal ── */}
+      {linkModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60" onClick={() => !linking && setLinkModal(null)}>
+          <div className="w-[480px] rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-2xl" onClick={e => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className="px-5 py-4 border-b border-[hsl(var(--border))]">
+              <h2 className="text-base font-bold">🔗 Link Profile + Card + Proxy</h2>
+              <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
+                Profile: <span className="font-semibold text-[hsl(var(--foreground))]">{linkModal.profileName}</span>
+              </p>
+            </div>
+
+            {/* Modal Body */}
+            <div className="px-5 py-4 space-y-4">
+              {/* Account Label */}
+              <div>
+                <label className="text-xs font-medium text-[hsl(var(--muted-foreground))] block mb-1">Account Label</label>
+                <input
+                  type="text"
+                  value={linkForm.label}
+                  onChange={e => setLinkForm(f => ({ ...f, label: e.target.value }))}
+                  placeholder="e.g. RA1, Account-TH-01"
+                  className="w-full h-8 px-3 text-xs rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--ring))]"
+                />
+              </div>
+
+              {/* Card Selection */}
+              <div>
+                <label className="text-xs font-medium text-[hsl(var(--muted-foreground))] block mb-1">💳 Lending Card *</label>
+                <select
+                  value={linkForm.cardUuid}
+                  onChange={e => setLinkForm(f => ({ ...f, cardUuid: e.target.value }))}
+                  className="w-full h-8 px-3 text-xs rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
+                >
+                  <option value="">Select a card...</option>
+                  {lcCards.map(c => (
+                    <option key={c.uuid || c.id} value={c.uuid || c.id}>
+                      {c.label || c.name || `Card ****${(c.card_number || "").slice(-4)}`}
+                      {c.status ? ` (${c.status})` : ""}
+                    </option>
+                  ))}
+                </select>
+                {lcCards.length === 0 && (
+                  <p className="text-[10px] text-amber-400 mt-1">No cards loaded. Check LendingCard API settings.</p>
+                )}
+              </div>
+
+              {/* Provider Selection */}
+              <div>
+                <label className="text-xs font-medium text-[hsl(var(--muted-foreground))] block mb-1">🌐 Proxy Provider</label>
+                <select
+                  value={linkForm.provider}
+                  onChange={e => setLinkForm(f => ({ ...f, provider: e.target.value }))}
+                  className="w-full h-8 px-3 text-xs rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
+                >
+                  <option value="">Auto (fallback chain)</option>
+                  <option value="nodemaven">NodeMaven</option>
+                  <option value="smartproxy">SmartProxy</option>
+                  <option value="soax">SOAX</option>
+                  <option value="brightdata">Bright Data</option>
+                </select>
+                <p className="text-[10px] text-[hsl(var(--muted-foreground))] mt-1">
+                  Auto = tries NodeMaven → SmartProxy → SOAX → Bright Data until quality passes
+                </p>
+              </div>
+
+              {/* Result */}
+              {linkResult && (
+                <div className={`p-3 rounded-md text-xs ${linkResult.success
+                  ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
+                  : "bg-red-500/10 border border-red-500/20 text-red-400"
+                }`}>
+                  {linkResult.success ? (
+                    <div>
+                      <div className="font-bold">✅ Link successful!</div>
+                      <div className="mt-1 space-y-0.5">
+                        <div>IP: <span className="font-mono">{linkResult.resolvedIp}</span></div>
+                        <div>Provider: {linkResult.proxyConfig?.providerName || linkResult.proxyConfig?.provider}</div>
+                        <div>Trust Score: <span className="font-bold">{linkResult.qualityResult?.score || "—"}</span></div>
+                        <div>Geo: {linkResult.geo?.city}, {linkResult.geo?.country}</div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="font-bold">❌ Link failed</div>
+                      <div className="mt-1">{linkResult.error}</div>
+                      {linkResult.conflicts?.length > 0 && (
+                        <ul className="mt-1 list-disc list-inside">
+                          {linkResult.conflicts.map((c, i) => <li key={i}>{c.message}</li>)}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-5 py-3 border-t border-[hsl(var(--border))] flex items-center justify-end gap-2">
+              <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setLinkModal(null)} disabled={linking}>
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                className="h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white px-4"
+                onClick={handleLink}
+                disabled={linking || !linkForm.cardUuid}
+              >
+                {linking ? "⏳ Validating & Linking..." : "🔗 Validate & Link"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
