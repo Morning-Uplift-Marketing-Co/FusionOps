@@ -41,8 +41,8 @@ jobs:
           echo "Using config: $CHANGED"
           cat "$CHANGED"
 
-      - name: Parse config and resolve template
-        id: template
+      - name: Parse config
+        id: config_parse
         run: |
           CONFIG_FILE="${{ steps.config.outputs.file }}"
           TEMPLATE_ID=$(node -e "const c=require('./$CONFIG_FILE');console.log(c.templateId||'installment-bear')")
@@ -50,11 +50,26 @@ jobs:
           CF_API_TOKEN=$(node -e "const c=require('./$CONFIG_FILE');console.log(c.cfApiToken||'')")
           CF_ACCOUNT_ID=$(node -e "const c=require('./$CONFIG_FILE');console.log(c.cfAccountId||'')")
 
-          # Map templateId → actual folder in templates/
-          # Direct match takes absolute priority
+          echo "template_id=$TEMPLATE_ID" >> "$GITHUB_OUTPUT"
+          echo "cf_pages_project=$CF_PAGES_PROJECT" >> "$GITHUB_OUTPUT"
+          echo "cf_api_token=$CF_API_TOKEN" >> "$GITHUB_OUTPUT"
+          echo "cf_account_id=$CF_ACCOUNT_ID" >> "$GITHUB_OUTPUT"
+          echo "Template ID: $TEMPLATE_ID"
+          echo "CF Project: $CF_PAGES_PROJECT"
+
+      - name: Auto-detect template source and prepare directory
+        id: template
+        env:
+          MCP_SECRET: ${{ secrets.MCP_SHARED_SECRET }}
+        run: |
+          TEMPLATE_ID="${{ steps.config_parse.outputs.template_id }}"
+          
+          # Check if physical directory exists
           if [ -d "templates/$TEMPLATE_ID" ]; then
             DIR="templates/$TEMPLATE_ID"
+            echo "Using physical template directory: $DIR"
           else
+            # Try legacy template mapping
             case "$TEMPLATE_ID" in
               *pet*|*scratchpay*|template10[0-9]|template11[0-9]) DIR="templates/pet_loans_v1" ;;
               installment-loans-101)                               DIR="templates/installment-loans-101" ;;
@@ -63,20 +78,22 @@ jobs:
               elastic-credits-v3)                                  DIR="templates/elastic-credits-v3" ;;
               *elastic*|template15[0-9])                          DIR="templates/elastic-credits-v4" ;;
               *bear*)                                              DIR="templates/bear-loan-astro" ;;
-              *)                                                   DIR="templates/installment-bear" ;;
+              *)                                                   DIR="" ;;
             esac
-          fi
-          if [ ! -d "$DIR" ]; then
-            echo "ERROR: Template directory not found: $DIR (templateId=$TEMPLATE_ID)"
-            exit 1
+            
+            if [ -n "$DIR" ] && [ -d "$DIR" ]; then
+              echo "Using legacy mapped directory: $DIR"
+            else
+              # Template not found in filesystem - generate from D1 Database
+              echo "Physical template not found, generating from D1 Database..."
+              node scripts/generate-template-from-db.mjs "$TEMPLATE_ID" || exit 1
+              DIR="tmp/templates/$TEMPLATE_ID"
+              echo "Generated temp directory: $DIR"
+            fi
           fi
 
           echo "dir=$DIR" >> "$GITHUB_OUTPUT"
-          echo "cf_pages_project=$CF_PAGES_PROJECT" >> "$GITHUB_OUTPUT"
-          echo "cf_api_token=$CF_API_TOKEN" >> "$GITHUB_OUTPUT"
-          echo "cf_account_id=$CF_ACCOUNT_ID" >> "$GITHUB_OUTPUT"
-          echo "Template: $TEMPLATE_ID → $DIR"
-          echo "CF Project: $CF_PAGES_PROJECT"
+          echo "Final template directory: $DIR"
 
       - name: Install template dependencies
         working-directory: ${{ steps.template.outputs.dir }}
