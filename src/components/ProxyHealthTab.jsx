@@ -85,7 +85,7 @@ function AlertBanner({ alerts, onDismiss }) {
   );
 }
 
-export function ProxyHealthTab({ profiles: rawProfiles = [], settings = {} }) {
+export function ProxyHealthTab({ profiles: rawProfiles = [], settings = {}, standalone = false }) {
   const [profileHealth, setProfileHealth] = useState({});
   const [checking, setChecking] = useState({});
   const [alerts, setAlerts] = useState([]);
@@ -175,8 +175,10 @@ export function ProxyHealthTab({ profiles: rawProfiles = [], settings = {} }) {
     <div>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-sm font-bold">🛡️ Proxy Health Monitor</h3>
-          <p className="text-[10px] text-[hsl(var(--muted-foreground))]">Real-time IP quality monitoring{lastScan && <> · Last scan: {new Date(lastScan).toLocaleTimeString()}</>}</p>
+          {standalone
+            ? <><h1 className="text-[22px] font-bold m-0">Proxy Health Monitor</h1><p className="text-sm text-[hsl(var(--muted-foreground))]">Real-time IP quality monitoring{lastScan && <> · Last scan: {new Date(lastScan).toLocaleTimeString()}</>}</p></>
+            : <><h3 className="text-sm font-bold">🛡️ Proxy Health Monitor</h3><p className="text-[10px] text-[hsl(var(--muted-foreground))]">Real-time IP quality monitoring{lastScan && <> · Last scan: {new Date(lastScan).toLocaleTimeString()}</>}</p></>
+          }
         </div>
         <div className="flex items-center gap-2">
           <label className="flex items-center gap-1.5 text-[10px] cursor-pointer"><input type="checkbox" checked={autoRefresh} onChange={e => setAutoRefresh(e.target.checked)} className="rounded" />Auto (5min)</label>
