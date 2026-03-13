@@ -22,10 +22,22 @@
 
 function getSettings() {
   try {
-    return JSON.parse(localStorage.getItem("lp_settings") || "{}");
+    const host = typeof window !== "undefined" ? `${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}` : "";
+    const namespaced = host ? localStorage.getItem(`lpf2:${host}:settings`) : null;
+    const legacy = localStorage.getItem("lpf2-settings");
+    const old = localStorage.getItem("lp_settings");
+    return JSON.parse(namespaced || legacy || old || "{}");
   } catch {
     return {};
   }
+}
+
+function resolveWorkerBase() {
+  const fromWindow = typeof window !== "undefined" ? window.__LP_API__ : "";
+  const fromEnv = typeof import.meta !== "undefined" && import.meta.env ? import.meta.env.VITE_API_BASE : "";
+  const DEFAULT = "https://lp-factory-api.misty-feather-556e.workers.dev/api";
+  const apiBase = String(fromWindow || fromEnv || DEFAULT).replace(/\/+$/, "");
+  return apiBase.endsWith("/api") ? apiBase.slice(0, -4) : apiBase;
 }
 
 /* ────────────────── ASN Blacklist (Hosting/DC) ────────────────── */
@@ -105,9 +117,7 @@ async function checkLatency(ip, port) {
   const start = Date.now();
   try {
     // Use fetch to a known endpoint through proxy worker
-    const settings = getSettings();
-    const apiBase = settings.apiBase || "";
-    const workerBase = apiBase.endsWith("/api") ? apiBase.slice(0, -4) : apiBase;
+    const workerBase = resolveWorkerBase();
 
     const res = await fetch(`${workerBase}/api/proxy/resolve-ip`, {
       method: "POST",
