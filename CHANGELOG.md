@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-03-14
+### Changed
+- **Template Manager redesign**: Full rewrite from inline styles to Tailwind CSS with grid cards + slide-out side panel layout
+  - Category-colored gradient card headers with emoji icons (Loan=indigo, Pet=emerald, Installment=purple, General=slate)
+  - Smart category detection: infers from template name when category is "general"
+  - Quality badge (pass/fail dot) visible on each card
+  - Side panel with meta tags, stats, expandable quality gate, actions, version history
+  - Grid/List view toggle, search, source/status/sort filters
+- **TopBar redesign**: Replaced text-based Dot labels with inline SVG icons for service connection status (Neon, Cloudflare, Voluum, LendingCard, Multilogin, AI)
+
+### Fixed
+- **MLX token auto-refresh**: Auto-refresh Multilogin token on 401 to prevent session drops
+- **Proxy Health Monitor**: Fixed scan/save functionality in Proxy Pool
+- **localStorage key mismatch**: Resolved empty apiBase in 7 services
+- **LendingCard dropdown**: Fixed empty dropdown in Profile Manager
+- **Template Manager close button**: Unicode escape sequences rendered as literal text instead of symbols
+- **Template Manager categories**: Templates with name-based category hints (e.g. "Pet-Orange-White") now show correct gradient colors
+
 ## [3.0.0] - 2026-03-13
 ### Changed
 - **FusionOps 3.0 branding**: Standardized product naming in UI surfaces to `FusionOps 3.0`.
