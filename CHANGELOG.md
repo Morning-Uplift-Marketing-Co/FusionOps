@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-03-14
+### Features
+- **Bolt.new Template Integration**: Auto-generate template directories from D1 Database
+  - `utils/template-db-loader.js`: Utility functions for fetching templates from D1 and generating temp directories
+  - `scripts/deploy-site-with-db-template.mjs`: Deploy script with auto-detection (physical directory or D1)
+  - `scripts/generate-template-from-db.mjs`: CI/CD script for GitHub Actions workflow
+  - `scripts/cleanup-db-templates.mjs`: Maintenance script for DB-only templates
+  - `.github/workflows/deploy-lp.yml`: Updated workflow to support DB-only templates
+  - Templates from Bolt.new can now be deployed without physical directories
+  - Automatic temp directory generation, deployment, and cleanup
+
+### Documentation
+- **Bolt.new Template Monitoring Guide**: `docs/bolt-template-monitoring.md`
+  - 6 methods for monitoring template upload status
+  - FusionOps UI, Browser DevTools, API calls, Cloudflare D1, GitHub Actions, Local scripts
+  - Troubleshooting guide for common issues
+
+### Changed
+- GitHub Actions workflow now auto-detects template source (physical vs D1)
+- Deploy process supports both legacy templates (physical directories) and new Bolt.new templates (D1-only)
+
 ## [3.0.0] - 2026-03-13
 ### Changed
 - **FusionOps 3.0 branding**: Standardized product naming in UI surfaces to `FusionOps 3.0`.
