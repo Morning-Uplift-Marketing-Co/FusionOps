@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.1] - 2026-03-14
+### Enhanced
+- **Tracking Verification Dashboard**: Now analyzes both INDEX and /apply pages simultaneously
+  - Dual-page analysis with separate score cards and detailed breakdowns
+  - Automatic fetch of both homepage and /apply route when checking tracking implementation
+  - Clear visual separation: INDEX PAGE ANALYSIS and APPLY PAGE ANALYSIS sections
+  - Independent scoring and verification for each page's tracking layers
+  - Graceful handling when /apply page doesn't exist or is inaccessible
+  - Event log shows separate analysis results for both pages
+
 ## [3.1.0] - 2026-03-14
 ### Changed
 - **Template Manager redesign**: Full rewrite from inline styles to Tailwind CSS with grid cards + slide-out side panel layout
@@ -17,13 +27,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Grid/List view toggle, search, source/status/sort filters
 - **TopBar redesign**: Replaced text-based Dot labels with inline SVG icons for service connection status (Neon, Cloudflare, Voluum, LendingCard, Multilogin, AI)
 
+### Features
+- **Bolt.new Template Integration**: Auto-generate template directories from D1 Database
+  - `utils/template-db-loader.js`: Utility functions for fetching templates from D1 and generating temp directories
+  - `scripts/deploy-site-with-db-template.mjs`: Deploy script with auto-detection (physical directory or D1)
+  - `scripts/generate-template-from-db.mjs`: CI/CD script for GitHub Actions workflow
+  - `scripts/cleanup-db-templates.mjs`: Maintenance script for DB-only templates
+  - `.github/workflows/deploy-lp.yml`: Updated workflow to support DB-only templates
+  - Templates from Bolt.new can now be deployed without physical directories
+
+### Documentation
+- **Bolt.new Template Monitoring Guide**: `docs/bolt-template-monitoring.md`
+  - 6 methods for monitoring template upload status
+  - Troubleshooting guide for common issues
+
 ### Fixed
 - **MLX token auto-refresh**: Auto-refresh Multilogin token on 401 to prevent session drops
 - **Proxy Health Monitor**: Fixed scan/save functionality in Proxy Pool
 - **localStorage key mismatch**: Resolved empty apiBase in 7 services
 - **LendingCard dropdown**: Fixed empty dropdown in Profile Manager
 - **Template Manager close button**: Unicode escape sequences rendered as literal text instead of symbols
-- **Template Manager categories**: Templates with name-based category hints (e.g. "Pet-Orange-White") now show correct gradient colors
+- **Template Manager categories**: Templates with name-based category hints now show correct gradient colors
 
 ## [3.0.0] - 2026-03-13
 ### Changed
