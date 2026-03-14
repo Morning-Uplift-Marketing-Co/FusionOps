@@ -131,7 +131,7 @@ async function main() {
   const templateId = args.id || slugify(folderName);
   const templateName = args.name || folderName;
   const description = args.desc || '';
-  const badge = args.badge || 'New';
+  const badge = args.badge || 'Bolt';
   const category = args.category || 'general';
 
   console.log(`\n📦 Converting: ${folderPath}`);
@@ -175,16 +175,40 @@ async function main() {
   fs.writeFileSync(outPath, JSON.stringify(payload, null, 2), 'utf-8');
   console.log(`\n💾 Saved to: ${outPath}`);
 
+  // Validate template before upload
+  if (args.upload && !args['skip-validation']) {
+    console.log('\n🔍 Validating template build...');
+    try {
+      const { execSync } = require('child_process');
+      execSync(`node scripts/validate-template-build.mjs "${folder}"`, {
+        cwd: path.resolve(__dirname, '..'),
+        stdio: 'inherit'
+      });
+      console.log('✅ Template validation passed!');
+    } catch (err) {
+      console.error('\n❌ Template validation failed!');
+      console.error('   Fix the issues above before uploading.');
+      console.error('   Or use --skip-validation to upload anyway (not recommended).');
+      process.exit(1);
+    }
+  }
+
   // Upload to API
   if (args.upload) {
+    const useMcp = args['use-mcp'] || false;
     const apiUrl = args['api-url'] || process.env.API_URL || 'http://localhost:8787';
-    const endpoint = `${apiUrl}/api/templates`;
+    const mcpUrl = 'https://fusion-mcp-server.fly.dev/mcp?token=9f6a3c1d4e8b7a2f5c0d9e1b3a6f4c7d2e8a1b5c9d3f7a4e6b0c2d8f1a3e5b7c';
+    const endpoint = useMcp ? mcpUrl : `${apiUrl}/api/templates`;
 
-    console.log(`\n🚀 Uploading to: ${endpoint}`);
+    console.log(`\n🚀 Uploading to: ${useMcp ? 'MCP Server' : 'API'}`);
+    console.log(`   Endpoint: ${endpoint}`);
     try {
       const res = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Origin': 'http://localhost:4322'
+        },
         body: JSON.stringify(payload),
       });
 
