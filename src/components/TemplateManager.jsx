@@ -44,14 +44,26 @@ function toDate(ts) {
 
 /* ── Config ── */
 const CATS = {
-  loan:        { grad: "from-indigo-600 to-purple-700", icon: "\ud83d\udcb0", label: "Loan" },
-  pet:         { grad: "from-emerald-600 to-teal-700",  icon: "\ud83d\udc3e", label: "Pet" },
-  "pet-care":  { grad: "from-emerald-600 to-teal-700",  icon: "\ud83d\udc3e", label: "Pet" },
-  custom:      { grad: "from-amber-600 to-orange-700",  icon: "\ud83c\udfa8", label: "Custom" },
-  general:     { grad: "from-slate-600 to-gray-700",    icon: "\ud83d\udcc4", label: "General" },
-  installment: { grad: "from-indigo-600 to-purple-700", icon: "\ud83d\udcb3", label: "Installment" },
+  loan:        { grad: "from-indigo-600 to-purple-700", icon: "💰", label: "Loan" },
+  pet:         { grad: "from-emerald-600 to-teal-700",  icon: "🐾", label: "Pet" },
+  "pet-care":  { grad: "from-emerald-600 to-teal-700",  icon: "🐾", label: "Pet" },
+  custom:      { grad: "from-amber-600 to-orange-700",  icon: "🎨", label: "Custom" },
+  general:     { grad: "from-slate-600 to-gray-700",    icon: "📄", label: "General" },
+  installment: { grad: "from-indigo-600 to-purple-700", icon: "💳", label: "Installment" },
 };
-const catOf = (t) => CATS[String(t.category || "").toLowerCase()] || CATS.general;
+/* Smart category detection: check specific category first, then infer from name/id */
+const catOf = (t) => {
+  const cat = String(t.category || "").toLowerCase();
+  // If a specific (non-general) category is set, use it
+  if (cat && cat !== "general" && CATS[cat]) return CATS[cat];
+  // Otherwise, infer from template name/id
+  const name = String(t.name || t.id || "").toLowerCase();
+  if (/pet|animal|vet|puppy|kitten/.test(name)) return CATS.pet;
+  if (/installment|pdl|payday/.test(name)) return CATS.installment;
+  if (/loan|lend|borrow|credit|finance|apr/.test(name)) return CATS.loan;
+  // Fall back to explicit category or general
+  return CATS[cat] || CATS.general;
+};
 
 const STAT = {
   active:     { cls: "text-emerald-400", dot: "bg-emerald-400", label: "Active" },
@@ -218,9 +230,9 @@ export function TemplateManager({ sites = [], notify, onDefaultTemplateChange })
         </div>
         <Select value={sourceFilter} onChange={setSourceFilter} options={[["all","All Sources"],["module","Module"],["legacy","Legacy"],["api","Custom"]]} />
         <Select value={statusFilter} onChange={setStatusFilter} options={[["all","All Status"],["active","Active"],["draft","Draft"],["deprecated","Deprecated"],["archived","Archived"]]} />
-        <Select value={sortBy} onChange={setSortBy} options={[["newest","Newest"],["usage","Most Used"],["name","A \u2013 Z"]]} />
+        <Select value={sortBy} onChange={setSortBy} options={[["newest","Newest"],["usage","Most Used"],["name","A – Z"]]} />
         <div className="ml-auto flex rounded-lg border border-[hsl(var(--border))] overflow-hidden">
-          {[["grid", "\u229e"], ["list", "\u2630"]].map(([m, icon]) => (
+          {[["grid", "⊞"], ["list", "☰"]].map(([m, icon]) => (
             <button key={m} onClick={() => setViewMode(m)} className={`px-3 py-1.5 text-xs transition-colors ${viewMode === m ? "bg-[hsl(var(--primary))] text-white" : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))]"}`}>
               {icon} {m[0].toUpperCase() + m.slice(1)}
             </button>
@@ -294,7 +306,7 @@ function TemplateCard({ tpl, selected, defaultId, hiddenHint, quality, onClick }
       {/* Info */}
       <div className="p-3 bg-[hsl(var(--card))]">
         <div className="font-semibold text-xs text-[hsl(var(--foreground))] truncate">{tpl.name || tpl.id}</div>
-        <div className="text-[10px] text-[hsl(var(--muted-foreground))] mt-0.5 truncate">{tpl._source} {cat.label !== "General" ? `\u00b7 ${cat.label}` : ""}</div>
+        <div className="text-[10px] text-[hsl(var(--muted-foreground))] mt-0.5 truncate">{tpl._source} {cat.label !== "General" ? `· ${cat.label}` : ""}</div>
         <div className="flex items-center gap-2 mt-1.5 text-[10px]">
           <span className={`flex items-center gap-1 ${st.cls}`}>
             <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
@@ -302,7 +314,7 @@ function TemplateCard({ tpl, selected, defaultId, hiddenHint, quality, onClick }
           </span>
           <span className="text-[hsl(var(--muted-foreground))]">{tpl._usage} {tpl._usage === 1 ? "site" : "sites"}</span>
         </div>
-        {hiddenHint && <div className="text-[9px] text-yellow-400 mt-1 truncate" title={hiddenHint}>\u26a0 {hiddenHint}</div>}
+        {hiddenHint && <div className="text-[9px] text-yellow-400 mt-1 truncate" title={hiddenHint}>⚠ {hiddenHint}</div>}
       </div>
     </button>
   );
@@ -320,7 +332,7 @@ function TemplateRow({ tpl, selected, defaultId, quality, onClick }) {
       </div>
       <div className="flex-1 min-w-0">
         <div className="font-semibold text-xs text-[hsl(var(--foreground))] truncate">{tpl.name || tpl.id}</div>
-        <div className="text-[10px] text-[hsl(var(--muted-foreground))] truncate">{tpl._source} {cat.label !== "General" ? `\u00b7 ${cat.label}` : ""} \u00b7 {tpl._usage} sites</div>
+        <div className="text-[10px] text-[hsl(var(--muted-foreground))] truncate">{tpl._source} {cat.label !== "General" ? `· ${cat.label}` : ""} · {tpl._usage} sites</div>
       </div>
       <span className={`flex items-center gap-1 text-[10px] ${st.cls}`}><span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />{st.label}</span>
       <span className={`w-2 h-2 rounded-full shrink-0 ${quality.pass ? "bg-emerald-400" : "bg-red-400"}`} title={quality.pass ? "Pass" : "Fail"} />
@@ -341,7 +353,7 @@ function SidePanel({ tpl, quality, usage, versions, defaultId, publishing, hidde
     <div className="flex flex-col">
       {/* Header gradient */}
       <div className={`h-24 bg-gradient-to-br ${cat.grad} flex items-end p-4 relative`}>
-        <button onClick={onClose} className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/30 hover:bg-black/50 text-white flex items-center justify-center text-sm transition-colors">\u2715</button>
+        <button onClick={onClose} className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/30 hover:bg-black/50 text-white flex items-center justify-center text-sm transition-colors">✕</button>
         <div>
           <div className="text-white font-bold text-sm leading-tight">{tpl.name || tpl.id}</div>
           <div className="text-white/70 text-[10px] mt-0.5">{tpl.id || tpl.template_id}</div>
@@ -369,20 +381,20 @@ function SidePanel({ tpl, quality, usage, versions, defaultId, publishing, hidde
         <div className={`rounded-lg border p-3 cursor-pointer transition-colors ${quality.pass ? "border-emerald-500/30 bg-emerald-500/5" : "border-red-500/30 bg-red-500/5"}`} onClick={() => setShowQuality(!showQuality)}>
           <div className="flex items-center justify-between">
             <span className={`text-xs font-semibold ${quality.pass ? "text-emerald-400" : "text-red-400"}`}>
-              Quality Gate {quality.pass ? "\u2713 Pass" : "\u2717 Fail"}
+              Quality Gate {quality.pass ? "✓ Pass" : "✗ Fail"}
             </span>
-            <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{quality.blocking.length + quality.warnings.length} checks \u00b7 {showQuality ? "\u25b2" : "\u25bc"}</span>
+            <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{quality.blocking.length + quality.warnings.length} checks · {showQuality ? "▲" : "▼"}</span>
           </div>
           {showQuality && (
             <div className="mt-2 space-y-1">
-              {quality.blocking.map((x) => <div key={x} className="text-[10px] text-red-400">\u2022 {x}</div>)}
-              {quality.warnings.map((x) => <div key={x} className="text-[10px] text-yellow-400">\u2022 {x}</div>)}
+              {quality.blocking.map((x) => <div key={x} className="text-[10px] text-red-400">• {x}</div>)}
+              {quality.warnings.map((x) => <div key={x} className="text-[10px] text-yellow-400">• {x}</div>)}
               {quality.pass && quality.warnings.length === 0 && <div className="text-[10px] text-emerald-400">All checks passed.</div>}
             </div>
           )}
         </div>
 
-        {hiddenHint && <div className="text-[10px] text-yellow-400 bg-yellow-400/5 rounded-lg p-2">\u26a0 Wizard excluded: {hiddenHint}</div>}
+        {hiddenHint && <div className="text-[10px] text-yellow-400 bg-yellow-400/5 rounded-lg p-2">⚠ Wizard excluded: {hiddenHint}</div>}
 
         {/* Actions */}
         <div className="space-y-2">
@@ -420,7 +432,7 @@ function SidePanel({ tpl, quality, usage, versions, defaultId, publishing, hidde
                 <div className="text-xs font-semibold text-[hsl(var(--foreground))]">
                   v{v.version_number} {Number(v.version_number) === Number(tpl.current_version || 1) ? <span className="text-emerald-400 text-[9px]">(current)</span> : ""}
                 </div>
-                <div className="text-[10px] text-[hsl(var(--muted-foreground))]">{v.note || "No note"} \u00b7 {toDate(v.created_at)}</div>
+                <div className="text-[10px] text-[hsl(var(--muted-foreground))]">{v.note || "No note"} · {toDate(v.created_at)}</div>
               </div>
               <div className="flex gap-1">
                 <Btn small onClick={() => onPublish(v.version_number)}>Publish</Btn>
