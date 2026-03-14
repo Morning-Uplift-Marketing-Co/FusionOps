@@ -37,5 +37,5 @@
   "trustBadges": "",
   "reviews": [],
   "deployedAt": "2026-03-09T12:24:00.000Z",
-  "_comment": "Testing Bolt template fusionops-tmp-01 deployment"
+  "_comment": "Testing Bolt template fusionops-tmp-01 with env.ts"
 }
