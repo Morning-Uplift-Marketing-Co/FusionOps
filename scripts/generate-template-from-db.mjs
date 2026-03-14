@@ -58,6 +58,43 @@ async function fetchTemplateFromDB(templateId) {
   }
 }
 
+/**
+ * Fix Astro frontmatter ordering: imports must come before const/let/var declarations.
+ * Templates from Bolt.new sometimes have const declarations before imports, which
+ * causes esbuild to fail with "Expected ';' but found ..." errors.
+ */
+function fixAstroFrontmatter(content) {
+  const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!fmMatch) return content;
+
+  const frontmatter = fmMatch[1];
+  const lines = frontmatter.split('\n');
+
+  const importLines = [];
+  const otherLines = [];
+
+  for (const line of lines) {
+    if (/^\s*import\s+/.test(line)) {
+      importLines.push(line);
+    } else {
+      otherLines.push(line);
+    }
+  }
+
+  // If imports are already first (or none), no fix needed
+  if (importLines.length === 0) return content;
+
+  const firstImportIdx = lines.findIndex(l => /^\s*import\s+/.test(l));
+  const lastNonImportBeforeImport = lines.slice(0, firstImportIdx).some(l => /^\s*(const|let|var)\s+/.test(l));
+
+  if (!lastNonImportBeforeImport) return content; // Already correct order
+
+  const reordered = [...importLines, '', ...otherLines].join('\n');
+  const fixed = content.replace(fmMatch[0], `---\n${reordered}\n---`);
+  console.log(`  ⚠ Fixed Astro frontmatter order (imports moved before declarations)`);
+  return fixed;
+}
+
 function generateTempDirectory(templateId, files) {
   const tempDir = path.join(root, 'tmp', 'templates', templateId);
 
@@ -72,8 +109,14 @@ function generateTempDirectory(templateId, files) {
     // Create subdirectories if needed
     mkdirSync(dir, { recursive: true });
 
+    // Fix Astro frontmatter: imports must come before const declarations
+    let fixedContent = content;
+    if (filePath.endsWith('.astro') && typeof content === 'string') {
+      fixedContent = fixAstroFrontmatter(content);
+    }
+
     // Write file
-    writeFileSync(fullPath, content, 'utf8');
+    writeFileSync(fullPath, fixedContent, 'utf8');
   }
 
   console.log(`Generated temp directory: ${tempDir}`);

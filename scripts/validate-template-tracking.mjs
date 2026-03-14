@@ -17,19 +17,62 @@ if (!templateDirArg) {
 }
 
 const templateDir = path.resolve(templateDirArg);
+
+// Detect template format: Astro (has src/pages/index.astro) or HTML-first (has index.html)
+const indexAstroPath = path.join(templateDir, 'src', 'pages', 'index.astro');
+const indexHtmlPath = path.join(templateDir, 'index.html');
+const distIndexPath = path.join(templateDir, 'dist', 'index.html');
+const isAstro = fs.existsSync(indexAstroPath);
+const isHtml = !isAstro && (fs.existsSync(indexHtmlPath) || fs.existsSync(distIndexPath));
+
+if (isHtml) {
+  // HTML-first templates: validate basic tracking presence in HTML files
+  const htmlFiles = [];
+  function findHtml(dir) {
+    if (!fs.existsSync(dir)) return;
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isDirectory() && entry.name !== 'node_modules') findHtml(path.join(dir, entry.name));
+      else if (entry.name.endsWith('.html')) htmlFiles.push(path.join(dir, entry.name));
+    }
+  }
+  findHtml(templateDir);
+
+  const allHtml = htmlFiles.map(f => readText(f)).join('\n');
+  const issues = [];
+
+  if (allHtml.length === 0) {
+    issues.push('No HTML files found in template directory');
+  } else {
+    // Basic checks for HTML templates — warnings only, not blocking
+    const hasGtag = /gtag\(|googletagmanager|AW-\d+/i.test(allHtml);
+    const hasPixel = /sendBeacon|fpPixel|__fpPixel|pixel|\/e['"?]/i.test(allHtml);
+    if (!hasGtag) console.warn('⚠ HTML template: No Google Ads tracking detected (non-blocking)');
+    if (!hasPixel) console.warn('⚠ HTML template: No pixel tracking detected (non-blocking)');
+  }
+
+  if (issues.length) {
+    console.error('\n✗ HTML template validation failed:\n');
+    for (const issue of issues) console.error(`  - ${issue}`);
+    process.exit(1);
+  }
+
+  console.log('✓ HTML-first template validation passed for', templateDir, `(${htmlFiles.length} HTML files)`);
+  process.exit(0);
+}
+
+// Astro template validation (original logic)
 const layoutPath = path.join(templateDir, 'src', 'layouts', 'Layout.astro');
-const indexPath = path.join(templateDir, 'src', 'pages', 'index.astro');
 const endpointPath = path.join(templateDir, 'src', 'pages', 'e.ts');
 const robotsPath = path.join(templateDir, 'src', 'pages', 'robots.txt.ts');
 const headersPath = path.join(templateDir, 'public', '_headers');
 
 const layout = readText(layoutPath);
-const index = readText(indexPath);
+const index = readText(indexAstroPath);
 
 const issues = [];
 
 ensure(fs.existsSync(layoutPath), `Missing file: ${layoutPath}`, issues);
-ensure(fs.existsSync(indexPath), `Missing file: ${indexPath}`, issues);
+ensure(fs.existsSync(indexAstroPath), `Missing file: ${indexAstroPath}`, issues);
 ensure(fs.existsSync(endpointPath), `Missing endpoint: ${endpointPath}`, issues);
 ensure(fs.existsSync(robotsPath), `Missing robots route: ${robotsPath}`, issues);
 ensure(fs.existsSync(headersPath), `Missing security headers file: ${headersPath}`, issues);

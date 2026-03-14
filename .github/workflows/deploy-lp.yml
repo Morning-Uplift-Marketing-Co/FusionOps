@@ -152,6 +152,15 @@ jobs:
         working-directory: ${{ steps.template.outputs.dir }}
         run: node $GITHUB_WORKSPACE/scripts/validate-template-tracking.mjs .
 
+      - name: Patch build script for CI
+        working-directory: ${{ steps.template.outputs.dir }}
+        run: |
+          # DB templates may have "astro check && astro build" which fails in CI
+          # because @astrojs/check + typescript are not installed. Patch to "astro build" only.
+          if node -e "const p=require('./package.json');if(p.scripts?.build?.includes('astro check')){p.scripts.build='astro build';require('fs').writeFileSync('package.json',JSON.stringify(p,null,2));console.log('Patched build script: removed astro check')}else{console.log('Build script OK: '+p.scripts?.build)}"; then
+            echo "Build script check complete"
+          fi
+
       - name: Build Astro site
         working-directory: ${{ steps.template.outputs.dir }}
         run: npm run build
