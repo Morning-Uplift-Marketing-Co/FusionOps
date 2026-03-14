@@ -644,6 +644,30 @@ function isValidTemplateId(value) {
   return /^[a-z0-9][a-z0-9-]{1,63}$/i.test(v);
 }
 
+/** Infer template category from templateId, name, description, and file contents */
+function inferTemplateCategory(templateId, name, description, files) {
+  const hint = [templateId, name, description].join(' ').toLowerCase();
+  const fileContent = typeof files === 'object' && files
+    ? Object.values(files).filter(v => typeof v === 'string').join(' ').toLowerCase().slice(0, 5000)
+    : '';
+  const all = hint + ' ' + fileContent;
+  if (/pet|animal|vet|puppy|kitten|veterinar/.test(hint)) return 'pet';
+  if (/installment|pdl|payday/.test(hint)) return 'installment';
+  if (/loan|lend|borrow|credit|financ|apr/.test(hint)) return 'loan';
+  // Check file content as fallback
+  if (/pet[-_ ]?care|veterinar|animal\s+hospital/i.test(fileContent)) return 'pet';
+  if (/installment\s+loan|payday\s+loan/i.test(fileContent)) return 'installment';
+  if (/loan\s+calculator|monthly\s+payment|apr\s+range|personal\s+loan/i.test(fileContent)) return 'loan';
+  return 'general';
+}
+
+/** Resolve category: use explicit if valid and non-general, otherwise infer */
+function resolveCategory(explicit, templateId, name, description, files) {
+  const cat = String(explicit || '').trim().toLowerCase();
+  if (cat && cat !== 'general' && ['loan', 'pet', 'pet-care', 'installment', 'custom'].includes(cat)) return cat;
+  return inferTemplateCategory(templateId, name, description, files);
+}
+
 async function getLcSettings(db) {
   const rows = await db.prepare("SELECT key, value FROM settings WHERE key IN ('lcToken', 'lcTeamUuid')").all();
   const s = {};
@@ -2297,6 +2321,8 @@ export default {
           'SELECT id FROM templates WHERE template_id = ? AND COALESCE(is_deleted, 0) = 0'
         ).bind(templateId).first();
 
+        const resolvedCategory = resolveCategory(body.category, templateId, name, body.description, body.files);
+
         if (existing) {
           // Update existing template
           await db.prepare(`
@@ -2307,7 +2333,7 @@ export default {
           `).bind(
             name,
             body.description || '',
-            body.category || 'general',
+            resolvedCategory,
             badge,
             body.sourceCode || body.source_code || '',
             filesJson,
@@ -2333,7 +2359,7 @@ export default {
           `).bind(
             id, templateId, name,
             body.description || '',
-            body.category || 'general',
+            resolvedCategory,
             badge,
             body.sourceCode || body.source_code || '',
             filesJson, now, now, status, null
@@ -2408,6 +2434,7 @@ export default {
         }
 
         const filesJson = body.files ? JSON.stringify(body.files) : '{}';
+        const postCategory = resolveCategory(body.category, templateId, body.name, body.description, body.files);
         try {
           await db.prepare(`
             INSERT INTO templates (
@@ -2420,7 +2447,7 @@ export default {
             templateId,
             body.name || '',
             body.description || '',
-            body.category || 'general',
+            postCategory,
             body.badge || 'New',
             body.sourceCode || '',
             filesJson,
@@ -2478,7 +2505,10 @@ export default {
         }
         if (Object.prototype.hasOwnProperty.call(body, 'name')) { fields.push('name = ?'); values.push(body.name || ''); }
         if (Object.prototype.hasOwnProperty.call(body, 'description')) { fields.push('description = ?'); values.push(body.description || ''); }
-        if (Object.prototype.hasOwnProperty.call(body, 'category')) { fields.push('category = ?'); values.push(body.category || 'general'); }
+        if (Object.prototype.hasOwnProperty.call(body, 'category')) {
+          const putCat = resolveCategory(body.category, row.template_id, body.name || row.name, body.description || row.description, body.files || null);
+          fields.push('category = ?'); values.push(putCat);
+        }
         if (Object.prototype.hasOwnProperty.call(body, 'badge')) { fields.push('badge = ?'); values.push(body.badge || 'New'); }
         if (Object.prototype.hasOwnProperty.call(body, 'sourceCode')) { fields.push('source_code = ?'); values.push(body.sourceCode || ''); }
         if (Object.prototype.hasOwnProperty.call(body, 'files')) { fields.push('files = ?'); values.push(JSON.stringify(body.files || {})); }

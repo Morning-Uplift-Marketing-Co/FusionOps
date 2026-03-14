@@ -165,6 +165,21 @@ function mergeTemplateCollections(sources) {
 
 export const registry = Object.freeze({});
 
+/** Infer category from template id/name when DB has 'general' or missing */
+function inferCategoryFromHints(templateId, name, description) {
+  const hint = [templateId, name, description].join(' ').toLowerCase();
+  if (/pet|animal|vet|puppy|kitten|veterinar/.test(hint)) return 'pet';
+  if (/installment|pdl|payday/.test(hint)) return 'installment';
+  if (/loan|lend|borrow|credit|financ|apr/.test(hint)) return 'loan';
+  return 'general';
+}
+
+function resolveCategoryClient(explicit, templateId, name, description) {
+  const cat = String(explicit || '').trim().toLowerCase();
+  if (cat && cat !== 'general' && ['loan', 'pet', 'pet-care', 'installment', 'custom'].includes(cat)) return cat;
+  return inferCategoryFromHints(templateId, name, description);
+}
+
 // Cache for custom templates from API
 let customTemplatesCache = null;
 let customTemplatesLoading = false;
@@ -224,7 +239,7 @@ export async function fetchCustomTemplates(force = false) {
             name: t.name,
             description: t.description,
             badge: t.badge || 'Custom',
-            category: t.category || 'custom',
+            category: resolveCategoryClient(t.category, t.template_id || t.id, t.name, t.description),
             source: 'api',
             sourceCode: t.source_code,
             createdAt: t.created_at,
