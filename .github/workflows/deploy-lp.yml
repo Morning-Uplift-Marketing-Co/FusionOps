@@ -93,6 +93,9 @@ jobs:
           fi
 
           echo "dir=$DIR" >> "$GITHUB_OUTPUT"
+          echo "cf_pages_project=${{ steps.config_parse.outputs.cf_pages_project }}" >> "$GITHUB_OUTPUT"
+          echo "cf_api_token=${{ steps.config_parse.outputs.cf_api_token }}" >> "$GITHUB_OUTPUT"
+          echo "cf_account_id=${{ steps.config_parse.outputs.cf_account_id }}" >> "$GITHUB_OUTPUT"
           echo "Final template directory: $DIR"
 
       - name: Install template dependencies
