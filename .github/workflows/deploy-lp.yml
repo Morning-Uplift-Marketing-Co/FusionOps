@@ -102,7 +102,7 @@ jobs:
         working-directory: ${{ steps.template.outputs.dir }}
         run: npm install
 
-      - name: Inject site config as Astro env vars
+      - name: Inject site config as env vars (Astro PUBLIC_* + Vite VITE_*)
         working-directory: ${{ steps.template.outputs.dir }}
         run: |
           node -e "
@@ -113,38 +113,63 @@ jobs:
           const cleanDomain = String(c.domain||'').trim().toLowerCase().replace(/^https?:\/\//,'').replace(/^\/\//,'').replace(/[/?#].*$/,'').replace(/\.+$/,'').replace(/^www\./,'');
           const amountMin = String(Number(String(c.amountMin||100).replace(/[^0-9.]/g,''))||100);
           const amountMax = String(Number(String(c.amountMax||5000).replace(/[^0-9.]/g,''))||5000);
-          const lines = [
-            'PUBLIC_BRAND='       + JSON.stringify(c.brand||''),
-            'PUBLIC_DOMAIN='      + JSON.stringify(cleanDomain||'example.com'),
-            'PUBLIC_H1='          + JSON.stringify(c.h1||c.brand||''),
-            'PUBLIC_SUB='         + JSON.stringify(c.sub||''),
-            'PUBLIC_CTA='         + JSON.stringify(c.cta||'Apply Now'),
-            'PUBLIC_PHONE='       + JSON.stringify(c.phone||''),
-            'PUBLIC_EMAIL='       + JSON.stringify(c.email||('support@'+(c.domain||'example.com'))),
-            'PUBLIC_ADDRESS='     + JSON.stringify(c.address||''),
-            'PUBLIC_AID='         + JSON.stringify(c.aid||''),
-            'PUBLIC_AMOUNTMIN='   + JSON.stringify(amountMin),
-            'PUBLIC_AMOUNTMAX='   + JSON.stringify(amountMax),
-            'PUBLIC_PRIMARYCOLOR='+ JSON.stringify(c.primaryColor||'#3b5bdb'),
-            'PUBLIC_ACCENTCOLOR=' + JSON.stringify(c.accentColor||'#f97316'),
-            'PUBLIC_APRMIN='        + JSON.stringify(String(c.aprMin||5.99)),
-            'PUBLIC_APRMAX='        + JSON.stringify(String(c.aprMax||35.99)),
-            'PUBLIC_CONVERSIONID='    + JSON.stringify(c.conversionId||''),
-            'PUBLIC_FORMSTARTLABEL='  + JSON.stringify(c.gtagFormStartLabel||c.formStartLabel||''),
-            'PUBLIC_FORMSUBMITLABEL=' + JSON.stringify(c.gtagFormSubmitLabel||c.formSubmitLabel||''),
-            'PUBLIC_VOLUUMID='        + JSON.stringify(c.voluumId||''),
-            'PUBLIC_VOLUUMDOMAIN='  + JSON.stringify(c.voluumDomain||''),
-            'PUBLIC_VOLUUM_CLICK_URL=' + JSON.stringify(c.voluumClickUrl||''),
-            'PUBLIC_COLORID='       + JSON.stringify(c.colorId||''),
-            'PUBLIC_FONTID='        + JSON.stringify(c.fontId||''),
-            'PUBLIC_LAYOUT='        + JSON.stringify(c.layout||''),
-            'PUBLIC_RADIUS='        + JSON.stringify(c.radius||''),
-            'PUBLIC_TRUSTBADGES='   + JSON.stringify(c.trustBadges||''),
-            'PUBLIC_REVIEWS='       + JSON.stringify(JSON.stringify(c.reviews||[])),
-          ];
-          // Merge with existing .env (preserves template-specific keys like Supabase)
+
+          // Shared values — written as both PUBLIC_* (Astro) and VITE_* (Loveable/Vite)
+          const vars = {
+            BRAND:           c.brand||'',
+            DOMAIN:          cleanDomain||'example.com',
+            H1:              c.h1||c.brand||'',
+            SUB:             c.sub||'',
+            CTA:             c.cta||'Apply Now',
+            PHONE:           c.phone||'',
+            EMAIL:           c.email||('support@'+(c.domain||'example.com')),
+            ADDRESS:         c.address||'',
+            AID:             c.aid||'',
+            AMOUNTMIN:       amountMin,
+            AMOUNTMAX:       amountMax,
+            PRIMARYCOLOR:    c.primaryColor||'#3b5bdb',
+            ACCENTCOLOR:     c.accentColor||'#f97316',
+            APRMIN:          String(c.aprMin||5.99),
+            APRMAX:          String(c.aprMax||35.99),
+            CONVERSIONID:    c.conversionId||'',
+            FORMSTARTLABEL:  c.gtagFormStartLabel||c.formStartLabel||'',
+            FORMSUBMITLABEL: c.gtagFormSubmitLabel||c.formSubmitLabel||'',
+            VOLUUMID:        c.voluumId||'',
+            VOLUUMDOMAIN:    c.voluumDomain||'',
+            VOLUUM_CLICK_URL:c.voluumClickUrl||'',
+            COLORID:         c.colorId||'',
+            FONTID:          c.fontId||'',
+            LAYOUT:          c.layout||'',
+            RADIUS:          c.radius||'',
+            TRUSTBADGES:     c.trustBadges||'',
+            REVIEWS:         JSON.stringify(c.reviews||[]),
+          };
+
+          // Explicit VITE_* key mapping (Loveable convention)
+          const viteMap = {
+            BRAND:'BRAND', DOMAIN:'DOMAIN', H1:'H1', SUB:'SUB', CTA:'CTA',
+            PHONE:'PHONE', EMAIL:'EMAIL', ADDRESS:'ADDRESS', AID:'AID',
+            AMOUNTMIN:'AMOUNT_MIN', AMOUNTMAX:'AMOUNT_MAX',
+            PRIMARYCOLOR:'PRIMARY_COLOR', ACCENTCOLOR:'ACCENT_COLOR',
+            APRMIN:'APR_MIN', APRMAX:'APR_MAX',
+            CONVERSIONID:'CONVERSION_ID',
+            FORMSTARTLABEL:'FORM_START_LABEL', FORMSUBMITLABEL:'FORM_SUBMIT_LABEL',
+            VOLUUMID:'VOLUUM_ID', VOLUUMDOMAIN:'VOLUUM_DOMAIN',
+            VOLUUM_CLICK_URL:'VOLUUM_CLICK_URL',
+            COLORID:'COLOR_ID', FONTID:'FONT_ID',
+            LAYOUT:'LAYOUT', RADIUS:'RADIUS',
+            TRUSTBADGES:'TRUSTBADGES', REVIEWS:'REVIEWS',
+          };
+
+          const lines = [];
+          for (const [key, val] of Object.entries(vars)) {
+            lines.push('PUBLIC_' + key + '=' + JSON.stringify(val));
+            const vk = viteMap[key] || key;
+            lines.push('VITE_' + vk + '=' + JSON.stringify(val));
+          }
+
+          // Merge with existing .env (preserves template-specific keys)
           const existingEnv = fs.existsSync('.env') ? fs.readFileSync('.env', 'utf8') : '';
-          const existingKeys = new Set(existingEnv.split('\n').filter(l=>l.includes('=')).map(l=>l.split('=')[0]));
           const newKeys = new Set(lines.map(l=>l.split('=')[0]));
           const preserved = existingEnv.split('\n').filter(l => {
             const key = l.split('=')[0];
@@ -152,10 +177,14 @@ jobs:
           });
           const merged = [...lines, ...preserved].join('\n');
           fs.writeFileSync('.env', merged);
-          console.log('Wrote .env for domain:', c.domain, 'amountMax:', amountMax, 'preserved keys:', preserved.length);
+          console.log('Wrote .env for domain:', c.domain, '| vars:', lines.length, '| preserved:', preserved.length);
           "
         env:
           CONFIG_FILE: ${{ steps.config.outputs.file }}
+
+      - name: Auto-inject tracking (Voluum + Pixel + Gtag)
+        working-directory: ${{ steps.template.outputs.dir }}
+        run: node $GITHUB_WORKSPACE/scripts/inject-tracking.mjs .
 
       - name: Validate template tracking stack
         working-directory: ${{ steps.template.outputs.dir }}
@@ -164,13 +193,27 @@ jobs:
       - name: Patch build script for CI
         working-directory: ${{ steps.template.outputs.dir }}
         run: |
-          # DB templates may have "astro check && astro build" which fails in CI
-          # because @astrojs/check + typescript are not installed. Patch to "astro build" only.
-          if node -e "const p=require('./package.json');if(p.scripts?.build?.includes('astro check')){p.scripts.build='astro build';require('fs').writeFileSync('package.json',JSON.stringify(p,null,2));console.log('Patched build script: removed astro check')}else{console.log('Build script OK: '+p.scripts?.build)}"; then
-            echo "Build script check complete"
-          fi
+          node -e "
+          const fs = require('fs');
+          const p = JSON.parse(fs.readFileSync('package.json','utf8'));
+          let changed = false;
+          // Remove 'astro check' from build (needs @astrojs/check + typescript)
+          if (p.scripts?.build?.includes('astro check')) {
+            p.scripts.build = p.scripts.build.replace(/astro check\s*&&?\s*/g, '').trim() || 'astro build';
+            changed = true;
+            console.log('Patched: removed astro check');
+          }
+          // Remove lovable-tagger plugin (CI-only issue)
+          if (p.devDependencies?.['lovable-tagger']) {
+            delete p.devDependencies['lovable-tagger'];
+            changed = true;
+            console.log('Patched: removed lovable-tagger');
+          }
+          if (changed) fs.writeFileSync('package.json', JSON.stringify(p, null, 2));
+          else console.log('Build script OK:', p.scripts?.build);
+          "
 
-      - name: Build Astro site
+      - name: Build site (Astro or Vite)
         working-directory: ${{ steps.template.outputs.dir }}
         run: npm run build
 
