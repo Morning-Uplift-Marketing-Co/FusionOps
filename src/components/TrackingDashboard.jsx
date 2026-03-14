@@ -205,12 +205,15 @@ export function TrackingDashboard({ settings, sites }) {
   const [html, setHtml] = useState(null);
   const [checks, setChecks] = useState(null);
   const [score, setScore] = useState(null);
+  const [htmlApply, setHtmlApply] = useState(null);
+  const [checksApply, setChecksApply] = useState(null);
+  const [scoreApply, setScoreApply] = useState(null);
   const [events, setEvents] = useState([]);
   const [liveUrl, setLiveUrl] = useState(null);
   const iframeRef = useRef(null);
   const [selectedSite, setSelectedSite] = useState("");
 
-  // Fetch and analyze LP
+  // Fetch and analyze LP (both index and /apply)
   const analyze = useCallback(async (targetUrl) => {
     const normalizedUrl = normalizeTargetUrl(targetUrl);
     if (!normalizedUrl) {
@@ -224,29 +227,49 @@ export function TrackingDashboard({ settings, sites }) {
 
     setLoading(true);
     setEvents([]);
-    try {
-      // Try fetching via API proxy to avoid CORS
-      let fetchedHtml = null;
+    
+    // Helper function to fetch HTML
+    const fetchHtml = async (url) => {
       try {
-        const res = await fetch(normalizedUrl);
-        fetchedHtml = await res.text();
+        const res = await fetch(url);
+        return await res.text();
       } catch {
-        // Try via proxy
         try {
-          const proxyRes = await fetch(`/api/proxy?url=${encodeURIComponent(normalizedUrl)}`);
-          fetchedHtml = await proxyRes.text();
+          const proxyRes = await fetch(`/api/proxy?url=${encodeURIComponent(url)}`);
+          return await proxyRes.text();
         } catch {
-          // Try web_fetch style
-          addEvent("error", "Could not fetch URL directly. Analyzing from source if available.");
+          return null;
         }
       }
+    };
 
+    try {
+      // Fetch index page
+      const fetchedHtml = await fetchHtml(normalizedUrl);
       if (fetchedHtml) {
         setHtml(fetchedHtml);
         const c = analyzeHtml(fetchedHtml);
         setChecks(c);
         setScore(scoreChecks(c));
-        addEvent("info", `Analyzed ${normalizedUrl} — ${fetchedHtml.length.toLocaleString()} bytes`);
+        addEvent("info", `Analyzed INDEX: ${normalizedUrl} — ${fetchedHtml.length.toLocaleString()} bytes`);
+      } else {
+        addEvent("error", "Could not fetch INDEX page.");
+      }
+
+      // Fetch /apply page
+      const applyUrl = normalizedUrl.replace(/\/$/, '') + '/apply';
+      const fetchedHtmlApply = await fetchHtml(applyUrl);
+      if (fetchedHtmlApply) {
+        setHtmlApply(fetchedHtmlApply);
+        const cApply = analyzeHtml(fetchedHtmlApply);
+        setChecksApply(cApply);
+        setScoreApply(scoreChecks(cApply));
+        addEvent("info", `Analyzed APPLY: ${applyUrl} — ${fetchedHtmlApply.length.toLocaleString()} bytes`);
+      } else {
+        addEvent("warn", "Could not fetch /apply page. It may not exist or is blocked.");
+        setHtmlApply(null);
+        setChecksApply(null);
+        setScoreApply(null);
       }
     } catch (e) {
       addEvent("error", `Analysis failed: ${e.message}`);
@@ -360,7 +383,7 @@ export function TrackingDashboard({ settings, sites }) {
       </div>
 
       {/* Tab Content */}
-      {tab === "overview" && <OverviewTab checks={checks} score={score} />}
+      {tab === "overview" && <OverviewTab checks={checks} score={score} checksApply={checksApply} scoreApply={scoreApply} />}
       {tab === "events" && <EventsTab events={events} />}
       {tab === "monitor" && <MonitorTab url={liveUrl} iframeRef={iframeRef} addEvent={addEvent} />}
       {tab === "help" && <HelpTab />}
@@ -369,7 +392,7 @@ export function TrackingDashboard({ settings, sites }) {
 }
 
 // ─── Overview Tab ───
-function OverviewTab({ checks, score }) {
+function OverviewTab({ checks, score, checksApply, scoreApply }) {
   if (!checks || !score) {
     return (
       <div style={{ ...S.card, textAlign: "center", padding: 48, color: T.muted }}>
@@ -381,10 +404,11 @@ function OverviewTab({ checks, score }) {
   }
 
   const pctColor = score.pct >= 80 ? T.success : score.pct >= 50 ? T.warning : T.danger;
+  const pctColorApply = scoreApply ? (scoreApply.pct >= 80 ? T.success : scoreApply.pct >= 50 ? T.warning : T.danger) : T.muted;
 
   return (
     <>
-      {/* Score Summary */}
+      {/* Score Summary - Index Page */}
       <div style={{ ...S.card, marginBottom: 20, display: "flex", alignItems: "center", gap: 20 }}>
         <div style={{
           width: 64, height: 64, borderRadius: "50%",
@@ -395,9 +419,9 @@ function OverviewTab({ checks, score }) {
         }}>
           {score.pct}%
         </div>
-        <div>
+        <div style={{ flex: 1 }}>
           <div style={{ fontSize: 16, fontWeight: 800 }}>
-            Tracking Verification <span style={S.badge(pctColor)}>{score.passed}/{score.total}</span>
+            📄 INDEX Page — Tracking Verification <span style={S.badge(pctColor)}>{score.passed}/{score.total}</span>
           </div>
           <div style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>
             {score.pct >= 80 ? "All critical tracking layers detected" :
@@ -407,7 +431,33 @@ function OverviewTab({ checks, score }) {
         </div>
       </div>
 
-      {/* Check Groups */}
+      {/* Score Summary - Apply Page */}
+      {scoreApply && (
+        <div style={{ ...S.card, marginBottom: 20, display: "flex", alignItems: "center", gap: 20 }}>
+          <div style={{
+            width: 64, height: 64, borderRadius: "50%",
+            border: `3px solid ${pctColorApply}`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 20, fontWeight: 800, color: pctColorApply,
+            background: `${pctColorApply}11`,
+          }}>
+            {scoreApply.pct}%
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 16, fontWeight: 800 }}>
+              📝 APPLY Page — Tracking Verification <span style={S.badge(pctColorApply)}>{scoreApply.passed}/{scoreApply.total}</span>
+            </div>
+            <div style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>
+              {scoreApply.pct >= 80 ? "All critical tracking layers detected" :
+               scoreApply.pct >= 50 ? "Some tracking layers missing — check details below" :
+               "Major tracking gaps detected — review implementation"}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* INDEX Page - Check Groups */}
+      <div style={{ ...S.sectionLabel, marginTop: 20 }}>📄 INDEX PAGE ANALYSIS</div>
       <div style={S.grid}>
         {Object.entries(score.groups).map(([group, items]) => {
           const passed = items.filter(i => {
@@ -438,6 +488,43 @@ function OverviewTab({ checks, score }) {
           );
         })}
       </div>
+
+      {/* APPLY Page - Check Groups */}
+      {scoreApply && checksApply && (
+        <>
+          <div style={{ ...S.sectionLabel, marginTop: 32 }}>📝 APPLY PAGE ANALYSIS</div>
+          <div style={S.grid}>
+            {Object.entries(scoreApply.groups).map(([group, items]) => {
+              const passed = items.filter(i => {
+                const v = checksApply[i.key];
+                return v === true || (typeof v === "string" && v);
+              }).length;
+              const total = items.length;
+              const groupColor = passed === total ? T.success : passed > 0 ? T.warning : T.danger;
+
+              return (
+                <div key={group} style={S.card}>
+                  <div style={S.cardTitle}>
+                    <span style={S.badge(groupColor)}>{passed}/{total}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: .5, color: T.muted }}>{group}</span>
+                  </div>
+                  {items.map(item => {
+                    const val = checksApply[item.key];
+                    const ok = val === true || (typeof val === "string" && val);
+                    const style = ok ? S.rowPass : item.required ? S.rowFail : S.rowWarn;
+                    return (
+                      <div key={item.key} style={{ ...S.row, ...style }}>
+                        <span>{item.label}</span>
+                        <StatusDot ok={ok} warn={!item.required} />
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
     </>
   );
 }
