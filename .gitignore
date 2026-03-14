@@ -28,3 +28,6 @@ dist/nul
 tmp_check.html
 templates/astro-test002/package-lock.json
 templates/installment-loans-101/package-lock.json
+
+# Generated template directories
+tmp/

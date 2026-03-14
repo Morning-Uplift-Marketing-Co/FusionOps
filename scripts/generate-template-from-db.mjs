@@ -14,10 +14,10 @@ const MCP_SECRET = process.env.MCP_SECRET || '9f6a3c1d4e8b7a2f5c0d9e1b3a6f4c7d2e
 
 async function fetchTemplateFromDB(templateId) {
   try {
-    const url = `${API_BASE}/api/mcp/templates`;
+    const url = `${API_BASE}/api/templates`;
     const response = await fetch(url, {
       headers: {
-        'x-mcp-secret': MCP_SECRET,
+        'Origin': 'http://localhost:4322',
       },
     });
 
@@ -26,11 +26,12 @@ async function fetchTemplateFromDB(templateId) {
       return null;
     }
 
-    const data = await response.json();
-    const template = data.data?.find((t) => t.template_id === templateId);
+    const templates = await response.json();
+    const template = templates.find((t) => t.template_id === templateId);
 
     if (!template) {
       console.error(`Template not found in D1 Database: ${templateId}`);
+      console.error(`Available templates: ${templates.map(t => t.template_id).join(', ')}`);
       return null;
     }
 
@@ -41,6 +42,8 @@ async function fetchTemplateFromDB(templateId) {
       console.error(`Failed to parse files JSON:`, e.message);
       return null;
     }
+
+    console.log(`Files count: ${Object.keys(files).length}`);
 
     return {
       id: template.id,
