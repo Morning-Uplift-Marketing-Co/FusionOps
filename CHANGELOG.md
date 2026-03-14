@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.1] - 2026-03-14
+### Enhanced
+- **Tracking Verification Dashboard**: Now analyzes both INDEX and /apply pages simultaneously
+  - Dual-page analysis with separate score cards and detailed breakdowns
+  - Automatic fetch of both homepage and /apply route when checking tracking implementation
+  - Clear visual separation: 📄 INDEX PAGE ANALYSIS and 📝 APPLY PAGE ANALYSIS sections
+  - Independent scoring and verification for each page's tracking layers
+  - Graceful handling when /apply page doesn't exist or is inaccessible
+  - Event log shows separate analysis results for both pages
+
 ## [3.1.0] - 2026-03-14
 ### Features
 - **Bolt.new Template Integration**: Auto-generate template directories from D1 Database
