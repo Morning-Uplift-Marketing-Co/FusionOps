@@ -104,7 +104,9 @@ jobs:
         run: |
           node -e "
           const fs = require('fs');
-          const c = JSON.parse(fs.readFileSync(process.env.CONFIG_FILE, 'utf8'));
+          const path = require('path');
+          const configPath = path.resolve(process.env.GITHUB_WORKSPACE, process.env.CONFIG_FILE);
+          const c = JSON.parse(fs.readFileSync(configPath, 'utf8'));
           const cleanDomain = String(c.domain||'').trim().toLowerCase().replace(/^https?:\/\//,'').replace(/^\/\//,'').replace(/[/?#].*$/,'').replace(/\.+$/,'').replace(/^www\./,'');
           const amountMin = String(Number(String(c.amountMin||100).replace(/[^0-9.]/g,''))||100);
           const amountMax = String(Number(String(c.amountMax||5000).replace(/[^0-9.]/g,''))||5000);
@@ -141,11 +143,11 @@ jobs:
           console.log('Wrote .env for domain:', c.domain, 'amountMax:', amountMax);
           "
         env:
-          CONFIG_FILE: ../../${{ steps.config.outputs.file }}
+          CONFIG_FILE: ${{ steps.config.outputs.file }}
 
       - name: Validate template tracking stack
         working-directory: ${{ steps.template.outputs.dir }}
-        run: node ../../scripts/validate-template-tracking.mjs .
+        run: node $GITHUB_WORKSPACE/scripts/validate-template-tracking.mjs .
 
       - name: Build Astro site
         working-directory: ${{ steps.template.outputs.dir }}
