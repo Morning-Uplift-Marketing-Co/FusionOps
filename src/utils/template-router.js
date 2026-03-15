@@ -49,6 +49,82 @@ function getColorObj(colorId) {
   return ALL_COLORS.find(c => c.id === colorId) || ALL_COLORS[3] || ALL_COLORS[0];
 }
 
+// Generate a static preview placeholder for Vite/React templates (Loveable)
+// These templates need a build step and can't render live in an iframe
+function generateVitePreviewPlaceholder(customTemplate, site) {
+  const brand = site.brand || customTemplate.name || 'Brand';
+  const h1 = site.h1 || 'Your Headline Here';
+  const sub = site.sub || 'Your subheadline goes here';
+  const cta = site.cta || 'Apply Now';
+  const badge = customTemplate.badge || 'Vite';
+  const amountMax = site.amountMax ? `$${Number(String(site.amountMax).replace(/[^0-9]/g, '')).toLocaleString()}` : '$5,000';
+  const colorObj = getColorObj(site.colorId);
+  const primary = `hsl(${colorObj.p[0]}, ${colorObj.p[1]}%, ${colorObj.p[2]}%)`;
+  const accent = site.primaryColor || primary;
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; }
+    .badge { display: inline-block; background: ${accent}18; color: ${accent}; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 20px; margin-bottom: 12px; border: 1px solid ${accent}30; }
+    .hero { padding: 32px 20px; text-align: center; background: linear-gradient(180deg, #fff 0%, #f1f5f9 100%); }
+    .h1 { font-size: 22px; font-weight: 800; line-height: 1.2; margin-bottom: 10px; color: #0f172a; }
+    .sub { font-size: 13px; color: #64748b; line-height: 1.5; margin-bottom: 20px; }
+    .cta-btn { display: inline-block; background: ${accent}; color: #fff; font-size: 15px; font-weight: 700; padding: 14px 32px; border-radius: 10px; text-decoration: none; box-shadow: 0 4px 14px ${accent}40; }
+    .trust { display: flex; justify-content: center; gap: 16px; margin-top: 24px; }
+    .trust-item { text-align: center; }
+    .trust-icon { font-size: 20px; margin-bottom: 4px; }
+    .trust-label { font-size: 9px; color: #94a3b8; font-weight: 600; }
+    .form-card { margin: 20px; padding: 24px; background: #fff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    .form-title { font-size: 15px; font-weight: 700; text-align: center; margin-bottom: 6px; }
+    .form-sub { font-size: 11px; color: #94a3b8; text-align: center; margin-bottom: 16px; }
+    .input { width: 100%; padding: 12px 14px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 13px; margin-bottom: 10px; background: #f8fafc; }
+    .vite-tag { position: fixed; bottom: 8px; right: 8px; background: #1e293b; color: #94a3b8; font-size: 9px; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
+    .howit { padding: 24px 20px; text-align: center; }
+    .howit h2 { font-size: 16px; font-weight: 800; margin-bottom: 16px; }
+    .steps { display: flex; flex-direction: column; gap: 12px; }
+    .step-item { display: flex; align-items: center; gap: 12px; text-align: left; padding: 12px; background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .step-num { width: 28px; height: 28px; border-radius: 50%; background: ${accent}15; color: ${accent}; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; flex-shrink: 0; }
+    .step-text { font-size: 12px; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <div class="badge">${badge} Template</div>
+    <div class="h1">${h1}</div>
+    <div class="sub">${sub}</div>
+    <a class="cta-btn" href="#">${cta}</a>
+    <div class="trust">
+      <div class="trust-item"><div class="trust-icon">🔒</div><div class="trust-label">256-bit SSL</div></div>
+      <div class="trust-item"><div class="trust-icon">⚡</div><div class="trust-label">2-Min Process</div></div>
+      <div class="trust-item"><div class="trust-icon">✅</div><div class="trust-label">No Credit Impact</div></div>
+    </div>
+  </div>
+  <div class="form-card">
+    <div class="form-title">Check Your Eligibility</div>
+    <div class="form-sub">Takes less than 3 minutes — no credit impact</div>
+    <input class="input" placeholder="ZIP Code" readonly>
+    <a class="cta-btn" href="#" style="display:block;text-align:center">${cta}</a>
+  </div>
+  <div class="howit">
+    <h2>How It Works</h2>
+    <div class="steps">
+      <div class="step-item"><div class="step-num">1</div><div class="step-text">Fill out the simple form</div></div>
+      <div class="step-item"><div class="step-num">2</div><div class="step-text">Get matched with lenders</div></div>
+      <div class="step-item"><div class="step-num">3</div><div class="step-text">Receive funds up to ${amountMax}</div></div>
+    </div>
+  </div>
+  <div class="vite-tag">⚡ ${badge} · Preview</div>
+</body>
+</html>`;
+}
+
 function ensureTrackingBaselineHtml(html, site) {
   let content = String(html || '');
   if (!content) return content;
@@ -943,10 +1019,18 @@ export function generateHtmlByTemplate(site) {
   if (customTemplatesCache) {
     const customTemplate = customTemplatesCache.find(t => t.id === templateId || t.dbId === templateId);
     if (customTemplate && customTemplate.files) {
+      const fileKeys = Object.keys(customTemplate.files);
+      // Detect Vite/React templates (Loveable) — index.html + vite.config + src/main.tsx
+      // These can't render in an iframe preview, so generate a static placeholder
+      const isViteReact = fileKeys.some(k => k === 'vite.config.ts' || k === 'vite.config.js')
+        && fileKeys.some(k => /src\/main\.(tsx?|jsx?)$/.test(k));
+      if (isViteReact) {
+        return ensureTrackingBaselineHtml(generateVitePreviewPlaceholder(customTemplate, site), site);
+      }
       // HTML-first templates (Bolt/Lovable): serve index.html directly, skip Astro parser
       const fmt = customTemplate.format || detectTemplateFormat(customTemplate.files);
       if (fmt === 'html') {
-        const keys = Object.keys(customTemplate.files);
+        const keys = fileKeys;
         const htmlKey = keys.find(k => k === 'index.html') || keys.find(k => k.endsWith('/index.html'));
         if (htmlKey) {
           return ensureTrackingBaselineHtml(String(customTemplate.files[htmlKey]), site);
