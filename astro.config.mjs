@@ -44,6 +44,7 @@ export default defineConfig({
     server: {
       port: 4323,
       host: true,
+      fs: { allow: ['../..', '.'] },
       proxy: {
         '/api': {
           target: API_BASE.replace(/\/api$/, ''),
