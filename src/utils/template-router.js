@@ -60,7 +60,7 @@ function generateVitePreviewPlaceholder(customTemplate, site) {
   const amountMax = site.amountMax ? `$${Number(String(site.amountMax).replace(/[^0-9]/g, '')).toLocaleString()}` : '$5,000';
   const colorObj = getColorObj(site.colorId);
   const primary = `hsl(${colorObj.p[0]}, ${colorObj.p[1]}%, ${colorObj.p[2]}%)`;
-  const accent = site.primaryColor || primary;
+  const accent = (site.colorId === 'custom' && site.primaryColor) ? site.primaryColor : primary;
 
   return `<!DOCTYPE html>
 <html lang="en">
