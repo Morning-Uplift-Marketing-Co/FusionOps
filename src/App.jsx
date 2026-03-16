@@ -191,25 +191,34 @@ useEffect(() => {
     };
   }, []);
 
-  // ── Auth check on boot ───────────────────────────────────────────
+  // ── Auth check on boot (runs ONCE on mount) ─────────────────────
   useEffect(() => {
+    // Bypass auth entirely if Neon is not configured —
+    // no DB = no auth possible, let the app run without login gate.
+    const neonConnStr = NEON_URL || LS.get("settings")?.neonUrl || "";
+    if (!neonConnStr || !neonConnStr.includes("@")) {
+      console.info("[auth] Neon not configured — bypassing login gate");
+      setAuthChecked(true);
+      return;
+    }
+
     getMe()
-      .then((me) => {
-        setUser(me);
-        // If admin, pre-load team user list
-        if (me && isAdmin(me) && neonOk) {
-          db.loadUsers().then(setUsers).catch(() => {});
-        }
-      })
+      .then((me) => { setUser(me); })
       .catch(() => setUser(null))
       .finally(() => setAuthChecked(true));
-  }, [neonOk]);
+  }, []); // ← run once on mount only, NOT on every neonOk change
+
+  // Load team users list when admin + Neon comes online
+  useEffect(() => {
+    if (neonOk && user && isAdmin(user) && users.length === 0) {
+      db.loadUsers().then(setUsers).catch(() => {});
+    }
+  }, [neonOk, user]);
 
   async function handleLogin(email, password) {
     const result = await authLogin(email, password);
     if (result.ok) {
       setUser(result.user);
-      // Load users list for admin
       if (isAdmin(result.user)) {
         db.loadUsers().then(setUsers).catch(() => {});
       }
@@ -220,7 +229,27 @@ useEffect(() => {
   async function handleLogout() {
     await authLogout();
     setUser(null);
+    setUsers([]);
     setPage("dashboard");
+  }
+
+  // ── Audit log helper — auto-injects userId + userName ─────────────
+  function auditLog(siteId, eventType, title, detail = "", extraMeta = {}) {
+    if (!neonOk) return;
+    const meta = {
+      ...extraMeta,
+      ...(user ? { userId: user.id, userName: user.name || user.email } : {}),
+    };
+    const event = {
+      id: `ae_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+      site_id: siteId || "global",
+      event_type: eventType,
+      severity: extraMeta.severity || "info",
+      title,
+      detail,
+      meta,
+    };
+    db.saveAuditEvent(event).catch(() => {});
   }
 
   // Proactively connect to Neon if URL is provided/discovered later
@@ -699,6 +728,7 @@ useEffect(() => {
       else if (apiOk) await api.post("/sites", cleanSite).catch(() => {});
       saveSiteToD1(cleanSite).catch(() => {}); // D1 backup — fire and forget
 
+      auditLog(cleanSite.id, "site_created", `Site created: ${cleanSite.brand}`, cleanSite.domain || "");
       notify(`${cleanSite.brand} created!`);
     }
     setPage("sites");
@@ -741,6 +771,12 @@ useEffect(() => {
 
     if (neonOk) db.saveDeploy(d).catch(() => { });
     else if (apiOk) api.post("/deploys", d).catch(() => { });
+
+    // Audit KPI event — deploy_success / deploy_failed
+    if (d.status === "success" || d.status === "deployed") {
+      auditLog(d.site_id || d.siteId || "global", "deploy_success",
+        `Deployed: ${d.brand || d.url || "site"}`, d.url || "", { target: d.target });
+    }
   };
 
   const toOpsStateKey = (coll) => {
