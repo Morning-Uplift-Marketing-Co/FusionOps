@@ -200,6 +200,31 @@ export async function register(email, password, role = "employee", name = "") {
 }
 
 /**
+ * Check if any users exist in the database.
+ * Used to detect first-run / bootstrap state.
+ * @returns {Promise<boolean>} true = at least one user exists
+ */
+export async function checkUsersExist() {
+  try {
+    const users = await db.loadUsers();
+    return Array.isArray(users) && users.length > 0;
+  } catch {
+    // DB not ready — assume exists to avoid false setup page
+    return true;
+  }
+}
+
+/**
+ * Seed the very first admin account (only works when users table is empty).
+ * @returns {{ ok: boolean, user?: object, error?: string }}
+ */
+export async function seedFirstAdmin(email, password, name = "") {
+  const exists = await checkUsersExist();
+  if (exists) return { ok: false, error: "Setup already complete. Use the login form." };
+  return register(email, password, "admin", name || email.split("@")[0]);
+}
+
+/**
  * Change password for a user (admin can do any, employee their own).
  */
 export async function updatePassword(userId, newPassword) {
