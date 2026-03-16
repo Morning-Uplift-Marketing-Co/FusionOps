@@ -5,6 +5,19 @@ import { cn } from "../lib/utils";
 
 const CHANGELOG = [
     {
+        version: "3.4.0",
+        date: "2026-03-16",
+        changes: [
+            "🔐 Auth System — PBKDF2 login, session management, role-based access (admin/employee)",
+            "👥 User Manager — admin CRUD for team accounts: create, edit, activate/deactivate",
+            "🏆 KPI Dashboard — team leaderboard (admin) + personal stats (employee) from audit log",
+            "🔒 Data Sanitizer — strips revenue/profit/roi/payout for employee role server-side",
+            "💾 Neon DB — users, sessions, site_audit_log tables with indices",
+            "🧭 Route Guard — app requires login, shows LoginPage when session expired",
+            "📌 Sidebar — user identity panel, role badge, logout button (↩)",
+        ],
+    },
+    {
         version: "3.0.0",
         date: "2026-03-13",
         changes: [
@@ -85,11 +98,13 @@ const CHANGELOG = [
     },
 ];
 
-export function Sidebar({ page, setPage, siteCount, startCreate, startTemplateGen, collapsed, toggle }) {
+export function Sidebar({ page, setPage, siteCount, startCreate, startTemplateGen, collapsed, toggle, user, onLogout }) {
     const [showLog, setShowLog] = useState(false);
+    const isAdmin = user?.role === "admin";
 
-    const items = [
+    const baseItems = [
         { id: "dashboard", icon: "📊", label: "Dashboard" },
+        { id: "kpi", icon: "🏆", label: "KPI Dashboard" },
         { id: "spend", icon: "💳", label: "Spend Dashboard" },
         { id: "voluum", icon: "🎯", label: "Voluum Explorer" },
         { id: "account-map", icon: "🗺️", label: "Account Map" },
@@ -109,6 +124,13 @@ export function Sidebar({ page, setPage, siteCount, startCreate, startTemplateGe
         { id: "docs", icon: "📚", label: "API Docs", external: true, href: "/docs" },
         { id: "settings", icon: "⚙️", label: "Settings" },
     ];
+
+    // Admin-only items
+    const adminItems = [
+        { id: "users", icon: "👥", label: "User Manager" },
+    ];
+
+    const items = isAdmin ? [...baseItems, ...adminItems] : baseItems;
 
     return (
         <>
@@ -174,14 +196,49 @@ export function Sidebar({ page, setPage, siteCount, startCreate, startTemplateGe
                 </nav>
 
                 {/* Footer */}
-                {!collapsed && (
-                    <div
-                        className="px-3.5 py-2.5 border-t border-[hsl(var(--border))] text-[10px] text-[hsl(var(--muted-foreground))] cursor-pointer transition-colors hover:text-[hsl(var(--primary))]"
-                        onClick={() => setShowLog(true)}
-                    >
-                        📋 v{APP_VERSION} • View Changelog
-                    </div>
-                )}
+                <div className="border-t border-[hsl(var(--border))]">
+                    {/* User info */}
+                    {!collapsed && user && (
+                        <div className="px-3.5 py-2.5 flex items-center gap-2">
+                            <div
+                                className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0"
+                                style={{ background: T.grad }}
+                            >
+                                {(user.name || user.email || "?")[0].toUpperCase()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <div className="text-[12px] font-semibold truncate">{user.name || user.email?.split("@")[0]}</div>
+                                <div className="text-[10px] text-[hsl(var(--muted-foreground))] capitalize">{user.role}</div>
+                            </div>
+                            {onLogout && (
+                                <button
+                                    onClick={onLogout}
+                                    title="Sign out"
+                                    className="text-[12px] text-[hsl(var(--muted-foreground))] hover:text-red-500 border-none bg-transparent cursor-pointer px-1"
+                                >
+                                    ↩
+                                </button>
+                            )}
+                        </div>
+                    )}
+                    {collapsed && onLogout && (
+                        <button
+                            onClick={onLogout}
+                            title="Sign out"
+                            className="w-full py-2.5 flex items-center justify-center border-none bg-transparent cursor-pointer text-[hsl(var(--muted-foreground))] hover:text-red-500 text-[14px]"
+                        >
+                            ↩
+                        </button>
+                    )}
+                    {!collapsed && (
+                        <div
+                            className="px-3.5 py-2 text-[10px] text-[hsl(var(--muted-foreground))] cursor-pointer transition-colors hover:text-[hsl(var(--primary))]"
+                            onClick={() => setShowLog(true)}
+                        >
+                            📋 v{APP_VERSION} • View Changelog
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Changelog Modal */}

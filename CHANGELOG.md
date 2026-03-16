@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.0] - 2026-03-16
+### Added
+- **Auth System**: PBKDF2 password hashing via Web Crypto API — browser-native, no deps
+- **LoginPage**: FusionOps-branded login screen with show/hide password toggle
+- **Session Management**: Token stored in localStorage, verified against Neon sessions table
+- **Role-Based Access**: `admin` (full access) vs `employee` (no financial metrics/exports)
+- **UserManager**: Admin CRUD for team accounts — create, edit role, activate/deactivate, delete
+- **KPI Dashboard**: Leaderboard for admins + personal stats for employees, driven by audit log
+- **Data Sanitizer**: `sanitizeForEmployee()` strips revenue/profit/roi/payout from responses
+- **Neon DB**: `users`, `sessions`, `site_audit_log` tables auto-created with indices
+- **Sidebar**: User identity panel + role badge + logout button (↩)
+- **Route Guard**: App shows LoginPage when no valid session found
+
 ## [3.1.1] - 2026-03-14
 ### Enhanced
 - **Tracking Verification Dashboard**: Now analyzes both INDEX and /apply pages simultaneously
