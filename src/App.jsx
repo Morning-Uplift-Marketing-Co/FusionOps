@@ -155,6 +155,17 @@ useEffect(() => {
     try { return JSON.parse(localStorage.getItem("lpf2-tasks") || "[]"); } catch { return []; }
   });
 
+  // Apply localStorage theme override to CSS variables on mount
+  useEffect(() => {
+    try {
+      const ov = JSON.parse(localStorage.getItem("theme-color") || "null");
+      if (ov?.hsl) {
+        document.documentElement.style.setProperty("--primary", ov.hsl);
+        document.documentElement.style.setProperty("--ring", ov.hsl);
+      }
+    } catch {}
+  }, []);
+
   // Global error capture — feeds into Error Log tab
   useEffect(() => {
     const onError = (event) => {
