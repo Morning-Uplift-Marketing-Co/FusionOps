@@ -92,13 +92,13 @@ export function OverviewTab({ stats, trendData, hideRevenue = false }) {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="h-[300px] w-full">
+                        <div className="h-[300px] w-full overflow-hidden">
                             {hideRevenue ? (
                                 <div className="h-full rounded-lg border border-dashed border-[hsl(var(--border))] flex items-center justify-center text-sm text-[hsl(var(--muted-foreground))]">
                                     Revenue chart hidden
                                 </div>
                             ) : (
-                                <ResponsiveContainer width="100%" height="100%">
+                                <ResponsiveContainer width="100%" height={300} minWidth={0}>
                                     <BarChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: -10 }}>
                                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                                         <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
@@ -126,8 +126,8 @@ export function OverviewTab({ stats, trendData, hideRevenue = false }) {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="h-[300px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
+                        <div className="h-[300px] w-full overflow-hidden">
+                            <ResponsiveContainer width="100%" height={300} minWidth={0}>
                                 <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: -10 }}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                                     <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
