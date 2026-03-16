@@ -7,6 +7,7 @@
  */
 
 import * as db from "./neon";
+import { uid } from "../utils";
 
 const SESSION_KEY = "lpf2-session";
 const SESSION_TTL_DAYS = 30;
@@ -104,21 +105,19 @@ export async function login(email, password) {
   const valid = await verifyPassword(password, user.password_hash);
   if (!valid) return { ok: false, error: "Invalid email or password" };
 
-  // Generate random 128-bit token
-  const token =
-    Array.from(crypto.getRandomValues(new Uint8Array(16)))
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("") +
-    Array.from(crypto.getRandomValues(new Uint8Array(16)))
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
+  // Generate random 256-bit token (single call)
+  const token = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 
   const expiresAt = new Date(Date.now() + SESSION_TTL_DAYS * 86_400_000).toISOString();
   const sessionId = "s_" + token.slice(0, 16);
 
   try {
-    await db.createSession({ id: sessionId, userId: user.id, token, expiresAt, ua: navigator.userAgent.slice(0, 200) });
-    await db.updateLastLogin(user.id);
+    await Promise.all([
+      db.createSession({ id: sessionId, userId: user.id, token, expiresAt, ua: navigator.userAgent.slice(0, 200) }),
+      db.updateLastLogin(user.id),
+    ]);
   } catch (e) {
     // Continue even if session save fails — degrade gracefully
     console.warn("[auth] Session save failed:", e.message);
@@ -157,6 +156,9 @@ export async function getMe() {
 
   // Try to verify against DB (soft check — if DB fails, trust localStorage)
   try {
+    // If Neon is not yet initialized (race on boot), trust local session
+    if (!db.getConnectionStatus().connected) return session.user;
+
     const dbSession = await db.findSession(session.token);
     if (!dbSession) {
       clearStoredSession();
@@ -184,9 +186,7 @@ export async function register(email, password, role = "employee", name = "") {
   if (password.length < 8) return { ok: false, error: "Password must be at least 8 characters" };
 
   const passwordHash = await hashPassword(password);
-  const id = "u_" + Array.from(crypto.getRandomValues(new Uint8Array(8)))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+  const id = "u_" + uid();
 
   try {
     await db.createUser({ id, email: email.trim().toLowerCase(), passwordHash, role, name });

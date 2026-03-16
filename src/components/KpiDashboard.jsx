@@ -22,6 +22,13 @@ const METRIC_DEFS = [
     { key: "sites_created", label: "Sites Created", icon: "🌐", color: "#3b82f6" },
 ];
 
+// Shared score formula — used for both sort and display
+function calcScore(s) {
+    return (s.tasks_completed || 0) * 3 + (s.tasks_created || 0) + (s.deploys || 0) * 2 + (s.sites_created || 0) * 2;
+}
+
+const SEV_COLOR = { error: "#dc2626", warning: "#f59e0b", info: "#6366f1", success: "#22c55e" };
+
 /* ═══════════════════════════════════════════════════
    SUB-COMPONENTS
 ═══════════════════════════════════════════════════ */
@@ -54,7 +61,7 @@ function StatCard({ icon, label, value, color, sub }) {
 function LeaderRow({ rank, name, email, stats, isMe }) {
     const medals = ["🥇", "🥈", "🥉"];
     const medal = medals[rank - 1] || `#${rank}`;
-    const score = (stats.tasks_completed || 0) * 3 + (stats.tasks_created || 0) + (stats.deploys || 0) * 2 + (stats.sites_created || 0) * 2;
+    const score = calcScore(stats);
 
     return (
         <div
@@ -124,32 +131,36 @@ export function KpiDashboard({ user, users = [] }) {
         load();
     }, []);
 
-    // Filter audit log by period
-    const cutoff = period > 0 ? Date.now() - period * 86_400_000 : 0;
-    const filteredLog = useMemo(
-        () => auditLog.filter((e) => !cutoff || new Date(e.ts).getTime() >= cutoff),
-        [auditLog, cutoff]
-    );
+    // Filter audit log by period (cutoff inside memo to avoid stale closure drift)
+    const filteredLog = useMemo(() => {
+        const cutoff = period > 0 ? Date.now() - period * 86_400_000 : 0;
+        return auditLog.filter((e) => !cutoff || new Date(e.ts).getTime() >= cutoff);
+    }, [auditLog, period]);
 
-    // My stats from audit log
-    const myStats = useMemo(() => {
-        const events = filteredLog.filter((e) => {
+    // My activity (filtered to current user) — reused for stats and personal feed
+    const myActivity = useMemo(
+        () => filteredLog.filter((e) => {
             try {
                 const meta = typeof e.meta === "string" ? JSON.parse(e.meta) : e.meta;
                 return meta?.userId === user?.id;
-            } catch {
-                return false;
-            }
-        });
-        return {
-            tasks_completed: events.filter((e) => e.event_type === "task_completed").length,
-            tasks_created: events.filter((e) => e.event_type === "task_created").length,
-            deploys: events.filter((e) => e.event_type === "deploy_success").length,
-            sites_created: events.filter((e) => e.event_type === "site_created").length,
-        };
-    }, [filteredLog, user?.id]);
+            } catch { return false; }
+        }),
+        [filteredLog, user?.id]
+    );
 
-    const myScore = myStats.tasks_completed * 3 + myStats.tasks_created + myStats.deploys * 2 + myStats.sites_created * 2;
+    // My stats — single reduce pass over pre-filtered events
+    const myStats = useMemo(() => myActivity.reduce(
+        (acc, e) => {
+            if (e.event_type === "task_completed") acc.tasks_completed++;
+            else if (e.event_type === "task_created") acc.tasks_created++;
+            else if (e.event_type === "deploy_success") acc.deploys++;
+            else if (e.event_type === "site_created") acc.sites_created++;
+            return acc;
+        },
+        { tasks_completed: 0, tasks_created: 0, deploys: 0, sites_created: 0 }
+    ), [myActivity]);
+
+    const myScore = calcScore(myStats);
 
     // Leaderboard merged from DB KPI stats + users list
     const leaderboard = useMemo(() => {
@@ -166,15 +177,10 @@ export function KpiDashboard({ user, users = [] }) {
                     sites_created: Number(row.sites_created || 0),
                 };
             })
-            .sort(
-                (a, b) =>
-                    b.tasks_completed * 3 + b.deploys * 2 - (a.tasks_completed * 3 + a.deploys * 2)
-            );
+            .sort((a, b) => calcScore(b) - calcScore(a));
     }, [kpiData, users]);
 
-    const recentActivity = filteredLog.slice(0, 50);
-
-    const SEV_COLOR = { error: "#dc2626", warning: "#f59e0b", info: "#6366f1", success: "#22c55e" };
+    const recentActivity = useMemo(() => filteredLog.slice(0, 50), [filteredLog]);
 
     return (
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
@@ -403,15 +409,7 @@ export function KpiDashboard({ user, users = [] }) {
                                 📋 My Recent Activity
                             </div>
                             <div style={{ overflowY: "auto", maxHeight: 400 }}>
-                                {filteredLog
-                                    .filter((ev) => {
-                                        try {
-                                            const meta = typeof ev.meta === "string" ? JSON.parse(ev.meta) : ev.meta;
-                                            return meta?.userId === user?.id;
-                                        } catch { return false; }
-                                    })
-                                    .slice(0, 40)
-                                    .map((ev, i) => (
+                                {myActivity.slice(0, 40).map((ev, i) => (
                                         <div
                                             key={ev.id || i}
                                             style={{
@@ -438,12 +436,7 @@ export function KpiDashboard({ user, users = [] }) {
                                             </span>
                                         </div>
                                     ))}
-                                {filteredLog.filter((ev) => {
-                                    try {
-                                        const meta = typeof ev.meta === "string" ? JSON.parse(ev.meta) : ev.meta;
-                                        return meta?.userId === user?.id;
-                                    } catch { return false; }
-                                }).length === 0 && (
+                                {myActivity.length === 0 && (
                                     <div style={{ textAlign: "center", padding: "32px 0", color: "hsl(var(--muted-foreground))", fontSize: 13 }}>
                                         No activity logged yet.
                                     </div>

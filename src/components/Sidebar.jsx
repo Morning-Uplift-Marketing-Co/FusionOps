@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { THEME as T } from "../constants";
 import { APP_VERSION } from "../constants";
 import { cn } from "../lib/utils";
+import { isAdmin } from "../services/auth";
 
 const CHANGELOG = [
     {
@@ -100,7 +101,7 @@ const CHANGELOG = [
 
 export function Sidebar({ page, setPage, siteCount, startCreate, startTemplateGen, collapsed, toggle, user, onLogout }) {
     const [showLog, setShowLog] = useState(false);
-    const isAdmin = user?.role === "admin";
+    const admin = isAdmin(user);
 
     const baseItems = [
         { id: "dashboard", icon: "📊", label: "Dashboard" },
@@ -130,7 +131,7 @@ export function Sidebar({ page, setPage, siteCount, startCreate, startTemplateGe
         { id: "users", icon: "👥", label: "User Manager" },
     ];
 
-    const items = isAdmin ? [...baseItems, ...adminItems] : baseItems;
+    const items = admin ? [...baseItems, ...adminItems] : baseItems;
 
     return (
         <>

@@ -236,15 +236,16 @@ useEffect(() => {
   // ── Audit log helper — auto-injects userId + userName ─────────────
   function auditLog(siteId, eventType, title, detail = "", extraMeta = {}) {
     if (!neonOk) return;
+    const { severity = "info", ...restMeta } = extraMeta;
     const meta = {
-      ...extraMeta,
+      ...restMeta,
       ...(user ? { userId: user.id, userName: user.name || user.email } : {}),
     };
     const event = {
-      id: `ae_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+      id: "ae_" + uid(),
       site_id: siteId || "global",
       event_type: eventType,
-      severity: extraMeta.severity || "info",
+      severity,
       title,
       detail,
       meta,
