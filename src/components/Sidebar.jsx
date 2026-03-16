@@ -108,7 +108,6 @@ const CHANGELOG = [
         changes: [
             "🚀 Launched FusionOps 3.0 — all-in-one PPC landing page platform",
             "🏢 Ops Center: manage domains, DNS, registrars, deployers",
-            "🎨 Variant Studio: A/B test color, font, layout combos",
             "☁️ Multi-deployer: CF Workers, CF Pages, Vercel, Netlify",
             "💾 Neon DB: cloud persistence for settings, sites, deploys",
             "📡 API Worker proxy for CORS-free Vercel / Cloudflare API calls",
@@ -141,7 +140,6 @@ export function Sidebar({ page, setPage, siteCount, taskBadge, startCreate, star
         { id: "template-manager", icon: "🗂️", label: "Template Manager" },
         { id: "template-gen", icon: "🧙", label: "Template Wizard", action: startTemplateGen },
         { id: "create", icon: "⚡", label: "LP Wizard", action: startCreate },
-        { id: "variant", icon: "🧪", label: "Variant Studio" },
         { id: "profile-manager", icon: "👤", label: "Profile Manager" },
         { id: "ops", icon: "🏢", label: "Ops Center" },
         { id: "deploys", icon: "🚀", label: "Deploys" },
