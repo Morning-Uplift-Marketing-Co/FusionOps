@@ -35,7 +35,24 @@ const statusCls = {
     Failed: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400",
 };
 
-export function Dashboard({ sites, stats, ops, setPage, startCreate, settings = {}, apiOk, neonOk }) {
+const AUDIT_ICON = {
+    site_created: '🆕', site_cloned: '⟳', site_deployed: '🚀',
+    policy_changed: '⚠', domain_changed: '🌐', health_check: '❤',
+    proxy_assigned: '🔗', note_added: '📝',
+    ad_disapproved: '🚫', account_warned: '⚡', account_banned: '🔴',
+};
+const AUDIT_COLOR = {
+    info: '#6b7280', warning: '#f59e0b', critical: '#dc2626',
+};
+function relTime(ts) {
+    const diff = Date.now() - new Date(ts).getTime();
+    if (diff < 60000) return 'just now';
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+    return `${Math.floor(diff / 86400000)}d ago`;
+}
+
+export function Dashboard({ sites, stats, ops, setPage, startCreate, settings = {}, apiOk, neonOk, auditEvents = {} }) {
     const hideRevenue = settings.hideRevenue === true;
     const recent = sites.slice(0, 5);
     const risks = useMemo(() => detectRisks(ops), [ops]);
@@ -146,8 +163,8 @@ export function Dashboard({ sites, stats, ops, setPage, startCreate, settings = 
                     <CardContent>
                         <div className="text-3xl font-bold tracking-tight">+{stats.builds || 0}</div>
                         <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">+180.1% from last month</p>
-                        <div className="h-[140px] mt-4">
-                            <ResponsiveContainer width="100%" height="100%">
+                        <div className="h-[140px] mt-4 overflow-hidden">
+                            <ResponsiveContainer width="100%" height={140} minWidth={0}>
                                 <BarChart data={SUB_DATA} barCategoryGap="20%">
                                     <Bar dataKey="v" fill="hsl(var(--foreground))" radius={[3, 3, 0, 0]} />
                                 </BarChart>
@@ -166,13 +183,13 @@ export function Dashboard({ sites, stats, ops, setPage, startCreate, settings = 
                         <p className={`text-xs mt-1 ${hideRevenue ? "text-[hsl(var(--muted-foreground))]" : "text-emerald-600 dark:text-emerald-400"}`}>
                             {hideRevenue ? "Employee view is masking revenue metrics" : "+20.1% from last month"}
                         </p>
-                        <div className="h-[140px] mt-4">
+                        <div className="h-[140px] mt-4 overflow-hidden">
                             {hideRevenue ? (
                                 <div className="h-full rounded-lg border border-dashed border-[hsl(var(--border))] flex items-center justify-center text-xs text-[hsl(var(--muted-foreground))]">
                                     Revenue trend hidden
                                 </div>
                             ) : (
-                                <ResponsiveContainer width="100%" height="100%">
+                                <ResponsiveContainer width="100%" height={140} minWidth={0}>
                                     <LineChart data={REV_DATA}>
                                         <Line type="monotone" dataKey="v" stroke="hsl(var(--foreground))" strokeWidth={2} dot={false} />
                                     </LineChart>
@@ -239,8 +256,8 @@ export function Dashboard({ sites, stats, ops, setPage, startCreate, settings = 
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="h-[200px]">
-                            <ResponsiveContainer width="100%" height="100%">
+                        <div className="h-[200px] overflow-hidden">
+                            <ResponsiveContainer width="100%" height={200} minWidth={0}>
                                 <LineChart data={TREND_DATA}>
                                     <Line type="monotone" dataKey="a" stroke="hsl(var(--foreground))" strokeWidth={2} dot={false} />
                                     <Line type="monotone" dataKey="b" stroke="hsl(var(--muted-foreground))" strokeWidth={1.5} dot={false} strokeDasharray="4 4" opacity={0.5} />
@@ -253,52 +270,58 @@ export function Dashboard({ sites, stats, ops, setPage, startCreate, settings = 
 
             {/* ─── Row 3: Latest Activity table + KPI cards (like Payments + Payment Method) ─── */}
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-                {/* Latest Activity table */}
+                {/* Latest Activity — site audit events */}
                 <Card className="lg:col-span-3">
                     <CardHeader>
                         <div className="flex items-center justify-between">
                             <div>
                                 <CardTitle className="text-base font-semibold">Latest Activity</CardTitle>
-                                <p className="text-sm text-[hsl(var(--muted-foreground))]">Recent transactions and events.</p>
+                                <p className="text-sm text-[hsl(var(--muted-foreground))]">Recent site events across all campaigns.</p>
                             </div>
-                            <input
-                                className="w-48 px-3 py-1.5 text-sm rounded-md border border-[hsl(var(--border))] bg-transparent placeholder:text-[hsl(var(--muted-foreground))]"
-                                placeholder="Filter activity..."
-                                value={txFilter}
-                                onChange={e => setTxFilter(e.target.value)}
-                            />
+                            <button onClick={() => setPage("ops")}
+                                className="text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] bg-transparent border-none cursor-pointer transition">
+                                View all →
+                            </button>
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Tag</TableHead>
-                                    <TableHead className="text-right">Amount</TableHead>
-                                    <TableHead>Type</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {txnLoading ? (
-                                    <TableRow><TableCell colSpan={3} className="text-center text-[hsl(var(--muted-foreground))] py-8">Loading transactions...</TableCell></TableRow>
-                                ) : filteredTxn.length === 0 ? (
-                                    <TableRow><TableCell colSpan={3} className="text-center text-[hsl(var(--muted-foreground))] py-8">No transactions found</TableCell></TableRow>
-                                ) : filteredTxn.map((t, i) => {
-                                    const txType = t.type || "auth";
-                                    const txStatus = txType === "decline" ? "Failed" : txType === "refund" ? "Processing" : "Success";
-                                    const tag = t.comment || t.tag || (t.card_last_4 ? `****${t.card_last_4}` : "—");
-                                    return (
-                                        <TableRow key={t.uuid || i}>
-                                            <TableCell className="font-medium">{tag}</TableCell>
-                                            <TableCell className="text-right font-mono">{txType === "decline" ? "DECLINED" : `${Number(t.amount || 0).toFixed(2)}`}</TableCell>
-                                            <TableCell>
-                                                <span className={`text-xs font-medium px-2.5 py-1 rounded-md ${statusCls[txStatus] || ""}`}>{txType}</span>
-                                            </TableCell>
-                                        </TableRow>
-                                    );
-                                })}
-                            </TableBody>
-                        </Table>
+                        {(() => {
+                            const allEvents = Object.entries(auditEvents)
+                                .flatMap(([siteId, evts]) => (evts || []).map(e => ({ ...e, _siteId: siteId })))
+                                .sort((a, b) => new Date(b.ts) - new Date(a.ts))
+                                .slice(0, 10);
+                            if (allEvents.length === 0) return (
+                                <div className="text-center py-10 text-sm text-[hsl(var(--muted-foreground))]">
+                                    No activity yet — events from My Sites will appear here.
+                                </div>
+                            );
+                            return (
+                                <div className="space-y-0">
+                                    {allEvents.map((e, i) => {
+                                        const site = sites.find(s => s.id === e._siteId || s.id === e.site_id);
+                                        const icon = AUDIT_ICON[e.event_type] || '📋';
+                                        const col = AUDIT_COLOR[e.severity] || AUDIT_COLOR.info;
+                                        return (
+                                            <div key={e.id || i} className="flex items-start gap-3 py-3 border-b border-[hsl(var(--border))] last:border-0">
+                                                <span style={{ fontSize: 16, lineHeight: 1, marginTop: 2 }}>{icon}</span>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="text-sm font-medium truncate" style={{ color: col }}>{e.title}</div>
+                                                    {e.detail && <div className="text-xs text-[hsl(var(--muted-foreground))] truncate mt-0.5">{e.detail}</div>}
+                                                </div>
+                                                <div className="flex flex-col items-end gap-1 shrink-0">
+                                                    {site && (
+                                                        <span className="text-xs px-2 py-0.5 rounded-full border border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))]">
+                                                            {site.brand}
+                                                        </span>
+                                                    )}
+                                                    <span className="text-xs text-[hsl(var(--muted-foreground))]">{relTime(e.ts)}</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            );
+                        })()}
                     </CardContent>
                 </Card>
 

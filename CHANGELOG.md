@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-03-16
+### Added
+- **Audit Log System**: เก็บ timeline เหตุการณ์ต่อ site แบบ multi-layer (Neon + D1 + localStorage)
+  - `site_audit_log` table ใน Neon Postgres พร้อม index `(site_id, ts DESC)`
+  - `proxies` table ใน Neon พร้อม D1 SQLite backup
+  - `auditLog()` central function: dual-write Neon+D1, LS fallback, feeds Ops logs
+  - Auto-hooks: `site_created`, `site_cloned`, `site_deployed`, `policy_changed`, `domain_changed`
+  - `auditEvents` state hydrated จาก localStorage ทันทีตอน boot (ไม่ต้องรอ async)
+
+- **Proxy Manager** (`src/components/ProxyManager.jsx`):
+  - Filter chips: All | Active | Rotating | Flagged | Dead
+  - Table with expand row: credentials (password masked/reveal), assign-to-site toggles, notes
+  - AddEditModal via React createPortal
+  - Auto-log `proxy_assigned` event เมื่อ assign proxy ให้ site ใหม่
+
+- **Site Activity Panel** (per site card ใน My Sites):
+  - `▼ Activity` toggle แสดง/ซ่อน timeline per site
+  - `+ Log` button → `LogEventModal` สำหรับ log event แบบ manual
+  - `LogEventModal`: eventType selector, title, detail, severity, conditional campaignId/reason fields
+  - Health Check auto-logs `health_check` event พร้อม online/SSL/tracking status
+
+- **Global Audit Feed** (OpsCenter → Site Activity tab):
+  - Flatten audit events ทุก site, เรียง newest first
+  - Filter chips: all | policy_changed | ad_disapproved | account_banned | site_deployed | health_check
+  - Lazy-load `db.loadAllAuditEvents(200)` จาก Neon ถ้า state ว่าง
+
+- **Dashboard Latest Activity** (หน้า Dashboard):
+  - แทน LeadingCards transactions ด้วย site audit events ทุก campaign
+  - แสดง event icon, title, site badge, relative time
+  - `View all →` link ไป OpsCenter → Site Activity tab
+  - Hydrate จาก `auditEvents` state ซึ่ง boot จาก localStorage อัตโนมัติ
+
+### Changed
+- **Dashboard `Latest Activity`**: เปลี่ยนจาก LeadingCards transactions เป็น site audit event feed
+- **OpsCenter**: เพิ่ม 2 tabs ใหม่ (Proxy Manager, Site Activity)
+- **Inter font**: เพิ่ม Google Fonts import ใน `globals.css`
+
 ## [3.1.1] - 2026-03-14
 ### Enhanced
 - **Tracking Verification Dashboard**: Now analyzes both INDEX and /apply pages simultaneously

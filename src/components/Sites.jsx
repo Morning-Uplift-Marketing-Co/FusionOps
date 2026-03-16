@@ -13,7 +13,7 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { cn } from "../lib/utils";
 
-export function Sites({ sites, del, notify, startCreate, startDuplicate, settings, addDeploy, ops, updateSite }) {
+export function Sites({ sites, del, notify, startCreate, startDuplicate, addSite, settings, addDeploy, ops, updateSite, auditLog, auditEvents, proxies }) {
     const [search, setSearch] = useState("");
     const [groupBy, setGroupBy] = useState("google-ads");
     const [onlyIssues, setOnlyIssues] = useState(false);
@@ -49,6 +49,21 @@ export function Sites({ sites, del, notify, startCreate, startDuplicate, setting
     const deployRef = useRef(null);
     const downloadRef = useRef(null);
     const availableTargets = getAvailableTargets(settings);
+    const [isDark, setIsDark] = useState(() => LS.get("sitesDarkMode") === true);
+    const [healthResults, setHealthResults] = useState({});
+    const [checkingHealth, setCheckingHealth] = useState({});
+    const [cloneSource, setCloneSource] = useState(null);
+    const [openAuditSiteId, setOpenAuditSiteId] = useState(null);
+    const [localAuditCache, setLocalAuditCache] = useState({});
+    const [loadingAuditId, setLoadingAuditId] = useState(null);
+    const [logEventModal, setLogEventModal] = useState(null);
+
+    // Sync fresh auditEvents from parent into localAuditCache when panel is open
+    useEffect(() => {
+        if (openAuditSiteId && auditEvents?.[openAuditSiteId]?.length > 0) {
+            setLocalAuditCache(p => ({ ...p, [openAuditSiteId]: auditEvents[openAuditSiteId] }));
+        }
+    }, [auditEvents, openAuditSiteId]);
 
     const normalizeDomain = (value) => String(value || "")
         .trim()
@@ -418,6 +433,90 @@ export function Sites({ sites, del, notify, startCreate, startDuplicate, setting
         return value.length > max ? `${value.slice(0, max - 1)}…` : value;
     };
 
+    const checkSiteHealth = async (siteId, domain, gtagId) => {
+        if (!domain) return;
+        setCheckingHealth(p => ({ ...p, [siteId]: true }));
+        let online = 'offline', ssl = 'unknown';
+        try {
+            const ctrl = new AbortController();
+            const t = setTimeout(() => ctrl.abort(), 8000);
+            await fetch(`https://${domain}`, { mode: 'no-cors', method: 'HEAD', signal: ctrl.signal });
+            clearTimeout(t);
+            online = 'online'; ssl = 'valid';
+        } catch (e) {
+            if (e.name === 'AbortError') {
+                online = 'timeout'; ssl = 'unknown';
+            } else {
+                // Try HTTP to distinguish SSL issue vs full offline
+                try {
+                    const ctrl2 = new AbortController();
+                    const t2 = setTimeout(() => ctrl2.abort(), 5000);
+                    await fetch(`http://${domain}`, { mode: 'no-cors', method: 'HEAD', signal: ctrl2.signal });
+                    clearTimeout(t2);
+                    online = 'online'; ssl = 'invalid';
+                } catch { online = 'offline'; }
+            }
+        }
+        const tracking = !gtagId ? 'not_configured'
+            : /^(G|AW|UA)-[\w-]+$/.test(gtagId) ? 'configured'
+            : 'invalid';
+        const result = { online, ssl, tracking, gtagId, checkedAt: Date.now() };
+        setHealthResults(p => ({ ...p, [siteId]: result }));
+        setCheckingHealth(p => { const n = { ...p }; delete n[siteId]; return n; });
+        if (auditLog) {
+            auditLog(
+                siteId, 'health_check',
+                `Health: ${online === 'online' ? 'Online' : online === 'timeout' ? 'Timeout' : 'Offline'} · SSL: ${ssl} · Track: ${tracking}`,
+                '',
+                { online, ssl, tracking, gtagId },
+                online !== 'online' ? 'warning' : 'info'
+            );
+            // Update local audit cache
+            setLocalAuditCache(p => ({
+                ...p,
+                [siteId]: [{ id: Date.now().toString(36), eventType: 'health_check', severity: online !== 'online' ? 'warning' : 'info',
+                    title: `Health: ${online} · SSL: ${ssl} · Track: ${tracking}`, detail: '', meta: { online, ssl, tracking }, ts: new Date().toISOString() },
+                    ...(p[siteId] || [])].slice(0, 200)
+            }));
+        }
+    };
+
+    const checkAllHealth = () => {
+        sites.filter(s => s.domain).forEach(s => checkSiteHealth(s.id, s.domain, s.gtagId));
+    };
+
+    const loadSiteAudit = async (siteId) => {
+        // Use in-memory from parent first
+        const parentEvents = auditEvents?.[siteId];
+        if (parentEvents?.length > 0) {
+            setLocalAuditCache(p => ({ ...p, [siteId]: parentEvents }));
+            return;
+        }
+        // LS fallback
+        const lsEvents = LS.get(`audit:${siteId}`) || [];
+        if (lsEvents.length > 0) {
+            setLocalAuditCache(p => ({ ...p, [siteId]: lsEvents }));
+            return;
+        }
+        // Lazy-load from Neon
+        setLoadingAuditId(siteId);
+        try {
+            const { loadAuditEvents } = await import('../services/neon.js');
+            const events = await loadAuditEvents(siteId, 50);
+            if (events?.length > 0) setLocalAuditCache(p => ({ ...p, [siteId]: events }));
+        } catch (_) {}
+        setLoadingAuditId(null);
+    };
+
+    const toggleAuditPanel = (siteId) => {
+        if (openAuditSiteId === siteId) {
+            setOpenAuditSiteId(null);
+        } else {
+            setOpenAuditSiteId(siteId);
+            loadSiteAudit(siteId);
+        }
+    };
+
     const hasIssue = (site) => {
         const deployedCount = getDeployedTargets(site.id).length;
         const policyStatus = getPolicyStatus(site);
@@ -570,141 +669,178 @@ export function Sites({ sites, del, notify, startCreate, startDuplicate, setting
             .sort((a, b) => a.label.localeCompare(b.label));
     }, [filteredSites, groupBy, sortBy]);
 
+    // Persist dark mode preference
+    useEffect(() => { LS.set("sitesDarkMode", isDark); }, [isDark]);
+
+    // Theme tokens
+    const dk = isDark;
+    const bg      = dk ? "#09090b" : "#f4f4f5";
+    const surface = dk ? "#18181b" : "#ffffff";
+    const surfaceHover = dk ? "#27272a" : "#f9f9f9";
+    const border  = dk ? "#27272a" : "#e4e4e7";
+    const borderFaint = dk ? "#1c1c1f" : "#f0f0f0";
+    const text    = dk ? "#fafafa" : "#09090b";
+    const textSub = dk ? "#a1a1aa" : "#52525b";
+    const textFaint = dk ? "#52525b" : "#a1a1aa";
+    const accent  = "#ea580c";
+    const accentDk = "#f97316";
+    const accentColor = dk ? accentDk : accent;
+
+    // ── shadcn-style button helper ──
+    const b = (variant = "default", size = "default") => {
+        const base = {
+            display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
+            fontFamily: "inherit", cursor: "pointer", whiteSpace: "nowrap", outline: "none",
+            transition: "opacity .15s, background .15s",
+            borderRadius: 6, fontWeight: 500, border: "none",
+            ...(size === "xs" ? { height: 26, padding: "0 8px",  fontSize: 11 } :
+                size === "sm" ? { height: 32, padding: "0 12px", fontSize: 13 } :
+                size === "lg" ? { height: 40, padding: "0 24px", fontSize: 14 } :
+                                { height: 36, padding: "0 16px", fontSize: 14 }),
+        };
+        if (variant === "default")     return { ...base, background: dk ? "#fafafa" : "#18181b", color: dk ? "#09090b" : "#fafafa" };
+        if (variant === "secondary")   return { ...base, background: dk ? "#27272a" : "#f4f4f5", color: dk ? "#e4e4e7" : "#18181b" };
+        if (variant === "outline")     return { ...base, background: "transparent", border: `1px solid ${border}`, color: text };
+        if (variant === "ghost")       return { ...base, background: "transparent", color: textSub };
+        if (variant === "orange")      return { ...base, background: accentColor, color: "#fff" };
+        if (variant === "destructive") return { ...base, background: "#dc2626", color: "#fff" };
+        if (variant === "destOutline") return { ...base, background: "transparent", border: "1px solid #fca5a5", color: "#dc2626" };
+        return base;
+    };
+
     return (
-        <div className="animate-[fadeIn_.3s_ease]">
-            <div className="flex justify-between items-center mb-5">
+        <div style={{ margin: "-24px -28px", padding: "32px 36px", background: bg, minHeight: "calc(100vh - 48px)", transition: "background .2s, color .2s", fontFamily: "'Inter', sans-serif" }}>
+
+            {/* ── Header ── */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 32 }}>
                 <div>
-                    <h1 className="text-[22px] font-bold m-0">My Sites</h1>
-                    <p className="text-[hsl(var(--muted-foreground))] text-xs mt-0.5">Manage & deploy your loan landing pages</p>
+                    <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: text, letterSpacing: "-0.02em" }}>My Sites</h1>
+                    <p style={{ margin: "4px 0 0", fontSize: 13, color: textSub }}>
+                        {sites.length} landing {sites.length === 1 ? "page" : "pages"} · manage & deploy
+                    </p>
                 </div>
-                <div className="flex gap-2">
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <button onClick={checkAllHealth} style={b("outline", "sm")} title="Check online status, SSL & tracking for all sites">
+                        ↻ Health Check
+                    </button>
+                    <button onClick={() => setIsDark(!isDark)} style={b("outline", "sm")}>
+                        {isDark ? "☀ Light" : "☽ Dark"}
+                    </button>
                     {sites.length > 0 && (
-                        <Button
-                            onClick={handleBulkDelete}
-                            disabled={bulkDeleting}
-                            variant="destructive"
-                            className="px-3 py-2 text-xs"
-                        >
-                            {bulkDeleting ? "🔄 Deleting..." : "🗑️ Delete All"}
-                        </Button>
+                        <button onClick={handleBulkDelete} disabled={bulkDeleting} style={{ ...b("destOutline", "sm"), opacity: bulkDeleting ? 0.5 : 1 }}>
+                            {bulkDeleting ? "Deleting…" : "Delete All"}
+                        </button>
                     )}
-                    <Button onClick={startCreate}>➕ Create LP</Button>
+                    <button onClick={startCreate} style={b("default")}>
+                        + Create LP
+                    </button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-4 gap-2.5 mb-4">
+            {/* ── Stats ── */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 28 }}>
                 {[
-                    { l: "Sites", v: sites.length },
-                    { l: "Builds", v: sites.length },
-                    { l: "Deployed", v: Object.keys(deployUrls).filter(k => Object.keys(deployUrls[k] || {}).length > 0).length },
-                    { l: "Need Attention", v: sites.filter(s => !s.domain || getDeployedTargets(s.id).length === 0).length },
-                ].map((m, i) => (
-                    <Card key={i} className="p-3">
-                        <div className="text-[10px] text-[hsl(var(--muted-foreground))]">{m.l}</div>
-                        <div className="text-[18px] font-bold mt-0.5">{m.v}</div>
-                    </Card>
+                    { label: "Total Sites",     value: sites.length,                                                                                   accent: "#6366f1" },
+                    { label: "Deployed",        value: Object.keys(deployUrls).filter(k => Object.keys(deployUrls[k]||{}).length > 0).length,          accent: "#22c55e" },
+                    { label: "Need Attention",  value: sites.filter(s => !s.domain || getDeployedTargets(s.id).length === 0).length,                   accent: "#f59e0b" },
+                    { label: "Deploying Now",   value: deploying ? 1 : 0,                                                                              accent: accentColor },
+                ].map((stat, i) => (
+                    <div key={i} style={{ background: surface, borderTop: `1px solid ${border}`, borderRight: `1px solid ${border}`, borderBottom: `1px solid ${border}`, borderLeft: `3px solid ${stat.accent}`, borderRadius: 12, padding: "16px 20px" }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: textFaint, letterSpacing: "0.07em", textTransform: "uppercase", marginBottom: 6 }}>{stat.label}</div>
+                        <div style={{ fontSize: 30, fontWeight: 700, color: text, lineHeight: 1 }}>{stat.value}</div>
+                    </div>
                 ))}
             </div>
 
-            <div className="flex flex-wrap gap-2.5 items-center mb-3.5">
-                <Inp value={search} onChange={setSearch} placeholder="Search sites..." style={{ width: 240 }} />
-                <select value={groupBy} onChange={(e) => setGroupBy(e.target.value)}
-                    className="bg-[hsl(var(--input))] border border-[hsl(var(--border))] text-[hsl(var(--foreground))] rounded-lg text-xs px-2.5 py-2 min-w-[170px] cursor-pointer">
+            {/* ── Toolbar ── */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginBottom: 12 }}>
+                <div style={{ position: "relative" }}>
+                    <svg style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", width: 14, height: 14, color: textFaint }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search sites…"
+                        style={{ paddingLeft: 32, paddingRight: 12, paddingTop: 8, paddingBottom: 8, width: 210, fontSize: 13, borderRadius: 8, outline: "none", background: surface, border: `1px solid ${border}`, color: text }} />
+                </div>
+                <select value={groupBy} onChange={e => setGroupBy(e.target.value)}
+                    style={{ padding: "8px 10px", fontSize: 12, borderRadius: 8, cursor: "pointer", background: surface, border: `1px solid ${border}`, color: textSub, outline: "none" }}>
                     <option value="google-ads">Group: Google Ads</option>
                     <option value="cloudflare">Group: Cloudflare</option>
                     <option value="status">Group: Policy Status</option>
                     <option value="template">Group: Template</option>
-                    <option value="none">Group: None</option>
+                    <option value="none">No grouping</option>
                 </select>
-                <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}
-                    className="bg-[hsl(var(--input))] border border-[hsl(var(--border))] text-[hsl(var(--foreground))] rounded-lg text-xs px-2.5 py-2 min-w-[180px] cursor-pointer">
+                <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+                    style={{ padding: "8px 10px", fontSize: 12, borderRadius: 8, cursor: "pointer", background: surface, border: `1px solid ${border}`, color: textSub, outline: "none" }}>
                     <option value="issues-first">Sort: Issues first</option>
-                    <option value="latest">Sort: Latest activity</option>
-                    <option value="brand">Sort: Brand A-Z</option>
+                    <option value="latest">Sort: Latest</option>
+                    <option value="brand">Sort: A – Z</option>
                 </select>
-                <label className="flex items-center gap-1.5 text-xs text-[hsl(var(--muted-foreground))] cursor-pointer">
-                    <input type="checkbox" checked={onlyIssues} onChange={(e) => setOnlyIssues(e.target.checked)} />
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: textSub, cursor: "pointer" }}>
+                    <input type="checkbox" checked={onlyIssues} onChange={e => setOnlyIssues(e.target.checked)} style={{ accentColor: accentColor }} />
                     Only issues
                 </label>
             </div>
 
-            <div className="flex flex-wrap gap-2 mb-3.5">
+            {/* ── Quick filter chips ── */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 28 }}>
                 {[
-                    { id: "all", label: "All" },
-                    { id: "deployed", label: "Deployed" },
-                    { id: "banned", label: "Banned" },
-                    { id: "warming", label: "Warming" },
-                    { id: "no-domain", label: "No Domain" },
+                    { id: "all",          label: "All" },
+                    { id: "deployed",     label: "Deployed",     on: { bg: dk?"#14532d30":"#f0fdf4", text:"#16a34a", border:"#86efac" } },
                     { id: "not-deployed", label: "Not Deployed" },
-                ].map((chip) => {
+                    { id: "banned",       label: "Banned",       on: { bg: dk?"#450a0a30":"#fef2f2", text:"#dc2626", border:"#fca5a5" } },
+                    { id: "warming",      label: "Warming",      on: { bg: dk?"#451a0330":"#fffbeb", text:"#d97706", border:"#fde68a" } },
+                    { id: "no-domain",    label: "No Domain" },
+                ].map(chip => {
                     const active = quickFilter === chip.id;
+                    const on = chip.on || { bg: dk?"#431a0030":"#fff7ed", text: accentColor, border:"#fdba74" };
                     return (
                         <button key={chip.id} onClick={() => setQuickFilter(chip.id)}
-                            className={cn(
-                                "border rounded-full text-[11px] font-bold px-2.5 py-1.5 cursor-pointer transition-all",
-                                active
-                                    ? chip.id === "deployed"
-                                        ? "border-[hsl(var(--success))] bg-[hsl(var(--success))/13] text-[hsl(var(--success))]"
-                                        : "border-[hsl(var(--primary))] bg-[hsl(var(--primary))/13] text-[hsl(var(--primary))]"
-                                    : "border-[hsl(var(--border))] bg-[hsl(var(--input))] text-[hsl(var(--muted-foreground))]"
-                            )}>
+                            style={{
+                                ...b("outline", "sm"),
+                                borderRadius: 999, fontWeight: active ? 600 : 400,
+                                background: active ? on.bg : "transparent",
+                                borderColor: active ? on.border : border,
+                                color: active ? on.text : textSub,
+                            }}>
                             {chip.label} ({quickFilterCounts[chip.id] || 0})
                         </button>
                     );
                 })}
             </div>
 
+            {/* ── Empty state ── */}
             {filteredSites.length === 0 ? (
-                <Card className="text-center p-12">
-                    <div className="text-4xl mb-2">🏗️</div>
-                    <div className="text-[15px] font-semibold">No sites yet</div>
-                    <div className="text-[hsl(var(--muted-foreground))] text-xs mt-1">Create your first loan LP</div>
-                </Card>
+                <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 16, padding: "80px 32px", textAlign: "center" }}>
+                    <div style={{ fontSize: 36, marginBottom: 12 }}>🏗</div>
+                    <div style={{ fontSize: 16, fontWeight: 600, color: text, marginBottom: 4 }}>No sites yet</div>
+                    <div style={{ fontSize: 13, color: textFaint }}>Create your first landing page to get started</div>
+                </div>
             ) : (
-                <div className="flex flex-col gap-3.5">
-                    {groupedSites.map((group) => (
-                        <Card key={group.key} className="p-3">
-                            <div className="flex justify-between items-center mb-2.5 flex-wrap gap-2">
-                                <div className="text-[13px] font-bold">{group.label}</div>
-                                <div className="flex gap-1.5 flex-wrap">
-                                    {[{ scope: "all", content: <Badge variant="default">{group.sites.length} site(s)</Badge> }, { scope: "deployed", content: <Badge variant="success">{group.deployed} deployed</Badge> }, { scope: "issues", content: <Badge variant="warning">{group.issue} issue</Badge> }].map((b, i) => (
-                                        <button key={i} type="button" title={getScopeHelpText(b.scope)} onClick={() => applyQuickScope(b.scope)}
-                                            className={cn("rounded-full px-0.5 py-0 border cursor-pointer transition-all", isQuickScopeActive(b.scope) ? "border-[hsl(var(--primary))/40] bg-[hsl(var(--primary))/12]" : "border-transparent bg-transparent")}>
-                                            {b.content}
-                                        </button>
-                                    ))}
-                                    {group.notDeployed > 0 && (
-                                        <button type="button" title={getScopeHelpText("not-deployed")} onClick={() => applyQuickScope("not-deployed")}
-                                            className={cn("rounded-full px-0.5 border cursor-pointer", isQuickScopeActive("not-deployed") ? "border-[hsl(var(--primary))/40] bg-[hsl(var(--primary))/12]" : "border-transparent")}>
-                                            <Badge variant="secondary">{group.notDeployed} not deployed</Badge>
-                                        </button>
-                                    )}
-                                    {group.warming > 0 && (
-                                        <button type="button" title={getScopeHelpText("warming")} onClick={() => applyQuickScope("warming")}
-                                            className="rounded-full px-0.5 border border-transparent cursor-pointer">
-                                            <Badge variant="warning">{group.warming} warming</Badge>
-                                        </button>
-                                    )}
-                                    {group.banned > 0 && (
-                                        <button type="button" title={getScopeHelpText("banned")} onClick={() => applyQuickScope("banned")}
-                                            className="rounded-full px-0.5 border border-transparent cursor-pointer">
-                                            <Badge variant="danger">{group.banned} banned</Badge>
-                                        </button>
-                                    )}
+                <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+                    {groupedSites.map(group => (
+                        <div key={group.key}>
+                            {/* Group header */}
+                            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                                <span style={{ fontSize: 11, fontWeight: 700, color: textFaint, textTransform: "uppercase", letterSpacing: "0.08em" }}>{group.label}</span>
+                                <span style={{ fontSize: 11, padding: "1px 8px", borderRadius: 999, background: dk?"#27272a":"#f0f0f0", color: textSub, fontWeight: 600 }}>{group.sites.length}</span>
+                                <div style={{ flex: 1, height: 1, background: border }} />
+                                <div style={{ display: "flex", gap: 5 }}>
+                                    {group.deployed > 0 && <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 999, background: dk?"#14532d30":"#f0fdf4", color: "#16a34a", border: "1px solid #86efac" }}>{group.deployed} live</span>}
+                                    {group.issue > 0 && <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 999, background: dk?"#451a0330":"#fffbeb", color: "#d97706", border: "1px solid #fde68a" }}>{group.issue} issue{group.issue!==1?"s":""}</span>}
+                                    {group.banned > 0 && <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 999, background: dk?"#450a0a30":"#fef2f2", color: "#dc2626", border: "1px solid #fca5a5" }}>{group.banned} banned</span>}
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            {/* Site cards */}
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
                                 {group.sites.map(s => {
                                     const co = COLORS.find(x => x.id === s.colorId);
                                     const deployed = getDeployedTargets(s.id);
-                                    const health = getSiteHealth(s, deployed.length);
                                     const isDeploying = deploying?.siteId === s.id;
                                     const latestUpdate = s.updatedAt || s._updatedAt || s._createdAt || s.createdAt;
                                     const templateLabel = getTemplateLabel(s.templateId || "classic");
                                     const latestDeploy = getLatestDeploy(s.id);
                                     const policyStatus = getPolicyStatus(s);
-                                    const policyTone = getPolicyTone(policyStatus);
                                     const googleAdsLabel = getGoogleAdsAccountLabel(s);
                                     const cloudflareLabel = getCloudflareAccountLabel(s);
                                     const landerTrackingUrl = s.voluumLanderTrackingUrl || buildLanderTrackingUrl({
@@ -712,155 +848,258 @@ export function Sites({ sites, del, notify, startCreate, startDuplicate, setting
                                         campaignId: s.voluumCampaignId || s.voluumId || "",
                                         landerId: s.voluumLanderId || "",
                                     });
+                                    const avatarBg = co ? hsl(...co.p) : accentColor;
+
+                                    const deployBadge = deployed.length > 0
+                                        ? { text: `● ${deployed.length} live`, bg: dk?"#14532d30":"#f0fdf4", color: "#16a34a", border: "#86efac" }
+                                        : { text: "○ Not deployed", bg: dk?"#27272a":surface, color: textFaint, border: border };
+
+                                    const policyBadge =
+                                        policyStatus === "Banned"  ? { bg: dk?"#450a0a30":"#fef2f2",  color:"#dc2626", border:"#fca5a5" } :
+                                        policyStatus === "Limited" ? { bg: dk?"#431a0030":"#fff7ed",  color: accentColor, border:"#fdba74" } :
+                                        policyStatus === "Warming" ? { bg: dk?"#451a0330":"#fffbeb",  color:"#d97706", border:"#fde68a" } :
+                                        policyStatus === "Clean"   ? { bg: dk?"#14532d30":"#f0fdf4",  color:"#16a34a", border:"#86efac" } :
+                                        { bg: dk?"#27272a":surface, color: textFaint, border };
 
                                     return (
-                                        <Card key={s.id} className="p-4 flex gap-4 relative">
-                                            <div className="w-11 h-11 rounded-[10px] flex items-center justify-center text-lg text-white font-bold shrink-0"
-                                                style={{ background: co ? hsl(...co.p) : T.primary }}>{s.brand?.[0]}</div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex justify-between items-center">
-                                                    <div className="text-[15px] font-bold">{s.brand}</div>
-                                                    <button onClick={() => handleDelete(s)}
-                                                        className="px-2.5 py-1 text-[10px] font-bold bg-[rgba(239,68,68,.15)] text-[#ef4444] border border-[rgba(239,68,68,.3)] rounded-md cursor-pointer tracking-wide hover:bg-[#ef4444] hover:text-white transition-all">
-                                                        🗑 DELETE
-                                                    </button>
+                                        <div key={s.id} style={{ background: surface, border: `1px solid ${border}`, borderRadius: 14, overflow: "hidden" }}>
+                                            {/* Card top: identity + status */}
+                                            <div style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "18px 20px 14px" }}>
+                                                {/* Avatar */}
+                                                <div style={{ width: 44, height: 44, borderRadius: 11, background: avatarBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
+                                                    {s.brand?.[0]?.toUpperCase()}
                                                 </div>
-                                                <div className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">{s.domain || "no domain"}</div>
-
-                                                <div className="flex gap-1.5 items-center flex-wrap mt-2">
-                                                    <Badge variant="default">{templateLabel}</Badge>
-                                                    <Badge style={{ background: `${health.color}22`, color: health.color, border: `1px solid ${health.color}44` }}>{health.label}</Badge>
-                                                    <Badge style={{ background: `${policyTone.color}22`, color: policyTone.color, border: `1px solid ${policyTone.color}44` }}>
-                                                        {policyTone.label}
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); setEditingPolicySite(s.id); }}
-                                                            className="ml-1 text-[8px] underline hover:no-underline cursor-pointer"
-                                                            style={{ opacity: 0.7 }}
-                                                        >
-                                                            ✏️
+                                                {/* Name & domain */}
+                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                    <div style={{ fontSize: 15, fontWeight: 700, color: text }}>{s.brand}</div>
+                                                    <div style={{ fontSize: 12, color: s.domain ? textSub : "#f59e0b", marginTop: 2 }}>
+                                                        {s.domain || "⚠ No domain set"}
+                                                    </div>
+                                                </div>
+                                                {/* Status badges + delete */}
+                                                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
+                                                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                                                        <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 999, background: deployBadge.bg, color: deployBadge.color, border: `1px solid ${deployBadge.border}` }}>
+                                                            {deployBadge.text}
+                                                        </span>
+                                                        <span onClick={e => { e.stopPropagation(); setEditingPolicySite(editingPolicySite === s.id ? null : s.id); }}
+                                                            style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 999, cursor: "pointer", background: policyBadge.bg, color: policyBadge.color, border: `1px solid ${policyBadge.border}` }}
+                                                            title="Click to change">
+                                                            {policyStatus} ✏
+                                                        </span>
+                                                        <button onClick={() => handleDelete(s)} style={b("destOutline", "xs")}>
+                                                            Delete
                                                         </button>
-                                                    </Badge>
-                                                    <Badge variant={deployed.length > 0 ? "success" : "secondary"}>{deployed.length > 0 ? `${deployed.length} target(s)` : "0 targets"}</Badge>
-                                                    <span className="text-[10px] text-[hsl(var(--muted-foreground))]">Updated {formatAgo(latestUpdate)}</span>
-                                                </div>
-
-                                                <div className="flex gap-1.5 flex-wrap mt-1.5">
-                                                    <span className="text-[10px] text-[hsl(var(--muted-foreground))] border border-[hsl(var(--border))] rounded-full px-2 py-0.5 bg-[hsl(var(--input))]">Ads: {truncateLabel(googleAdsLabel)}</span>
-                                                    <span className="text-[10px] text-[hsl(var(--muted-foreground))] border border-[hsl(var(--border))] rounded-full px-2 py-0.5 bg-[hsl(var(--input))]">CF: {truncateLabel(cloudflareLabel)}</span>
-                                                </div>
-
-                                                <div className="mt-2 text-[11px] text-[hsl(var(--muted-foreground))]">
-                                                    <span>Live URL: </span>
-                                                    {latestDeploy?.url ? (
-                                                        <a href={latestDeploy.url} target="_blank" rel="noreferrer"
-                                                            className="text-[hsl(var(--accent))] no-underline ml-1">{latestDeploy.url}</a>
-                                                    ) : (
-                                                        <span className="ml-1">Not deployed yet</span>
-                                                    )}
-                                                </div>
-
-                                                <DeployStatusChecker
-                                                    site={s}
-                                                    deployedTargets={deployed}
-                                                    settings={settings}
-                                                />
-
-                                                <div className="flex flex-wrap gap-1.5 mt-3">
-                                                    {!!landerTrackingUrl && (
-                                                        <>
-                                                            <Button
-                                                                variant="ghost"
-                                                                title={landerTrackingUrl}
-                                                                onClick={() => window.open(landerTrackingUrl, "_blank", "noopener,noreferrer")}
-                                                                className="px-2.5 py-1.5 text-[10px] h-auto"
-                                                            >
-                                                                🧪 Open Test
-                                                            </Button>
-                                                            <Button
-                                                                variant="ghost"
-                                                                title={landerTrackingUrl}
-                                                                onClick={() => copyToClipboard(landerTrackingUrl, `Copied Lander Tracking URL for ${s.brand}`)}
-                                                                className="px-2.5 py-1.5 text-[10px] h-auto"
-                                                            >
-                                                                📋 Copy to Google Ads
-                                                            </Button>
-                                                        </>
-                                                    )}
-                                                    <Button variant="ghost" onClick={() => startCreate(s)} className="px-2.5 py-1.5 text-[10px] h-auto">🔄 Edit & Redeploy</Button>
-                                                    {startDuplicate && <Button variant="ghost" onClick={() => startDuplicate(s)} className="px-2.5 py-1.5 text-[10px] h-auto">📋 Duplicate</Button>}
-
+                                                    </div>
+                                                    {/* Policy editor dropdown */}
                                                     {editingPolicySite === s.id && (
-                                                        <div className="absolute top-full right-0 mt-1 bg-white border border-[hsl(var(--border))] rounded-lg shadow-lg p-2 z-50">
-                                                            <div className="text-xs font-semibold mb-2">Set Policy Status:</div>
-                                                            {["Warming", "Limited", "Banned", "Unknown"].map(status => (
-                                                                <button
-                                                                    key={status}
-                                                                    onClick={() => handlePolicyChange(s, status)}
-                                                                    className="block w-full text-left px-2 py-1 text-xs hover:bg-[hsl(var(--accent))/10] rounded"
-                                                                >
-                                                                    {status}
+                                                        <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,.15)", padding: "4px", zIndex: 100, minWidth: 140 }}>
+                                                            <div style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px 6px", color: textFaint, letterSpacing: "0.07em", textTransform: "uppercase" }}>Policy Status</div>
+                                                            {["Warming","Limited","Banned","Unknown"].map(st => (
+                                                                <button key={st} onClick={() => handlePolicyChange(s, st)}
+                                                                    style={{ display: "block", width: "100%", textAlign: "left", padding: "6px 12px", fontSize: 12, background: "transparent", border: "none", color: text, cursor: "pointer", borderRadius: 6 }}>
+                                                                    {st}
                                                                 </button>
                                                             ))}
-                                                            <button
-                                                                onClick={() => setEditingPolicySite(null)}
-                                                                className="mt-2 w-full text-left px-2 py-1 text-xs text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))/10] rounded"
-                                                            >
-                                                                Cancel
-                                                            </button>
                                                         </div>
                                                     )}
-
-                                                    <div className="relative" ref={openDownload === s.id ? downloadRef : null}>
-                                                        <Button variant="ghost" onClick={() => setOpenDownload(openDownload === s.id ? null : s.id)} className="px-2.5 py-1.5 text-[10px] h-auto">📥 Download ▾</Button>
-                                                        {openDownload === s.id && (
-                                                            <div style={dropdownStyle}>
-                                                                <DropdownItem icon="🚀" label="Astro Project (ZIP)" desc="Full source, buildable" onClick={() => { setOpenDownload(null); downloadAstroZip(s); }} />
-                                                                <DropdownItem icon="📄" label="Static HTML (ZIP)" desc="Single index.html" onClick={() => { setOpenDownload(null); downloadHtmlZip(s); }} />
-                                                                <DropdownItem icon="📝" label="Apply Page (HTML)" desc="Form embed page" onClick={() => { setOpenDownload(null); downloadApplyPage(s); }} />
-                                                                <DropdownItem icon="🎨" label="Theme JSON" desc="Design tokens export" onClick={() => { setOpenDownload(null); exportJson(s); }} />
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    <div className="relative" ref={openDeploy === s.id ? deployRef : null}>
-                                                        <Button onClick={() => setOpenDeploy(openDeploy === s.id ? null : s.id)} disabled={isDeploying} className="px-3 py-1.5 text-[10px] h-auto">
-                                                            {isDeploying ? `Deploying to ${DEPLOY_TARGETS.find(t => t.id === deploying?.target)?.label || "..."}` : "🚀 Deploy ▾"}
-                                                        </Button>
-                                                        {openDeploy === s.id && !isDeploying && (
-                                                            <div style={dropdownStyle}>
-                                                                {availableTargets.map(t => (
-                                                                    <DropdownItem key={t.id} icon={t.icon} label={t.label}
-                                                                        desc={t.configured ? t.description : "⚠ Not configured"}
-                                                                        disabled={!t.configured} active={!!deployUrls[s.id]?.[t.id]}
-                                                                        onClick={() => t.configured && handleDeploy(s, t.id)} />
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </div>
                                                 </div>
                                             </div>
-                                        </Card>
+
+                                            {/* Info row */}
+                                            <div style={{ display: "flex", flexWrap: "wrap", gap: "3px 20px", padding: "0 20px 14px 78px", fontSize: 12, color: textFaint }}>
+                                                <span>Template: <b style={{ color: textSub, fontWeight: 500 }}>{templateLabel}</b></span>
+                                                <span>CF: <b style={{ color: textSub, fontWeight: 500 }}>{truncateLabel(cloudflareLabel, 26)}</b></span>
+                                                <span>Ads: <b style={{ color: textSub, fontWeight: 500 }}>{truncateLabel(googleAdsLabel, 26)}</b></span>
+                                                <span>Updated <b style={{ color: textSub, fontWeight: 500 }}>{formatAgo(latestUpdate)}</b></span>
+                                                <span>
+                                                    Live:{" "}
+                                                    {latestDeploy?.url
+                                                        ? <a href={latestDeploy.url} target="_blank" rel="noreferrer" style={{ color: accentColor, textDecoration: "none", fontWeight: 500 }}>{latestDeploy.url}</a>
+                                                        : <span style={{ color: textFaint }}>Not deployed yet</span>}
+                                                </span>
+                                            </div>
+
+                                            {/* Health row */}
+                                            {(healthResults[s.id] || checkingHealth[s.id]) && s.domain && (() => {
+                                                const h = healthResults[s.id];
+                                                const checking = !!checkingHealth[s.id];
+                                                const onlineColor = !h ? textFaint : h.online === 'online' ? "#16a34a" : h.online === 'timeout' ? "#f59e0b" : "#dc2626";
+                                                const onlineLabel = !h ? '' : h.online === 'online' ? '● Online' : h.online === 'timeout' ? '◌ Timeout' : '● Offline';
+                                                const sslColor = !h ? textFaint : h.ssl === 'valid' ? "#16a34a" : h.ssl === 'invalid' ? "#dc2626" : textFaint;
+                                                const sslLabel = !h ? '' : h.ssl === 'valid' ? '🔒 SSL OK' : h.ssl === 'invalid' ? '⚠ SSL issue' : '';
+                                                const trackColor = !h ? textFaint : h.tracking === 'configured' ? "#16a34a" : h.tracking === 'not_configured' ? "#f59e0b" : "#dc2626";
+                                                const trackLabel = !h ? '' : h.tracking === 'configured' ? `✓ gtag: ${h.gtagId}` : h.tracking === 'not_configured' ? '✗ No gtag set' : '⚠ gtag invalid';
+                                                const checkedAgo = h ? Math.round((Date.now() - h.checkedAt) / 1000) : 0;
+                                                const agoStr = checkedAgo < 60 ? `${checkedAgo}s ago` : `${Math.round(checkedAgo / 60)}m ago`;
+                                                return (
+                                                    <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px", padding: "6px 20px 10px 78px", fontSize: 11, alignItems: "center" }}>
+                                                        {checking ? (
+                                                            <span style={{ color: textFaint }}>⏳ Checking…</span>
+                                                        ) : <>
+                                                            <span style={{ fontWeight: 600, color: onlineColor }}>{onlineLabel}</span>
+                                                            {sslLabel && <span style={{ color: sslColor }}>{sslLabel}</span>}
+                                                            <span style={{ color: trackColor }}>{trackLabel}</span>
+                                                            {h.tracking === 'configured' && (
+                                                                <a href={`https://tagassistant.google.com/#/?source=TAG_MANAGER&url=https://${s.domain}`} target="_blank" rel="noreferrer"
+                                                                    style={{ color: accentColor, textDecoration: "none", fontSize: 10 }}>Test ↗</a>
+                                                            )}
+                                                            <span style={{ color: textFaint, opacity: 0.6, marginLeft: "auto" }}>checked {agoStr}</span>
+                                                        </>}
+                                                        <button onClick={() => checkSiteHealth(s.id, s.domain, s.gtagId)} disabled={checking}
+                                                            style={{ fontSize: 10, padding: "2px 8px", borderRadius: 5, border: `1px solid ${border}`, background: "transparent", color: textFaint, cursor: "pointer", opacity: checking ? 0.4 : 1 }}>
+                                                            ↻
+                                                        </button>
+                                                    </div>
+                                                );
+                                            })()}
+
+                                            {/* Deploy status */}
+                                            <DeployStatusChecker site={s} deployedTargets={deployed} settings={settings} isDark={isDark} surfaceAlt={dk?"#111113":"#f9f9f9"} borderColor={border} textFaint={textFaint} textSub={textSub} />
+
+                                            {/* Action buttons */}
+                                            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "12px 20px 16px 78px", borderTop: `1px solid ${borderFaint}` }}>
+                                                {s.domain && (
+                                                    <ActionBtn onClick={() => checkSiteHealth(s.id, s.domain, s.gtagId)} disabled={!!checkingHealth[s.id]} isDark={isDark} title="Check online status, SSL & tracking">
+                                                        {checkingHealth[s.id] ? "Checking…" : "↻ Health"}
+                                                    </ActionBtn>
+                                                )}
+                                                {!!landerTrackingUrl && <>
+                                                    <ActionBtn onClick={() => window.open(landerTrackingUrl,"_blank","noopener,noreferrer")} isDark={isDark}>Open Test</ActionBtn>
+                                                    <ActionBtn onClick={() => copyToClipboard(landerTrackingUrl,`Copied URL for ${s.brand}`)} isDark={isDark}>Copy Ads URL</ActionBtn>
+                                                </>}
+                                                <ActionBtn onClick={() => startCreate(s)} isDark={isDark}>Edit & Redeploy</ActionBtn>
+                                                {startDuplicate && <ActionBtn onClick={() => startDuplicate(s)} isDark={isDark}>Duplicate</ActionBtn>}
+                                                {addSite && <ActionBtn onClick={() => setCloneSource(s)} isDark={isDark} variant="outline" title="Clone this site and change domain, account & color without opening the full wizard">⟳ Clone & Rotate</ActionBtn>}
+                                                {auditLog && <ActionBtn onClick={() => setLogEventModal(s)} isDark={isDark} title="Add manual audit entry">+ Log</ActionBtn>}
+
+                                                {/* Download */}
+                                                <div style={{ position: "relative" }} ref={openDownload === s.id ? downloadRef : null}>
+                                                    <ActionBtn onClick={() => setOpenDownload(openDownload===s.id?null:s.id)} isDark={isDark}>Download ▾</ActionBtn>
+                                                    {openDownload === s.id && (
+                                                        <div style={{ position:"absolute", top:"100%", left:0, marginTop:4, background:surface, border:`1px solid ${border}`, borderRadius:10, boxShadow:"0 8px 24px rgba(0,0,0,.15)", zIndex:100, minWidth:220, padding:4 }}>
+                                                            <DropdownItem icon="🚀" label="Astro Project (ZIP)" desc="Full source, buildable" isDark={isDark} textColor={text} mutedColor={textFaint} hoverBg={surfaceHover} onClick={() => { setOpenDownload(null); downloadAstroZip(s); }} />
+                                                            <DropdownItem icon="📄" label="Static HTML (ZIP)" desc="Single index.html" isDark={isDark} textColor={text} mutedColor={textFaint} hoverBg={surfaceHover} onClick={() => { setOpenDownload(null); downloadHtmlZip(s); }} />
+                                                            <DropdownItem icon="📝" label="Apply Page (HTML)" desc="Form embed page" isDark={isDark} textColor={text} mutedColor={textFaint} hoverBg={surfaceHover} onClick={() => { setOpenDownload(null); downloadApplyPage(s); }} />
+                                                            <DropdownItem icon="🎨" label="Theme JSON" desc="Design tokens export" isDark={isDark} textColor={text} mutedColor={textFaint} hoverBg={surfaceHover} onClick={() => { setOpenDownload(null); exportJson(s); }} />
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Deploy */}
+                                                <div style={{ position: "relative" }} ref={openDeploy === s.id ? deployRef : null}>
+                                                    <button onClick={() => setOpenDeploy(openDeploy===s.id?null:s.id)} disabled={isDeploying}
+                                                        style={{ ...b("orange", "sm"), opacity: isDeploying ? 0.6 : 1, cursor: isDeploying ? "wait" : "pointer" }}>
+                                                        {isDeploying ? "Deploying…" : "Deploy ▾"}
+                                                    </button>
+                                                    {openDeploy === s.id && !isDeploying && (
+                                                        <div style={{ position:"absolute", top:"100%", left:0, marginTop:4, background:surface, border:`1px solid ${border}`, borderRadius:10, boxShadow:"0 8px 24px rgba(0,0,0,.15)", zIndex:100, minWidth:220, padding:4 }}>
+                                                            {availableTargets.map(t => (
+                                                                <DropdownItem key={t.id} icon={t.icon} label={t.label} desc={t.configured ? t.description : "⚠ Not configured"}
+                                                                    disabled={!t.configured} active={!!deployUrls[s.id]?.[t.id]}
+                                                                    isDark={isDark} textColor={text} mutedColor={textFaint} hoverBg={surfaceHover}
+                                                                    onClick={() => t.configured && handleDeploy(s, t.id)} />
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Activity toggle */}
+                                            {auditLog && (
+                                                <button onClick={() => toggleAuditPanel(s.id)}
+                                                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 20px 5px 78px', width: '100%', background: 'transparent', border: 'none', borderTop: `1px solid ${borderFaint}`, fontSize: 11, color: textFaint, cursor: 'pointer', textAlign: 'left' }}>
+                                                    <span>{openAuditSiteId === s.id ? '▲' : '▼'}</span>
+                                                    <span>Activity</span>
+                                                    {(localAuditCache[s.id]?.length > 0 || auditEvents?.[s.id]?.length > 0) && (
+                                                        <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 999, background: dk ? '#27272a' : '#f4f4f5', color: textSub }}>
+                                                            {(localAuditCache[s.id] || auditEvents?.[s.id] || []).length}
+                                                        </span>
+                                                    )}
+                                                    {loadingAuditId === s.id && <span style={{ opacity: 0.5 }}>loading…</span>}
+                                                </button>
+                                            )}
+
+                                            {/* Activity panel */}
+                                            {openAuditSiteId === s.id && (
+                                                <SiteAuditPanel
+                                                    events={localAuditCache[s.id] || auditEvents?.[s.id] || []}
+                                                    isDark={dk}
+                                                    border={border}
+                                                    borderFaint={borderFaint}
+                                                    textFaint={textFaint}
+                                                    textSub={textSub}
+                                                    text={text}
+                                                />
+                                            )}
+                                        </div>
                                     );
                                 })}
                             </div>
-                        </Card>
+                        </div>
                     ))}
                 </div>
             )}
 
+            {/* Clone & Rotate modal */}
+            {cloneSource && addSite && createPortal(
+                <CloneRotateModal
+                    source={cloneSource}
+                    isDark={isDark}
+                    ops={ops}
+                    colors={COLORS}
+                    onClose={() => setCloneSource(null)}
+                    onClone={(newSite) => {
+                        addSite(newSite);
+                        setCloneSource(null);
+                        notify(`${newSite.brand} cloned from ${cloneSource.brand}!`);
+                    }}
+                />,
+                document.body
+            )}
+
+            {/* Log Event modal */}
+            {logEventModal && auditLog && createPortal(
+                <LogEventModal
+                    site={logEventModal}
+                    isDark={isDark}
+                    onClose={() => setLogEventModal(null)}
+                    onSubmit={auditLog}
+                />,
+                document.body
+            )}
+
+            {/* Preview modal */}
             {preview && createPortal(
-                <div onClick={(e) => { if (e.target === e.currentTarget) setPreview(null); }}
-                    className="fixed inset-0 bg-black/85 z-[10000] flex flex-col p-6 animate-[fadeIn_.2s_ease]">
-                    <div className="flex justify-between mb-3">
-                        <div className="text-white font-bold">Preview: {preview.brand}</div>
-                        <Button variant="destructive" onClick={() => setPreview(null)} className="px-3 py-1 h-auto text-xs">Close</Button>
+                <div onClick={e => { if (e.target===e.currentTarget) setPreview(null); }}
+                    style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.85)", zIndex:10000, display:"flex", flexDirection:"column", padding:24 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", marginBottom:12, alignItems:"center" }}>
+                        <div style={{ color:"#fff", fontWeight:700 }}>Preview: {preview.brand}</div>
+                        <button onClick={() => setPreview(null)} style={{ padding:"6px 14px", background:"#dc2626", color:"#fff", border:"none", borderRadius:6, cursor:"pointer" }}>Close</button>
                     </div>
-                    <iframe title="preview" className="flex-1 bg-white rounded-xl border-none" srcDoc={generateHtmlByTemplate(preview)} />
+                    <iframe title="preview" style={{ flex:1, background:"#fff", borderRadius:12, border:"none" }} srcDoc={generateHtmlByTemplate(preview)} />
                 </div>,
                 document.body
             )}
         </div>
     );
+}
+
+function ActionBtn({ onClick, variant = "secondary", isDark: dk2, children, disabled, title }) {
+    const style = {
+        display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
+        height: 32, padding: "0 12px", borderRadius: 6, cursor: disabled ? "not-allowed" : "pointer",
+        fontSize: 13, fontWeight: 500, fontFamily: "inherit", whiteSpace: "nowrap",
+        transition: "opacity .15s, background .15s", outline: "none",
+        opacity: disabled ? 0.5 : 1,
+        ...(variant === "secondary"  ? { background: dk2 ? "#27272a" : "#f4f4f5", border: "none",                        color: dk2 ? "#e4e4e7" : "#18181b" } :
+            variant === "outline"    ? { background: "transparent",               border: `1px solid ${dk2?"#3f3f46":"#e4e4e7"}`, color: dk2 ? "#e4e4e7" : "#18181b" } :
+            variant === "ghost"      ? { background: "transparent",               border: "none",                        color: dk2 ? "#a1a1aa" : "#71717a" } :
+            variant === "orange"     ? { background: "#ea580c",                   border: "none",                        color: "#fff" } :
+            variant === "default"    ? { background: dk2 ? "#fafafa" : "#18181b", border: "none",                        color: dk2 ? "#09090b" : "#fafafa" } :
+                                       { background: dk2 ? "#27272a" : "#f4f4f5", border: "none",                        color: dk2 ? "#e4e4e7" : "#18181b" }),
+    };
+    return <button onClick={onClick} disabled={disabled} title={title} style={style}>{children}</button>;
 }
 
 /* ─── Deploy Status Checker Component ─── */
@@ -874,7 +1113,7 @@ const STATUS_META = {
     no_deploys: { icon: "📭", label: "No deploys", color: "#94a3b8" },
 };
 
-function DeployStatusChecker({ site, deployedTargets, settings }) {
+function DeployStatusChecker({ site, deployedTargets, settings, isDark, surfaceAlt, borderColor, textFaint, textSub }) {
     const [statuses, setStatuses] = useState({});
     const [loading, setLoading] = useState(false);
     const [lastChecked, setLastChecked] = useState(null);
@@ -900,23 +1139,19 @@ function DeployStatusChecker({ site, deployedTargets, settings }) {
 
     if (!deployedTargets.length) return null;
 
+    const sa = surfaceAlt || "#f9f9f9";
+    const bc = borderColor || "#e4e4e7";
+    const tf = textFaint || "#a1a1aa";
     return (
-        <div className="mt-2 border border-[hsl(var(--border))] rounded-lg p-2 bg-[hsl(var(--muted))/20]">
-            <div className="flex justify-between items-center mb-1.5">
-                <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))]">
+        <div style={{ margin: "0 20px 0 78px", padding: "8px 10px", background: sa, border: `1px solid ${bc}`, borderRadius: 8, marginBottom: 4 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: tf, textTransform: "uppercase", letterSpacing: "0.07em" }}>
                     Deploy Status
-                    {lastChecked && (
-                        <span className="ml-1.5 font-normal opacity-60">
-                            checked {lastChecked.toLocaleTimeString()}
-                        </span>
-                    )}
+                    {lastChecked && <span style={{ fontWeight: 400, marginLeft: 6, opacity: 0.7 }}>· {lastChecked.toLocaleTimeString()}</span>}
                 </span>
-                <button
-                    onClick={checkAll}
-                    disabled={loading}
-                    className="text-[9px] px-2 py-0.5 rounded border border-[hsl(var(--border))] hover:bg-[hsl(var(--accent))/10] transition-colors disabled:opacity-50"
-                >
-                    {loading ? "Checking…" : "🔄 Check"}
+                <button onClick={checkAll} disabled={loading}
+                    style={{ fontSize: 10, padding: "2px 8px", borderRadius: 5, border: `1px solid ${bc}`, background: "transparent", color: tf, cursor: "pointer", opacity: loading ? 0.5 : 1 }}>
+                    {loading ? "Checking…" : "Check"}
                 </button>
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -950,46 +1185,376 @@ function DeployStatusChecker({ site, deployedTargets, settings }) {
     );
 }
 
-/* ─── Dropdown Styles & Components ─── */
-
-const dropdownStyle = {
-    position: "absolute",
-    top: "100%",
-    left: 0,
-    marginTop: 4,
-    background: T.card,
-    border: `1px solid ${T.border}`,
-    borderRadius: 8,
-    boxShadow: "0 8px 32px rgba(0,0,0,.4)",
-    zIndex: 100,
-    minWidth: 220,
-    padding: 4,
-    animation: "fadeIn .15s ease",
-};
-
-function DropdownItem({ icon, label, desc, onClick, disabled, active }) {
+function DropdownItem({ icon, label, desc, onClick, disabled, active, textColor, mutedColor, hoverBg }) {
     const [hovered, setHovered] = useState(false);
+    const tc = textColor || "#09090b";
+    const mc = mutedColor || "#a1a1aa";
+    const hb = hoverBg || "#f4f4f5";
     return (
-        <button
-            onClick={disabled ? undefined : onClick}
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
-            style={{
-                display: "flex", alignItems: "center", gap: 8, width: "100%",
-                padding: "8px 10px", background: hovered && !disabled ? T.hover : "transparent",
-                border: "none", borderRadius: 6, cursor: disabled ? "not-allowed" : "pointer",
-                textAlign: "left", color: disabled ? T.dim : T.text, opacity: disabled ? 0.5 : 1,
-                transition: "background .15s",
-            }}
-        >
+        <button onClick={disabled ? undefined : onClick}
+            onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
+            style={{ display:"flex", alignItems:"center", gap:8, width:"100%", padding:"8px 10px",
+                background: hovered && !disabled ? hb : "transparent",
+                border:"none", borderRadius:6, cursor: disabled?"not-allowed":"pointer",
+                textAlign:"left", color: disabled ? mc : tc, opacity: disabled ? 0.5 : 1, transition:"background .15s" }}>
             <span style={{ fontSize: 14, flexShrink: 0 }}>{icon}</span>
             <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, display:"flex", alignItems:"center", gap:4 }}>
                     {label}
-                    {active && <span style={{ fontSize: 9, color: T.success, fontWeight: 700 }}>● LIVE</span>}
+                    {active && <span style={{ fontSize: 9, color:"#16a34a", fontWeight:700 }}>● LIVE</span>}
                 </div>
-                {desc && <div style={{ fontSize: 10, color: T.dim, marginTop: 1 }}>{desc}</div>}
+                {desc && <div style={{ fontSize: 10, color: mc, marginTop: 1 }}>{desc}</div>}
             </div>
         </button>
+    );
+}
+
+/* ─── Clone & Rotate Modal ─── */
+function CloneRotateModal({ source, onClose, onClone, isDark, ops, colors }) {
+    const dk = isDark;
+    const surface  = dk ? "#18181b" : "#ffffff";
+    const bg       = dk ? "#09090b" : "#f9fafb";
+    const border   = dk ? "#27272a" : "#e4e4e7";
+    const text     = dk ? "#fafafa" : "#09090b";
+    const textSub  = dk ? "#a1a1aa" : "#52525b";
+    const accent   = "#ea580c";
+
+    // Collect unique Google Ads account names from ops
+    const adsAccounts = [...new Set([
+        ...(ops?.accounts  || []).map(a => a.name || a.label || a.googleAdsAccountName).filter(Boolean),
+        ...(ops?.profiles  || []).map(p => p.googleAdsAccountName || p.adsAccountName).filter(Boolean),
+    ])].filter(Boolean);
+
+    const cfAccounts = ops?.cfAccounts || [];
+
+    // Default: next color in list, same account, empty domain/brand
+    const nextColor = colors.find(c => c.id !== source.colorId)?.id || colors[0].id;
+    const [form, setForm] = useState({
+        brand:                  (source.brand || '') + ' 2',
+        domain:                 '',
+        colorId:                nextColor,
+        googleAdsAccountName:   source.googleAdsAccountName || '',
+        cfAccountId:            source.cfAccountId || '',
+        cloudflareAccountName:  source.cloudflareAccountName || '',
+    });
+    const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        const {
+            id, domain, brand, email, phone, address,
+            voluumCampaignId, voluumCampaignName, voluumClickUrl,
+            voluumTrackingDomain, voluumLanderTrackingUrl, voluumLanderId,
+            voluumOfferId, voluumLanderScript, voluumCfCname, voluumAcmName, voluumAcmValue,
+            status, createdAt, updatedAt, cost, _editMode,
+            ...portable
+        } = source;
+        onClone({
+            ...portable,
+            id: uid(),
+            brand: form.brand.trim(),
+            domain: form.domain.trim().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0],
+            colorId: form.colorId,
+            googleAdsAccountName: form.googleAdsAccountName,
+            cloudflareAccountName: form.cloudflareAccountName || portable.cloudflareAccountName,
+            cfAccountId: form.cfAccountId || portable.cfAccountId,
+            createdAt: now(),
+            updatedAt: now(),
+            _editMode: false,
+        });
+    };
+
+    const inputStyle = {
+        width: "100%", padding: "8px 12px", borderRadius: 8,
+        border: `1px solid ${border}`, background: bg, color: text,
+        fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box",
+    };
+    const labelStyle = { display: "flex", flexDirection: "column", gap: 5 };
+    const labelTextStyle = { fontSize: 12, fontWeight: 600, color: textSub };
+
+    return (
+        <div onClick={e => e.target === e.currentTarget && onClose()}
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+            <form onSubmit={handleSubmit}
+                style={{ background: surface, border: `1px solid ${border}`, borderRadius: 16, padding: "28px 28px 24px", width: "100%", maxWidth: 460, boxShadow: "0 24px 48px rgba(0,0,0,.35)", fontFamily: "inherit" }}>
+
+                {/* Header */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 22 }}>
+                    <div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: text, letterSpacing: "-0.01em" }}>⟳ Clone & Rotate</div>
+                        <div style={{ fontSize: 12, color: textSub, marginTop: 3 }}>
+                            Cloning from <b style={{ color: text }}>{source.brand}</b> · keeps template, headline & settings
+                        </div>
+                    </div>
+                    <button type="button" onClick={onClose}
+                        style={{ background: "none", border: "none", color: textSub, cursor: "pointer", fontSize: 20, lineHeight: 1, padding: 2 }}>✕</button>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                    {/* Brand + Domain side by side */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                        <label style={labelStyle}>
+                            <span style={labelTextStyle}>Brand Name</span>
+                            <input value={form.brand} onChange={e => set('brand', e.target.value)} required style={inputStyle} placeholder="e.g. SwiftCash 2" />
+                        </label>
+                        <label style={labelStyle}>
+                            <span style={labelTextStyle}>New Domain <span style={{ color: accent }}>*</span></span>
+                            <input value={form.domain} onChange={e => set('domain', e.target.value)} required style={inputStyle} placeholder="e.g. newdomain.com" />
+                        </label>
+                    </div>
+
+                    {/* Color picker */}
+                    <div style={labelStyle}>
+                        <span style={labelTextStyle}>Color Theme</span>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "6px 0" }}>
+                            {colors.map(c => {
+                                const swatch = `hsl(${c.p[0]}, ${c.p[1]}%, ${c.p[2]}%)`;
+                                const selected = form.colorId === c.id;
+                                const isSource = source.colorId === c.id;
+                                return (
+                                    <button key={c.id} type="button" onClick={() => set('colorId', c.id)} title={c.name + (isSource ? ' (current)' : '')}
+                                        style={{ width: 32, height: 32, borderRadius: 9, background: swatch, cursor: "pointer", position: "relative",
+                                            border: selected ? `2.5px solid ${accent}` : `2px solid transparent`,
+                                            outline: selected ? `2px solid ${accent}44` : "none",
+                                            opacity: isSource && !selected ? 0.4 : 1 }}>
+                                        {isSource && !selected && <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10 }}>✓</span>}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        <div style={{ fontSize: 11, color: textSub }}>
+                            {colors.find(c => c.id === form.colorId)?.name}
+                            {source.colorId === form.colorId && <span style={{ color: "#f59e0b", marginLeft: 6 }}>⚠ same as source</span>}
+                        </div>
+                    </div>
+
+                    {/* Google Ads Account */}
+                    <label style={labelStyle}>
+                        <span style={labelTextStyle}>Google Ads Account <span style={{ color: textSub, fontWeight: 400 }}>(rotate to different account)</span></span>
+                        {adsAccounts.length > 0 ? (
+                            <select value={form.googleAdsAccountName} onChange={e => set('googleAdsAccountName', e.target.value)}
+                                style={{ ...inputStyle, appearance: "none" }}>
+                                <option value="">— keep same ({source.googleAdsAccountName || 'Unassigned'}) —</option>
+                                {adsAccounts.map(a => <option key={a} value={a}>{a}</option>)}
+                            </select>
+                        ) : (
+                            <input value={form.googleAdsAccountName} onChange={e => set('googleAdsAccountName', e.target.value)}
+                                style={inputStyle} placeholder={source.googleAdsAccountName || 'Google Ads account name'} />
+                        )}
+                    </label>
+
+                    {/* CF Account — only show if accounts are configured */}
+                    {cfAccounts.length > 0 && (
+                        <label style={labelStyle}>
+                            <span style={labelTextStyle}>Cloudflare Account</span>
+                            <select value={form.cfAccountId} onChange={e => set('cfAccountId', e.target.value)}
+                                style={{ ...inputStyle, appearance: "none" }}>
+                                <option value="">— keep same —</option>
+                                {cfAccounts.map(a => {
+                                    const id = a.id || a.accountId || a.account_id;
+                                    const label = a.label || a.email || id;
+                                    return <option key={id} value={id}>{label}</option>;
+                                })}
+                            </select>
+                        </label>
+                    )}
+                </div>
+
+                {/* Footer */}
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 24, paddingTop: 20, borderTop: `1px solid ${border}` }}>
+                    <button type="button" onClick={onClose}
+                        style={{ padding: "8px 18px", borderRadius: 8, border: `1px solid ${border}`, background: "transparent", color: text, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        style={{ padding: "8px 22px", borderRadius: 8, border: "none", background: accent, color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                        Clone & Create →
+                    </button>
+                </div>
+            </form>
+        </div>
+    );
+}
+
+// ─── Site Audit Panel ───────────────────────────────────────────────────────
+
+const AUDIT_META = {
+    site_created:   { icon: '🆕', color: '#16a34a' },
+    site_cloned:    { icon: '⟳',  color: '#3b82f6' },
+    site_deployed:  { icon: '🚀', color: '#3b82f6' },
+    policy_changed: { icon: '⚠',  color: '#f59e0b' },
+    domain_changed: { icon: '🌐', color: '#8b5cf6' },
+    health_check:   { icon: '❤',  color: '#64748b' },
+    proxy_assigned: { icon: '🔗', color: '#0ea5e9' },
+    note_added:     { icon: '📝', color: '#6b7280' },
+    ad_disapproved: { icon: '🚫', color: '#dc2626' },
+    account_warned: { icon: '⚡', color: '#f59e0b' },
+    account_banned: { icon: '🔴', color: '#dc2626' },
+};
+
+function SiteAuditPanel({ events, isDark, border, borderFaint, textFaint, textSub, text }) {
+    const [showAll, setShowAll] = React.useState(false);
+    const shown = showAll ? events : events.slice(0, 5);
+    const bg = isDark ? '#0d0d10' : '#f9f9fb';
+
+    if (events.length === 0) {
+        return (
+            <div style={{ padding: '10px 20px 10px 78px', fontSize: 11, color: textFaint, background: bg }}>
+                No activity recorded yet
+            </div>
+        );
+    }
+
+    const relativeTime = (ts) => {
+        if (!ts) return '';
+        const diff = Date.now() - new Date(ts).getTime();
+        const m = Math.floor(diff / 60000);
+        if (m < 1) return 'just now';
+        if (m < 60) return `${m}m ago`;
+        const h = Math.floor(m / 60);
+        if (h < 24) return `${h}h ago`;
+        return `${Math.floor(h / 24)}d ago`;
+    };
+
+    return (
+        <div style={{ borderTop: `1px solid ${border}`, background: bg }}>
+            {shown.map(ev => {
+                const evType = ev.eventType || ev.event_type || '';
+                const m = AUDIT_META[evType] || { icon: '•', color: textFaint };
+                const sevColor = ev.severity === 'critical' ? '#dc2626'
+                               : ev.severity === 'warning'  ? '#f59e0b'
+                               : m.color;
+                return (
+                    <div key={ev.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '7px 20px', borderBottom: `1px solid ${borderFaint}`, fontSize: 11 }}>
+                        <span style={{ width: 20, height: 20, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, background: `${sevColor}18`, color: sevColor, flexShrink: 0, marginTop: 1 }}>
+                            {m.icon}
+                        </span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ color: text, fontWeight: 500 }}>{ev.title}</div>
+                            {ev.detail && <div style={{ color: textFaint, marginTop: 2, fontSize: 10 }}>{ev.detail}</div>}
+                        </div>
+                        <span style={{ color: textFaint, fontSize: 10, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                            {relativeTime(ev.ts)}
+                        </span>
+                    </div>
+                );
+            })}
+            {events.length > 5 && (
+                <button onClick={() => setShowAll(p => !p)}
+                    style={{ width: '100%', padding: '6px', background: 'transparent', border: 'none', fontSize: 10, color: textFaint, cursor: 'pointer' }}>
+                    {showAll ? '▲ Show less' : `▼ Show all ${events.length} events`}
+                </button>
+            )}
+        </div>
+    );
+}
+
+// ─── Log Event Modal ────────────────────────────────────────────────────────
+
+const LOG_EVENT_TYPES = [
+    { value: 'note_added',     label: '📝 Note / General' },
+    { value: 'ad_disapproved', label: '🚫 Ad Disapproved' },
+    { value: 'account_warned', label: '⚡ Account Warned' },
+    { value: 'account_banned', label: '🔴 Account Banned' },
+    { value: 'policy_changed', label: '⚠ Policy Change' },
+    { value: 'domain_changed', label: '🌐 Domain Changed' },
+    { value: 'proxy_assigned', label: '🔗 Proxy Assigned' },
+];
+
+function LogEventModal({ site, isDark, onClose, onSubmit }) {
+    const [eventType, setEventType] = useState('note_added');
+    const [title, setTitle] = useState('');
+    const [detail, setDetail] = useState('');
+    const [severity, setSeverity] = useState('info');
+    const [campaignId, setCampaignId] = useState('');
+    const [reason, setReason] = useState('');
+
+    const dk = isDark;
+    const bg = dk ? '#18181b' : '#ffffff';
+    const surface = dk ? '#09090b' : '#f4f4f5';
+    const border = dk ? '#3f3f46' : '#e4e4e7';
+    const text = dk ? '#fafafa' : '#09090b';
+    const textSub = dk ? '#a1a1aa' : '#71717a';
+    const accent = '#ea580c';
+    const inputStyle = { width: '100%', padding: '8px 10px', borderRadius: 8, border: `1px solid ${border}`, background: surface, color: text, fontSize: 13, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' };
+    const labelStyle = { display: 'flex', flexDirection: 'column', gap: 4 };
+    const labelTextStyle = { fontSize: 11, fontWeight: 600, color: textSub, textTransform: 'uppercase', letterSpacing: '0.05em' };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!title.trim()) return;
+        const meta = {};
+        if (campaignId) meta.campaignId = campaignId;
+        if (reason) meta.reason = reason;
+        onSubmit(site.id, eventType, title.trim(), detail.trim(), meta, severity);
+        onClose();
+    };
+
+    const needsExtra = eventType === 'ad_disapproved' || eventType === 'account_warned' || eventType === 'account_banned';
+
+    return (
+        <div onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', zIndex: 10001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+            <form onSubmit={handleSubmit}
+                style={{ background: bg, border: `1px solid ${border}`, borderRadius: 16, padding: '28px 28px 24px', width: '100%', maxWidth: 460, boxShadow: '0 24px 48px rgba(0,0,0,.35)', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: text }}>+ Log Event: {site.brand}</div>
+                    <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', color: textSub, cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 2 }}>✕</button>
+                </div>
+
+                <label style={labelStyle}>
+                    <span style={labelTextStyle}>Event Type</span>
+                    <select value={eventType} onChange={e => setEventType(e.target.value)} style={inputStyle}>
+                        {LOG_EVENT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                    </select>
+                </label>
+
+                <label style={labelStyle}>
+                    <span style={labelTextStyle}>Title <span style={{ color: accent }}>*</span></span>
+                    <input value={title} onChange={e => setTitle(e.target.value)} required style={inputStyle} placeholder="Short description of what happened" />
+                </label>
+
+                <label style={labelStyle}>
+                    <span style={labelTextStyle}>Detail (optional)</span>
+                    <textarea value={detail} onChange={e => setDetail(e.target.value)} rows={2} style={{ ...inputStyle, resize: 'vertical' }} placeholder="More context, URLs, notes…" />
+                </label>
+
+                {needsExtra && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                        <label style={labelStyle}>
+                            <span style={labelTextStyle}>Campaign ID</span>
+                            <input value={campaignId} onChange={e => setCampaignId(e.target.value)} style={inputStyle} placeholder="e.g. 12345678" />
+                        </label>
+                        <label style={labelStyle}>
+                            <span style={labelTextStyle}>Reason</span>
+                            <input value={reason} onChange={e => setReason(e.target.value)} style={inputStyle} placeholder="e.g. Circumventing systems" />
+                        </label>
+                    </div>
+                )}
+
+                <label style={labelStyle}>
+                    <span style={labelTextStyle}>Severity</span>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                        {[['info','🔵 Info'],['warning','🟡 Warning'],['critical','🔴 Critical']].map(([v, l]) => (
+                            <button key={v} type="button" onClick={() => setSeverity(v)}
+                                style={{ flex: 1, padding: '7px 8px', borderRadius: 8, border: `1px solid ${severity === v ? accent : border}`, background: severity === v ? `${accent}18` : 'transparent', color: severity === v ? accent : textSub, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+                                {l}
+                            </button>
+                        ))}
+                    </div>
+                </label>
+
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
+                    <button type="button" onClick={onClose}
+                        style={{ padding: '8px 18px', borderRadius: 8, border: `1px solid ${border}`, background: 'transparent', color: text, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        style={{ padding: '8px 22px', borderRadius: 8, border: 'none', background: accent, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        Save Event →
+                    </button>
+                </div>
+            </form>
+        </div>
     );
 }

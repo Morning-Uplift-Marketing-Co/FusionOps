@@ -196,6 +196,8 @@ async function directExecute(sql, params = []) {
 }
 
 let _sitesTableReady = false;
+let _auditTableReady = false;
+let _proxiesTableReady = false;
 
 /**
  * Ensure the sites table exists in D1 — only runs once per session
@@ -211,6 +213,36 @@ async function ensureSitesTable() {
     )`
   );
   _sitesTableReady = true;
+}
+
+async function ensureAuditTable() {
+  if (_auditTableReady) return;
+  await directExecute(
+    `CREATE TABLE IF NOT EXISTS site_audit_log (
+      id TEXT PRIMARY KEY,
+      site_id TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      severity TEXT NOT NULL DEFAULT 'info',
+      title TEXT NOT NULL,
+      detail TEXT,
+      meta TEXT DEFAULT '{}',
+      ts TEXT DEFAULT (datetime('now'))
+    )`
+  );
+  _auditTableReady = true;
+}
+
+async function ensureProxiesTable() {
+  if (_proxiesTableReady) return;
+  await directExecute(
+    `CREATE TABLE IF NOT EXISTS proxies (
+      id TEXT PRIMARY KEY,
+      data TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )`
+  );
+  _proxiesTableReady = true;
 }
 
 /**
@@ -238,6 +270,38 @@ export async function saveSiteToD1(site) {
  */
 export async function deleteSiteFromD1(id) {
   await directExecute(`DELETE FROM sites WHERE id = ?`, [id]);
+  return true;
+}
+
+/** Save audit event to D1 (fire-and-forget backup) */
+export async function saveAuditEventToD1(event) {
+  await ensureAuditTable();
+  await directExecute(
+    `INSERT INTO site_audit_log (id, site_id, event_type, severity, title, detail, meta, ts)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(id) DO NOTHING`,
+    [event.id, event.site_id, event.event_type, event.severity || 'info',
+     event.title || '', event.detail || '', JSON.stringify(event.meta || {}), event.ts || new Date().toISOString()]
+  );
+  return true;
+}
+
+/** Upsert proxy to D1 (fire-and-forget backup) */
+export async function saveProxyToD1(proxy) {
+  await ensureProxiesTable();
+  const { id, createdAt, updatedAt, ...data } = proxy;
+  await directExecute(
+    `INSERT INTO proxies (id, data, updated_at)
+     VALUES (?, ?, datetime('now'))
+     ON CONFLICT(id) DO UPDATE SET data = excluded.data, updated_at = datetime('now')`,
+    [id, JSON.stringify(data)]
+  );
+  return true;
+}
+
+/** Delete proxy from D1 */
+export async function deleteProxyFromD1(id) {
+  await directExecute(`DELETE FROM proxies WHERE id = ?`, [id]);
   return true;
 }
 

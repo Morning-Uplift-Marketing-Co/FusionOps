@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { api } from "./services/api";
 import * as db from "./services/neon";
-import { saveSiteToD1, deleteSiteFromD1 } from "./services/d1";
+import { saveSiteToD1, deleteSiteFromD1, saveAuditEventToD1, saveProxyToD1, deleteProxyFromD1 } from "./services/d1";
 import { THEME as T, WIZARD_DEFAULTS } from "./constants";
 import { uid, now, LS } from "./utils";
 import { refreshCustomTemplates } from "./utils/template-router";
@@ -137,6 +137,27 @@ useEffect(() => {
     .catch(() => {});
 }, []);
 
+  const [auditEvents, setAuditEvents] = useState(() => {
+    // Hydrate from localStorage on first render
+    try {
+      const pfx = `lpf2:${window.location.hostname}${window.location.port ? ':' + window.location.port : ''}:audit:`;
+      const leg = 'lpf2-audit:';
+      const seen = new Set();
+      const result = {};
+      Object.keys(localStorage).forEach(k => {
+        let sid = null;
+        if (k.startsWith(pfx)) sid = k.slice(pfx.length);
+        else if (k.startsWith(leg)) sid = k.slice(leg.length);
+        if (sid && !seen.has(sid)) {
+          seen.add(sid);
+          const evts = JSON.parse(localStorage.getItem(k) || '[]');
+          if (evts.length > 0) result[sid] = evts;
+        }
+      });
+      return result;
+    } catch (_) { return {}; }
+  });  // { [siteId]: event[] }
+  const [proxies, setProxies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [apiOk, setApiOk] = useState(false);
   const [neonOk, setNeonOk] = useState(false);
@@ -299,12 +320,13 @@ useEffect(() => {
             api.post("/settings", { neonUrl: neonConnStr }).catch(() => { });
 
             // Load from Neon
-            const [neonSettings, neonSites, neonDeploys, neonRegistrarAccounts, neonCfAccounts] = await Promise.all([
+            const [neonSettings, neonSites, neonDeploys, neonRegistrarAccounts, neonCfAccounts, neonProxies] = await Promise.all([
               db.loadSettings(),
               db.loadSites(),
               db.loadDeploys(),
               db.loadRegistrarAccounts(),
               db.loadCfAccounts(),
+              db.loadProxies(),
             ]);
 
             if (neonSettings && Object.keys(neonSettings).length > 0) {
@@ -371,6 +393,11 @@ useEffect(() => {
                 cfAccounts: neonCfAccounts,
               }));
             }
+            if (Array.isArray(neonProxies) && neonProxies.length > 0) {
+              setProxies(neonProxies);
+            } else {
+              setProxies(LS.get("proxies") || []);
+            }
 
             // Stats
             const siteList = neonSites?.length ? neonSites : [];
@@ -432,12 +459,13 @@ useEffect(() => {
               neonReady = true;
 
               // Load full data from Neon now that it's connected
-              const [ns, nsi, nde, nra, nca] = await Promise.all([
+              const [ns, nsi, nde, nra, nca, nprox] = await Promise.all([
                 db.loadSettings(),
                 db.loadSites(),
                 db.loadDeploys(),
                 db.loadRegistrarAccounts(),
                 db.loadCfAccounts(),
+                db.loadProxies(),
               ]);
               if (ns) {
                 const m = { ...localSettings, ...data.settings, ...ns };
@@ -451,6 +479,9 @@ useEffect(() => {
               }
               if (Array.isArray(nca) && nca.length > 0) {
                 setOps(prev => ({ ...prev, cfAccounts: nca }));
+              }
+              if (Array.isArray(nprox) && nprox.length > 0) {
+                setProxies(nprox);
               }
             }
           }
@@ -467,6 +498,7 @@ useEffect(() => {
           if (data.stats) setStats(data.stats);
           if (data.deploys) setDeploys(data.deploys);
           if (data.variants) setRegistry(data.variants);
+          setProxies(LS.get("proxies") || []);
         }
 
         setApiOk(true);
@@ -631,7 +663,7 @@ useEffect(() => {
   };
 
   // Keep only plain serializable site fields — drops React event/DOM properties
-  const SITE_FIELDS = new Set(["id", "brand", "domain", "tagline", "email", "templateId", "loanType", "amountMin", "amountMax", "aprMin", "aprMax", "colorId", "fontId", "layout", "radius", "trustBadgeStyle", "trustBadgeIconTone", "h1", "h1span", "badge", "cta", "sub", "metaTitle", "metaDesc", "conversionId", "gtagId", "gtagFormStartLabel", "gtagFormSubmitLabel", "formStartLabel", "formSubmitLabel", "aid", "network", "redirectUrl", "voluumId", "voluumDomain", "voluumCampaignId", "voluumCampaignName", "voluumTrackingDomain", "voluumClickUrl", "voluumLanderTrackingUrl", "voluumLanderId", "voluumOfferId", "voluumLanderScript", "voluumCfCname", "voluumAcmName", "voluumAcmValue", "trackingMode", "phone", "address", "lang", "faviconDataUrl", "ogImageDataUrl", "formEmbed", "cfProfileId", "cfAccountId", "internetbsAccountId", "domainProvider", "domainProviderAccountId", "status", "createdAt", "updatedAt", "cost", "reviews", "trustBadges", "deployTarget", "deployOnBuild"]);
+  const SITE_FIELDS = new Set(["id", "brand", "domain", "tagline", "email", "templateId", "loanType", "amountMin", "amountMax", "aprMin", "aprMax", "colorId", "fontId", "layout", "radius", "trustBadgeStyle", "trustBadgeIconTone", "h1", "h1span", "badge", "cta", "sub", "metaTitle", "metaDesc", "conversionId", "gtagId", "gtagFormStartLabel", "gtagFormSubmitLabel", "formStartLabel", "formSubmitLabel", "aid", "network", "redirectUrl", "voluumId", "voluumDomain", "voluumCampaignId", "voluumCampaignName", "voluumTrackingDomain", "voluumClickUrl", "voluumLanderTrackingUrl", "voluumLanderId", "voluumOfferId", "voluumLanderScript", "voluumCfCname", "voluumAcmName", "voluumAcmValue", "trackingMode", "phone", "address", "lang", "faviconDataUrl", "ogImageDataUrl", "formEmbed", "cfProfileId", "cfAccountId", "internetbsAccountId", "domainProvider", "domainProviderAccountId", "status", "policyStatus", "warmupStartedAt", "createdAt", "updatedAt", "cost", "reviews", "trustBadges", "deployTarget", "deployOnBuild"]);
   const sanitizeSite = (obj) => Object.fromEntries(
     Object.entries(obj).filter(([k, v]) => SITE_FIELDS.has(k) && typeof v !== "function")
   );
@@ -658,14 +690,45 @@ useEffect(() => {
       else if (apiOk) await api.post("/sites", cleanSite).catch(() => {});
       saveSiteToD1(cleanSite).catch(() => {}); // D1 backup — fire and forget
 
+      // Auto-log: site created
+      const isClone = !!cleanSite._clonedFromId;
+      auditLog(
+        cleanSite.id,
+        isClone ? 'site_cloned' : 'site_created',
+        isClone ? `Cloned from: ${cleanSite._clonedFromBrand || 'site'}` : `Site created: ${cleanSite.brand}`,
+        `Domain: ${cleanSite.domain || 'none'} · Template: ${cleanSite.templateId || 'classic'}`,
+        { domain: cleanSite.domain, templateId: cleanSite.templateId, clonedFromId: cleanSite._clonedFromId },
+        'info'
+      );
+
       notify(`${cleanSite.brand} created!`);
     }
     setPage("sites");
   };
 
   const updateSite = async (site) => {
+    const existing = sites.find(s => s.id === site.id);
     const updatedSite = sanitizeSite({ ...site, updatedAt: now() });
     setSites(p => p.map(s => s.id === site.id ? updatedSite : s));
+
+    // Auto-log: domain changed
+    if (existing && existing.domain !== site.domain) {
+      auditLog(
+        site.id, 'domain_changed',
+        `Domain: ${existing.domain || 'none'} → ${site.domain || 'none'}`,
+        '', { from: existing.domain, to: site.domain }, 'warning'
+      );
+    }
+    // Auto-log: policy status changed
+    if (existing && existing.policyStatus !== site.policyStatus && site.policyStatus) {
+      const sev = site.policyStatus === 'Banned' ? 'critical'
+                : site.policyStatus === 'Limited' ? 'warning' : 'info';
+      auditLog(
+        site.id, 'policy_changed',
+        `Policy: ${existing.policyStatus || 'Unknown'} → ${site.policyStatus}`,
+        '', { from: existing.policyStatus, to: site.policyStatus }, sev
+      );
+    }
 
     if (neonOk) await db.saveSite(updatedSite).catch(() => {});
     else if (apiOk) await api.put(`/sites/${site.id}`, updatedSite).catch(() => {});
@@ -700,6 +763,79 @@ useEffect(() => {
 
     if (neonOk) db.saveDeploy(d).catch(() => { });
     else if (apiOk) api.post("/deploys", d).catch(() => { });
+
+    // Auto-log: deployed
+    if (d.siteId) {
+      auditLog(
+        d.siteId, 'site_deployed',
+        `Deployed to ${d.target || 'target'}: ${d.url || ''}`,
+        `Brand: ${d.brand || ''}`,
+        { url: d.url, target: d.target }, 'info'
+      );
+    }
+  };
+
+  // ─── AUDIT LOG ─────────────────────────────────────────────────────────────
+  const auditLog = (siteId, eventType, title, detail = '', meta = {}, severity = 'info') => {
+    if (!siteId) return;
+    const event = {
+      id: uid(),
+      site_id: siteId,
+      event_type: eventType,
+      severity,
+      title,
+      detail,
+      meta,
+      ts: now(),
+    };
+    setAuditEvents(prev => ({
+      ...prev,
+      [siteId]: [event, ...(prev[siteId] || [])].slice(0, 200),
+    }));
+    const lsKey = `audit:${siteId}`;
+    const existing = LS.get(lsKey) || [];
+    LS.set(lsKey, [event, ...existing].slice(0, 500));
+    if (neonOk) db.saveAuditEvent(event).catch(() => {});
+    saveAuditEventToD1(event).catch(() => {});
+    setOps(p => ({
+      ...p,
+      logs: [{ id: event.id, msg: `[${siteId.slice(0, 6)}] ${title}`, ts: event.ts }, ...p.logs].slice(0, 200),
+    }));
+  };
+
+  // ─── PROXY CRUD ────────────────────────────────────────────────────────────
+  const addProxy = async (proxy) => {
+    const p = { ...proxy, id: proxy.id || uid(), createdAt: now(), updatedAt: now() };
+    setProxies(prev => [p, ...prev]);
+    LS.set("proxies", [p, ...proxies]);
+    if (neonOk) db.saveProxy(p).catch(() => {});
+    saveProxyToD1(p).catch(() => {});
+    notify(`Proxy "${p.label}" added`);
+  };
+
+  const updateProxy = async (proxy) => {
+    const updated = { ...proxy, updatedAt: now() };
+    // Detect newly assigned sites for audit log
+    const prev = proxies.find(px => px.id === proxy.id);
+    const prevSites = new Set(prev?.assignedSites || []);
+    const newSites = (proxy.assignedSites || []).filter(s => !prevSites.has(s));
+    newSites.forEach(siteId => {
+      auditLog(siteId, 'proxy_assigned',
+        `Proxy assigned: ${proxy.label || proxy.ip}`,
+        '', { proxyId: proxy.id, proxyLabel: proxy.label, proxyIp: proxy.ip }, 'info');
+    });
+    setProxies(prev => prev.map(px => px.id === proxy.id ? updated : px));
+    LS.set("proxies", proxies.map(px => px.id === proxy.id ? updated : px));
+    if (neonOk) db.saveProxy(updated).catch(() => {});
+    saveProxyToD1(updated).catch(() => {});
+  };
+
+  const deleteProxyById = async (id) => {
+    setProxies(prev => prev.filter(px => px.id !== id));
+    LS.set("proxies", proxies.filter(px => px.id !== id));
+    if (neonOk) db.deleteProxy(id).catch(() => {});
+    deleteProxyFromD1(id).catch(() => {});
+    notify("Proxy deleted", "danger");
   };
 
   const toOpsStateKey = (coll) => {
@@ -899,15 +1035,15 @@ useEffect(() => {
       <main style={{ flex: 1, marginLeft: ml, minHeight: "100vh", transition: "margin .2s" }}>
         <TopBar stats={stats} settings={settings} deploys={deploys} apiOk={apiOk} neonOk={neonOk} onReconnectNeon={recoverNeonConnection} />
         <div style={{ padding: "24px 28px" }}>
-          {page === "dashboard" && <Dashboard sites={sites} stats={stats} ops={ops} setPage={setPage} startCreate={startCreate} settings={settings} apiOk={apiOk} neonOk={neonOk} />}
+          {page === "dashboard" && <Dashboard sites={sites} stats={stats} ops={ops} setPage={setPage} startCreate={startCreate} settings={settings} apiOk={apiOk} neonOk={neonOk} auditEvents={auditEvents} />}
           {page === "spend" && <SpendDashboard apiOk={apiOk} neonOk={neonOk} settings={settings} />}
           {page === "voluum" && <VoluumExplorer settings={settings} />}
           {page === "account-map" && <AccountMap apiOk={apiOk} neonOk={neonOk} ops={ops} settings={settings} />}
-          {page === "sites" && <Sites sites={sites} del={delSite} notify={notify} startCreate={startCreate} startDuplicate={startDuplicate} settings={settings} addDeploy={addDeploy} ops={ops} updateSite={updateSite} />}
+          {page === "sites" && <Sites sites={sites} del={delSite} notify={notify} startCreate={startCreate} startDuplicate={startDuplicate} addSite={addSite} settings={settings} addDeploy={addDeploy} ops={ops} updateSite={updateSite} auditLog={auditLog} auditEvents={auditEvents} proxies={proxies} />}
           {page === "create" && wizData && <Wizard config={wizData} setConfig={setWizData} addSite={addSite} addDeploy={addDeploy} setPage={setPage} settings={settings} notify={notify} cfAccounts={ops.cfAccounts} registrarAccounts={ops.registrarAccounts} />}
           {page === "variant" && <VariantStudio notify={notify} sites={sites} addSite={addSite} registry={registry} setRegistry={setRegistry} apiOk={apiOk} />}
           {page === "profile-manager" && <ProfileManager settings={settings} ops={ops} />}
-          {page === "ops" && <OpsCenter data={ops} add={opsAdd} del={opsDel} upd={opsUpd} settings={settings} />}
+          {page === "ops" && <OpsCenter data={{ ...ops, proxies }} add={opsAdd} del={opsDel} upd={opsUpd} settings={settings} auditLog={auditLog} auditEvents={auditEvents} addProxy={addProxy} updateProxy={updateProxy} deleteProxy={deleteProxyById} />}
           {page === "deploys" && <DeployHistory deploys={deploys} />}
           {page === "tracking" && <TrackingDashboard settings={settings} sites={sites} />}
           {page === "realtime-events" && <RealtimeEventsDashboard sites={sites} />}

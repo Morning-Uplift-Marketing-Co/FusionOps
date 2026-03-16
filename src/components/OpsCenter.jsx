@@ -14,6 +14,7 @@ import cloudflareDns from "../services/cloudflare-dns";
 import { DeployTab } from "../components/OpsCenter/deploy/DeployTab.jsx";
 import { ProxyHealthTab } from "./ProxyHealthTab.jsx";
 import { ProxyListTab } from "./ProxyListTab.jsx";
+import { ProxyManager } from "./ProxyManager.jsx";
 import { api } from "../services/api";
 import { getCfApiBase } from "../utils/api-proxy";
 import { query, testConnection, getTables } from "../services/d1";
@@ -769,7 +770,7 @@ function AuditLogPanel({ logs = [] }) {
 /* ═══════════════════════════════════════════════════════════════════════
    OpsCenter — Tasks 7, 8, 9, 11, 12
    ═══════════════════════════════════════════════════════════════════════ */
-export function OpsCenter({ data, add, del, upd, settings }) {
+export function OpsCenter({ data, add, del, upd, settings, auditLog, auditEvents, addProxy, updateProxy, deleteProxy }) {
     data = {
         ...(data || {}),
         domains: Array.isArray(data?.domains) ? data.domains : [],
@@ -1076,8 +1077,10 @@ export function OpsCenter({ data, add, del, upd, settings }) {
         { id: "d1", label: "D1 Database", icon: "🗄️" },
         { id: "proxy-list", label: "Proxy Pool", icon: "🌐" },
         { id: "proxy-health", label: "Proxy Health", icon: "🛡️" },
+        { id: "proxy-manager", label: "Proxy Manager", icon: "🔗", count: (data.proxies || []).length },
         { id: "risks", label: "Risks", icon: "⚠️" },
         { id: "logs", label: "Audit Logs", icon: "📋" },
+        { id: "site-audit-feed", label: "Site Activity", icon: "📋" },
     ];
 
     /* ─── Filtered cards (Task 7) ────────────────────────────────────── */
@@ -2797,9 +2800,29 @@ export function OpsCenter({ data, add, del, upd, settings }) {
             {tab === "proxy-health" && <ProxyHealthTab profiles={data.profiles} settings={settings} />}
 
             {/* ═══════════════════════════════════════════════════════════
+                TAB: PROXY MANAGER
+                ═══════════════════════════════════════════════════════════ */}
+            {tab === "proxy-manager" && (
+                <ProxyManager
+                    proxies={data.proxies || []}
+                    addProxy={addProxy || (() => {})}
+                    updateProxy={updateProxy || (() => {})}
+                    deleteProxy={deleteProxy || (() => {})}
+                    sites={data.domains || []}
+                />
+            )}
+
+            {/* ═══════════════════════════════════════════════════════════
                 TAB: LOGS
                 ═══════════════════════════════════════════════════════════ */}
             {tab === "logs" && <AuditLogPanel logs={data.logs} />}
+
+            {/* ═══════════════════════════════════════════════════════════
+                TAB: SITE ACTIVITY FEED
+                ═══════════════════════════════════════════════════════════ */}
+            {tab === "site-audit-feed" && (
+                <GlobalAuditFeed auditEvents={auditEvents || {}} sites={data.domains || []} />
+            )}
 
             {/* ═══════════════════════════════════════════════════════════
                 MODAL: ACCOUNT CREATION WIZARD (Task 11)
@@ -3278,6 +3301,123 @@ export function OpsCenter({ data, add, del, upd, settings }) {
                 })()
             }
         </div >
+    );
+}
+
+// ─── Global Audit Feed ─────────────────────────────────────────────────────
+
+const GLOBAL_AUDIT_META = {
+    site_created:   { icon: '🆕', color: '#16a34a' },
+    site_cloned:    { icon: '⟳',  color: '#3b82f6' },
+    site_deployed:  { icon: '🚀', color: '#3b82f6' },
+    policy_changed: { icon: '⚠',  color: '#f59e0b' },
+    domain_changed: { icon: '🌐', color: '#8b5cf6' },
+    health_check:   { icon: '❤',  color: '#64748b' },
+    proxy_assigned: { icon: '🔗', color: '#0ea5e9' },
+    note_added:     { icon: '📝', color: '#6b7280' },
+    ad_disapproved: { icon: '🚫', color: '#dc2626' },
+    account_warned: { icon: '⚡', color: '#f59e0b' },
+    account_banned: { icon: '🔴', color: '#dc2626' },
+};
+
+const FEED_FILTERS = [
+    { value: 'all',            label: 'All' },
+    { value: 'policy_changed', label: '⚠ Policy' },
+    { value: 'ad_disapproved', label: '🚫 Disapproved' },
+    { value: 'account_banned', label: '🔴 Banned' },
+    { value: 'site_deployed',  label: '🚀 Deployed' },
+    { value: 'health_check',   label: '❤ Health' },
+];
+
+function GlobalAuditFeed({ auditEvents = {}, sites = [] }) {
+    const [filter, setFilter] = useState('all');
+    const [events, setEvents] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    const siteById = useMemo(() => {
+        const m = {};
+        sites.forEach(s => { if (s.id) m[s.id] = s; });
+        return m;
+    }, [sites]);
+
+    useEffect(() => {
+        // Flatten in-memory events map
+        const flat = Object.values(auditEvents).flat().sort((a, b) => new Date(b.ts) - new Date(a.ts));
+        if (flat.length > 0) {
+            setEvents(flat);
+            setLoading(false);
+            return;
+        }
+        // Lazy-load from Neon
+        import('../services/neon.js').then(db => db.loadAllAuditEvents(200))
+            .then(rows => { if (rows) setEvents(rows.sort((a, b) => new Date(b.ts) - new Date(a.ts))); })
+            .catch(() => {})
+            .finally(() => setLoading(false));
+    }, [auditEvents]);
+
+    const filtered = useMemo(() => filter === 'all' ? events : events.filter(e => (e.eventType || e.event_type) === filter), [events, filter]);
+
+    const relativeTime = (ts) => {
+        if (!ts) return '';
+        const diff = Date.now() - new Date(ts).getTime();
+        const m = Math.floor(diff / 60000);
+        if (m < 1) return 'just now';
+        if (m < 60) return `${m}m ago`;
+        const h = Math.floor(m / 60);
+        if (h < 24) return `${h}h ago`;
+        return `${Math.floor(h / 24)}d ago`;
+    };
+
+    return (
+        <div style={{ color: T.text, fontFamily: "'Inter', sans-serif" }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <div>
+                    <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>📋 Site Activity Feed</h2>
+                    <p style={{ margin: '4px 0 0', fontSize: 12, color: T.muted }}>{events.length} events total</p>
+                </div>
+            </div>
+
+            {/* Filter chips */}
+            <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
+                {FEED_FILTERS.map(f => (
+                    <button key={f.value} onClick={() => setFilter(f.value)}
+                        style={{ padding: '4px 12px', borderRadius: 999, border: `1px solid ${filter === f.value ? '#ea580c' : T.border}`, background: filter === f.value ? '#ea580c18' : 'transparent', color: filter === f.value ? '#ea580c' : T.muted, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        {f.label}
+                        {f.value !== 'all' && <span style={{ marginLeft: 4, opacity: 0.7 }}>({events.filter(e => (e.eventType || e.event_type) === f.value).length})</span>}
+                    </button>
+                ))}
+            </div>
+
+            {loading ? (
+                <div style={{ padding: '40px 0', textAlign: 'center', color: T.muted, fontSize: 13 }}>Loading…</div>
+            ) : filtered.length === 0 ? (
+                <div style={{ padding: '40px 0', textAlign: 'center', color: T.muted, fontSize: 13 }}>No events found</div>
+            ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {filtered.map(ev => {
+                        const evType = ev.eventType || ev.event_type || '';
+                        const m = GLOBAL_AUDIT_META[evType] || { icon: '•', color: T.muted };
+                        const sevColor = ev.severity === 'critical' ? '#dc2626' : ev.severity === 'warning' ? '#f59e0b' : m.color;
+                        const site = siteById[ev.siteId || ev.site_id];
+                        return (
+                            <div key={ev.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.02)', borderBottom: `1px solid ${T.border}`, fontSize: 12 }}>
+                                <span style={{ width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, background: `${sevColor}18`, color: sevColor, flexShrink: 0, marginTop: 1 }}>
+                                    {m.icon}
+                                </span>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
+                                        <span style={{ fontWeight: 600, color: T.text }}>{ev.title}</span>
+                                        {site && <span style={{ fontSize: 10, color: T.muted, background: 'rgba(255,255,255,0.06)', padding: '1px 6px', borderRadius: 4 }}>{site.brand || site.domain}</span>}
+                                    </div>
+                                    {ev.detail && <div style={{ color: T.muted, marginTop: 2, fontSize: 11 }}>{ev.detail}</div>}
+                                </div>
+                                <span style={{ color: T.muted, fontSize: 10, whiteSpace: 'nowrap', flexShrink: 0 }}>{relativeTime(ev.ts)}</span>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
     );
 }
 

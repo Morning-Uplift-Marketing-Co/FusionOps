@@ -6,9 +6,12 @@
  *   settings  (key TEXT PK, value JSONB, updated_at)
  *   sites     (id TEXT PK, data JSONB, created_at, updated_at)
  *   deploy_history (id TEXT PK, site_id TEXT FK, target, url, status, brand, created_at)
+ *   site_audit_log (id, site_id, event_type, severity, title, detail, meta, ts)
+ *   proxies (id, data JSONB, created_at, updated_at)
  */
 
-import { neon } from "@neondatabase/serverless";
+import { neon, neonConfig } from "@neondatabase/serverless";
+neonConfig.disableWarningInBrowsers = true;
 
 let sql = null;
 let connectionString = null;
@@ -107,6 +110,31 @@ export async function ensureTables() {
         card_last4 TEXT,
         merchant TEXT,
         created_at TIMESTAMPTZ DEFAULT now()
+      )
+    `;
+    // SITE AUDIT LOG table
+    await sql`
+      CREATE TABLE IF NOT EXISTS site_audit_log (
+        id TEXT PRIMARY KEY,
+        site_id TEXT NOT NULL,
+        event_type TEXT NOT NULL,
+        severity TEXT NOT NULL DEFAULT 'info',
+        title TEXT NOT NULL,
+        detail TEXT,
+        meta JSONB DEFAULT '{}',
+        ts TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `;
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_audit_site_ts ON site_audit_log (site_id, ts DESC)
+    `;
+    // PROXIES table
+    await sql`
+      CREATE TABLE IF NOT EXISTS proxies (
+        id TEXT PRIMARY KEY,
+        data JSONB NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT now(),
+        updated_at TIMESTAMPTZ DEFAULT now()
       )
     `;
     return true;
@@ -627,4 +655,132 @@ export function getConnectionStatus() {
     reconnectAttempts,
     maxReconnectAttempts
   };
+}
+
+// ═══════════════════════════════════════════════════════
+// SITE AUDIT LOG
+// ═══════════════════════════════════════════════════════
+
+/** Append one audit event — insert only, never update */
+export async function saveAuditEvent(event) {
+  if (!ensureConnection() || !event?.id) return false;
+  try {
+    await sql`
+      INSERT INTO site_audit_log (id, site_id, event_type, severity, title, detail, meta, ts)
+      VALUES (
+        ${event.id},
+        ${event.site_id},
+        ${event.event_type},
+        ${event.severity || 'info'},
+        ${event.title || ''},
+        ${event.detail || ''},
+        ${JSON.stringify(event.meta || {})},
+        ${event.ts || new Date().toISOString()}
+      )
+      ON CONFLICT (id) DO NOTHING
+    `;
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+/** Load audit events for one site, newest-first */
+export async function loadAuditEvents(siteId, limit = 100) {
+  if (!ensureConnection() || !siteId) return null;
+  try {
+    const rows = await sql`
+      SELECT id, site_id, event_type, severity, title, detail, meta, ts
+      FROM site_audit_log
+      WHERE site_id = ${siteId}
+      ORDER BY ts DESC
+      LIMIT ${limit}
+    `;
+    return rows.map(r => ({
+      id: r.id,
+      siteId: r.site_id,
+      eventType: r.event_type,
+      severity: r.severity,
+      title: r.title,
+      detail: r.detail,
+      meta: typeof r.meta === 'string' ? JSON.parse(r.meta) : (r.meta || {}),
+      ts: r.ts,
+    }));
+  } catch (e) {
+    return null;
+  }
+}
+
+/** Load global audit feed — all sites, newest-first */
+export async function loadAllAuditEvents(limit = 200) {
+  if (!ensureConnection()) return null;
+  try {
+    const rows = await sql`
+      SELECT id, site_id, event_type, severity, title, detail, meta, ts
+      FROM site_audit_log
+      ORDER BY ts DESC
+      LIMIT ${limit}
+    `;
+    return rows.map(r => ({
+      id: r.id,
+      siteId: r.site_id,
+      eventType: r.event_type,
+      severity: r.severity,
+      title: r.title,
+      detail: r.detail,
+      meta: typeof r.meta === 'string' ? JSON.parse(r.meta) : (r.meta || {}),
+      ts: r.ts,
+    }));
+  } catch (e) {
+    return null;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// PROXIES
+// ═══════════════════════════════════════════════════════
+
+/** Load all proxies */
+export async function loadProxies() {
+  if (!ensureConnection()) return null;
+  try {
+    const rows = await sql`SELECT id, data, created_at, updated_at FROM proxies ORDER BY created_at DESC`;
+    return rows.map(r => ({
+      ...(typeof r.data === 'string' ? JSON.parse(r.data) : r.data),
+      id: r.id,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+    }));
+  } catch (e) {
+    return null;
+  }
+}
+
+/** Upsert one proxy */
+export async function saveProxy(proxy) {
+  if (!ensureConnection() || !proxy?.id) return false;
+  try {
+    const { id, createdAt, updatedAt, ...data } = proxy;
+    await sql`
+      INSERT INTO proxies (id, data, created_at, updated_at)
+      VALUES (${id}, ${JSON.stringify(data)}, now(), now())
+      ON CONFLICT (id) DO UPDATE SET
+        data = EXCLUDED.data,
+        updated_at = now()
+    `;
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+/** Delete a proxy */
+export async function deleteProxy(id) {
+  if (!ensureConnection() || !id) return false;
+  try {
+    await sql`DELETE FROM proxies WHERE id = ${id}`;
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
