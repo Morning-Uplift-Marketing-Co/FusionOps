@@ -10,6 +10,93 @@ import { detectIncompleteSettings } from "../services/account-lock";
 import { migrateSitesToD1 } from "../services/d1";
 import { loadSites } from "../services/neon";
 
+/* ── Appearance / Theme Color ─────────────────────────────────── */
+const COLOR_PRESETS = [
+    { label: "Red/Orange",  primary: "#ef4444", gradEnd: "#f97316", hsl: "0 84% 60%",    primaryH: "#f87171" },
+    { label: "Rose",        primary: "#f43f5e", gradEnd: "#e11d48", hsl: "347 89% 60%",  primaryH: "#fb7185" },
+    { label: "Crimson",     primary: "#dc2626", gradEnd: "#991b1b", hsl: "0 72% 51%",    primaryH: "#ef4444" },
+    { label: "Blue",        primary: "#3b82f6", gradEnd: "#06b6d4", hsl: "217 91% 60%",  primaryH: "#60a5fa" },
+    { label: "Teal",        primary: "#14b8a6", gradEnd: "#06b6d4", hsl: "173 80% 40%",  primaryH: "#2dd4bf" },
+    { label: "Green",       primary: "#10b981", gradEnd: "#059669", hsl: "160 84% 39%",  primaryH: "#34d399" },
+    { label: "Amber",       primary: "#f59e0b", gradEnd: "#d97706", hsl: "38 92% 50%",   primaryH: "#fbbf24" },
+    { label: "Purple",      primary: "#6366f1", gradEnd: "#a855f7", hsl: "239 84% 67%",  primaryH: "#818cf8" },
+];
+
+function AppearanceSection() {
+    const saved = (() => { try { return JSON.parse(localStorage.getItem("theme-color") || "null"); } catch { return null; } })();
+    const [primary, setPrimary] = useState(saved?.primary || "#ef4444");
+    const [gradEnd, setGradEnd] = useState(saved?.gradEnd || "#f97316");
+    const [active, setActive] = useState(saved?.primary || "#ef4444");
+
+    function applyPreset(p) {
+        setPrimary(p.primary);
+        setGradEnd(p.gradEnd);
+        setActive(p.primary);
+        localStorage.setItem("theme-color", JSON.stringify({
+            primary: p.primary, gradEnd: p.gradEnd, primaryH: p.primaryH,
+            grad: `linear-gradient(135deg,${p.primary},${p.gradEnd})`,
+            hsl: p.hsl,
+        }));
+        window.location.reload();
+    }
+
+    function applyCustom() {
+        localStorage.setItem("theme-color", JSON.stringify({
+            primary, gradEnd, primaryH: primary,
+            grad: `linear-gradient(135deg,${primary},${gradEnd})`,
+            hsl: "",
+        }));
+        window.location.reload();
+    }
+
+    function reset() {
+        localStorage.removeItem("theme-color");
+        window.location.reload();
+    }
+
+    return (
+        <Card className="mb-4">
+            <CardHeader><CardTitle>Theme Color</CardTitle></CardHeader>
+            <CardContent className="flex flex-col gap-4">
+                <p className="text-[10px] text-[hsl(var(--muted-foreground))] -mt-2">
+                    เลือกสี accent / gradient ของแอป — บันทึกไว้ใน browser (preview mode)
+                </p>
+                {/* Presets */}
+                <div className="grid grid-cols-4 gap-2">
+                    {COLOR_PRESETS.map(p => (
+                        <button key={p.label} onClick={() => applyPreset(p)}
+                            title={p.label}
+                            style={{ background: `linear-gradient(135deg,${p.primary},${p.gradEnd})`, outline: active === p.primary ? "2px solid white" : "none", outlineOffset: 2 }}
+                            className="h-9 rounded-lg text-white text-[10px] font-semibold shadow-sm cursor-pointer border-0 transition-transform hover:scale-105">
+                            {p.label}
+                        </button>
+                    ))}
+                </div>
+                {/* Custom picker */}
+                <div className="flex gap-3 items-end">
+                    <label className="flex flex-col gap-1 text-[10px] text-[hsl(var(--muted-foreground))] font-semibold uppercase">
+                        Primary
+                        <input type="color" value={primary} onChange={e => setPrimary(e.target.value)}
+                            className="h-9 w-16 rounded cursor-pointer border border-[hsl(var(--border))] bg-transparent" />
+                    </label>
+                    <label className="flex flex-col gap-1 text-[10px] text-[hsl(var(--muted-foreground))] font-semibold uppercase">
+                        Gradient End
+                        <input type="color" value={gradEnd} onChange={e => setGradEnd(e.target.value)}
+                            className="h-9 w-16 rounded cursor-pointer border border-[hsl(var(--border))] bg-transparent" />
+                    </label>
+                    <div className="flex-1 h-9 rounded-lg shadow-sm" style={{ background: `linear-gradient(135deg,${primary},${gradEnd})` }} />
+                    <Button onClick={applyCustom} className="h-9 px-3 text-[11px]">Apply</Button>
+                </div>
+                <div className="flex justify-end">
+                    <Button variant="ghost" onClick={reset} className="h-7 px-2 text-[10px] text-[hsl(var(--muted-foreground))]">
+                        Reset to Default
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
 export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
     const asArray = (v) => Array.isArray(v) ? v : [];
     const [neonUrl, setNeonUrl] = useState(settings.neonUrl || import.meta.env.VITE_NEON_URL || "");
@@ -911,6 +998,11 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                                 </div>
                             </CardContent>
                         </Card>
+                    </section>
+
+                    <section>
+                        <SectionHeader>🎨 Appearance</SectionHeader>
+                        <AppearanceSection />
                     </section>
 
                     <section>

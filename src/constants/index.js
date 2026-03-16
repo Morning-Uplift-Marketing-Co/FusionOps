@@ -262,11 +262,25 @@ export const DNS_TTL_OPTIONS = [
     { id: "604800", label: "1 week", value: 604800 },
 ];
 
-export const THEME = {
-    bg: "#0b0d14", card: "#12141e", card2: "#181b28", hover: "#1c2030",
-    input: "#1a1d2e", border: "#232738", borderFocus: "#6366f1",
-    text: "#e2e8f0", muted: "#8892a8", dim: "#5b6478",
-    primary: "#6366f1", primaryH: "#818cf8", primaryGlow: "rgba(99,102,241,0.15)",
-    accent: "#22d3ee", success: "#10b981", danger: "#ef4444", warning: "#f59e0b",
-    grad: "linear-gradient(135deg,#6366f1,#a855f7)",
-};
+function _buildTheme() {
+    const base = {
+        bg: "#0b0d14", card: "#12141e", card2: "#181b28", hover: "#1c2030",
+        input: "#1a1d2e", border: "#232738", borderFocus: "#ef4444",
+        text: "#e2e8f0", muted: "#8892a8", dim: "#5b6478",
+        primary: "#ef4444", primaryH: "#f87171", primaryGlow: "rgba(239,68,68,0.15)",
+        accent: "#22d3ee", success: "#10b981", danger: "#ef4444", warning: "#f59e0b",
+        grad: "linear-gradient(135deg,#ef4444,#f97316)",
+    };
+    try {
+        const ov = JSON.parse((typeof localStorage !== "undefined" ? localStorage.getItem("theme-color") : null) || "null");
+        if (ov?.primary) {
+            base.primary = ov.primary;
+            base.primaryH = ov.primaryH || ov.primary;
+            base.primaryGlow = ov.primary + "26";
+            base.borderFocus = ov.primary;
+            base.grad = ov.grad || `linear-gradient(135deg,${ov.primary},${ov.gradEnd || ov.primary})`;
+        }
+    } catch {}
+    return base;
+}
+export const THEME = _buildTheme();
