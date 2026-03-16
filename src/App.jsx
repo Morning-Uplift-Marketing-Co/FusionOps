@@ -19,7 +19,6 @@ import { Toast } from "./components/ui/toast";
 import { Dashboard } from "./components/Dashboard";
 import { Sites } from "./components/Sites";
 import { Wizard } from "./components/Wizard";
-import { VariantStudio } from "./components/VariantStudio";
 import { OpsCenter } from "./components/OpsCenter";
 import { Settings } from "./components/Settings";
 import { DeployHistory } from "./components/DeployHistory";
@@ -1027,7 +1026,6 @@ useEffect(() => {
           {page === "account-map" && <AccountMap apiOk={apiOk} neonOk={neonOk} ops={ops} settings={settings} />}
           {page === "sites" && <Sites sites={sites} del={delSite} notify={notify} startCreate={startCreate} startDuplicate={startDuplicate} settings={settings} addDeploy={addDeploy} ops={ops} updateSite={updateSite} />}
           {page === "create" && wizData && <Wizard config={wizData} setConfig={setWizData} addSite={addSite} addDeploy={addDeploy} setPage={setPage} settings={settings} notify={notify} cfAccounts={ops.cfAccounts} registrarAccounts={ops.registrarAccounts} />}
-          {page === "variant" && <VariantStudio notify={notify} sites={sites} addSite={addSite} registry={registry} setRegistry={setRegistry} apiOk={apiOk} />}
           {page === "profile-manager" && <ProfileManager settings={settings} ops={ops} />}
           {page === "ops" && <OpsCenter data={ops} add={opsAdd} del={opsDel} upd={opsUpd} settings={settings} />}
           {page === "deploys" && <DeployHistory deploys={deploys} />}
