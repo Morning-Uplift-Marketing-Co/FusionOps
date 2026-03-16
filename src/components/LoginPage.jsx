@@ -131,6 +131,7 @@ export function LoginPage({ onLogin, loading: extLoading }) {
                 setError(result?.error || "Login failed after setup");
                 setLoading(false);
             }
+            // if ok, component unmounts — loading state doesn't matter
         } catch {
             setLoading(false);
         }
