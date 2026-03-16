@@ -52,7 +52,7 @@ function relTime(ts) {
     return `${Math.floor(diff / 86400000)}d ago`;
 }
 
-export function Dashboard({ sites, stats, ops, setPage, startCreate, settings = {}, apiOk, neonOk, auditEvents = {} }) {
+export function Dashboard({ sites, stats, ops, setPage, startCreate, settings = {}, apiOk, neonOk, auditEvents = {}, tasks = [] }) {
     const hideRevenue = settings.hideRevenue === true;
     const recent = sites.slice(0, 5);
     const risks = useMemo(() => detectRisks(ops), [ops]);
@@ -355,6 +355,57 @@ export function Dashboard({ sites, stats, ops, setPage, startCreate, settings = 
                     </CardContent>
                 </Card>
             </div>
+
+            {/* ─── Task Summary Widget ─── */}
+            {tasks.length > 0 && (() => {
+                const urgent = tasks.filter(t => t.priority === 'urgent' && t.status !== 'done').length;
+                const inProg = tasks.filter(t => t.status === 'in_progress').length;
+                const today = new Date().toDateString();
+                const dueToday = tasks.filter(t => t.due_date && new Date(t.due_date).toDateString() === today && t.status !== 'done').length;
+                return (
+                    <div className="rounded-lg border border-[hsl(var(--border))] px-4 py-3 flex items-center justify-between"
+                        style={{ background: "hsl(var(--card))" }}>
+                        <div className="flex items-center gap-6">
+                            {urgent > 0 && (
+                                <div className="flex items-center gap-2">
+                                    <span style={{ fontSize: 16 }}>🔴</span>
+                                    <div>
+                                        <div className="text-xs text-[hsl(var(--muted-foreground))]">Urgent</div>
+                                        <div className="text-base font-bold" style={{ color: "#dc2626" }}>{urgent}</div>
+                                    </div>
+                                </div>
+                            )}
+                            <div className="flex items-center gap-2">
+                                <span style={{ fontSize: 16 }}>🟡</span>
+                                <div>
+                                    <div className="text-xs text-[hsl(var(--muted-foreground))]">In Progress</div>
+                                    <div className="text-base font-bold" style={{ color: "#f59e0b" }}>{inProg}</div>
+                                </div>
+                            </div>
+                            {dueToday > 0 && (
+                                <div className="flex items-center gap-2">
+                                    <span style={{ fontSize: 16 }}>⚠</span>
+                                    <div>
+                                        <div className="text-xs text-[hsl(var(--muted-foreground))]">Due Today</div>
+                                        <div className="text-base font-bold" style={{ color: "#f97316" }}>{dueToday}</div>
+                                    </div>
+                                </div>
+                            )}
+                            <div className="flex items-center gap-2">
+                                <span style={{ fontSize: 16 }}>✅</span>
+                                <div>
+                                    <div className="text-xs text-[hsl(var(--muted-foreground))]">Total Tasks</div>
+                                    <div className="text-base font-bold text-[hsl(var(--foreground))]">{tasks.length}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button onClick={() => setPage("tasks")} className="text-xs font-semibold bg-transparent border-none cursor-pointer hover:underline"
+                            style={{ color: "#6366f1" }}>
+                            View All Tasks →
+                        </button>
+                    </div>
+                );
+            })()}
 
             {/* ─── Risk Alert ─── */}
             {risks.length > 0 && (

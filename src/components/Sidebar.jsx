@@ -85,7 +85,7 @@ const CHANGELOG = [
     },
 ];
 
-export function Sidebar({ page, setPage, siteCount, startCreate, startTemplateGen, collapsed, toggle }) {
+export function Sidebar({ page, setPage, siteCount, taskCount = 0, startCreate, startTemplateGen, collapsed, toggle }) {
     const [showLog, setShowLog] = useState(false);
 
     const items = [
@@ -99,6 +99,7 @@ export function Sidebar({ page, setPage, siteCount, startCreate, startTemplateGe
         { id: "create", icon: "⚡", label: "LP Wizard", action: startCreate },
         { id: "variant", icon: "🧪", label: "Variant Studio" },
         { id: "profile-manager", icon: "👤", label: "Profile Manager" },
+        { id: "tasks", icon: "✅", label: "Tasks", badge: taskCount },
         { id: "ops", icon: "🏢", label: "Ops Center" },
         { id: "deploys", icon: "🚀", label: "Deploys" },
         { id: "tracking", icon: "🔬", label: "Tracking Test" },

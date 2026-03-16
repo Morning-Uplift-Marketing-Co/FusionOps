@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.3.0] - 2026-03-16
+### Added
+- **Task Management System** (`src/components/TaskManager.jsx`):
+  - Kanban board — 5 columns: Backlog | Todo | In Progress | Review | Done
+  - List view — sortable table with bulk select + delete
+  - Task card: priority badge (urgent🔴/high🟠/medium🟡/low⚪), title, description preview, site tag, assignee avatar, due date (red if overdue), tags
+  - Task Detail Modal (React createPortal) — title, description, status, priority, assignee, linked site, due date, tags
+  - Quick Add inline in Kanban columns (Enter to save, Esc to cancel)
+  - Filter bar: search, All Status, All Priority, All Sites
+
+- **Task DB Layer**:
+  - `tasks` table in Neon Postgres with indexes on `status` and `assignee_id`
+  - `loadTasks()`, `saveTask()`, `deleteTask()` in `src/services/neon.js`
+  - `saveTaskToD1()`, `deleteTaskFromD1()` in `src/services/d1.js` (fire-and-forget backup)
+
+- **App.jsx**: `tasks` state (LS-hydrated via `lpf2-tasks`), `addTask`/`updateTask`/`deleteTask` CRUD with dual-write (Neon + D1), boot load from Neon, audit log hooks (`task_created`, `task_completed`)
+
+- **Sidebar**: Tasks nav item with active task count badge (excludes done tasks)
+
+- **Dashboard**: Task summary widget — shows Urgent count, In Progress, Due Today, Total Tasks with link to Tasks page
+
 ## [3.2.0] - 2026-03-16
 ### Added
 - **Audit Log System**: เก็บ timeline เหตุการณ์ต่อ site แบบ multi-layer (Neon + D1 + localStorage)

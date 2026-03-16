@@ -137,6 +137,30 @@ export async function ensureTables() {
         updated_at TIMESTAMPTZ DEFAULT now()
       )
     `;
+    // TASKS table
+    await sql`
+      CREATE TABLE IF NOT EXISTS tasks (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'todo',
+        priority TEXT NOT NULL DEFAULT 'medium',
+        assignee_id TEXT,
+        assignee_name TEXT,
+        site_id TEXT,
+        tags JSONB DEFAULT '[]',
+        due_date TEXT,
+        created_by TEXT,
+        created_at TIMESTAMPTZ DEFAULT now(),
+        updated_at TIMESTAMPTZ DEFAULT now()
+      )
+    `;
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)
+    `;
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_tasks_assignee ON tasks(assignee_id)
+    `;
     return true;
   } catch (e) {
     console.error("[neon] ensureTables failed:", e.message);
@@ -779,6 +803,90 @@ export async function deleteProxy(id) {
   if (!ensureConnection() || !id) return false;
   try {
     await sql`DELETE FROM proxies WHERE id = ${id}`;
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// TASKS
+// ═══════════════════════════════════════════════════════
+
+/** Load all tasks ordered by updated_at DESC */
+export async function loadTasks() {
+  if (!ensureConnection()) return null;
+  try {
+    const rows = await sql`
+      SELECT id, title, description, status, priority, assignee_id, assignee_name,
+             site_id, tags, due_date, created_by, created_at, updated_at
+      FROM tasks ORDER BY updated_at DESC
+    `;
+    return rows.map(r => ({
+      id: r.id,
+      title: r.title,
+      description: r.description || '',
+      status: r.status,
+      priority: r.priority,
+      assignee_id: r.assignee_id || null,
+      assignee_name: r.assignee_name || null,
+      site_id: r.site_id || null,
+      tags: Array.isArray(r.tags) ? r.tags : (typeof r.tags === 'string' ? JSON.parse(r.tags) : []),
+      due_date: r.due_date || null,
+      created_by: r.created_by || null,
+      created_at: r.created_at,
+      updated_at: r.updated_at,
+    }));
+  } catch (e) {
+    return null;
+  }
+}
+
+/** Upsert a task (insert or update on conflict) */
+export async function saveTask(task) {
+  if (!ensureConnection() || !task?.id) return false;
+  try {
+    await sql`
+      INSERT INTO tasks (id, title, description, status, priority, assignee_id, assignee_name,
+                         site_id, tags, due_date, created_by, created_at, updated_at)
+      VALUES (
+        ${task.id},
+        ${task.title || ''},
+        ${task.description || ''},
+        ${task.status || 'todo'},
+        ${task.priority || 'medium'},
+        ${task.assignee_id || null},
+        ${task.assignee_name || null},
+        ${task.site_id || null},
+        ${JSON.stringify(task.tags || [])},
+        ${task.due_date || null},
+        ${task.created_by || null},
+        ${task.created_at || new Date().toISOString()},
+        now()
+      )
+      ON CONFLICT (id) DO UPDATE SET
+        title = EXCLUDED.title,
+        description = EXCLUDED.description,
+        status = EXCLUDED.status,
+        priority = EXCLUDED.priority,
+        assignee_id = EXCLUDED.assignee_id,
+        assignee_name = EXCLUDED.assignee_name,
+        site_id = EXCLUDED.site_id,
+        tags = EXCLUDED.tags,
+        due_date = EXCLUDED.due_date,
+        updated_at = now()
+    `;
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+/** Delete a task by id */
+export async function deleteTask(id) {
+  if (!ensureConnection() || !id) return false;
+  try {
+    await sql`DELETE FROM tasks WHERE id = ${id}`;
     return true;
   } catch (e) {
     return false;

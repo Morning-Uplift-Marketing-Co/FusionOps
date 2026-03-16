@@ -198,6 +198,7 @@ async function directExecute(sql, params = []) {
 let _sitesTableReady = false;
 let _auditTableReady = false;
 let _proxiesTableReady = false;
+let _tasksTableReady = false;
 
 /**
  * Ensure the sites table exists in D1 — only runs once per session
@@ -302,6 +303,60 @@ export async function saveProxyToD1(proxy) {
 /** Delete proxy from D1 */
 export async function deleteProxyFromD1(id) {
   await directExecute(`DELETE FROM proxies WHERE id = ?`, [id]);
+  return true;
+}
+
+async function ensureTasksTable() {
+  if (_tasksTableReady) return;
+  await directExecute(
+    `CREATE TABLE IF NOT EXISTS tasks (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      description TEXT DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'todo',
+      priority TEXT NOT NULL DEFAULT 'medium',
+      assignee_id TEXT,
+      assignee_name TEXT,
+      site_id TEXT,
+      tags TEXT DEFAULT '[]',
+      due_date TEXT,
+      created_by TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )`
+  );
+  _tasksTableReady = true;
+}
+
+/** Upsert task to D1 (fire-and-forget backup) */
+export async function saveTaskToD1(task) {
+  await ensureTasksTable();
+  await directExecute(
+    `INSERT INTO tasks (id, title, description, status, priority, assignee_id, assignee_name,
+                        site_id, tags, due_date, created_by, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+     ON CONFLICT(id) DO UPDATE SET
+       title = excluded.title,
+       description = excluded.description,
+       status = excluded.status,
+       priority = excluded.priority,
+       assignee_id = excluded.assignee_id,
+       assignee_name = excluded.assignee_name,
+       site_id = excluded.site_id,
+       tags = excluded.tags,
+       due_date = excluded.due_date,
+       updated_at = datetime('now')`,
+    [task.id, task.title || '', task.description || '', task.status || 'todo',
+     task.priority || 'medium', task.assignee_id || null, task.assignee_name || null,
+     task.site_id || null, JSON.stringify(task.tags || []), task.due_date || null,
+     task.created_by || null, task.created_at || new Date().toISOString()]
+  );
+  return true;
+}
+
+/** Delete task from D1 */
+export async function deleteTaskFromD1(id) {
+  await directExecute(`DELETE FROM tasks WHERE id = ?`, [id]);
   return true;
 }
 
