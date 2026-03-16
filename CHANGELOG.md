@@ -21,7 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Dashboard Widget**: Task Summary widget — Urgent, In Progress, Due Today counts + "View All Tasks →" quick link
 - **Sidebar Badge**: Open task count badge on Tasks nav item
 - **KPI Integration**: `task_created` and `task_completed` audit events fed into KPI leaderboard scoring
-
+- **Self-Registration**: Login page "Register" link — employees can create accounts without admin
+- **Theme Color**: Default accent changed to red/orange; Settings → Appearance with 8 color presets + custom picker
 ## [3.4.1] - 2026-03-16
 ### Fixed
 - **Auth Race Condition**: `getMe()` now checks `db.getConnectionStatus().connected` before calling `findSession()` — prevents valid localStorage sessions being cleared on boot before Neon initialises
