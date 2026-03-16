@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { THEME as T } from "../constants";
-import { checkUsersExist, seedFirstAdmin } from "../services/auth";
+import { checkUsersExist, seedFirstAdmin, register } from "../services/auth";
 
 /* ═══════════════════════════════════════════════════
    FIRST-RUN SETUP FORM
@@ -82,6 +82,82 @@ function SetupForm({ onSetupComplete }) {
 }
 
 /* ═══════════════════════════════════════════════════
+   REGISTER FORM (self-service employee signup)
+═══════════════════════════════════════════════════ */
+
+function RegisterForm({ onRegisterComplete, onBack }) {
+    const [email, setEmail] = useState("");
+    const [name, setName] = useState("");
+    const [password, setPassword] = useState("");
+    const [confirm, setConfirm] = useState("");
+    const [showPass, setShowPass] = useState(false);
+    const [error, setError] = useState("");
+    const [saving, setSaving] = useState(false);
+
+    async function handleSubmit(e) {
+        e.preventDefault();
+        setError("");
+        if (password !== confirm) { setError("Passwords do not match"); return; }
+        if (password.length < 8) { setError("Password must be at least 8 characters"); return; }
+        setSaving(true);
+        try {
+            const result = await register(email, password, "employee", name);
+            if (result.ok) {
+                onRegisterComplete(email, password);
+            } else {
+                setError(result.error || "Registration failed");
+            }
+        } catch (err) {
+            setError(err.message || "Unexpected error");
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    return (
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <label style={labelStyle}>
+                Your Name (optional)
+                <input type="text" value={name} onChange={e => setName(e.target.value)}
+                    placeholder="Display name" disabled={saving} style={inputStyle} />
+            </label>
+            <label style={labelStyle}>
+                Email
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                    placeholder="you@company.com" required disabled={saving} style={inputStyle} autoComplete="email" />
+            </label>
+            <label style={labelStyle}>
+                Password
+                <div style={{ position: "relative" }}>
+                    <input type={showPass ? "text" : "password"} value={password}
+                        onChange={e => setPassword(e.target.value)}
+                        placeholder="Min 8 characters" required disabled={saving}
+                        style={{ ...inputStyle, paddingRight: 38 }} autoComplete="new-password" />
+                    <button type="button" onClick={() => setShowPass(p => !p)} style={eyeBtn}>
+                        {showPass ? "🙈" : "👁️"}
+                    </button>
+                </div>
+            </label>
+            <label style={labelStyle}>
+                Confirm Password
+                <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)}
+                    placeholder="••••••••" required disabled={saving}
+                    style={inputStyle} autoComplete="new-password" />
+            </label>
+            {error && <div style={errorBox}>⚠️ {error}</div>}
+            <button type="submit" disabled={saving}
+                style={{ ...submitBtn, background: saving ? "hsl(var(--muted))" : T.grad }}>
+                {saving ? "Creating account…" : "Create Account"}
+            </button>
+            <button type="button" onClick={onBack} disabled={saving}
+                style={{ ...submitBtn, background: "transparent", color: "hsl(var(--muted-foreground))", border: "1.5px solid hsl(var(--border))" }}>
+                Back to Sign In
+            </button>
+        </form>
+    );
+}
+
+/* ═══════════════════════════════════════════════════
    MAIN LOGIN PAGE
 ═══════════════════════════════════════════════════ */
 
@@ -93,8 +169,9 @@ export function LoginPage({ onLogin, loading: extLoading }) {
     const [showPass, setShowPass] = useState(false);
 
     // First-run detection
-    const [mode, setMode] = useState("check"); // check | login | setup
+    const [mode, setMode] = useState("check"); // check | login | setup | register
     const [setupDone, setSetupDone] = useState(false);
+    const [registerDone, setRegisterDone] = useState(false);
 
     const busy = loading || extLoading;
 
@@ -114,6 +191,23 @@ export function LoginPage({ onLogin, loading: extLoading }) {
         } catch (err) {
             setError(err.message || "Unexpected error");
         } finally {
+            setLoading(false);
+        }
+    }
+
+    async function handleRegisterComplete(regEmail, regPassword) {
+        setRegisterDone(true);
+        setMode("login");
+        setEmail(regEmail);
+        setPassword(regPassword);
+        setLoading(true);
+        try {
+            const result = await onLogin(regEmail, regPassword);
+            if (!result?.ok) {
+                setError(result?.error || "Login failed after registration");
+                setLoading(false);
+            }
+        } catch {
             setLoading(false);
         }
     }
@@ -166,7 +260,7 @@ export function LoginPage({ onLogin, loading: extLoading }) {
                     }}>⚡</div>
                     <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>FusionOps 3.0</div>
                     <div style={{ fontSize: 13, color: "hsl(var(--muted-foreground))" }}>
-                        {mode === "setup" ? "First-time setup" : "Sign in to your workspace"}
+                        {mode === "setup" ? "First-time setup" : mode === "register" ? "Create your account" : "Sign in to your workspace"}
                     </div>
                 </div>
 
@@ -182,12 +276,25 @@ export function LoginPage({ onLogin, loading: extLoading }) {
                     <SetupForm onSetupComplete={handleSetupComplete} />
                 )}
 
+                {/* Self-registration */}
+                {mode === "register" && (
+                    <RegisterForm
+                        onRegisterComplete={handleRegisterComplete}
+                        onBack={() => setMode("login")}
+                    />
+                )}
+
                 {/* Login form */}
                 {mode === "login" && (
                     <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                         {setupDone && (
                             <div style={{ background: "#f0fdf4", border: "1px solid #86efac", color: "#16a34a", padding: "9px 13px", borderRadius: 8, fontSize: 13 }}>
                                 ✅ Admin account created! Signing you in…
+                            </div>
+                        )}
+                        {registerDone && (
+                            <div style={{ background: "#f0fdf4", border: "1px solid #86efac", color: "#16a34a", padding: "9px 13px", borderRadius: 8, fontSize: 13 }}>
+                                ✅ Account created! Signing you in…
                             </div>
                         )}
 
@@ -216,13 +323,20 @@ export function LoginPage({ onLogin, loading: extLoading }) {
                             style={{ ...submitBtn, background: busy ? "hsl(var(--muted))" : T.grad }}>
                             {loading ? "Signing in…" : "Sign In"}
                         </button>
+
+                        <div style={{ textAlign: "center", fontSize: 13, color: "hsl(var(--muted-foreground))", marginTop: 4 }}>
+                            Don't have an account?{" "}
+                            <button type="button" onClick={() => { setError(""); setMode("register"); }}
+                                style={{ background: "none", border: "none", cursor: "pointer", color: T.primary, fontWeight: 600, fontSize: 13, padding: 0 }}>
+                                Register
+                            </button>
+                        </div>
                     </form>
                 )}
 
                 {/* Footer */}
                 <div style={{ marginTop: 22, textAlign: "center", fontSize: 11, color: "hsl(var(--muted-foreground))", lineHeight: 1.6 }}>
                     FusionOps 3.0 — Internal Dashboard
-                    {mode === "login" && <><br />Contact admin to create your account.</>}
                 </div>
             </div>
         </div>
