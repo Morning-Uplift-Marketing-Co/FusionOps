@@ -6,6 +6,19 @@ import { isAdmin } from "../services/auth";
 
 const CHANGELOG = [
     {
+        version: "3.4.1",
+        date: "2026-03-16",
+        changes: [
+            "🐛 Auth race — getMe() guards findSession() behind connection check, preserving valid sessions on boot",
+            "🐛 KPI sort mismatch fixed — shared calcScore() aligns leaderboard rank with displayed scores",
+            "🐛 Audit meta — severity no longer duplicated inside meta JSONB",
+            "⚡ createSession + updateLastLogin run in parallel (Promise.all)",
+            "⚡ KPI Dashboard — myActivity memo, single-pass myStats reduce, memoised recentActivity",
+            "🧹 UserManager notify() setTimeout cleared on unmount",
+            "🔁 Sidebar uses imported isAdmin() from auth service",
+        ],
+    },
+    {
         version: "3.4.0",
         date: "2026-03-16",
         changes: [
