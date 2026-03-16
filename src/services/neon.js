@@ -112,6 +112,32 @@ export async function ensureTables() {
         created_at TIMESTAMPTZ DEFAULT now()
       )
     `;
+    // USERS table (auth)
+    await sql`
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        email TEXT UNIQUE NOT NULL,
+        name TEXT DEFAULT '',
+        password_hash TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'employee' CHECK (role IN ('admin','employee')),
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        created_at TIMESTAMPTZ DEFAULT now(),
+        last_login_at TIMESTAMPTZ
+      )
+    `;
+    // SESSIONS table (auth)
+    await sql`
+      CREATE TABLE IF NOT EXISTS sessions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        token TEXT NOT NULL UNIQUE,
+        expires_at TIMESTAMPTZ NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT now(),
+        ua TEXT,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token)`;
     // SITE AUDIT LOG table
     await sql`
       CREATE TABLE IF NOT EXISTS site_audit_log (
@@ -125,9 +151,9 @@ export async function ensureTables() {
         ts TIMESTAMPTZ NOT NULL DEFAULT now()
       )
     `;
-    await sql`
-      CREATE INDEX IF NOT EXISTS idx_audit_site_ts ON site_audit_log (site_id, ts DESC)
-    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_audit_site_ts ON site_audit_log(site_id, ts DESC)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_audit_site ON site_audit_log(site_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_audit_type ON site_audit_log(event_type)`;
     // PROXIES table
     await sql`
       CREATE TABLE IF NOT EXISTS proxies (
@@ -155,12 +181,8 @@ export async function ensureTables() {
         updated_at TIMESTAMPTZ DEFAULT now()
       )
     `;
-    await sql`
-      CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)
-    `;
-    await sql`
-      CREATE INDEX IF NOT EXISTS idx_tasks_assignee ON tasks(assignee_id)
-    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_tasks_assignee ON tasks(assignee_id)`;
     return true;
   } catch (e) {
     console.error("[neon] ensureTables failed:", e.message);
@@ -681,6 +703,113 @@ export function getConnectionStatus() {
   };
 }
 
+// AUTH — USERS
+// ═══════════════════════════════════════════════════════
+
+/** Find user by email (returns full row including password_hash) */
+export async function findUserByEmail(email) {
+  if (!ensureConnection()) return null;
+  const rows = await sql`SELECT * FROM users WHERE email = ${email} LIMIT 1`;
+  return rows[0] || null;
+}
+
+/** Find user by id (no password_hash) */
+export async function findUserById(id) {
+  if (!ensureConnection()) return null;
+  const rows = await sql`SELECT id, email, name, role, is_active, created_at, last_login_at FROM users WHERE id = ${id} LIMIT 1`;
+  return rows[0] || null;
+}
+
+/** Load all users — no password_hash */
+export async function loadUsers() {
+  if (!ensureConnection()) return [];
+  return sql`SELECT id, email, name, role, is_active, created_at, last_login_at FROM users ORDER BY created_at`;
+}
+
+/** Create a new user */
+export async function createUser({ id, email, passwordHash, role, name }) {
+  if (!ensureConnection()) throw new Error("Neon not connected");
+  await sql`
+    INSERT INTO users (id, email, name, password_hash, role, is_active)
+    VALUES (${id}, ${email}, ${name || ""}, ${passwordHash}, ${role}, TRUE)
+  `;
+  return { id, email, role };
+}
+
+/** Update user role */
+export async function updateUserRole(id, role) {
+  if (!ensureConnection()) throw new Error("Neon not connected");
+  await sql`UPDATE users SET role = ${role} WHERE id = ${id}`;
+  return true;
+}
+
+/** Activate / deactivate user */
+export async function updateUserStatus(id, isActive) {
+  if (!ensureConnection()) throw new Error("Neon not connected");
+  await sql`UPDATE users SET is_active = ${isActive} WHERE id = ${id}`;
+  return true;
+}
+
+/** Update password hash */
+export async function updateUserPassword(id, passwordHash) {
+  if (!ensureConnection()) throw new Error("Neon not connected");
+  await sql`UPDATE users SET password_hash = ${passwordHash} WHERE id = ${id}`;
+  return true;
+}
+
+/** Update last_login_at timestamp */
+export async function updateLastLogin(id) {
+  if (!ensureConnection()) return;
+  await sql`UPDATE users SET last_login_at = now() WHERE id = ${id}`;
+}
+
+/** Delete user (cascade deletes sessions) */
+export async function deleteUser(id) {
+  if (!ensureConnection()) throw new Error("Neon not connected");
+  await sql`DELETE FROM users WHERE id = ${id}`;
+  return true;
+}
+
+// ═══════════════════════════════════════════════════════
+// AUTH — SESSIONS
+// ═══════════════════════════════════════════════════════
+
+/** Create session record */
+export async function createSession({ id, userId, token, expiresAt, ua }) {
+  if (!ensureConnection()) throw new Error("Neon not connected");
+  await sql`
+    INSERT INTO sessions (id, user_id, token, expires_at, ua)
+    VALUES (${id}, ${userId}, ${token}, ${expiresAt}, ${ua || ""})
+    ON CONFLICT (token) DO NOTHING
+  `;
+  return true;
+}
+
+/** Find session by token — returns session row */
+export async function findSession(token) {
+  if (!ensureConnection()) return null;
+  const rows = await sql`
+    SELECT s.*, u.id as uid, u.email, u.role, u.is_active, u.name
+    FROM sessions s
+    JOIN users u ON u.id = s.user_id
+    WHERE s.token = ${token} AND s.expires_at > now()
+    LIMIT 1
+  `;
+  return rows[0] || null;
+}
+
+/** Delete session by token (logout) */
+export async function deleteSession(token) {
+  if (!ensureConnection()) return;
+  await sql`DELETE FROM sessions WHERE token = ${token}`;
+}
+
+/** Delete all sessions for a user */
+export async function deleteUserSessions(userId) {
+  if (!ensureConnection()) return;
+  await sql`DELETE FROM sessions WHERE user_id = ${userId}`;
+}
+
 // ═══════════════════════════════════════════════════════
 // SITE AUDIT LOG
 // ═══════════════════════════════════════════════════════
@@ -688,11 +817,12 @@ export function getConnectionStatus() {
 /** Append one audit event — insert only, never update */
 export async function saveAuditEvent(event) {
   if (!ensureConnection() || !event?.id) return false;
+  const safeId = event.id || ("ae_" + Date.now().toString(36));
   try {
     await sql`
       INSERT INTO site_audit_log (id, site_id, event_type, severity, title, detail, meta, ts)
       VALUES (
-        ${event.id},
+        ${safeId},
         ${event.site_id},
         ${event.event_type},
         ${event.severity || 'info'},
@@ -758,6 +888,26 @@ export async function loadAllAuditEvents(limit = 200) {
   } catch (e) {
     return null;
   }
+}
+
+/** Get KPI stats per user from audit log meta */
+export async function getKpiStats() {
+  if (!ensureConnection()) return [];
+  const rows = await sql`
+    SELECT
+      meta->>'userId' AS user_id,
+      meta->>'userName' AS user_name,
+      COUNT(*) FILTER (WHERE event_type = 'task_completed') AS tasks_completed,
+      COUNT(*) FILTER (WHERE event_type = 'task_created') AS tasks_created,
+      COUNT(*) FILTER (WHERE event_type = 'deploy_success') AS deploys,
+      COUNT(*) FILTER (WHERE event_type = 'site_created') AS sites_created,
+      MAX(ts) AS last_active
+    FROM site_audit_log
+    WHERE meta->>'userId' IS NOT NULL
+    GROUP BY meta->>'userId', meta->>'userName'
+    ORDER BY tasks_completed DESC
+  `;
+  return rows;
 }
 
 // ═══════════════════════════════════════════════════════

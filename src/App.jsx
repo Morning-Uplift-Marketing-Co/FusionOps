@@ -7,6 +7,7 @@ import { uid, now, LS } from "./utils";
 import { refreshCustomTemplates } from "./utils/template-router";
 import { setSentryContext, addBreadcrumb } from "./services/sentry";
 import { sanitizeSettings, validateSettingsAccount, autoRecoverSettings, detectIncompleteSettings } from "./services/account-lock";
+import { login as authLogin, logout as authLogout, getMe, isAdmin, sanitizeForEmployee } from "./services/auth";
 
 // Custom event for template refresh
 const TEMPLATE_REFRESH_EVENT = 'lp-template-refresh';
@@ -18,7 +19,6 @@ import { Toast } from "./components/ui/toast";
 import { Dashboard } from "./components/Dashboard";
 import { Sites } from "./components/Sites";
 import { Wizard } from "./components/Wizard";
-import { VariantStudio } from "./components/VariantStudio";
 import { OpsCenter } from "./components/OpsCenter";
 import { Settings } from "./components/Settings";
 import { DeployHistory } from "./components/DeployHistory";
@@ -37,6 +37,7 @@ import { TemplateManager } from "./components/TemplateManager";
 import { LoginPage } from "./components/LoginPage";
 import { KpiDashboard } from "./components/KpiDashboard";
 import { TaskManager } from "./components/TaskManager";
+import { UserManager } from "./components/UserManager";
 
 // Neon connection string — stored in settings or hardcoded for now
 const NEON_URL = import.meta.env.VITE_NEON_URL || "";
@@ -168,6 +169,11 @@ useEffect(() => {
   const [apiOk, setApiOk] = useState(false);
   const [neonOk, setNeonOk] = useState(false);
 
+  // ── Auth state ───────────────────────────────────────────────────
+  const [user, setUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [users, setUsers] = useState([]); // team users list (admin only)
+
   // Global error capture — feeds into Error Log tab
   useEffect(() => {
     const onError = (event) => {
@@ -208,6 +214,49 @@ useEffect(() => {
       cleanupVisibility?.();
     };
   }, []);
+
+  // ── Auth check on boot (runs ONCE on mount) ─────────────────────
+  useEffect(() => {
+    // Bypass auth entirely if Neon is not configured —
+    // no DB = no auth possible, let the app run without login gate.
+    const neonConnStr = NEON_URL || LS.get("settings")?.neonUrl || "";
+    if (!neonConnStr || !neonConnStr.includes("@")) {
+      console.info("[auth] Neon not configured — bypassing login gate");
+      setAuthChecked(true);
+      return;
+    }
+
+    getMe()
+      .then((me) => { setUser(me); })
+      .catch(() => setUser(null))
+      .finally(() => setAuthChecked(true));
+  }, []); // ← run once on mount only, NOT on every neonOk change
+
+  // Load team users list when admin + Neon comes online
+  useEffect(() => {
+    if (neonOk && user && isAdmin(user) && users.length === 0) {
+      db.loadUsers().then(setUsers).catch(() => {});
+    }
+  }, [neonOk, user]);
+
+  async function handleLogin(email, password) {
+    const result = await authLogin(email, password);
+    if (result.ok) {
+      setUser(result.user);
+      if (isAdmin(result.user)) {
+        db.loadUsers().then(setUsers).catch(() => {});
+      }
+    }
+    return result;
+  }
+
+  async function handleLogout() {
+    await authLogout();
+    setUser(null);
+    setUsers([]);
+    setPage("dashboard");
+  }
+
 
   // Proactively connect to Neon if URL is provided/discovered later
   useEffect(() => {
@@ -713,7 +762,6 @@ useEffect(() => {
         { domain: cleanSite.domain, templateId: cleanSite.templateId, clonedFromId: cleanSite._clonedFromId },
         'info'
       );
-
       notify(`${cleanSite.brand} created!`);
     }
     setPage("sites");
@@ -786,19 +834,25 @@ useEffect(() => {
         { url: d.url, target: d.target }, 'info'
       );
     }
+    // KPI audit event
+    if (d.status === "success" || d.status === "deployed") {
+      auditLog(d.site_id || d.siteId || "global", "deploy_success",
+        `Deployed: ${d.brand || d.url || "site"}`, d.url || "", { target: d.target });
+    }
   };
 
   // ─── AUDIT LOG ─────────────────────────────────────────────────────────────
   const auditLog = (siteId, eventType, title, detail = '', meta = {}, severity = 'info') => {
     if (!siteId) return;
+    const enrichedMeta = { ...meta, ...(user ? { userId: user.id, userName: user.name || user.email } : {}) };
     const event = {
-      id: uid(),
+      id: "ae_" + uid(),
       site_id: siteId,
       event_type: eventType,
       severity,
       title,
       detail,
-      meta,
+      meta: enrichedMeta,
       ts: now(),
     };
     setAuditEvents(prev => ({
@@ -828,7 +882,6 @@ useEffect(() => {
 
   const updateProxy = async (proxy) => {
     const updated = { ...proxy, updatedAt: now() };
-    // Detect newly assigned sites for audit log
     const prev = proxies.find(px => px.id === proxy.id);
     const prevSites = new Set(prev?.assignedSites || []);
     const newSites = (proxy.assignedSites || []).filter(s => !prevSites.has(s));
@@ -1063,6 +1116,12 @@ useEffect(() => {
     </div>
   );
 
+  // ── Auth gate ────────────────────────────────────────────────────
+  // Show login page if auth check done and no user session found
+  if (authChecked && !user) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
   const ml = sideCollapsed ? 64 : 220;
 
   return (
@@ -1080,7 +1139,8 @@ useEffect(() => {
       />
 
       <Sidebar page={page} setPage={setPage} siteCount={sites.length} taskCount={tasks.filter(t => t.status !== 'done').length} startCreate={startCreate} startTemplateGen={() => setTemplateGenOpen(true)}
-        collapsed={sideCollapsed} toggle={() => setSideCollapsed(p => !p)} />
+        collapsed={sideCollapsed} toggle={() => setSideCollapsed(p => !p)}
+        user={user} onLogout={handleLogout} />
 
       <main style={{ flex: 1, marginLeft: ml, minHeight: "100vh", transition: "margin .2s" }}>
         <TopBar stats={stats} settings={settings} deploys={deploys} apiOk={apiOk} neonOk={neonOk} onReconnectNeon={recoverNeonConnection} />
@@ -1091,7 +1151,6 @@ useEffect(() => {
           {page === "account-map" && <AccountMap apiOk={apiOk} neonOk={neonOk} ops={ops} settings={settings} />}
           {page === "sites" && <Sites sites={sites} del={delSite} notify={notify} startCreate={startCreate} startDuplicate={startDuplicate} addSite={addSite} settings={settings} addDeploy={addDeploy} ops={ops} updateSite={updateSite} auditLog={auditLog} auditEvents={auditEvents} proxies={proxies} />}
           {page === "create" && wizData && <Wizard config={wizData} setConfig={setWizData} addSite={addSite} addDeploy={addDeploy} setPage={setPage} settings={settings} notify={notify} cfAccounts={ops.cfAccounts} registrarAccounts={ops.registrarAccounts} />}
-          {page === "variant" && <VariantStudio notify={notify} sites={sites} addSite={addSite} registry={registry} setRegistry={setRegistry} apiOk={apiOk} />}
           {page === "profile-manager" && <ProfileManager settings={settings} ops={ops} />}
           {page === "ops" && <OpsCenter data={{ ...ops, proxies }} add={opsAdd} del={opsDel} upd={opsUpd} settings={settings} auditLog={auditLog} auditEvents={auditEvents} addProxy={addProxy} updateProxy={updateProxy} deleteProxy={deleteProxyById} />}
           {page === "deploys" && <DeployHistory deploys={deploys} />}
@@ -1114,10 +1173,9 @@ useEffect(() => {
           {page === "error-log" && <ErrorLog />}
           {page === "api-health" && <ApiHealthCheck />}
           {page === "settings" && <Settings settings={settings} setSettings={handleSaveSettings} stats={stats} apiOk={apiOk} neonOk={neonOk} />}
-          {page === "tasks" && <TaskManager tasks={tasks} sites={sites} addTask={addTask} updateTask={updateTask} deleteTask={deleteTask} user={null} />}
-          {/* ── MOCKUP PREVIEW ROUTES ── */}
-          {page === "login-preview" && <LoginPage onLogin={(e, p) => { notify(`Demo login: ${e}`); setPage("dashboard"); }} />}
-          {page === "kpi" && <KpiDashboard user={{ role: "admin", id: "u1" }} />}
+          {page === "tasks" && <TaskManager tasks={tasks} sites={sites} addTask={addTask} updateTask={updateTask} deleteTask={deleteTask} user={user} />}
+          {page === "kpi" && <KpiDashboard user={user} users={users} />}
+          {page === "users" && isAdmin(user) && <UserManager currentUser={user} />}
         </div>
       </main>
 

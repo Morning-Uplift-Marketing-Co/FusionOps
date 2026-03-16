@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.1] - 2026-03-16
+### Fixed
+- **Auth Race Condition**: `getMe()` now checks `db.getConnectionStatus().connected` before calling `findSession()` — prevents valid localStorage sessions being cleared on boot before Neon initialises
+- **KPI Sort Bug**: Leaderboard sort order now matches displayed scores (extracted shared `calcScore()` — was using 2-metric formula while display used 4)
+- **Audit Meta**: `severity` field no longer duplicated inside `meta` JSONB; correctly separated at `event` level
+
+### Improved
+- **Auth**: `createSession` + `updateLastLogin` now run in parallel (`Promise.all`)
+- **Auth**: Token generation simplified to single 32-byte `getRandomValues` call; userId uses shared `uid()` utility
+- **KPI Dashboard**: `myActivity` memo replaces double userId filter; `myStats` reduced to single pass; `recentActivity` memoised; `cutoff` moved inside `filteredLog` memo to avoid stale drift; `SEV_COLOR`/`calcScore` hoisted to module scope
+- **UserManager**: `notify` setTimeout ref stored + cleared on unmount (prevents setState on unmounted component)
+- **Sidebar**: Uses imported `isAdmin()` from auth service instead of inline role check
+
+## [3.4.0] - 2026-03-16
+### Added
+- **Auth System**: PBKDF2 password hashing via Web Crypto API — browser-native, no deps
+- **LoginPage**: FusionOps-branded login screen with show/hide password toggle
+- **Session Management**: Token stored in localStorage, verified against Neon sessions table
+- **Role-Based Access**: `admin` (full access) vs `employee` (no financial metrics/exports)
+- **UserManager**: Admin CRUD for team accounts — create, edit role, activate/deactivate, delete
+- **KPI Dashboard**: Leaderboard for admins + personal stats for employees, driven by audit log
+- **Data Sanitizer**: `sanitizeForEmployee()` strips revenue/profit/roi/payout from responses
+- **Neon DB**: `users`, `sessions`, `site_audit_log` tables auto-created with indices
+- **Sidebar**: User identity panel + role badge + logout button (↩)
+- **Route Guard**: App shows LoginPage when no valid session found
+
 ## [3.3.0] - 2026-03-16
 ### Added
 - **Task Management System** (`src/components/TaskManager.jsx`):

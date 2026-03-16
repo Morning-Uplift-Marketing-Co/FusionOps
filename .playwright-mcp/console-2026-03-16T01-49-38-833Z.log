@@ -1,0 +1,393 @@
+[      11ms] [ERROR] [neon] ensureTables failed: Error connecting to database: TypeError: Failed to fetch @ http://localhost:4323/src/services/neon.js:113
+[     102ms] [WARNING]           
+        ************************************************************
+        *                                                          *
+        *  WARNING: Running SQL directly from the browser can have *
+        *  security implications. Even if your database is         *
+        *  protected by Row-Level Security (RLS), use it at your   *
+        *  own risk. This approach is great for fast prototyping,  *
+        *  but ensure proper safeguards are in place to prevent    *
+        *  misuse or execution of expensive SQL queries by your    *
+        *  end users.                                              *
+        *                                                          *
+        *  If you've assessed the risks, suppress this message     *
+        *  using the disableWarningInBrowsers configuration        *
+        *  parameter.                                              *
+        *                                                          *
+        ************************************************************ @ http://localhost:4323/node_modules/.vite/deps/@neondatabase_serverless.js?v=7c5e1c19:4881
+[     102ms] [WARNING]           
+        ************************************************************
+        *                                                          *
+        *  WARNING: Running SQL directly from the browser can have *
+        *  security implications. Even if your database is         *
+        *  protected by Row-Level Security (RLS), use it at your   *
+        *  own risk. This approach is great for fast prototyping,  *
+        *  but ensure proper safeguards are in place to prevent    *
+        *  misuse or execution of expensive SQL queries by your    *
+        *  end users.                                              *
+        *                                                          *
+        *  If you've assessed the risks, suppress this message     *
+        *  using the disableWarningInBrowsers configuration        *
+        *  parameter.                                              *
+        *                                                          *
+        ************************************************************ @ http://localhost:4323/node_modules/.vite/deps/@neondatabase_serverless.js?v=7c5e1c19:4881
+[     102ms] [WARNING]           
+        ************************************************************
+        *                                                          *
+        *  WARNING: Running SQL directly from the browser can have *
+        *  security implications. Even if your database is         *
+        *  protected by Row-Level Security (RLS), use it at your   *
+        *  own risk. This approach is great for fast prototyping,  *
+        *  but ensure proper safeguards are in place to prevent    *
+        *  misuse or execution of expensive SQL queries by your    *
+        *  end users.                                              *
+        *                                                          *
+        *  If you've assessed the risks, suppress this message     *
+        *  using the disableWarningInBrowsers configuration        *
+        *  parameter.                                              *
+        *                                                          *
+        ************************************************************ @ http://localhost:4323/node_modules/.vite/deps/@neondatabase_serverless.js?v=7c5e1c19:4881
+[     103ms] [WARNING]           
+        ************************************************************
+        *                                                          *
+        *  WARNING: Running SQL directly from the browser can have *
+        *  security implications. Even if your database is         *
+        *  protected by Row-Level Security (RLS), use it at your   *
+        *  own risk. This approach is great for fast prototyping,  *
+        *  but ensure proper safeguards are in place to prevent    *
+        *  misuse or execution of expensive SQL queries by your    *
+        *  end users.                                              *
+        *                                                          *
+        *  If you've assessed the risks, suppress this message     *
+        *  using the disableWarningInBrowsers configuration        *
+        *  parameter.                                              *
+        *                                                          *
+        ************************************************************ @ http://localhost:4323/node_modules/.vite/deps/@neondatabase_serverless.js?v=7c5e1c19:4881
+[    3904ms] [WARNING]           
+        ************************************************************
+        *                                                          *
+        *  WARNING: Running SQL directly from the browser can have *
+        *  security implications. Even if your database is         *
+        *  protected by Row-Level Security (RLS), use it at your   *
+        *  own risk. This approach is great for fast prototyping,  *
+        *  but ensure proper safeguards are in place to prevent    *
+        *  misuse or execution of expensive SQL queries by your    *
+        *  end users.                                              *
+        *                                                          *
+        *  If you've assessed the risks, suppress this message     *
+        *  using the disableWarningInBrowsers configuration        *
+        *  parameter.                                              *
+        *                                                          *
+        ************************************************************ @ http://localhost:4323/node_modules/.vite/deps/@neondatabase_serverless.js?v=7c5e1c19:4881
+[    3904ms] [WARNING]           
+        ************************************************************
+        *                                                          *
+        *  WARNING: Running SQL directly from the browser can have *
+        *  security implications. Even if your database is         *
+        *  protected by Row-Level Security (RLS), use it at your   *
+        *  own risk. This approach is great for fast prototyping,  *
+        *  but ensure proper safeguards are in place to prevent    *
+        *  misuse or execution of expensive SQL queries by your    *
+        *  end users.                                              *
+        *                                                          *
+        *  If you've assessed the risks, suppress this message     *
+        *  using the disableWarningInBrowsers configuration        *
+        *  parameter.                                              *
+        *                                                          *
+        ************************************************************ @ http://localhost:4323/node_modules/.vite/deps/@neondatabase_serverless.js?v=7c5e1c19:4881
+[    3904ms] [WARNING]           
+        ************************************************************
+        *                                                          *
+        *  WARNING: Running SQL directly from the browser can have *
+        *  security implications. Even if your database is         *
+        *  protected by Row-Level Security (RLS), use it at your   *
+        *  own risk. This approach is great for fast prototyping,  *
+        *  but ensure proper safeguards are in place to prevent    *
+        *  misuse or execution of expensive SQL queries by your    *
+        *  end users.                                              *
+        *                                                          *
+        *  If you've assessed the risks, suppress this message     *
+        *  using the disableWarningInBrowsers configuration        *
+        *  parameter.                                              *
+        *                                                          *
+        ************************************************************ @ http://localhost:4323/node_modules/.vite/deps/@neondatabase_serverless.js?v=7c5e1c19:4881
+[    3904ms] [WARNING]           
+        ************************************************************
+        *                                                          *
+        *  WARNING: Running SQL directly from the browser can have *
+        *  security implications. Even if your database is         *
+        *  protected by Row-Level Security (RLS), use it at your   *
+        *  own risk. This approach is great for fast prototyping,  *
+        *  but ensure proper safeguards are in place to prevent    *
+        *  misuse or execution of expensive SQL queries by your    *
+        *  end users.                                              *
+        *                                                          *
+        *  If you've assessed the risks, suppress this message     *
+        *  using the disableWarningInBrowsers configuration        *
+        *  parameter.                                              *
+        *                                                          *
+        ************************************************************ @ http://localhost:4323/node_modules/.vite/deps/@neondatabase_serverless.js?v=7c5e1c19:4881
+[    3905ms] [WARNING]           
+        ************************************************************
+        *                                                          *
+        *  WARNING: Running SQL directly from the browser can have *
+        *  security implications. Even if your database is         *
+        *  protected by Row-Level Security (RLS), use it at your   *
+        *  own risk. This approach is great for fast prototyping,  *
+        *  but ensure proper safeguards are in place to prevent    *
+        *  misuse or execution of expensive SQL queries by your    *
+        *  end users.                                              *
+        *                                                          *
+        *  If you've assessed the risks, suppress this message     *
+        *  using the disableWarningInBrowsers configuration        *
+        *  parameter.                                              *
+        *                                                          *
+        ************************************************************ @ http://localhost:4323/node_modules/.vite/deps/@neondatabase_serverless.js?v=7c5e1c19:4881
+[    3905ms] [WARNING]           
+        ************************************************************
+        *                                                          *
+        *  WARNING: Running SQL directly from the browser can have *
+        *  security implications. Even if your database is         *
+        *  protected by Row-Level Security (RLS), use it at your   *
+        *  own risk. This approach is great for fast prototyping,  *
+        *  but ensure proper safeguards are in place to prevent    *
+        *  misuse or execution of expensive SQL queries by your    *
+        *  end users.                                              *
+        *                                                          *
+        *  If you've assessed the risks, suppress this message     *
+        *  using the disableWarningInBrowsers configuration        *
+        *  parameter.                                              *
+        *                                                          *
+        ************************************************************ @ http://localhost:4323/node_modules/.vite/deps/@neondatabase_serverless.js?v=7c5e1c19:4881
+[    3905ms] [WARNING]           
+        ************************************************************
+        *                                                          *
+        *  WARNING: Running SQL directly from the browser can have *
+        *  security implications. Even if your database is         *
+        *  protected by Row-Level Security (RLS), use it at your   *
+        *  own risk. This approach is great for fast prototyping,  *
+        *  but ensure proper safeguards are in place to prevent    *
+        *  misuse or execution of expensive SQL queries by your    *
+        *  end users.                                              *
+        *                                                          *
+        *  If you've assessed the risks, suppress this message     *
+        *  using the disableWarningInBrowsers configuration        *
+        *  parameter.                                              *
+        *                                                          *
+        ************************************************************ @ http://localhost:4323/node_modules/.vite/deps/@neondatabase_serverless.js?v=7c5e1c19:4881
+[    3905ms] [WARNING]           
+        ************************************************************
+        *                                                          *
+        *  WARNING: Running SQL directly from the browser can have *
+        *  security implications. Even if your database is         *
+        *  protected by Row-Level Security (RLS), use it at your   *
+        *  own risk. This approach is great for fast prototyping,  *
+        *  but ensure proper safeguards are in place to prevent    *
+        *  misuse or execution of expensive SQL queries by your    *
+        *  end users.                                              *
+        *                                                          *
+        *  If you've assessed the risks, suppress this message     *
+        *  using the disableWarningInBrowsers configuration        *
+        *  parameter.                                              *
+        *                                                          *
+        ************************************************************ @ http://localhost:4323/node_modules/.vite/deps/@neondatabase_serverless.js?v=7c5e1c19:4881
+[    3905ms] [WARNING]           
+        ************************************************************
+        *                                                          *
+        *  WARNING: Running SQL directly from the browser can have *
+        *  security implications. Even if your database is         *
+        *  protected by Row-Level Security (RLS), use it at your   *
+        *  own risk. This approach is great for fast prototyping,  *
+        *  but ensure proper safeguards are in place to prevent    *
+        *  misuse or execution of expensive SQL queries by your    *
+        *  end users.                                              *
+        *                                                          *
+        *  If you've assessed the risks, suppress this message     *
+        *  using the disableWarningInBrowsers configuration        *
+        *  parameter.                                              *
+        *                                                          *
+        ************************************************************ @ http://localhost:4323/node_modules/.vite/deps/@neondatabase_serverless.js?v=7c5e1c19:4881
+[    3905ms] [WARNING]           
+        ************************************************************
+        *                                                          *
+        *  WARNING: Running SQL directly from the browser can have *
+        *  security implications. Even if your database is         *
+        *  protected by Row-Level Security (RLS), use it at your   *
+        *  own risk. This approach is great for fast prototyping,  *
+        *  but ensure proper safeguards are in place to prevent    *
+        *  misuse or execution of expensive SQL queries by your    *
+        *  end users.                                              *
+        *                                                          *
+        *  If you've assessed the risks, suppress this message     *
+        *  using the disableWarningInBrowsers configuration        *
+        *  parameter.                                              *
+        *                                                          *
+        ************************************************************ @ http://localhost:4323/node_modules/.vite/deps/@neondatabase_serverless.js?v=7c5e1c19:4881
+[    3905ms] [WARNING]           
+        ************************************************************
+        *                                                          *
+        *  WARNING: Running SQL directly from the browser can have *
+        *  security implications. Even if your database is         *
+        *  protected by Row-Level Security (RLS), use it at your   *
+        *  own risk. This approach is great for fast prototyping,  *
+        *  but ensure proper safeguards are in place to prevent    *
+        *  misuse or execution of expensive SQL queries by your    *
+        *  end users.                                              *
+        *                                                          *
+        *  If you've assessed the risks, suppress this message     *
+        *  using the disableWarningInBrowsers configuration        *
+        *  parameter.                                              *
+        *                                                          *
+        ************************************************************ @ http://localhost:4323/node_modules/.vite/deps/@neondatabase_serverless.js?v=7c5e1c19:4881
+[    4155ms] [WARNING]           
+        ************************************************************
+        *                                                          *
+        *  WARNING: Running SQL directly from the browser can have *
+        *  security implications. Even if your database is         *
+        *  protected by Row-Level Security (RLS), use it at your   *
+        *  own risk. This approach is great for fast prototyping,  *
+        *  but ensure proper safeguards are in place to prevent    *
+        *  misuse or execution of expensive SQL queries by your    *
+        *  end users.                                              *
+        *                                                          *
+        *  If you've assessed the risks, suppress this message     *
+        *  using the disableWarningInBrowsers configuration        *
+        *  parameter.                                              *
+        *                                                          *
+        ************************************************************ @ http://localhost:4323/node_modules/.vite/deps/@neondatabase_serverless.js?v=7c5e1c19:4881
+[    4674ms] [WARNING]           
+        ************************************************************
+        *                                                          *
+        *  WARNING: Running SQL directly from the browser can have *
+        *  security implications. Even if your database is         *
+        *  protected by Row-Level Security (RLS), use it at your   *
+        *  own risk. This approach is great for fast prototyping,  *
+        *  but ensure proper safeguards are in place to prevent    *
+        *  misuse or execution of expensive SQL queries by your    *
+        *  end users.                                              *
+        *                                                          *
+        *  If you've assessed the risks, suppress this message     *
+        *  using the disableWarningInBrowsers configuration        *
+        *  parameter.                                              *
+        *                                                          *
+        ************************************************************ @ http://localhost:4323/node_modules/.vite/deps/@neondatabase_serverless.js?v=7c5e1c19:4881
+[    4923ms] [WARNING]           
+        ************************************************************
+        *                                                          *
+        *  WARNING: Running SQL directly from the browser can have *
+        *  security implications. Even if your database is         *
+        *  protected by Row-Level Security (RLS), use it at your   *
+        *  own risk. This approach is great for fast prototyping,  *
+        *  but ensure proper safeguards are in place to prevent    *
+        *  misuse or execution of expensive SQL queries by your    *
+        *  end users.                                              *
+        *                                                          *
+        *  If you've assessed the risks, suppress this message     *
+        *  using the disableWarningInBrowsers configuration        *
+        *  parameter.                                              *
+        *                                                          *
+        ************************************************************ @ http://localhost:4323/node_modules/.vite/deps/@neondatabase_serverless.js?v=7c5e1c19:4881
+[    5041ms] [WARNING]           
+        ************************************************************
+        *                                                          *
+        *  WARNING: Running SQL directly from the browser can have *
+        *  security implications. Even if your database is         *
+        *  protected by Row-Level Security (RLS), use it at your   *
+        *  own risk. This approach is great for fast prototyping,  *
+        *  but ensure proper safeguards are in place to prevent    *
+        *  misuse or execution of expensive SQL queries by your    *
+        *  end users.                                              *
+        *                                                          *
+        *  If you've assessed the risks, suppress this message     *
+        *  using the disableWarningInBrowsers configuration        *
+        *  parameter.                                              *
+        *                                                          *
+        ************************************************************ @ http://localhost:4323/node_modules/.vite/deps/@neondatabase_serverless.js?v=7c5e1c19:4881
+[    5042ms] [WARNING]           
+        ************************************************************
+        *                                                          *
+        *  WARNING: Running SQL directly from the browser can have *
+        *  security implications. Even if your database is         *
+        *  protected by Row-Level Security (RLS), use it at your   *
+        *  own risk. This approach is great for fast prototyping,  *
+        *  but ensure proper safeguards are in place to prevent    *
+        *  misuse or execution of expensive SQL queries by your    *
+        *  end users.                                              *
+        *                                                          *
+        *  If you've assessed the risks, suppress this message     *
+        *  using the disableWarningInBrowsers configuration        *
+        *  parameter.                                              *
+        *                                                          *
+        ************************************************************ @ http://localhost:4323/node_modules/.vite/deps/@neondatabase_serverless.js?v=7c5e1c19:4881
+[    5042ms] [WARNING]           
+        ************************************************************
+        *                                                          *
+        *  WARNING: Running SQL directly from the browser can have *
+        *  security implications. Even if your database is         *
+        *  protected by Row-Level Security (RLS), use it at your   *
+        *  own risk. This approach is great for fast prototyping,  *
+        *  but ensure proper safeguards are in place to prevent    *
+        *  misuse or execution of expensive SQL queries by your    *
+        *  end users.                                              *
+        *                                                          *
+        *  If you've assessed the risks, suppress this message     *
+        *  using the disableWarningInBrowsers configuration        *
+        *  parameter.                                              *
+        *                                                          *
+        ************************************************************ @ http://localhost:4323/node_modules/.vite/deps/@neondatabase_serverless.js?v=7c5e1c19:4881
+[    5052ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:4323/node_modules/.vite/deps/recharts.js?v=7c5e1c19:9083
+[    5052ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:4323/node_modules/.vite/deps/recharts.js?v=7c5e1c19:9083
+[    5052ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:4323/node_modules/.vite/deps/recharts.js?v=7c5e1c19:9083
+[    5052ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:4323/node_modules/.vite/deps/recharts.js?v=7c5e1c19:9083
+[    5053ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:4323/node_modules/.vite/deps/recharts.js?v=7c5e1c19:9083
+[    5053ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:4323/node_modules/.vite/deps/recharts.js?v=7c5e1c19:9083
+[    5169ms] [WARNING]           
+        ************************************************************
+        *                                                          *
+        *  WARNING: Running SQL directly from the browser can have *
+        *  security implications. Even if your database is         *
+        *  protected by Row-Level Security (RLS), use it at your   *
+        *  own risk. This approach is great for fast prototyping,  *
+        *  but ensure proper safeguards are in place to prevent    *
+        *  misuse or execution of expensive SQL queries by your    *
+        *  end users.                                              *
+        *                                                          *
+        *  If you've assessed the risks, suppress this message     *
+        *  using the disableWarningInBrowsers configuration        *
+        *  parameter.                                              *
+        *                                                          *
+        ************************************************************ @ http://localhost:4323/node_modules/.vite/deps/@neondatabase_serverless.js?v=7c5e1c19:4881
+[    5412ms] [WARNING]           
+        ************************************************************
+        *                                                          *
+        *  WARNING: Running SQL directly from the browser can have *
+        *  security implications. Even if your database is         *
+        *  protected by Row-Level Security (RLS), use it at your   *
+        *  own risk. This approach is great for fast prototyping,  *
+        *  but ensure proper safeguards are in place to prevent    *
+        *  misuse or execution of expensive SQL queries by your    *
+        *  end users.                                              *
+        *                                                          *
+        *  If you've assessed the risks, suppress this message     *
+        *  using the disableWarningInBrowsers configuration        *
+        *  parameter.                                              *
+        *                                                          *
+        ************************************************************ @ http://localhost:4323/node_modules/.vite/deps/@neondatabase_serverless.js?v=7c5e1c19:4881
