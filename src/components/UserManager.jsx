@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { THEME as T } from "../constants";
 import * as db from "../services/neon";
 import { register, updatePassword } from "../services/auth";
@@ -168,10 +168,14 @@ export function UserManager({ currentUser }) {
     const [modal, setModal] = useState(null); // null | "add" | {user object}
     const [delConfirm, setDelConfirm] = useState(null);
     const [msg, setMsg] = useState(null); // { text, type }
+    const toastTimer = useRef(null);
+
+    useEffect(() => () => clearTimeout(toastTimer.current), []);
 
     function notify(text, type = "success") {
+        clearTimeout(toastTimer.current);
         setMsg({ text, type });
-        setTimeout(() => setMsg(null), 3000);
+        toastTimer.current = setTimeout(() => setMsg(null), 3000);
     }
 
     useEffect(() => {
