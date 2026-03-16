@@ -241,6 +241,46 @@ export async function deleteSiteFromD1(id) {
   return true;
 }
 
+/* ═════════════════════════════════════════════════════════════════════
+   TASK HELPERS — fire-and-forget backup alongside Neon
+══════════════════════════════════════════════════════════════════════ */
+
+let _tasksTableReady = false;
+
+async function ensureTasksTable() {
+  if (_tasksTableReady) return;
+  await directExecute(
+    `CREATE TABLE IF NOT EXISTS tasks (
+      id TEXT PRIMARY KEY,
+      data TEXT NOT NULL,
+      updated_at TEXT DEFAULT (datetime('now'))
+    )`
+  );
+  _tasksTableReady = true;
+}
+
+/** Upsert a task into D1 (fire-and-forget backup) */
+export async function saveTaskToD1(task) {
+  try {
+    await ensureTasksTable();
+    await directExecute(
+      `INSERT INTO tasks (id, data, updated_at)
+       VALUES (?, ?, datetime('now'))
+       ON CONFLICT(id) DO UPDATE SET
+         data = excluded.data,
+         updated_at = datetime('now')`,
+      [task.id, JSON.stringify(task)]
+    );
+  } catch { /* fire and forget — never throw */ }
+}
+
+/** Delete a task from D1 by id */
+export async function deleteTaskFromD1(id) {
+  try {
+    await directExecute(`DELETE FROM tasks WHERE id = ?`, [id]);
+  } catch { /* fire and forget */ }
+}
+
 /**
  * One-time migration: bulk-upsert all sites from Neon → D1
  * @param {Array} sites  — array of site objects (from Neon loadSites)

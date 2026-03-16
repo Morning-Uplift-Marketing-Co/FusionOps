@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { api } from "./services/api";
 import * as db from "./services/neon";
-import { saveSiteToD1, deleteSiteFromD1 } from "./services/d1";
+import { saveSiteToD1, deleteSiteFromD1, saveTaskToD1, deleteTaskFromD1 } from "./services/d1";
 import { THEME as T, WIZARD_DEFAULTS } from "./constants";
 import { uid, now, LS } from "./utils";
 import { refreshCustomTemplates } from "./utils/template-router";
@@ -38,6 +38,7 @@ import { TemplateManager } from "./components/TemplateManager";
 import { LoginPage } from "./components/LoginPage";
 import { KpiDashboard } from "./components/KpiDashboard";
 import { UserManager } from "./components/UserManager";
+import { TaskManager } from "./components/TaskManager";
 
 // Neon connection string — stored in settings or hardcoded for now
 const NEON_URL = import.meta.env.VITE_NEON_URL || "";
@@ -150,6 +151,11 @@ useEffect(() => {
   const [authChecked, setAuthChecked] = useState(false);
   const [users, setUsers] = useState([]); // team users list (admin only)
 
+  // ── Tasks state ──────────────────────────────────────────────────
+  const [tasks, setTasks] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("lpf2-tasks") || "[]"); } catch { return []; }
+  });
+
   // Global error capture — feeds into Error Log tab
   useEffect(() => {
     const onError = (event) => {
@@ -232,6 +238,28 @@ useEffect(() => {
     setUsers([]);
     setPage("dashboard");
   }
+
+  // ── Task CRUD ────────────────────────────────────────────────────
+  const addTask = (task) => {
+    const t = { ...task, id: uid(), created_at: now(), updated_at: now(), created_by: user?.id || null };
+    setTasks(prev => { const next = [t, ...prev]; localStorage.setItem("lpf2-tasks", JSON.stringify(next)); return next; });
+    if (neonOk) db.saveTask(t).catch(() => {});
+    saveTaskToD1(t).catch(() => {});
+    // Will call auditLog after it's defined below
+  };
+
+  const updateTask = (task) => {
+    const t = { ...task, updated_at: now() };
+    setTasks(prev => { const next = prev.map(x => x.id === t.id ? t : x); localStorage.setItem("lpf2-tasks", JSON.stringify(next)); return next; });
+    if (neonOk) db.saveTask(t).catch(() => {});
+    saveTaskToD1(t).catch(() => {});
+  };
+
+  const deleteTask = (id) => {
+    setTasks(prev => { const next = prev.filter(t => t.id !== id); localStorage.setItem("lpf2-tasks", JSON.stringify(next)); return next; });
+    if (neonOk) db.deleteTask(id).catch(() => {});
+    deleteTaskFromD1(id).catch(() => {});
+  };
 
   // ── Audit log helper — auto-injects userId + userName ─────────────
   function auditLog(siteId, eventType, title, detail = "", extraMeta = {}) {
@@ -370,12 +398,13 @@ useEffect(() => {
             api.post("/settings", { neonUrl: neonConnStr }).catch(() => { });
 
             // Load from Neon
-            const [neonSettings, neonSites, neonDeploys, neonRegistrarAccounts, neonCfAccounts] = await Promise.all([
+            const [neonSettings, neonSites, neonDeploys, neonRegistrarAccounts, neonCfAccounts, neonTasks] = await Promise.all([
               db.loadSettings(),
               db.loadSites(),
               db.loadDeploys(),
               db.loadRegistrarAccounts(),
               db.loadCfAccounts(),
+              db.loadTasks().catch(() => []),
             ]);
 
             if (neonSettings && Object.keys(neonSettings).length > 0) {
@@ -441,6 +470,12 @@ useEffect(() => {
                 ...prev,
                 cfAccounts: neonCfAccounts,
               }));
+            }
+
+            // Tasks from Neon
+            if (neonTasks?.length > 0) {
+              setTasks(neonTasks);
+              localStorage.setItem("lpf2-tasks", JSON.stringify(neonTasks));
             }
 
             // Stats
@@ -977,14 +1012,16 @@ useEffect(() => {
         onDismiss={() => setShowAccountBanner(false)}
       />
 
-      <Sidebar page={page} setPage={setPage} siteCount={sites.length} startCreate={startCreate} startTemplateGen={() => setTemplateGenOpen(true)}
+      <Sidebar page={page} setPage={setPage} siteCount={sites.length}
+        taskBadge={tasks.filter(t => t.status !== "done").length}
+        startCreate={startCreate} startTemplateGen={() => setTemplateGenOpen(true)}
         collapsed={sideCollapsed} toggle={() => setSideCollapsed(p => !p)}
         user={user} onLogout={handleLogout} />
 
       <main style={{ flex: 1, marginLeft: ml, minHeight: "100vh", transition: "margin .2s" }}>
         <TopBar stats={stats} settings={settings} deploys={deploys} apiOk={apiOk} neonOk={neonOk} onReconnectNeon={recoverNeonConnection} />
         <div style={{ padding: "24px 28px" }}>
-          {page === "dashboard" && <Dashboard sites={sites} stats={stats} ops={ops} setPage={setPage} startCreate={startCreate} settings={settings} apiOk={apiOk} neonOk={neonOk} />}
+          {page === "dashboard" && <Dashboard sites={sites} stats={stats} ops={ops} setPage={setPage} startCreate={startCreate} settings={settings} apiOk={apiOk} neonOk={neonOk} tasks={tasks} />}
           {page === "spend" && <SpendDashboard apiOk={apiOk} neonOk={neonOk} settings={settings} />}
           {page === "voluum" && <VoluumExplorer settings={settings} />}
           {page === "account-map" && <AccountMap apiOk={apiOk} neonOk={neonOk} ops={ops} settings={settings} />}
@@ -1015,6 +1052,7 @@ useEffect(() => {
           {page === "settings" && <Settings settings={settings} setSettings={handleSaveSettings} stats={stats} apiOk={apiOk} neonOk={neonOk} />}
           {page === "kpi" && <KpiDashboard user={user} users={users} />}
           {page === "users" && isAdmin(user) && <UserManager currentUser={user} />}
+          {page === "tasks" && <TaskManager tasks={tasks} sites={sites} users={users} addTask={addTask} updateTask={updateTask} deleteTask={deleteTask} user={user} setPage={setPage} auditLog={auditLog} />}
         </div>
       </main>
 
