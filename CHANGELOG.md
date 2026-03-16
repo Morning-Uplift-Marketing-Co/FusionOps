@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.0] - 2026-03-16
+### Added
+- **Task Manager**: Full Kanban + List view task management system for PPC/LP campaigns
+- **Kanban Board**: 5-column board (Backlog → Todo → In Progress → Review → Done) with drag-free status updates
+- **Task Cards**: Priority badge (urgent/high/medium/low), site link, assignee, due date with overdue highlight, tags
+- **Quick Add**: Inline task creation within any Kanban column (Enter to save, Esc to cancel)
+- **List View**: Sortable table with bulk-select delete; sortable by priority, title, status, assignee, due date
+- **Task Modal**: Full CRUD — title, description, status, priority, assignee (from user list), linked site, due date, tags (Enter to add)
+- **Filter Bar**: Search, Status, Priority, Site, Assignee filters with live update
+- **Tasks Neon Table**: `tasks` table with JSONB tags, status/priority indices; `loadTasks`, `saveTask`, `deleteTask` functions
+- **D1 Backup**: `saveTaskToD1` / `deleteTaskFromD1` fire-and-forget backup alongside Neon primary
+- **Dashboard Widget**: Task Summary widget — Urgent, In Progress, Due Today counts + "View All Tasks →" quick link
+- **Sidebar Badge**: Open task count badge on Tasks nav item
+- **KPI Integration**: `task_created` and `task_completed` audit events fed into KPI leaderboard scoring
+
 ## [3.4.1] - 2026-03-16
 ### Fixed
 - **Auth Race Condition**: `getMe()` now checks `db.getConnectionStatus().connected` before calling `findSession()` — prevents valid localStorage sessions being cleared on boot before Neon initialises

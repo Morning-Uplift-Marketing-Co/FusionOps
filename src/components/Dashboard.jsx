@@ -35,7 +35,7 @@ const statusCls = {
     Failed: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400",
 };
 
-export function Dashboard({ sites, stats, ops, setPage, startCreate, settings = {}, apiOk, neonOk }) {
+export function Dashboard({ sites, stats, ops, setPage, startCreate, settings = {}, apiOk, neonOk, tasks = [] }) {
     const hideRevenue = settings.hideRevenue === true;
     const recent = sites.slice(0, 5);
     const risks = useMemo(() => detectRisks(ops), [ops]);
@@ -101,6 +101,42 @@ export function Dashboard({ sites, stats, ops, setPage, startCreate, settings = 
                     </button>
                 </div>
             )}
+
+            {/* ─── Task Summary Widget ─── */}
+            {tasks.length > 0 && (() => {
+                const urgent = tasks.filter(t => t.priority === "urgent" && t.status !== "done").length;
+                const inProgress = tasks.filter(t => t.status === "in_progress").length;
+                const today = new Date().toISOString().slice(0, 10);
+                const dueToday = tasks.filter(t => t.due_date === today && t.status !== "done").length;
+                return (
+                    <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
+                        <div className="flex items-center gap-5 text-sm">
+                            {urgent > 0 && (
+                                <span className="flex items-center gap-1.5 font-semibold text-red-500">
+                                    🔴 <span>{urgent} Urgent</span>
+                                </span>
+                            )}
+                            <span className="flex items-center gap-1.5 font-semibold text-amber-500">
+                                🟡 <span>{inProgress} In Progress</span>
+                            </span>
+                            {dueToday > 0 && (
+                                <span className="flex items-center gap-1.5 font-semibold text-orange-500">
+                                    ⚠️ <span>{dueToday} Due Today</span>
+                                </span>
+                            )}
+                            <span className="text-[hsl(var(--muted-foreground))]">
+                                {tasks.filter(t => t.status !== "done").length} open tasks
+                            </span>
+                        </div>
+                        <button
+                            onClick={() => setPage("tasks")}
+                            className="text-xs font-semibold text-[hsl(var(--primary))] bg-transparent border-none cursor-pointer hover:underline whitespace-nowrap"
+                        >
+                            View All Tasks →
+                        </button>
+                    </div>
+                );
+            })()}
 
             {/* ─── Row 1: Team + Subscriptions + Total Revenue (3 cols like reference) ─── */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

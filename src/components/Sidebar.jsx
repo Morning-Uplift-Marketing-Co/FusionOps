@@ -6,6 +6,20 @@ import { isAdmin } from "../services/auth";
 
 const CHANGELOG = [
     {
+        version: "3.5.0",
+        date: "2026-03-16",
+        changes: [
+            "✅ Task Manager — Kanban + List view task system for PPC/LP campaigns",
+            "📋 Kanban Board — 5-column board (Backlog → Todo → In Progress → Review → Done)",
+            "⚡ Quick Add — inline task creation per column; Enter to save, Esc to cancel",
+            "☰ List View — sortable table with bulk-select delete",
+            "🔍 Filter Bar — search, status, priority, site, assignee filters",
+            "🗄️ Neon tasks table + D1 fire-and-forget backup",
+            "📊 Dashboard Task Summary widget — urgent / in-progress / due-today",
+            "🏆 KPI integration — task_created & task_completed scored in leaderboard",
+        ],
+    },
+    {
         version: "3.4.1",
         date: "2026-03-16",
         changes: [
@@ -112,12 +126,13 @@ const CHANGELOG = [
     },
 ];
 
-export function Sidebar({ page, setPage, siteCount, startCreate, startTemplateGen, collapsed, toggle, user, onLogout }) {
+export function Sidebar({ page, setPage, siteCount, taskBadge, startCreate, startTemplateGen, collapsed, toggle, user, onLogout }) {
     const [showLog, setShowLog] = useState(false);
     const admin = isAdmin(user);
 
     const baseItems = [
         { id: "dashboard", icon: "📊", label: "Dashboard" },
+        { id: "tasks", icon: "✅", label: "Tasks", badge: taskBadge },
         { id: "kpi", icon: "🏆", label: "KPI Dashboard" },
         { id: "spend", icon: "💳", label: "Spend Dashboard" },
         { id: "voluum", icon: "🎯", label: "Voluum Explorer" },

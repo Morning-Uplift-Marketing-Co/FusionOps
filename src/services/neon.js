@@ -150,6 +150,26 @@ export async function ensureTables() {
     await sql`CREATE INDEX IF NOT EXISTS idx_audit_site ON site_audit_log(site_id)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_audit_type ON site_audit_log(event_type)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token)`;
+    // Tasks table
+    await sql`
+      CREATE TABLE IF NOT EXISTS tasks (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'todo',
+        priority TEXT NOT NULL DEFAULT 'medium',
+        assignee_id TEXT,
+        assignee_name TEXT,
+        site_id TEXT,
+        tags JSONB DEFAULT '[]',
+        due_date TEXT,
+        created_by TEXT,
+        created_at TIMESTAMPTZ DEFAULT now(),
+        updated_at TIMESTAMPTZ DEFAULT now()
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_tasks_assignee ON tasks(assignee_id)`;
     return true;
   } catch (e) {
     console.error("[neon] ensureTables failed:", e.message);
@@ -827,4 +847,56 @@ export async function getKpiStats() {
     ORDER BY tasks_completed DESC
   `;
   return rows;
+}
+
+// ═══════════════════════════════════════════════════════
+// TASKS
+// ═══════════════════════════════════════════════════════
+
+/** Load all tasks ordered by updated_at DESC */
+export async function loadTasks() {
+  if (!ensureConnection()) return [];
+  try {
+    const rows = await sql`SELECT * FROM tasks ORDER BY updated_at DESC`;
+    return rows.map(r => ({
+      ...r,
+      tags: Array.isArray(r.tags) ? r.tags : (typeof r.tags === "string" ? JSON.parse(r.tags || "[]") : []),
+    }));
+  } catch (e) {
+    console.warn("[neon] loadTasks:", e.message);
+    return [];
+  }
+}
+
+/** Upsert a task */
+export async function saveTask(t) {
+  if (!ensureConnection()) return false;
+  try {
+    await sql`
+      INSERT INTO tasks (id, title, description, status, priority, assignee_id, assignee_name, site_id, tags, due_date, created_by, created_at, updated_at)
+      VALUES (${t.id}, ${t.title}, ${t.description || ""}, ${t.status}, ${t.priority}, ${t.assignee_id || null}, ${t.assignee_name || null}, ${t.site_id || null}, ${JSON.stringify(t.tags || [])}, ${t.due_date || null}, ${t.created_by || null}, ${t.created_at}, ${t.updated_at})
+      ON CONFLICT (id) DO UPDATE SET
+        title = EXCLUDED.title, description = EXCLUDED.description,
+        status = EXCLUDED.status, priority = EXCLUDED.priority,
+        assignee_id = EXCLUDED.assignee_id, assignee_name = EXCLUDED.assignee_name,
+        site_id = EXCLUDED.site_id, tags = EXCLUDED.tags,
+        due_date = EXCLUDED.due_date, updated_at = EXCLUDED.updated_at
+    `;
+    return true;
+  } catch (e) {
+    console.warn("[neon] saveTask:", e.message);
+    return false;
+  }
+}
+
+/** Delete a task by id */
+export async function deleteTask(id) {
+  if (!ensureConnection()) return false;
+  try {
+    await sql`DELETE FROM tasks WHERE id = ${id}`;
+    return true;
+  } catch (e) {
+    console.warn("[neon] deleteTask:", e.message);
+    return false;
+  }
 }
