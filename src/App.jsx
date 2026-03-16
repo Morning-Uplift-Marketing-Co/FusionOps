@@ -7,6 +7,7 @@ import { uid, now, LS } from "./utils";
 import { refreshCustomTemplates } from "./utils/template-router";
 import { setSentryContext, addBreadcrumb } from "./services/sentry";
 import { sanitizeSettings, validateSettingsAccount, autoRecoverSettings, detectIncompleteSettings } from "./services/account-lock";
+import { login as authLogin, logout as authLogout, getMe, isAdmin, sanitizeForEmployee } from "./services/auth";
 
 // Custom event for template refresh
 const TEMPLATE_REFRESH_EVENT = 'lp-template-refresh';
@@ -34,6 +35,9 @@ import { ApiHealthCheck } from "./components/ApiHealthCheck";
 import { ProxyHealthTab } from "./components/ProxyHealthTab";
 import { ProfileManager } from "./components/ProfileManager";
 import { TemplateManager } from "./components/TemplateManager";
+import { LoginPage } from "./components/LoginPage";
+import { KpiDashboard } from "./components/KpiDashboard";
+import { UserManager } from "./components/UserManager";
 
 // Neon connection string — stored in settings or hardcoded for now
 const NEON_URL = import.meta.env.VITE_NEON_URL || "";
@@ -141,6 +145,11 @@ useEffect(() => {
   const [apiOk, setApiOk] = useState(false);
   const [neonOk, setNeonOk] = useState(false);
 
+  // ── Auth state ───────────────────────────────────────────────────
+  const [user, setUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [users, setUsers] = useState([]); // team users list (admin only)
+
   // Global error capture — feeds into Error Log tab
   useEffect(() => {
     const onError = (event) => {
@@ -181,6 +190,38 @@ useEffect(() => {
       cleanupVisibility?.();
     };
   }, []);
+
+  // ── Auth check on boot ───────────────────────────────────────────
+  useEffect(() => {
+    getMe()
+      .then((me) => {
+        setUser(me);
+        // If admin, pre-load team user list
+        if (me && isAdmin(me) && neonOk) {
+          db.loadUsers().then(setUsers).catch(() => {});
+        }
+      })
+      .catch(() => setUser(null))
+      .finally(() => setAuthChecked(true));
+  }, [neonOk]);
+
+  async function handleLogin(email, password) {
+    const result = await authLogin(email, password);
+    if (result.ok) {
+      setUser(result.user);
+      // Load users list for admin
+      if (isAdmin(result.user)) {
+        db.loadUsers().then(setUsers).catch(() => {});
+      }
+    }
+    return result;
+  }
+
+  async function handleLogout() {
+    await authLogout();
+    setUser(null);
+    setPage("dashboard");
+  }
 
   // Proactively connect to Neon if URL is provided/discovered later
   useEffect(() => {
@@ -877,6 +918,12 @@ useEffect(() => {
     </div>
   );
 
+  // ── Auth gate ────────────────────────────────────────────────────
+  // Show login page if auth check done and no user session found
+  if (authChecked && !user) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
   const ml = sideCollapsed ? 64 : 220;
 
   return (
@@ -894,7 +941,8 @@ useEffect(() => {
       />
 
       <Sidebar page={page} setPage={setPage} siteCount={sites.length} startCreate={startCreate} startTemplateGen={() => setTemplateGenOpen(true)}
-        collapsed={sideCollapsed} toggle={() => setSideCollapsed(p => !p)} />
+        collapsed={sideCollapsed} toggle={() => setSideCollapsed(p => !p)}
+        user={user} onLogout={handleLogout} />
 
       <main style={{ flex: 1, marginLeft: ml, minHeight: "100vh", transition: "margin .2s" }}>
         <TopBar stats={stats} settings={settings} deploys={deploys} apiOk={apiOk} neonOk={neonOk} onReconnectNeon={recoverNeonConnection} />
@@ -928,6 +976,8 @@ useEffect(() => {
           {page === "error-log" && <ErrorLog />}
           {page === "api-health" && <ApiHealthCheck />}
           {page === "settings" && <Settings settings={settings} setSettings={handleSaveSettings} stats={stats} apiOk={apiOk} neonOk={neonOk} />}
+          {page === "kpi" && <KpiDashboard user={user} users={users} />}
+          {page === "users" && isAdmin(user) && <UserManager currentUser={user} />}
         </div>
       </main>
 
