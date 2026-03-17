@@ -792,6 +792,16 @@ export async function deleteSession(token) {
   await sql`DELETE FROM sessions WHERE token = ${token}`;
 }
 
+/** Update session expiry time */
+export async function updateSessionExpiry(token, expiresAt) {
+  if (!ensureConnection()) return;
+  await sql`
+    UPDATE sessions 
+    SET expires_at = ${expiresAt}
+    WHERE token = ${token}
+  `;
+}
+
 /** Delete all sessions for a user */
 export async function deleteUserSessions(userId) {
   if (!ensureConnection()) return;

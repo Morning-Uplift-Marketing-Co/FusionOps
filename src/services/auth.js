@@ -10,7 +10,7 @@ import * as db from "./neon";
 import { uid } from "../utils";
 
 const SESSION_KEY = "lpf2-session";
-const SESSION_TTL_DAYS = 30;
+const SESSION_TTL_DAYS = 365; // 1 year - remember login longer
 
 /* ═══════════════════════════════════════════════════
    CRYPTO HELPERS
@@ -222,6 +222,42 @@ export async function seedFirstAdmin(email, password, name = "") {
   const exists = await checkUsersExist();
   if (exists) return { ok: false, error: "Setup already complete. Use the login form." };
   return register(email, password, "admin", name || email.split("@")[0]);
+}
+
+/**
+ * Auto-refresh session to extend TTL if user is active.
+ * Call this periodically to keep session alive.
+ */
+export async function refreshSession() {
+  const session = getStoredSession();
+  if (!session) return false;
+
+  // Only refresh if less than 30 days remaining
+  const thirtyDaysMs = 30 * 86_400_000;
+  if (session.exp - Date.now() > thirtyDaysMs) return true;
+
+  try {
+    // Update local expiry
+    const newExp = Date.now() + SESSION_TTL_DAYS * 86_400_000;
+    localStorage.setItem(
+      SESSION_KEY,
+      JSON.stringify({
+        ...session,
+        exp: newExp,
+      })
+    );
+
+    // Update DB expiry if available
+    if (db.getConnectionStatus().connected) {
+      await db.updateSessionExpiry(session.token, new Date(newExp).toISOString());
+    }
+
+    console.log("[auth] Session refreshed");
+    return true;
+  } catch (e) {
+    console.warn("[auth] Failed to refresh session:", e);
+    return false;
+  }
 }
 
 /**
