@@ -12,6 +12,13 @@ database_name = "fusionops-main-new-v2"
 database_id = "4eaee76d-10fb-42a7-bb9d-50737c3da785"
 preview_database_id = "4eaee76d-10fb-42a7-bb9d-50737c3da785"
 
+# Pixel events database (used by Realtime Events Dashboard)
+[[d1_databases]]
+binding = "PIXEL_DB"
+database_name = "fusionops-pixel-new-v2"
+database_id = "99437cde-5e7c-4b58-97ad-69e43019c6ff"
+preview_database_id = "99437cde-5e7c-4b58-97ad-69e43019c6ff"
+
 # Browser Rendering API — for template thumbnail screenshots
 [browser]
 binding = "BROWSER"
