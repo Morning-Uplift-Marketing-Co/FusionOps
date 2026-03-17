@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-03-17
+### Fixed
+- **Deploy Safety**: `scripts/generate-template-from-db.mjs` now fetches only `active` templates for GitHub Actions deploys
+- **Deploy Validation**: Draft/inactive templates are rejected early with clear logs instead of silently reaching the build step
+- **Astro Template Gate**: DB templates are validated for required Astro files/build signals before deploy continues
+
+### Added
+- **Deploy Tests**: Added focused unit coverage for DB template parsing, Astro validation, frontmatter repair, and active-vs-draft template handling in `tests/unit/scripts/generate-template-from-db.spec.ts`
+
+### Verified
+- **Unit Tests**: `tests/unit/scripts/generate-template-from-db.spec.ts` passed (`6/6`)
+- **Deployers Tests**: `tests/unit/utils/deployers.spec.ts` passed (`30/30`)
+- **E2E Deploy Flow**: `tests/e2e/deploy/deploy-flow.spec.ts --project=chromium` passed (`27/27`)
+
 ## [3.4.1] - 2026-03-16
 ### Fixed
 - **Auth Race Condition**: `getMe()` now checks `db.getConnectionStatus().connected` before calling `findSession()` — prevents valid localStorage sessions being cleared on boot before Neon initialises
