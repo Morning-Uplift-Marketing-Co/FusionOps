@@ -72,11 +72,11 @@ function analyzeHtml(html) {
     // Layer 2: First-Party Pixel
     pixelInit: /sendBeacon|__pixel|pixel\s*\(/.test(html),
     pixelEndpoint: (html.match(/['"]https?:\/\/t\.([^'"\/]+)\/e['"]/) || [])[1] || null,
-    pixelPV: /pixel\s*\(\s*['"]pv['"]/.test(html) || /event.*pv/.test(html),
-    pixelScroll: /scroll_25|scroll_50|scroll_75|scroll_100/.test(html),
-    pixelTime: /top_30s|top_60s/.test(html),
-    pixelAmt: /pixel\s*\(\s*['"]amt['"]/.test(html) || /amount_selected/.test(html),
-    pixelZip: /pixel\s*\(\s*['"]ze['"]/.test(html) || /zip_entered/.test(html),
+    pixelPV: /pixel\s*\(\s*['"](?:pv|page_view)['"]/.test(html) || /event.*(?:pv|page_view)/.test(html),
+    pixelScroll: /scroll_25|scroll_50|scroll_75|scroll_100|scroll_depth|pixel\s*\(\s*['"]s(?:25|50|75|100)['"]/.test(html),
+    pixelTime: /time_on_page|time_on_page_30s|time_on_page_60s|pixel\s*\(\s*['"]t(?:30|60)['"]/.test(html),
+    pixelAmt: /pixel\s*\(\s*['"](?:amt|amount_selected)['"]/.test(html) || /amount_selected/.test(html),
+    pixelZip: /pixel\s*\(\s*['"](?:ze|zip_entered)['"]/.test(html) || /zip_entered/.test(html),
 
     // Layer 3: Voluum
     voluumScript: /dtpCallback|delegate-ch|voluum/i.test(html),
@@ -165,16 +165,40 @@ function scoreChecks(checks) {
     ],
   };
 
-  let total = 0, passed = 0;
+  let requiredTotal = 0;
+  let requiredPassed = 0;
+  let optionalTotal = 0;
+  let optionalPassed = 0;
   for (const items of Object.values(groups)) {
     for (const item of items) {
-      total++;
       const val = checks[item.key];
-      if (val === true || (typeof val === "string" && val)) passed++;
+      const ok = val === true || (typeof val === "string" && val);
+      if (item.required) {
+        requiredTotal++;
+        if (ok) requiredPassed++;
+      } else {
+        optionalTotal++;
+        if (ok) optionalPassed++;
+      }
     }
   }
 
-  return { groups, total, passed, pct: Math.round((passed / total) * 100) };
+  const requiredPct = requiredTotal ? Math.round((requiredPassed / requiredTotal) * 100) : 0;
+  const optionalPct = optionalTotal ? Math.round((optionalPassed / optionalTotal) * 100) : 0;
+
+  // Keep legacy keys (total/passed/pct) for existing UI code compatibility.
+  return {
+    groups,
+    requiredTotal,
+    requiredPassed,
+    requiredPct,
+    optionalTotal,
+    optionalPassed,
+    optionalPct,
+    total: requiredTotal,
+    passed: requiredPassed,
+    pct: requiredPct,
+  };
 }
 
 function normalizeTargetUrl(input) {
@@ -421,12 +445,15 @@ function OverviewTab({ checks, score, checksApply, scoreApply }) {
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 16, fontWeight: 800 }}>
-            📄 INDEX Page — Tracking Verification <span style={S.badge(pctColor)}>{score.passed}/{score.total}</span>
+            📄 INDEX Page — Tracking Verification <span style={S.badge(pctColor)}>{score.requiredPassed}/{score.requiredTotal} required</span>
           </div>
           <div style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>
             {score.pct >= 80 ? "All critical tracking layers detected" :
              score.pct >= 50 ? "Some tracking layers missing — check details below" :
              "Major tracking gaps detected — review implementation"}
+          </div>
+          <div style={{ fontSize: 11, color: T.dim, marginTop: 4 }}>
+            Optional checks: {score.optionalPassed}/{score.optionalTotal}
           </div>
         </div>
       </div>
@@ -445,12 +472,15 @@ function OverviewTab({ checks, score, checksApply, scoreApply }) {
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 16, fontWeight: 800 }}>
-              📝 APPLY Page — Tracking Verification <span style={S.badge(pctColorApply)}>{scoreApply.passed}/{scoreApply.total}</span>
+              📝 APPLY Page — Tracking Verification <span style={S.badge(pctColorApply)}>{scoreApply.requiredPassed}/{scoreApply.requiredTotal} required</span>
             </div>
             <div style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>
               {scoreApply.pct >= 80 ? "All critical tracking layers detected" :
                scoreApply.pct >= 50 ? "Some tracking layers missing — check details below" :
                "Major tracking gaps detected — review implementation"}
+            </div>
+            <div style={{ fontSize: 11, color: T.dim, marginTop: 4 }}>
+              Optional checks: {scoreApply.optionalPassed}/{scoreApply.optionalTotal}
             </div>
           </div>
         </div>
@@ -464,13 +494,22 @@ function OverviewTab({ checks, score, checksApply, scoreApply }) {
             const v = checks[i.key];
             return v === true || (typeof v === "string" && v);
           }).length;
+          const requiredItems = items.filter(i => i.required);
+          const requiredPassed = requiredItems.filter(i => {
+            const v = checks[i.key];
+            return v === true || (typeof v === "string" && v);
+          }).length;
           const total = items.length;
-          const groupColor = passed === total ? T.success : passed > 0 ? T.warning : T.danger;
+          const groupColor = requiredItems.length === 0 || requiredPassed === requiredItems.length
+            ? T.success
+            : requiredPassed > 0
+              ? T.warning
+              : T.danger;
 
           return (
             <div key={group} style={S.card}>
               <div style={S.cardTitle}>
-                <span style={S.badge(groupColor)}>{passed}/{total}</span>
+                <span style={S.badge(groupColor)}>{requiredPassed}/{requiredItems.length || 0} req • {passed}/{total} all</span>
                 <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: .5, color: T.muted }}>{group}</span>
               </div>
               {items.map(item => {
@@ -499,13 +538,22 @@ function OverviewTab({ checks, score, checksApply, scoreApply }) {
                 const v = checksApply[i.key];
                 return v === true || (typeof v === "string" && v);
               }).length;
+              const requiredItems = items.filter(i => i.required);
+              const requiredPassed = requiredItems.filter(i => {
+                const v = checksApply[i.key];
+                return v === true || (typeof v === "string" && v);
+              }).length;
               const total = items.length;
-              const groupColor = passed === total ? T.success : passed > 0 ? T.warning : T.danger;
+              const groupColor = requiredItems.length === 0 || requiredPassed === requiredItems.length
+                ? T.success
+                : requiredPassed > 0
+                  ? T.warning
+                  : T.danger;
 
               return (
                 <div key={group} style={S.card}>
                   <div style={S.cardTitle}>
-                    <span style={S.badge(groupColor)}>{passed}/{total}</span>
+                    <span style={S.badge(groupColor)}>{requiredPassed}/{requiredItems.length || 0} req • {passed}/{total} all</span>
                     <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: .5, color: T.muted }}>{group}</span>
                   </div>
                   {items.map(item => {
@@ -671,8 +719,9 @@ function HelpTab() {
       <div style={S.card}>
         <div style={S.cardTitle}>📡 Pixel Events</div>
         <div style={{ fontSize: 12, color: T.muted, lineHeight: 1.8 }}>
-          {["pv (page_view)", "fl (form_load)", "fs (form_submit)", "cta (cta_click)", "step (step_change)", "success",
-            "scroll_25 / 50 / 75 / 100", "top_30s / top_60s", "amt (amount_selected)", "ze (zip_entered)"
+          {["pv", "form_start", "form_submit", "sold_lead", "step_change", "success",
+            "scroll_25 / 50 / 75 / 100", "time_on_page_30s / 60s", "amount_selected", "zip_entered",
+            "(legacy aliases accepted: fl/fs/step/s25..s100/t30/t60/amt/ze)"
           ].map(e => <div key={e}>• <code style={{ color: T.accent, fontSize: 11 }}>{e}</code></div>)}
         </div>
       </div>
