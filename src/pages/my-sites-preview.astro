@@ -1,0 +1,571 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="My Sites Preview">
+  <main class="preview-page">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Preview</p>
+        <h1>My Sites mockup</h1>
+        <p class="lede">
+          Astro-inspired direction with deep space surfaces, violet glow, and brighter gradient accents.
+        </p>
+      </div>
+      <div class="hero-actions">
+        <button class="primary">Create LP</button>
+        <button class="ghost">Filter</button>
+      </div>
+    </section>
+
+    <section class="preview-block">
+      <div class="section-copy">
+        <p class="section-label">Option 1</p>
+        <h2>Clean List View</h2>
+        <p>Closest to Vercel: strong scanability, one primary action, everything else hidden in More.</p>
+      </div>
+
+      <div class="frame">
+        <div class="frame-toolbar">
+          <input type="text" value="Search sites..." readonly />
+          <div class="chips">
+            <span>All</span>
+            <span>Live</span>
+            <span>Needs attention</span>
+          </div>
+        </div>
+
+        <div class="list">
+          <article class="site-row">
+            <div>
+              <h3>JoraCredit</h3>
+              <p>joracreditz.com</p>
+              <div class="meta">
+                <span class="ok">Live</span>
+                <span>Pet Orange White</span>
+                <span>1 target</span>
+                <span>Updated 2h ago</span>
+              </div>
+            </div>
+            <div class="row-actions">
+              <button class="dark">Open site</button>
+              <button class="ghost">More</button>
+            </div>
+          </article>
+
+          <article class="site-row">
+            <div>
+              <h3>ScratchpayEasy</h3>
+              <p>scratchpayeasy.com</p>
+              <div class="meta">
+                <span class="warn">Draft</span>
+                <span>Installment 101</span>
+                <span>Not deployed</span>
+                <span>Updated 5m ago</span>
+              </div>
+            </div>
+            <div class="row-actions">
+              <button class="dark">Deploy</button>
+              <button class="ghost">More</button>
+            </div>
+          </article>
+
+          <article class="site-row">
+            <div>
+              <h3>BearLoanNow</h3>
+              <p>bearloannow.com</p>
+              <div class="meta">
+                <span class="bad">Limited</span>
+                <span>Classic</span>
+                <span>2 targets</span>
+                <span>Updated yesterday</span>
+              </div>
+            </div>
+            <div class="row-actions">
+              <button class="dark">Open site</button>
+              <button class="ghost">More</button>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="preview-block">
+      <div class="section-copy">
+        <p class="section-label">Option 2</p>
+        <h2>Modern Compact Cards</h2>
+        <p>Feels more premium and dashboard-like while still limiting actions to one primary CTA plus More.</p>
+      </div>
+
+      <div class="cards-grid">
+        <article class="card">
+          <div class="card-top">
+            <span class="ok pill">Live</span>
+            <span class="muted">Updated 2h ago</span>
+          </div>
+          <h3>JoraCredit</h3>
+          <p class="domain">joracreditz.com</p>
+          <div class="stats">
+            <div><strong>Theme</strong><span>Elegant</span></div>
+            <div><strong>Targets</strong><span>1</span></div>
+            <div><strong>Traffic</strong><span>Healthy</span></div>
+          </div>
+          <div class="card-actions">
+            <button class="primary">Open</button>
+            <button class="ghost">More</button>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-top">
+            <span class="warn pill">Draft</span>
+            <span class="muted">Updated 5m ago</span>
+          </div>
+          <h3>ScratchpayEasy</h3>
+          <p class="domain">scratchpayeasy.com</p>
+          <div class="stats">
+            <div><strong>Theme</strong><span>Editorial</span></div>
+            <div><strong>Targets</strong><span>0</span></div>
+            <div><strong>Status</strong><span>Ready to deploy</span></div>
+          </div>
+          <div class="card-actions">
+            <button class="primary">Deploy</button>
+            <button class="ghost">More</button>
+          </div>
+        </article>
+
+        <article class="card accent-card">
+          <div class="card-top">
+            <span class="bad pill">Attention</span>
+            <span class="muted">Updated yesterday</span>
+          </div>
+          <h3>BearLoanNow</h3>
+          <p class="domain">bearloannow.com</p>
+          <div class="stats">
+            <div><strong>Theme</strong><span>Classic</span></div>
+            <div><strong>Targets</strong><span>2</span></div>
+            <div><strong>Status</strong><span>Limited</span></div>
+          </div>
+          <div class="card-actions">
+            <button class="primary">Review</button>
+            <button class="ghost">More</button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="preview-block">
+      <div class="section-copy">
+        <p class="section-label">Option 3</p>
+        <h2>High Contrast Typography</h2>
+        <p>Most editorial. Great if you want the page to feel sharp, expensive, and less like a tool overload.</p>
+      </div>
+
+      <div class="editorial">
+        <article class="editorial-row">
+          <div class="editorial-main">
+            <p class="index">01</p>
+            <div>
+              <h3>JoraCredit</h3>
+              <p>joracreditz.com</p>
+            </div>
+          </div>
+          <div class="editorial-side">
+            <span>Live</span>
+            <span>Clean landing page</span>
+            <button class="linkish">Open</button>
+          </div>
+        </article>
+
+        <article class="editorial-row">
+          <div class="editorial-main">
+            <p class="index">02</p>
+            <div>
+              <h3>ScratchpayEasy</h3>
+              <p>scratchpayeasy.com</p>
+            </div>
+          </div>
+          <div class="editorial-side">
+            <span>Draft</span>
+            <span>Awaiting deploy</span>
+            <button class="linkish">Deploy</button>
+          </div>
+        </article>
+
+        <article class="editorial-row">
+          <div class="editorial-main">
+            <p class="index">03</p>
+            <div>
+              <h3>BearLoanNow</h3>
+              <p>bearloannow.com</p>
+            </div>
+          </div>
+          <div class="editorial-side">
+            <span>Limited</span>
+            <span>Needs review</span>
+            <button class="linkish">Review</button>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+</Layout>
+
+<style>
+  :global(body) {
+    margin: 0;
+    background:
+      radial-gradient(circle at top, rgba(124, 58, 237, 0.28), transparent 24%),
+      radial-gradient(circle at 80% 10%, rgba(236, 72, 153, 0.18), transparent 18%),
+      radial-gradient(circle at 20% 85%, rgba(59, 130, 246, 0.16), transparent 20%),
+      linear-gradient(180deg, #0b0920 0%, #120f2f 48%, #090713 100%);
+    color: #f5f7ff;
+  }
+
+  .preview-page {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 48px 24px 96px;
+  }
+
+  .hero,
+  .preview-block,
+  .frame,
+  .card,
+  .editorial {
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    box-shadow: 0 22px 70px rgba(5, 8, 24, 0.42);
+  }
+
+  .hero,
+  .preview-block {
+    background: linear-gradient(180deg, rgba(20, 18, 48, 0.94), rgba(12, 10, 28, 0.96));
+    border-radius: 28px;
+  }
+
+  .hero {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    align-items: end;
+    padding: 32px;
+    margin-bottom: 28px;
+  }
+
+  .eyebrow,
+  .section-label,
+  .muted,
+  .index {
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+  }
+
+  .eyebrow,
+  .section-label {
+    margin: 0 0 10px;
+    color: #ff8dc7;
+    font-size: 12px;
+  }
+
+  h1,
+  h2,
+  h3,
+  p {
+    margin: 0;
+  }
+
+  h1 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(2.6rem, 5vw, 4.6rem);
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+    color: #ffffff;
+    text-shadow: 0 0 32px rgba(168, 85, 247, 0.18);
+  }
+
+  .lede {
+    max-width: 560px;
+    margin-top: 12px;
+    color: #c8d0f5;
+    font-size: 16px;
+  }
+
+  .hero-actions,
+  .row-actions,
+  .card-actions,
+  .chips,
+  .meta {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  button,
+  input {
+    font: inherit;
+  }
+
+  button {
+    border-radius: 999px;
+    cursor: pointer;
+    transition: transform 0.15s ease, opacity 0.15s ease, background 0.15s ease;
+  }
+
+  button:hover {
+    transform: translateY(-1px);
+  }
+
+  .primary,
+  .dark,
+  .linkish {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    background: linear-gradient(135deg, #7c3aed, #ec4899 55%, #f97316);
+    box-shadow: 0 12px 30px rgba(124, 58, 237, 0.28);
+  }
+
+  .primary,
+  .dark {
+    padding: 12px 18px;
+    font-weight: 600;
+  }
+
+  .ghost {
+    padding: 12px 18px;
+    color: #e5e7eb;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .preview-block {
+    padding: 26px;
+    margin-top: 24px;
+  }
+
+  .section-copy {
+    margin-bottom: 18px;
+  }
+
+  .section-copy h2 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 2rem;
+    margin-bottom: 8px;
+  }
+
+  .section-copy p {
+    color: #b5bfdc;
+    max-width: 720px;
+  }
+
+  .frame {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 24px;
+    padding: 18px;
+  }
+
+  .frame-toolbar {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  input {
+    min-width: 280px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    background: rgba(255, 255, 255, 0.04);
+    color: #94a3b8;
+  }
+
+  .chips span,
+  .meta span,
+  .pill,
+  .editorial-side span {
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    color: #c7d2fe;
+    font-size: 13px;
+  }
+
+  .list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .site-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    align-items: center;
+    padding: 22px;
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(18, 16, 42, 0.9), rgba(11, 10, 27, 0.95));
+    border: 1px solid rgba(148, 163, 184, 0.12);
+  }
+
+  .site-row h3,
+  .card h3,
+  .editorial h3 {
+    font-size: 1.35rem;
+    margin-bottom: 6px;
+  }
+
+  .site-row p,
+  .domain,
+  .editorial p:not(.index) {
+    color: #94a3b8;
+  }
+
+  .ok,
+  .ok.pill {
+    color: #8dd7aa;
+  }
+
+  .warn,
+  .warn.pill {
+    color: #f0c77d;
+  }
+
+  .bad,
+  .bad.pill {
+    color: #ef9898;
+  }
+
+  .cards-grid {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .card {
+    border-radius: 24px;
+    padding: 22px;
+    background: linear-gradient(180deg, rgba(18, 16, 42, 0.94), rgba(11, 10, 27, 0.98));
+  }
+
+  .accent-card {
+    background:
+      radial-gradient(circle at top right, rgba(236, 72, 153, 0.12), transparent 28%),
+      linear-gradient(180deg, rgba(24, 19, 54, 0.96), rgba(12, 10, 28, 0.98));
+  }
+
+  .card-top,
+  .stats,
+  .editorial-row,
+  .editorial-main,
+  .editorial-side {
+    display: flex;
+  }
+
+  .card-top,
+  .editorial-row {
+    justify-content: space-between;
+  }
+
+  .card-top {
+    align-items: center;
+    margin-bottom: 18px;
+  }
+
+  .stats {
+    flex-direction: column;
+    gap: 12px;
+    margin: 18px 0 22px;
+  }
+
+  .stats div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 0;
+    border-top: 1px solid rgba(148, 163, 184, 0.12);
+  }
+
+  .stats strong {
+    color: #f8fafc;
+    font-weight: 600;
+  }
+
+  .stats span {
+    color: #a5b4fc;
+  }
+
+  .editorial {
+    border-radius: 24px;
+    overflow: hidden;
+    background: linear-gradient(180deg, rgba(16, 14, 38, 0.95), rgba(10, 9, 24, 0.98));
+  }
+
+  .editorial-row {
+    gap: 24px;
+    align-items: center;
+    padding: 26px 28px;
+    border-top: 1px solid rgba(148, 163, 184, 0.1);
+  }
+
+  .editorial-row:first-child {
+    border-top: 0;
+  }
+
+  .editorial-main {
+    align-items: center;
+    gap: 18px;
+    min-width: 0;
+  }
+
+  .editorial-side {
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .index {
+    min-width: 44px;
+    color: #7c89c5;
+    font-size: 0.9rem;
+  }
+
+  .linkish {
+    padding: 10px 14px;
+    font-weight: 600;
+  }
+
+  @media (max-width: 980px) {
+    .cards-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 760px) {
+    .preview-page {
+      padding: 24px 16px 64px;
+    }
+
+    .hero,
+    .site-row,
+    .editorial-row {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .row-actions,
+    .card-actions,
+    .hero-actions,
+    .editorial-side {
+      width: 100%;
+    }
+
+    .primary,
+    .dark,
+    .ghost,
+    .linkish {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+</style>

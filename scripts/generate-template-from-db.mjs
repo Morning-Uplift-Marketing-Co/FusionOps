@@ -1,6 +1,10 @@
 /**
  * Generate template directory from D1 Database
- * Used by GitHub Actions workflow when physical template directory doesn't exist
+ * Used by GitHub Actions workflow when physical template directory doesn't exist.
+ *
+ * Safety guard:
+ * - Only deploy published (`active`) templates from D1
+ * - Reject non-Astro templates early with a clear error in Actions logs
  */
 import { writeFileSync, mkdirSync } from 'fs';
 import path from 'path';
@@ -10,50 +14,117 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, '..');
 
 const API_BASE = process.env.API_BASE || 'https://lp-factory-api.misty-feather-556e.workers.dev';
-const MCP_SECRET = process.env.MCP_SECRET || '9f6a3c1d4e8b7a2f5c0d9e1b3a6f4c7d2e8a1b5c9d3f7a4e6b0c2d8f1a3e5b7c';
+
+function parseTemplateFiles(raw) {
+  if (!raw) return {};
+  if (typeof raw === 'object') return raw;
+  if (typeof raw === 'string') {
+    try {
+      return JSON.parse(raw);
+    } catch (_error) {
+      return {};
+    }
+  }
+  return {};
+}
+
+function parsePackageJson(files) {
+  try {
+    return JSON.parse(String(files['package.json'] || '{}'));
+  } catch (_error) {
+    return {};
+  }
+}
+
+function getAstroValidationIssues(template) {
+  const files = template?.files || {};
+  const keys = Object.keys(files);
+  const pkg = parsePackageJson(files);
+  const buildScript = String(pkg?.scripts?.build || '');
+  const deps = {
+    ...(pkg?.dependencies || {}),
+    ...(pkg?.devDependencies || {}),
+  };
+  const requiredFiles = [
+    'package.json',
+    'src/pages/index.astro',
+    'src/layouts/Layout.astro',
+    'src/pages/e.ts',
+    'src/pages/robots.txt.ts',
+    'public/_headers',
+  ];
+  const issues = [];
+
+  for (const requiredFile of requiredFiles) {
+    if (!keys.includes(requiredFile)) {
+      issues.push(`Missing required Astro deploy file: ${requiredFile}`);
+    }
+  }
+
+  const hasAstroBuild =
+    buildScript.includes('astro build') ||
+    buildScript.includes('astro check') ||
+    Boolean(deps.astro) ||
+    keys.includes('astro.config.mjs') ||
+    keys.includes('astro.config.ts');
+
+  if (!hasAstroBuild) {
+    issues.push('Template is not Astro-based (missing astro build signal in package.json/config).');
+  }
+
+  return issues;
+}
+
+async function fetchTemplates(status = '') {
+  const url = new URL(`${API_BASE}/api/templates`);
+  if (status) url.searchParams.set('status', status);
+
+  const response = await fetch(url, {
+    headers: {
+      Origin: 'http://localhost:4322',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch templates (${response.status})`);
+  }
+
+  return response.json();
+}
 
 async function fetchTemplateFromDB(templateId) {
   try {
-    const url = `${API_BASE}/api/templates`;
-    const response = await fetch(url, {
-      headers: {
-        'Origin': 'http://localhost:4322',
-      },
-    });
+    console.log(`[db-template] Fetching active templates from ${API_BASE}/api/templates?status=active`);
+    const activeTemplates = await fetchTemplates('active');
+    const activeTemplate = activeTemplates.find((t) => t.template_id === templateId);
 
-    if (!response.ok) {
-      console.error(`Failed to fetch templates: ${response.status}`);
+    if (activeTemplate) {
+      const files = parseTemplateFiles(activeTemplate.files);
+      return {
+        id: activeTemplate.id,
+        templateId: activeTemplate.template_id,
+        name: activeTemplate.name,
+        status: activeTemplate.status || 'unknown',
+        source: activeTemplate.badge || activeTemplate.source || 'db',
+        files,
+      };
+    }
+
+    console.log(`[db-template] Template ${templateId} was not found in active templates; checking all template statuses...`);
+    const allTemplates = await fetchTemplates();
+    const existing = allTemplates.find((t) => t.template_id === templateId);
+
+    if (existing) {
+      const status = String(existing.status || 'draft');
+      console.error(`[db-template] Template ${templateId} exists in D1 but is not deployable. status=${status}`);
+      console.error('[db-template] Publish the template first so it passes the quality gate and becomes active.');
       return null;
     }
 
-    const templates = await response.json();
-    const template = templates.find((t) => t.template_id === templateId);
-
-    if (!template) {
-      console.error(`Template not found in D1 Database: ${templateId}`);
-      console.error(`Available templates: ${templates.map(t => t.template_id).join(', ')}`);
-      return null;
-    }
-
-    let files = {};
-    try {
-      files = typeof template.files === 'string' ? JSON.parse(template.files) : template.files || {};
-    } catch (e) {
-      console.error(`Failed to parse files JSON:`, e.message);
-      return null;
-    }
-
-    console.log(`Files count: ${Object.keys(files).length}`);
-
-    return {
-      id: template.id,
-      templateId: template.template_id,
-      name: template.name,
-      source: template.badge || template.source || 'db',
-      files,
-    };
+    console.error(`[db-template] Template not found in D1 Database: ${templateId}`);
+    return null;
   } catch (error) {
-    console.error(`Error fetching template:`, error.message);
+    console.error(`[db-template] Error fetching template: ${error.message}`);
     return null;
   }
 }
@@ -81,51 +152,46 @@ function fixAstroFrontmatter(content) {
     }
   }
 
-  // If imports are already first (or none), no fix needed
   if (importLines.length === 0) return content;
 
-  const firstImportIdx = lines.findIndex(l => /^\s*import\s+/.test(l));
-  const lastNonImportBeforeImport = lines.slice(0, firstImportIdx).some(l => /^\s*(const|let|var)\s+/.test(l));
+  const firstImportIdx = lines.findIndex((l) => /^\s*import\s+/.test(l));
+  const lastNonImportBeforeImport = lines
+    .slice(0, firstImportIdx)
+    .some((l) => /^\s*(const|let|var)\s+/.test(l));
 
-  if (!lastNonImportBeforeImport) return content; // Already correct order
+  if (!lastNonImportBeforeImport) return content;
 
   const reordered = [...importLines, '', ...otherLines].join('\n');
   const fixed = content.replace(fmMatch[0], `---\n${reordered}\n---`);
-  console.log(`  ⚠ Fixed Astro frontmatter order (imports moved before declarations)`);
+  console.log('[db-template] Fixed Astro frontmatter order (imports moved before declarations)');
   return fixed;
 }
 
 function generateTempDirectory(templateId, files) {
   const tempDir = path.join(root, 'tmp', 'templates', templateId);
 
-  // Create temp directory
   mkdirSync(tempDir, { recursive: true });
 
-  // Write all files
   for (const [filePath, content] of Object.entries(files)) {
     const fullPath = path.join(tempDir, filePath);
     const dir = path.dirname(fullPath);
 
-    // Create subdirectories if needed
     mkdirSync(dir, { recursive: true });
 
-    // Fix Astro frontmatter: imports must come before const declarations
     let fixedContent = content;
     if (filePath.endsWith('.astro') && typeof content === 'string') {
       fixedContent = fixAstroFrontmatter(content);
     }
 
-    // Write file
     writeFileSync(fullPath, fixedContent, 'utf8');
   }
 
-  console.log(`Generated temp directory: ${tempDir}`);
-  console.log(`Files written: ${Object.keys(files).length}`);
+  console.log(`[db-template] Generated temp directory: ${tempDir}`);
+  console.log(`[db-template] Files written: ${Object.keys(files).length}`);
 
   return tempDir;
 }
 
-// CLI usage
 const templateId = process.argv[2];
 
 if (!templateId) {
@@ -133,18 +199,27 @@ if (!templateId) {
   process.exit(1);
 }
 
-console.log(`Fetching template from D1 Database: ${templateId}`);
+console.log(`[db-template] Fetching template from D1 Database: ${templateId}`);
 
 const template = await fetchTemplateFromDB(templateId);
 
 if (!template || !template.files) {
-  console.error(`Failed to fetch template: ${templateId}`);
+  console.error(`[db-template] Failed to fetch deployable template: ${templateId}`);
   process.exit(1);
 }
 
-console.log(`Template found: ${template.name} (source: ${template.source})`);
+console.log(`[db-template] Template found: ${template.name} (status: ${template.status}, source: ${template.source})`);
+console.log(`[db-template] Files count: ${Object.keys(template.files).length}`);
+
+const astroIssues = getAstroValidationIssues(template);
+if (astroIssues.length > 0) {
+  console.error(`[db-template] Template ${template.templateId} is not valid for Astro deploy:`);
+  for (const issue of astroIssues) {
+    console.error(`  - ${issue}`);
+  }
+  process.exit(1);
+}
 
 const tempDir = generateTempDirectory(templateId, template.files);
 
-console.log(`✅ Template directory generated successfully: ${tempDir}`);
-process.exit(0);
+console.log(`[db-template] ✅ Template directory generated successfully: ${tempDir}`);
