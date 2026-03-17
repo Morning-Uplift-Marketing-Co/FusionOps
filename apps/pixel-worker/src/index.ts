@@ -74,6 +74,14 @@ async function handlePixelEvent(
   const randomDelay = Math.random() * 8;
   await new Promise(resolve => setTimeout(resolve, randomDelay));
 
+  // Read body up-front; request stream may be unavailable inside waitUntil.
+  let requestBody = '';
+  try {
+    requestBody = await request.text();
+  } catch {
+    requestBody = '';
+  }
+
   const response = new Response('', {
     status: 204,
     headers: corsHeaders(request),
@@ -82,28 +90,68 @@ async function handlePixelEvent(
   ctx.waitUntil(
     (async () => {
       try {
-        const body = await request.text();
-        const params = new URLSearchParams(body);
+        const body = requestBody;
+        let payload: Record<string, string> = {};
 
-        const event = params.get('e');
+        // Beacon payload can be either JSON (current LP templates)
+        // or urlencoded form data (legacy senders).
+        try {
+          const parsed = JSON.parse(body);
+          if (parsed && typeof parsed === 'object') {
+            for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+              payload[key] = String(value ?? '');
+            }
+          }
+        } catch {
+          const params = new URLSearchParams(body);
+          for (const [key, value] of params.entries()) {
+            payload[key] = value;
+          }
+        }
+
+        const event = payload.e || payload.event;
         if (!event) return; // Invalid payload — silently discard
 
         // Add random DB delay (0-5ms) to vary database timing patterns
         const dbDelay = Math.random() * 5;
         await new Promise(resolve => setTimeout(resolve, dbDelay));
 
+        // Ensure table exists (idempotent) so first traffic does not fail silently
+        await env.DB.prepare(
+          `CREATE TABLE IF NOT EXISTS pixel_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            event TEXT NOT NULL,
+            session_id TEXT DEFAULT '',
+            click_id TEXT DEFAULT '',
+            gclid TEXT DEFAULT '',
+            timestamp TEXT DEFAULT '',
+            url TEXT DEFAULT '',
+            referrer TEXT DEFAULT '',
+            domain TEXT DEFAULT '',
+            details TEXT DEFAULT '',
+            created_at TEXT DEFAULT (datetime('now'))
+          )`
+        ).run();
+
+        const clickId = payload.cid || payload.click_id || payload.clickId || payload.cpid || '';
+        const gclid = payload.gid || payload.gclid || '';
+        const ts = payload.ts || payload.timestamp || String(Math.floor(Date.now() / 1000));
+        const urlValue = payload.url || payload.current_url || '';
+        const refValue = payload.ref || payload.referrer || '';
+        const domainValue = payload.d || payload.domain || new URL(request.url).hostname.replace(/^t\./, '');
+
         await env.DB.prepare(
           `INSERT INTO pixel_events (event, session_id, click_id, gclid, timestamp, url, referrer, domain, details, created_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
         ).bind(
           event,
-          params.get('sid') || '',
-          params.get('cid') || '',
-          params.get('gid') || '',
-          params.get('ts') || '',
-          params.get('url') || '',
-          params.get('ref') || '',
-          new URL(request.url).hostname.replace(/^t\./, ''), // Strip t. prefix → actual domain
+          payload.sid || payload.session_id || '',
+          clickId,
+          gclid,
+          ts,
+          urlValue,
+          refValue,
+          domainValue,
           body
         ).run();
       } catch {
