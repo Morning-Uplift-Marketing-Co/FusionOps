@@ -587,30 +587,36 @@ var _lg_form_init_ = {
 
   onFormLoad: function() {
     console.log('📋 LeadsGate form loaded');
+    var cid = getVoluumClickId();
     window.dataLayer.push({
       'event': 'leadsgate_form_start',
-      'clickId': getVoluumClickId(),
+      'clickId': cid,
       'gclid': SafeStorage.get('google_gclid'),
       'timestamp': new Date().toISOString()
     });
+    if (window.__pixel) window.__pixel('form_start', { source: 'onFormLoad', click_id: cid });
   },
 
   onStepChange: function(step) {
     console.log('📊 Form step:', step);
+    var cid = getVoluumClickId();
     window.dataLayer.push({
       'event': 'leadsgate_form_progress',
       'step': step,
-      'clickId': getVoluumClickId()
+      'clickId': cid
     });
+    if (window.__pixel) window.__pixel('step_change', { step: step, click_id: cid });
   },
 
   onSubmit: function() {
     console.log('📤 Form submitted');
+    var cid = getVoluumClickId();
     window.dataLayer.push({
       'event': 'leadsgate_form_submit',
-      'clickId': getVoluumClickId(),
+      'clickId': cid,
       'timestamp': new Date().toISOString()
     });
+    if (window.__pixel) window.__pixel('form_submit', { click_id: cid });
   },
 
   onSuccess: function(data) {
@@ -634,6 +640,7 @@ var _lg_form_init_ = {
     if (type === 'soldLead') {
       window.dataLayer.push({ 'event': 'lead_conversion_approved', 'leadData': conversionData, 'conversionValue': finalPayout, 'transactionId': leadId, 'clickId': voluumCid, 'gclid': googleGclid });
       console.log('✅ Approved lead tracked | Payout:', finalPayout);
+      if (window.__pixel) window.__pixel('sold_lead', { click_id: voluumCid, lead_id: leadId, payout: finalPayout });
     }
     if (type === 'rejectLead') {
       window.dataLayer.push({ 'event': 'lead_declined', 'leadData': conversionData, 'conversionValue': finalPayout, 'transactionId': leadId, 'clickId': voluumCid, 'gclid': googleGclid });

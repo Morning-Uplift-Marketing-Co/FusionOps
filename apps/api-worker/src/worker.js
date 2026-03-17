@@ -1244,6 +1244,92 @@ async function handleProxy(request, url) {
   }
 }
 
+const PIXEL_EVENT_ALIASES = {
+  pv: 'pv',
+  page_view: 'pv',
+  pageview: 'pv',
+  fl: 'form_start',
+  form_load: 'form_start',
+  leadsgate_form_start: 'form_start',
+  form_start: 'form_start',
+  fs: 'form_submit',
+  leadsgate_form_submit: 'form_submit',
+  form_submit: 'form_submit',
+  step: 'step_change',
+  leadsgate_form_progress: 'step_change',
+  step_change: 'step_change',
+  success: 'success',
+  soldlead: 'sold_lead',
+  sold_lead: 'sold_lead',
+  lead_conversion_approved: 'sold_lead',
+  amt: 'amount_selected',
+  amount_selected: 'amount_selected',
+  ze: 'zip_entered',
+  zip_entered: 'zip_entered',
+  t30: 'time_on_page_30s',
+  t60: 'time_on_page_60s',
+  n1: 'pv',
+  n2: 'form_start',
+  n3: 'form_submit',
+  n4: 'sold_lead',
+  n5: 'step_change',
+  n6: 'success',
+  n7: 'amount_selected',
+  n8: 'zip_entered',
+  n9: 'time_on_page_30s',
+  n10: 'time_on_page_60s',
+  n11: 'scroll_25',
+  n12: 'scroll_50',
+  n13: 'scroll_75',
+  n14: 'scroll_100',
+};
+
+function canonicalPixelEvent(rawEvent) {
+  const value = String(rawEvent || '').trim().toLowerCase();
+  if (!value) return 'unknown';
+  if (PIXEL_EVENT_ALIASES[value]) return PIXEL_EVENT_ALIASES[value];
+  const shortScrollMatch = value.match(/^s(25|50|75|100)$/);
+  if (shortScrollMatch) return `scroll_${shortScrollMatch[1]}`;
+  const longScrollMatch = value.match(/^scroll_(25|50|75|100)$/);
+  if (longScrollMatch) return `scroll_${longScrollMatch[1]}`;
+  if (value === 'time_on_page_30s') return 'time_on_page_30s';
+  if (value === 'time_on_page_60s') return 'time_on_page_60s';
+  return value;
+}
+
+async function parsePixelPayloadFromRequest(request, url, method) {
+  if (method === 'GET') {
+    const payload = {};
+    for (const [k, v] of url.searchParams) payload[k] = v;
+    return payload;
+  }
+
+  let bodyText = '';
+  try {
+    bodyText = await request.text();
+  } catch {
+    bodyText = '';
+  }
+
+  if (!bodyText) return {};
+
+  try {
+    const parsed = JSON.parse(bodyText);
+    if (parsed && typeof parsed === 'object') {
+      return Object.fromEntries(
+        Object.entries(parsed).map(([k, v]) => [k, v == null ? '' : String(v)])
+      );
+    }
+  } catch {
+    // Fall through to form decoding
+  }
+
+  const params = new URLSearchParams(bodyText);
+  const payload = {};
+  for (const [k, v] of params.entries()) payload[k] = v;
+  return payload;
+}
+
 export default {
   async fetch(request, env) {
     // Handle CORS preflight
@@ -1276,28 +1362,27 @@ export default {
           ts INTEGER DEFAULT (unixepoch())
         )`).run();
 
-        let payload = {};
-        if (method === 'POST') {
-          try { payload = await request.json(); } catch { payload = {}; }
-        } else {
-          for (const [k, v] of url.searchParams) payload[k] = v;
-        }
+        const payload = await parsePixelPayloadFromRequest(request, url, method);
 
         const id = uid();
         // Prefer explicit domain from payload for direct API-worker calls.
         const domain = String(payload.d || "").trim() || hostname || '';
         const sessionId = payload.sid || payload.session_id || '';
-        const event = payload.e || payload.event || 'unknown';
-        const data = typeof payload.data === 'object' ? JSON.stringify(payload.data) : (payload.data || '');
-        const gclid = payload.gclid || '';
-        const clickId = payload.click_id || payload.cid || '';
+        const rawEvent = payload.e || payload.event || '';
+        const hasEvent = Boolean(rawEvent);
+        const event = hasEvent ? canonicalPixelEvent(rawEvent) : 'unknown';
+        const data = payload.data || JSON.stringify(payload);
+        const gclid = payload.gclid || payload.gid || '';
+        const clickId = payload.click_id || payload.cid || payload.clickId || payload.cpid || '';
         const ip = request.headers.get('CF-Connecting-IP') || '';
         const ua = request.headers.get('User-Agent') || '';
         const ref = request.headers.get('Referer') || payload.ref || '';
 
-        await db.prepare(
-          `INSERT INTO pixel_events (id, domain, session_id, event, data, gclid, click_id, ip, ua, ref) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-        ).bind(id, domain, sessionId, event, data, gclid, clickId, ip, ua, ref).run();
+        if (hasEvent) {
+          await db.prepare(
+            `INSERT INTO pixel_events (id, domain, session_id, event, data, gclid, click_id, ip, ua, ref) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          ).bind(id, domain, sessionId, event, data, gclid, clickId, ip, ua, ref).run();
+        }
 
         // Return 1x1 transparent GIF for GET, JSON for POST
         if (method === 'GET') {
@@ -1307,7 +1392,7 @@ export default {
             headers: { 'Content-Type': 'image/gif', 'Cache-Control': 'no-store', ...corsHeaders },
           });
         }
-        return json({ ok: true, id });
+        return json({ ok: true, id, skipped: !hasEvent });
       } catch (e) {
         return json({ ok: false, error: e.message }, 500);
       }
@@ -1474,11 +1559,15 @@ export default {
           }
 
           const { results } = await stmt.all();
-          return (results || []).map((r) => ({
-            ...r,
-            ts: Number(r.ts || 0),
-            _key: `${r.domain || ''}|${r.event || ''}|${r.ts || 0}|${r.click_id || ''}|${r.gclid || ''}`,
-          }));
+          return (results || []).map((r) => {
+            const canonicalEvent = canonicalPixelEvent(r.event);
+            return {
+              ...r,
+              event: canonicalEvent,
+              ts: Number(r.ts || 0),
+              _key: `${r.domain || ''}|${canonicalEvent || ''}|${r.ts || 0}|${r.click_id || ''}|${r.gclid || ''}`,
+            };
+          });
         }
 
         const primaryRows = await queryFromDb(primaryDb);

@@ -485,15 +485,19 @@ const {
         click_id: cid,
         onFormLoad: function() {
           if (!fsFired) { fsFired = true; sessionStorage.setItem('_fs','1'); if (convId && fsLabel && typeof gtag === 'function') gtag('event','conversion',{send_to:convId+'/'+fsLabel}); }
-          if (window.__pixel) window.__pixel('fl');
+          if (window.__pixel) { window.__pixel('fl'); window.__pixel('form_start',{source:'onFormLoad',click_id:cid}); }
         },
-        onStepChange: function(step) { if (window.__pixel) window.__pixel('step',{step:step}); },
+        onStepChange: function(step) { if (window.__pixel) { window.__pixel('step',{step:step}); window.__pixel('step_change',{step:step,click_id:cid}); } },
         onSubmit: function() {
           if (convId && fsubLabel && typeof gtag === 'function') gtag('event','conversion',{send_to:convId+'/'+fsubLabel});
-          if (window.__pixel) window.__pixel('fs',{clickid:cid});
+          if (window.__pixel) { window.__pixel('fs',{clickid:cid}); window.__pixel('form_submit',{click_id:cid}); }
         },
         onSuccess: function(response) {
-          if (window.__pixel) window.__pixel('success',{clickid:cid,lead_id:response&&response.lead_id||''});
+          if (window.__pixel) {
+            var leadType=(response&&response.type)||'';
+            window.__pixel('success',{clickid:cid,lead_id:response&&response.lead_id||'',type:leadType});
+            if (String(leadType).toLowerCase()==='soldlead') window.__pixel('sold_lead',{click_id:cid,lead_id:response&&response.lead_id||''});
+          }
         }
       };
       var s = document.createElement('script');

@@ -12,6 +12,59 @@ interface Env {
   ENVIRONMENT: string;
 }
 
+const PIXEL_EVENT_ALIASES: Record<string, string> = {
+  pv: 'pv',
+  page_view: 'pv',
+  pageview: 'pv',
+  fl: 'form_start',
+  form_load: 'form_start',
+  leadsgate_form_start: 'form_start',
+  form_start: 'form_start',
+  fs: 'form_submit',
+  leadsgate_form_submit: 'form_submit',
+  form_submit: 'form_submit',
+  step: 'step_change',
+  leadsgate_form_progress: 'step_change',
+  step_change: 'step_change',
+  success: 'success',
+  soldlead: 'sold_lead',
+  sold_lead: 'sold_lead',
+  lead_conversion_approved: 'sold_lead',
+  amt: 'amount_selected',
+  amount_selected: 'amount_selected',
+  ze: 'zip_entered',
+  zip_entered: 'zip_entered',
+  t30: 'time_on_page_30s',
+  t60: 'time_on_page_60s',
+  n1: 'pv',
+  n2: 'form_start',
+  n3: 'form_submit',
+  n4: 'sold_lead',
+  n5: 'step_change',
+  n6: 'success',
+  n7: 'amount_selected',
+  n8: 'zip_entered',
+  n9: 'time_on_page_30s',
+  n10: 'time_on_page_60s',
+  n11: 'scroll_25',
+  n12: 'scroll_50',
+  n13: 'scroll_75',
+  n14: 'scroll_100',
+};
+
+function canonicalPixelEvent(rawEvent: string): string {
+  const value = String(rawEvent || '').trim().toLowerCase();
+  if (!value) return 'unknown';
+  if (PIXEL_EVENT_ALIASES[value]) return PIXEL_EVENT_ALIASES[value];
+  const shortScrollMatch = value.match(/^s(25|50|75|100)$/);
+  if (shortScrollMatch) return `scroll_${shortScrollMatch[1]}`;
+  const longScrollMatch = value.match(/^scroll_(25|50|75|100)$/);
+  if (longScrollMatch) return `scroll_${longScrollMatch[1]}`;
+  if (value === 'time_on_page_30s') return 'time_on_page_30s';
+  if (value === 'time_on_page_60s') return 'time_on_page_60s';
+  return value;
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
@@ -109,8 +162,9 @@ async function handlePixelEvent(
           }
         }
 
-        const event = payload.e || payload.event;
-        if (!event) return; // Invalid payload — silently discard
+        const rawEvent = payload.e || payload.event || '';
+        if (!rawEvent) return; // Invalid payload — silently discard
+        const event = canonicalPixelEvent(rawEvent);
 
         // Add random DB delay (0-5ms) to vary database timing patterns
         const dbDelay = Math.random() * 5;
