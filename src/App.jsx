@@ -7,7 +7,7 @@ import { uid, now, LS } from "./utils";
 import { refreshCustomTemplates } from "./utils/template-router";
 import { setSentryContext, addBreadcrumb } from "./services/sentry";
 import { sanitizeSettings, validateSettingsAccount, autoRecoverSettings, detectIncompleteSettings } from "./services/account-lock";
-import { login as authLogin, logout as authLogout, getMe, isAdmin, sanitizeForEmployee } from "./services/auth";
+import { login as authLogin, logout as authLogout, getMe, isAdmin, sanitizeForEmployee, refreshSession } from "./services/auth";
 
 // Custom event for template refresh
 const TEMPLATE_REFRESH_EVENT = 'lp-template-refresh';
@@ -230,6 +230,32 @@ useEffect(() => {
       db.loadUsers().then(setUsers).catch(() => {});
     }
   }, [neonOk, user]);
+
+  // Auto-refresh session every 30 minutes to keep login alive
+  useEffect(() => {
+    if (!user) return;
+
+    // Initial refresh check
+    refreshSession().catch(() => {});
+
+    // Set up interval for periodic refresh
+    const interval = setInterval(() => {
+      refreshSession().catch(() => {});
+    }, 30 * 60 * 1000); // 30 minutes
+
+    // Also refresh on user activity (mouse move, key press, click)
+    const handleActivity = () => {
+      refreshSession().catch(() => {});
+    };
+
+    const events = ['mousemove', 'keypress', 'click', 'scroll'];
+    events.forEach(event => document.addEventListener(event, handleActivity, { passive: true }));
+
+    return () => {
+      clearInterval(interval);
+      events.forEach(event => document.removeEventListener(event, handleActivity));
+    };
+  }, [user]);
 
   async function handleLogin(email, password) {
     const result = await authLogin(email, password);
