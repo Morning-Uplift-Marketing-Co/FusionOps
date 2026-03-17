@@ -1421,21 +1421,87 @@ export default {
     // ═══ PIXEL EVENTS API — query stored events ═══
     if (path === '/api/pixel/events' && method === 'GET') {
       try {
-        const db = env.DB;
+        const primaryDb = env.PIXEL_DB || env.DB;
         const domain = url.searchParams.get('domain') || '';
         const limit = Math.min(parseInt(url.searchParams.get('limit') || '100'), 500);
-        const since = url.searchParams.get('since') || '0';
+        const since = parseInt(url.searchParams.get('since') || '0', 10);
 
-        let stmt;
-        if (domain) {
-          stmt = db.prepare('SELECT * FROM pixel_events WHERE domain LIKE ? AND ts > ? ORDER BY ts DESC LIMIT ?')
-            .bind(`%${domain}%`, parseInt(since), limit);
-        } else {
-          stmt = db.prepare('SELECT * FROM pixel_events WHERE ts > ? ORDER BY ts DESC LIMIT ?')
-            .bind(parseInt(since), limit);
+        // Query one DB binding and normalize schema differences.
+        async function queryFromDb(db) {
+          const tableExists = await db
+            .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='pixel_events' LIMIT 1")
+            .first();
+          if (!tableExists) return [];
+
+          const schema = await db.prepare('PRAGMA table_info(pixel_events)').all();
+          const columns = new Set((schema?.results || []).map((c) => String(c.name || '')));
+
+          const tsExpr = columns.has('ts')
+            ? 'ts'
+            : columns.has('timestamp')
+              ? "CASE WHEN CAST(timestamp AS INTEGER) > 2000000000 THEN CAST(timestamp AS INTEGER) / 1000 ELSE CAST(timestamp AS INTEGER) END"
+              : columns.has('created_at')
+                ? "unixepoch(created_at)"
+                : '0';
+
+          const dataExpr = columns.has('data')
+            ? 'data'
+            : columns.has('details')
+              ? 'details'
+              : "''";
+
+          const domainExpr = columns.has('domain') ? 'domain' : "''";
+          const gclidExpr = columns.has('gclid') ? 'gclid' : "''";
+          const clickExpr = columns.has('click_id') ? 'click_id' : "''";
+
+          let stmt;
+          if (domain && columns.has('domain')) {
+            stmt = db.prepare(
+              `SELECT id, ${domainExpr} AS domain, event, ${gclidExpr} AS gclid, ${clickExpr} AS click_id, ${dataExpr} AS data, ${tsExpr} AS ts
+               FROM pixel_events
+               WHERE ${domainExpr} LIKE ? AND ${tsExpr} > ?
+               ORDER BY ${tsExpr} DESC
+               LIMIT ?`
+            ).bind(`%${domain}%`, since, limit);
+          } else {
+            stmt = db.prepare(
+              `SELECT id, ${domainExpr} AS domain, event, ${gclidExpr} AS gclid, ${clickExpr} AS click_id, ${dataExpr} AS data, ${tsExpr} AS ts
+               FROM pixel_events
+               WHERE ${tsExpr} > ?
+               ORDER BY ${tsExpr} DESC
+               LIMIT ?`
+            ).bind(since, limit);
+          }
+
+          const { results } = await stmt.all();
+          return (results || []).map((r) => ({
+            ...r,
+            ts: Number(r.ts || 0),
+            _key: `${r.domain || ''}|${r.event || ''}|${r.ts || 0}|${r.click_id || ''}|${r.gclid || ''}`,
+          }));
         }
-        const { results } = await stmt.all();
-        return json({ success: true, events: results || [], count: results?.length || 0 });
+
+        const primaryRows = await queryFromDb(primaryDb);
+        let merged = primaryRows;
+
+        // Some t.{domain} routes may still hit api-worker (/e writes env.DB),
+        // so merge events from DB as fallback to avoid missing rows in dashboard.
+        if (env.PIXEL_DB && env.DB && env.PIXEL_DB !== env.DB) {
+          const fallbackRows = await queryFromDb(env.DB);
+          merged = [...primaryRows, ...fallbackRows];
+        }
+
+        const dedup = new Map();
+        for (const row of merged) {
+          if (!dedup.has(row._key)) dedup.set(row._key, row);
+        }
+
+        const events = Array.from(dedup.values())
+          .sort((a, b) => Number(b.ts || 0) - Number(a.ts || 0))
+          .slice(0, limit)
+          .map(({ _key, ...rest }) => rest);
+
+        return json({ success: true, events, count: events.length });
       } catch (e) {
         return json({ success: false, error: e.message }, 500);
       }
