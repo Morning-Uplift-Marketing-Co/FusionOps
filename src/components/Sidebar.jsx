@@ -169,9 +169,15 @@ export function Sidebar({ page, setPage, siteCount, taskBadge, startCreate, star
                 <div className={cn("flex items-center gap-2.5 border-b border-[hsl(var(--border))]", collapsed ? "px-3 py-4" : "px-4 py-4")}>
                     <div
                         onClick={toggle}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-sm cursor-pointer shrink-0"
+                        className="w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer shrink-0"
                         style={{ background: T.grad }}
-                    >⚡</div>
+                    >
+                        <svg width="14" height="16" viewBox="0 0 26 30" fill="none">
+                            <rect x="2" y="0" width="7" height="30" rx="1.5" fill="white"/>
+                            <rect x="2" y="0" width="22" height="7.5" rx="1.5" fill="white"/>
+                            <rect x="2" y="12" width="16" height="6.5" rx="1.5" fill="white"/>
+                        </svg>
+                    </div>
                     {!collapsed && (
                         <div>
                             <div className="text-[15px] font-bold whitespace-nowrap">FusionOps 3.0</div>

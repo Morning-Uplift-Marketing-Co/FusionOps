@@ -36,5 +36,6 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-14T22:11:17.379Z"
+  "deployedAt": "2026-03-09T12:24:00.000Z",
+  "_fix": "removed prerender from apply.astro to fix 404"
 }

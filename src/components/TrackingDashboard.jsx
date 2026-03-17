@@ -235,7 +235,7 @@ export function TrackingDashboard({ settings, sites }) {
         return await res.text();
       } catch {
         try {
-          const proxyRes = await fetch(`/api/proxy?url=${encodeURIComponent(url)}`);
+          const proxyRes = await fetch(`/api/proxy/pass?url=${encodeURIComponent(url)}`);
           return await proxyRes.text();
         } catch {
           return null;

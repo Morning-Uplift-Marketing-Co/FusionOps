@@ -71,9 +71,13 @@ function validateStep(stepNum, config) {
         if (!gtagId.trim()) {
             errors.push("Google Ads Conversion ID is required");
         }
+        if (!config.aid?.toString().trim()) {
+            errors.push("LeadsGate AID is required");
+        }
         if ((config.trackingMode || "minimal") === "voluum") {
             if (!config.voluumCampaignId) errors.push("Voluum campaign must be selected");
             if (!config.voluumTrackingDomain && !config.domain) errors.push("Voluum tracking domain is required (set domain in Brand step)");
+            if (!config.voluumClickUrl?.trim()) errors.push("Voluum Click URL is required");
         }
     }
 
@@ -87,6 +91,8 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
     const [step, setStep] = useState(1);
     const [building, setBuilding] = useState(false);
     const [validationErrors, setValidationErrors] = useState([]);
+    const [trackingWarnings, setTrackingWarnings] = useState([]);
+    const [trackingGateOpen, setTrackingGateOpen] = useState(false);
     const [aiLoading, setAiLoading] = useState(false);
     const [aiMetaLoading, setAiMetaLoading] = useState(false);
     const [aiReviewsLoading, setAiReviewsLoading] = useState(false);
@@ -344,7 +350,31 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
         }
     };
 
+    const checkTrackingCompleteness = (cfg) => {
+        const warnings = [];
+        const gtagId = cfg.gtagId || cfg.conversionId || "";
+        if (!gtagId.trim()) warnings.push("❌ Google Ads Conversion ID missing — gtag.js will not fire");
+        if (!cfg.aid?.toString().trim()) warnings.push("❌ LeadsGate AID missing — form callbacks won't track");
+        if ((cfg.trackingMode || "minimal") === "voluum") {
+            if (!cfg.voluumClickUrl?.trim()) warnings.push("❌ Voluum Click URL missing — CTA will not track");
+            if (!cfg.voluumTrackingDomain?.trim() && !cfg.domain?.trim()) warnings.push("❌ Voluum tracking domain missing");
+        }
+        if (!cfg.formStartLabel?.trim()) warnings.push("⚠️ form_start label missing — micro-conversion won't fire");
+        if (!cfg.formSubmitLabel?.trim()) warnings.push("⚠️ form_submit label missing — conversion won't be reported");
+        return warnings;
+    };
+
     const handleBuild = async () => {
+        // Tracking gate — warn before building if critical tracking is missing
+        if (!trackingGateOpen) {
+            const warnings = checkTrackingCompleteness(config);
+            if (warnings.length > 0) {
+                setTrackingWarnings(warnings);
+                setTrackingGateOpen(true);
+                return; // pause — user must confirm
+            }
+        }
+        setTrackingGateOpen(false);
         setBuilding(true);
         let finalConfig = { ...config };
         console.log("[Wizard] handleBuild - finalConfig.templateId:", finalConfig.templateId);
@@ -600,6 +630,23 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                         {step === 6 && <StepTracking c={config} u={upd} capabilities={capabilities} />}
                         {step === 7 && <StepReview c={config} building={building} capabilities={capabilities} />}
                         </div>
+                        {step === 7 && trackingGateOpen && (
+                            <div className="mt-4 p-4 rounded-lg border border-[rgba(239,68,68,0.35)] bg-[rgba(239,68,68,0.06)]">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-sm font-bold text-[hsl(0,84%,60%)]">⚠️ Tracking Incomplete</span>
+                                    <span className="text-xs text-[hsl(var(--muted-foreground))]">— LP will build but tracking won't work</span>
+                                </div>
+                                <ul className="flex flex-col gap-1 mb-3">
+                                    {trackingWarnings.map((w, i) => (
+                                        <li key={i} className="text-xs text-[hsl(var(--muted-foreground))]">{w}</li>
+                                    ))}
+                                </ul>
+                                <div className="flex gap-2">
+                                    <Button onClick={() => { setStep(6); setTrackingGateOpen(false); }} className="h-7 px-3 text-xs" variant="outline">← Fix Tracking</Button>
+                                    <Button onClick={handleBuild} className="h-7 px-3 text-xs bg-[rgba(239,68,68,0.15)] border border-[rgba(239,68,68,0.4)] text-[hsl(0,84%,60%)] hover:bg-[rgba(239,68,68,0.25)]">Build Anyway</Button>
+                                </div>
+                            </div>
+                        )}
                         {step === 7 && (
                             <div className="mt-4 p-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))/30]">
                                 <label className="flex items-center gap-2 text-sm font-medium mb-2">
