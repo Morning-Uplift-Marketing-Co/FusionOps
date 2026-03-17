@@ -63,6 +63,9 @@
     "tailwindcss": "^4.2.0",
     "typescript": "^5.7.0",
     "vitest": "^4.0.18",
-    "wrangler": "^4.67.0"
+    "wrangler": "^4.35.0"
+  },
+  "overrides": {
+    "undici": "^7.24.4"
   }
 }
