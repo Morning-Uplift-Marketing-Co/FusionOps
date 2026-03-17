@@ -8,6 +8,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
+import d1Service from "../services/d1";
+import { multiloginApi } from "../services/multilogin";
 
 const REFRESH_INTERVAL = 5 * 60 * 1000;
 const SCORE_COLORS = { good: "hsl(142,71%,45%)", ok: "hsl(38,92%,50%)", bad: "hsl(0,84%,60%)" };
@@ -124,7 +126,6 @@ export function ProxyHealthTab({ profiles: rawProfiles = [], settings = {}, stan
     async function load() {
       setLoadingPool(true);
       try {
-        const d1Service = (await import("../services/d1.js")).default;
         const result = await d1Service.query("SELECT * FROM ops_proxy_pool ORDER BY created_at DESC");
         if (!cancelled && result?.success && Array.isArray(result.results)) {
           setPoolProxies(result.results.map(r => ({
@@ -257,7 +258,6 @@ export function ProxyHealthTab({ profiles: rawProfiles = [], settings = {}, stan
     try {
       const { nodemavenApi } = await import("../services/nodemaven.js");
       const config = nodemavenApi.rotateProxy({ profileId: profile.mlProfileId || pid, country: profile.proxyCountry || "us", state: profile.proxyState || "", city: profile.proxyCity || "", filter: settings.nmProxyFilter || "medium" });
-      const { multiloginApi } = await import("../services/multilogin.js");
       await multiloginApi.updateProfile(profile.mlProfileId, profile.mlFolderId, { proxy: nodemavenApi.toMultiloginFormat(config) });
       await checkProfile(profile);
       setAlerts(a => [{ message: `IP rotated for "${profile.name}"`, timestamp: Date.now(), profileId: pid }, ...a]);

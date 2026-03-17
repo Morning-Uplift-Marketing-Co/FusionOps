@@ -41,6 +41,19 @@ export default defineConfig({
   integrations: [react()],
   vite: {
     plugins: [tailwindcss()],
+    build: {
+      chunkSizeWarningLimit: 900,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id) return undefined;
+
+            if (id.includes('node_modules/recharts')) return 'vendor-charts';
+            return undefined;
+          },
+        },
+      },
+    },
     server: {
       port: 4323,
       host: true,

@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
+import d1Service from "../services/d1";
 
 const PROXY_TYPES = ["residential", "isp", "datacenter", "mobile"];
 const STATUS_OPTIONS = ["pending", "approved", "rejected"];
@@ -68,7 +69,6 @@ function statusBadge(status) {
 
 async function d1Query(sql, params = []) {
     try {
-        const d1Service = (await import("../services/d1.js")).default;
         return await d1Service.query(sql, params);
     } catch (e) {
         console.warn("[ProxyPool] D1 query failed:", e?.message);
@@ -78,7 +78,6 @@ async function d1Query(sql, params = []) {
 
 async function d1Execute(sql, params = []) {
     try {
-        const d1Service = (await import("../services/d1.js")).default;
         return await d1Service.execute(sql, params);
     } catch (e) {
         console.warn("[ProxyPool] D1 execute failed:", e?.message);

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import { api } from "./services/api";
 import * as db from "./services/neon";
 import { saveSiteToD1, deleteSiteFromD1, saveAuditEventToD1, saveProxyToD1, deleteProxyFromD1, saveTaskToD1, deleteTaskFromD1 } from "./services/d1";
@@ -16,28 +16,31 @@ const TEMPLATE_REFRESH_EVENT = 'lp-template-refresh';
 import { Sidebar } from "./components/Sidebar";
 import { TopBar } from "./components/TopBar";
 import { Toast } from "./components/ui/toast";
-import { Dashboard } from "./components/Dashboard";
-import { Sites } from "./components/Sites";
-import { Wizard } from "./components/Wizard";
-import { OpsCenter } from "./components/OpsCenter";
-import { Settings } from "./components/Settings";
-import { DeployHistory } from "./components/DeployHistory";
 import { TemplateGeneratorModal } from "./components/TemplateGenerator";
 import { ErrorLog, logError } from "./components/ErrorLog";
-import { SpendDashboard } from "./components/SpendDashboard";
-import { AccountMap } from "./components/AccountMap";
-import { TrackingDashboard } from "./components/TrackingDashboard";
-import { RealtimeEventsDashboard } from "./components/RealtimeEventsDashboard";
-import { VoluumExplorer } from "./components/VoluumExplorer";
 import { AccountVerificationBanner } from "./components/ui/AccountVerificationBanner";
-import { ApiHealthCheck } from "./components/ApiHealthCheck";
-import { ProxyHealthTab } from "./components/ProxyHealthTab";
-import { ProfileManager } from "./components/ProfileManager";
-import { TemplateManager } from "./components/TemplateManager";
 import { LoginPage } from "./components/LoginPage";
-import { KpiDashboard } from "./components/KpiDashboard";
-import { TaskManager } from "./components/TaskManager";
-import { UserManager } from "./components/UserManager";
+
+const lazyNamed = (loader, key) => lazy(() => loader().then((module) => ({ default: module[key] })));
+
+const Dashboard = lazyNamed(() => import("./components/Dashboard"), "Dashboard");
+const Sites = lazyNamed(() => import("./components/Sites"), "Sites");
+const Wizard = lazyNamed(() => import("./components/Wizard"), "Wizard");
+const OpsCenter = lazyNamed(() => import("./components/OpsCenter"), "OpsCenter");
+const Settings = lazyNamed(() => import("./components/Settings"), "Settings");
+const DeployHistory = lazyNamed(() => import("./components/DeployHistory"), "DeployHistory");
+const SpendDashboard = lazyNamed(() => import("./components/SpendDashboard"), "SpendDashboard");
+const AccountMap = lazyNamed(() => import("./components/AccountMap"), "AccountMap");
+const TrackingDashboard = lazyNamed(() => import("./components/TrackingDashboard"), "TrackingDashboard");
+const RealtimeEventsDashboard = lazyNamed(() => import("./components/RealtimeEventsDashboard"), "RealtimeEventsDashboard");
+const VoluumExplorer = lazyNamed(() => import("./components/VoluumExplorer"), "VoluumExplorer");
+const ApiHealthCheck = lazyNamed(() => import("./components/ApiHealthCheck"), "ApiHealthCheck");
+const ProxyHealthTab = lazyNamed(() => import("./components/ProxyHealthTab"), "ProxyHealthTab");
+const ProfileManager = lazyNamed(() => import("./components/ProfileManager"), "ProfileManager");
+const TemplateManager = lazyNamed(() => import("./components/TemplateManager"), "TemplateManager");
+const KpiDashboard = lazyNamed(() => import("./components/KpiDashboard"), "KpiDashboard");
+const TaskManager = lazyNamed(() => import("./components/TaskManager"), "TaskManager");
+const UserManager = lazyNamed(() => import("./components/UserManager"), "UserManager");
 
 // Neon connection string — stored in settings or hardcoded for now
 const NEON_URL = import.meta.env.VITE_NEON_URL || "";
@@ -100,6 +103,15 @@ const ENV_DEFAULTS = {
   cfAccountId:       import.meta.env.VITE_CF_ACCOUNT_ID       || "",
   neonUrl:           NEON_URL,
 };
+
+function PageLoader({ label = "Loading module..." }) {
+  return (
+    <div style={{ padding: "48px 24px", textAlign: "center", color: T.muted }}>
+      <div style={{ fontSize: 14, fontWeight: 600, color: T.text }}>FusionOps 3.0</div>
+      <div style={{ fontSize: 12, marginTop: 6 }}>{label}</div>
+    </div>
+  );
+}
 
 export default function App() {
   const asArray = (value) => Array.isArray(value) ? value : [];
@@ -1145,37 +1157,39 @@ useEffect(() => {
       <main style={{ flex: 1, marginLeft: ml, minHeight: "100vh", transition: "margin .2s" }}>
         <TopBar stats={stats} settings={settings} deploys={deploys} apiOk={apiOk} neonOk={neonOk} onReconnectNeon={recoverNeonConnection} />
         <div style={{ padding: "24px 28px" }}>
-          {page === "dashboard" && <Dashboard sites={sites} stats={stats} ops={ops} setPage={setPage} startCreate={startCreate} settings={settings} apiOk={apiOk} neonOk={neonOk} auditEvents={auditEvents} tasks={tasks} />}
-          {page === "spend" && <SpendDashboard apiOk={apiOk} neonOk={neonOk} settings={settings} />}
-          {page === "voluum" && <VoluumExplorer settings={settings} />}
-          {page === "account-map" && <AccountMap apiOk={apiOk} neonOk={neonOk} ops={ops} settings={settings} />}
-          {page === "sites" && <Sites sites={sites} del={delSite} notify={notify} startCreate={startCreate} startDuplicate={startDuplicate} addSite={addSite} settings={settings} addDeploy={addDeploy} ops={ops} updateSite={updateSite} auditLog={auditLog} auditEvents={auditEvents} proxies={proxies} />}
-          {page === "create" && wizData && <Wizard config={wizData} setConfig={setWizData} addSite={addSite} addDeploy={addDeploy} setPage={setPage} settings={settings} notify={notify} cfAccounts={ops.cfAccounts} registrarAccounts={ops.registrarAccounts} />}
-          {page === "profile-manager" && <ProfileManager settings={settings} ops={ops} />}
-          {page === "ops" && <OpsCenter data={{ ...ops, proxies }} add={opsAdd} del={opsDel} upd={opsUpd} settings={settings} auditLog={auditLog} auditEvents={auditEvents} addProxy={addProxy} updateProxy={updateProxy} deleteProxy={deleteProxyById} />}
-          {page === "deploys" && <DeployHistory deploys={deploys} />}
-          {page === "tracking" && <TrackingDashboard settings={settings} sites={sites} />}
-          {page === "realtime-events" && <RealtimeEventsDashboard sites={sites} />}
-          {page === "template-manager" && (
-            <TemplateManager
-              sites={sites}
-              notify={notify}
-              onDefaultTemplateChange={(templateId) => {
-                setSettings((prev) => {
-                  const next = { ...(prev || {}), defaultTemplateId: templateId };
-                  LS.set("settings", next);
-                  return next;
-                });
-              }}
-            />
-          )}
-          {page === "proxy-health" && <ProxyHealthTab profiles={ops.profiles} settings={settings} standalone />}
-          {page === "error-log" && <ErrorLog />}
-          {page === "api-health" && <ApiHealthCheck />}
-          {page === "settings" && <Settings settings={settings} setSettings={handleSaveSettings} stats={stats} apiOk={apiOk} neonOk={neonOk} />}
-          {page === "tasks" && <TaskManager tasks={tasks} sites={sites} addTask={addTask} updateTask={updateTask} deleteTask={deleteTask} user={user} />}
-          {page === "kpi" && <KpiDashboard user={user} users={users} />}
-          {page === "users" && isAdmin(user) && <UserManager currentUser={user} />}
+          <Suspense fallback={<PageLoader label={`Loading ${page}...`} />}>
+            {page === "dashboard" && <Dashboard sites={sites} stats={stats} ops={ops} setPage={setPage} startCreate={startCreate} settings={settings} apiOk={apiOk} neonOk={neonOk} auditEvents={auditEvents} tasks={tasks} />}
+            {page === "spend" && <SpendDashboard apiOk={apiOk} neonOk={neonOk} settings={settings} />}
+            {page === "voluum" && <VoluumExplorer settings={settings} />}
+            {page === "account-map" && <AccountMap apiOk={apiOk} neonOk={neonOk} ops={ops} settings={settings} />}
+            {page === "sites" && <Sites sites={sites} del={delSite} notify={notify} startCreate={startCreate} startDuplicate={startDuplicate} addSite={addSite} settings={settings} addDeploy={addDeploy} ops={ops} updateSite={updateSite} auditLog={auditLog} auditEvents={auditEvents} proxies={proxies} />}
+            {page === "create" && wizData && <Wizard config={wizData} setConfig={setWizData} addSite={addSite} addDeploy={addDeploy} setPage={setPage} settings={settings} notify={notify} cfAccounts={ops.cfAccounts} registrarAccounts={ops.registrarAccounts} />}
+            {page === "profile-manager" && <ProfileManager settings={settings} ops={ops} />}
+            {page === "ops" && <OpsCenter data={{ ...ops, proxies }} add={opsAdd} del={opsDel} upd={opsUpd} settings={settings} auditLog={auditLog} auditEvents={auditEvents} addProxy={addProxy} updateProxy={updateProxy} deleteProxy={deleteProxyById} />}
+            {page === "deploys" && <DeployHistory deploys={deploys} />}
+            {page === "tracking" && <TrackingDashboard settings={settings} sites={sites} />}
+            {page === "realtime-events" && <RealtimeEventsDashboard sites={sites} />}
+            {page === "template-manager" && (
+              <TemplateManager
+                sites={sites}
+                notify={notify}
+                onDefaultTemplateChange={(templateId) => {
+                  setSettings((prev) => {
+                    const next = { ...(prev || {}), defaultTemplateId: templateId };
+                    LS.set("settings", next);
+                    return next;
+                  });
+                }}
+              />
+            )}
+            {page === "proxy-health" && <ProxyHealthTab profiles={ops.profiles} settings={settings} standalone />}
+            {page === "error-log" && <ErrorLog />}
+            {page === "api-health" && <ApiHealthCheck />}
+            {page === "settings" && <Settings settings={settings} setSettings={handleSaveSettings} stats={stats} apiOk={apiOk} neonOk={neonOk} />}
+            {page === "tasks" && <TaskManager tasks={tasks} sites={sites} addTask={addTask} updateTask={updateTask} deleteTask={deleteTask} user={user} />}
+            {page === "kpi" && <KpiDashboard user={user} users={users} />}
+            {page === "users" && isAdmin(user) && <UserManager currentUser={user} />}
+          </Suspense>
         </div>
       </main>
 

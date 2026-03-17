@@ -675,10 +675,9 @@ function AuditLogPanel({ logs = [] }) {
     useEffect(() => {
         (async () => {
             try {
-                const { d1Service } = await import("../services/d1.js");
-                const rows = await d1Service.query("SELECT * FROM ops_link_audit ORDER BY created_at DESC LIMIT 100");
-                if (rows && Array.isArray(rows)) {
-                    setAuditLogs(rows);
+                const result = await query("SELECT * FROM ops_link_audit ORDER BY created_at DESC LIMIT 100");
+                if (result?.success && Array.isArray(result.results)) {
+                    setAuditLogs(result.results);
                 }
             } catch (e) {
                 console.warn("[AuditLog] D1 query failed, using local logs:", e?.message);
