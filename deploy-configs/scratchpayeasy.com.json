@@ -1,5 +1,5 @@
 {
-  "templateId": "lionfunds-loan-marketplace",
+  "templateId": "pet-orange-white",
   "cfPagesProject": "lp-scratchpayeasy-com",
   "cfApiToken": "",
   "cfAccountId": "",
@@ -36,5 +36,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-17T05:26:28.516Z"
+  "deployedAt": "2026-03-18T05:44:55.841Z"
 }
