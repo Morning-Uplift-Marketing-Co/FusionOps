@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apply</title>
+</head>
+<body>
+
+<script>
+window.dataLayer = window.dataLayer || [];
+
+// Safe Storage Helper
+var SafeStorage = {
+  _mem: {},
+  set: function(k, v) {
+    try { sessionStorage.setItem(k, v); }
+    catch (e) { this._mem[k] = v; }
+  },
+  get: function(k) {
+    try { return sessionStorage.getItem(k); }
+    catch (e) { return this._mem[k] || null; }
+  }
+};
+
+// Helper: Get Voluum Click ID
+function getVoluumClickId() {
+  var urlParams = new URLSearchParams(window.location.search);
+  var cid = urlParams.get('cid') || urlParams.get('click_id');
+  return SafeStorage.get('voluum_cid') || cid || '';
+}
+
+// LeadsGate Form Configuration WITH CALLBACKS
+var _lg_form_init_ = {
+  aid: "14881",
+  template: "fresh",
+  ref: window.location.hostname,
+  click_id: getVoluumClickId(),
+
+  // ===== CALLBACKS (Network ให้ใช้แล้ว) =====
+
+  // Callback: Form Load
+  onFormLoad: function() {
+    console.log('📋 LeadsGate form loaded');
+
+    window.dataLayer.push({
+      'event': 'leadsgate_form_start',
+      'clickId': getVoluumClickId(),
+      'gclid': SafeStorage.get('google_gclid'),
+      'timestamp': new Date().toISOString()
+    });
+  },
+
+  // Callback: Step Change
+  onStepChange: function(step) {
+    console.log('📊 Form step:', step);
+
+    window.dataLayer.push({
+      'event': 'leadsgate_form_progress',
+      'step': step,
+      'clickId': getVoluumClickId()
+    });
+  },
+
+  // Callback: Form Submit
+  onSubmit: function() {
+    console.log('📤 Form submitted');
+
+    window.dataLayer.push({
+      'event': 'leadsgate_form_submit',
+      'clickId': getVoluumClickId(),
+      'timestamp': new Date().toISOString()
+    });
+  },
+
+  // Callback: Success (เมื่อ LeadsGate ประมวลผลเสร็จ)
+  onSuccess: function(data) {
+    console.log('✅ LeadsGate Response:', data);
+
+    var voluumCid = getVoluumClickId();
+    var googleGclid = SafeStorage.get('google_gclid');
+
+    // Parse LeadsGate Response
+    var type = data.type;              // soldLead / rejectLead / newLead
+    var leadId = data.lead_id;         // Lead ID
+    var payout = data.price || 0;      // Revenue/Payout
+
+    // Determine Status
+    var status = 'pending';
+    if (type === 'soldLead') status = 'approved';
+    else if (type === 'rejectLead') status = 'declined';
+
+    // Determine Payout
+    var finalPayout = payout > 0 ? payout : (status === 'declined' ? 5.00 : 50.00);
+
+    console.log('📊 Parsed:', {
+      type: type,
+      status: status,
+      leadId: leadId,
+      payout: finalPayout
+    });
+
+    // Conversion Data
+    var conversionData = {
+      transaction_id: leadId,
+      value: finalPayout,
+      currency: 'USD',
+      status: status,
+      type: type,
+      click_id: voluumCid,
+      gclid: googleGclid,
+      created: data.created
+    };
+
+    // ===== TRACK ALL LEADS (Google Ads Learning) =====
+    window.dataLayer.push({
+      'event': 'lead_conversion_all',
+      'leadData': conversionData,
+      'conversionValue': finalPayout,
+      'leadStatus': status,
+      'leadType': type,
+      'transactionId': leadId,
+      'clickId': voluumCid,
+      'gclid': googleGclid
+    });
+
+    console.log('✅ All leads tracked:', status, 'Type:', type, 'Payout:', finalPayout);
+
+    // ===== TRACK APPROVED (soldLead) =====
+    if (type === 'soldLead') {
+      window.dataLayer.push({
+        'event': 'lead_conversion_approved',
+        'leadData': conversionData,
+        'conversionValue': finalPayout,
+        'transactionId': leadId,
+        'clickId': voluumCid,
+        'gclid': googleGclid
+      });
+
+      console.log('✅ Approved lead tracked | Payout:', finalPayout);
+    }
+
+    // ===== TRACK DECLINED (rejectLead) =====
+    if (type === 'rejectLead') {
+      window.dataLayer.push({
+        'event': 'lead_declined',
+        'leadData': conversionData,
+        'conversionValue': finalPayout,
+        'transactionId': leadId,
+        'clickId': voluumCid,
+        'gclid': googleGclid
+      });
+
+      console.log('⚠️ Declined lead tracked | Payout:', finalPayout);
+    }
+
+    // ===== TRACK PENDING (newLead) =====
+    if (type === 'newLead') {
+      window.dataLayer.push({
+        'event': 'lead_pending',
+        'leadData': conversionData,
+        'conversionValue': finalPayout,
+        'transactionId': leadId,
+        'clickId': voluumCid,
+        'gclid': googleGclid
+      });
+
+      console.log('⏳ Pending lead tracked | Payout:', finalPayout);
+    }
+
+    console.log('✅ Tracking complete for Lead ID:', leadId);
+  }
+};
+
+// Load LeadsGate Form Script
+var script = document.createElement('script');
+script.type = 'text/javascript';
+script.async = true;
+script.src = 'https://apikeep.com/form/applicationInit.js';
+document.body.appendChild(script);
+</script>
+
+<!-- Form Container -->
+<div id="_lg_form_"></div>
+
+</body>
+</html>

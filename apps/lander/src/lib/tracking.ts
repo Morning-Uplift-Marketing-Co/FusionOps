@@ -1,5 +1,5 @@
 // ============================================================
-// Tracking Library — Minimal Client-Side Tracking
+// Tracking Library - Minimal Client-Side Tracking
 // ============================================================
 // Rules:
 // - sessionStorage ONLY (no cookies, no localStorage)
@@ -8,9 +8,23 @@
 // - Captures: click_id, zip, amount, utm_*, gclid
 // ============================================================
 
-const STORAGE_KEYS = ['zip', 'amount', 'click_id', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid'] as const;
+const STORAGE_KEYS = [
+  'zip',
+  'amount',
+  'click_id',
+  'utm_source',
+  'utm_medium',
+  'utm_campaign',
+  'utm_term',
+  'utm_content',
+  'gclid',
+] as const;
 
 type StorageKey = typeof STORAGE_KEYS[number];
+
+function isTrackingDebugEnabled(): boolean {
+  return (window as any).__TRACK_DEBUG__ === true;
+}
 
 /**
  * Initialize tracking: parse URL params and persist to sessionStorage.
@@ -71,7 +85,7 @@ export function getTrackingData(): Record<string, string> {
 
 /**
  * Send a tracking beacon via navigator.sendBeacon.
- * Fire-and-forget — does not block the page.
+ * Fire-and-forget: does not block the page.
  */
 export function sendBeacon(event: string, extra?: Record<string, string>): void {
   const trackingEndpoint = (window as any).__TRACK_URL__ || '/track';
@@ -87,8 +101,24 @@ export function sendBeacon(event: string, extra?: Record<string, string>): void 
 
   try {
     const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-    navigator.sendBeacon(trackingEndpoint, blob);
-  } catch {
-    // Swallow errors — tracking must never break the page
+    const sent = navigator.sendBeacon(trackingEndpoint, blob);
+    if (!sent && isTrackingDebugEnabled()) {
+      console.warn('tracking_beacon_rejected', {
+        event,
+        endpoint: trackingEndpoint,
+        page: window.location.pathname,
+        timestamp: payload.timestamp,
+      });
+    }
+  } catch (error) {
+    if (isTrackingDebugEnabled()) {
+      console.error('tracking_beacon_failed', {
+        event,
+        endpoint: trackingEndpoint,
+        page: window.location.pathname,
+        message: error instanceof Error ? error.message : String(error),
+        timestamp: payload.timestamp,
+      });
+    }
   }
 }
