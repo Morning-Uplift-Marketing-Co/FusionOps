@@ -247,6 +247,60 @@ jobs:
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "Deploy URL: $URL"
 
+      - name: Remove stale Worker routes for domain (non-blocking)
+        continue-on-error: true
+        env:
+          CF_TOKEN_FROM_CONFIG: ${{ steps.template.outputs.cf_api_token }}
+          CF_ACCOUNT_FROM_CONFIG: ${{ steps.template.outputs.cf_account_id }}
+          CF_TOKEN_FROM_SECRET: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_FROM_SECRET: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          export CF_TOKEN="${CF_TOKEN_FROM_SECRET:-$CF_TOKEN_FROM_CONFIG}"
+          export CF_ACCOUNT="${CF_ACCOUNT_FROM_SECRET:-$CF_ACCOUNT_FROM_CONFIG}"
+          CONFIG_FILE="${{ steps.config.outputs.file }}"
+          DOMAIN=$(node -e "const c=require('./$CONFIG_FILE');const d=String(c.domain||'').trim().toLowerCase().replace(/^https?:\/\//,'').replace(/^\/\//,'').replace(/[/?#].*$/,'').replace(/\.+$/,'').replace(/^www\./,'');console.log(d)")
+
+          if [ -z "$DOMAIN" ] || [ -z "$CF_TOKEN" ] || [ -z "$CF_ACCOUNT" ]; then
+            echo "Skipping stale worker route cleanup: missing domain, token, or account"
+            exit 0
+          fi
+
+          ZONE_RESP=$(curl -s -X GET \
+            "https://api.cloudflare.com/client/v4/zones?name=$DOMAIN&account.id=$CF_ACCOUNT" \
+            -H "Authorization: Bearer $CF_TOKEN" \
+            -H "Content-Type: application/json")
+          ZONE_ID=$(ZONE_RESP="$ZONE_RESP" node -e "const r=JSON.parse(process.env.ZONE_RESP||'{}');console.log((r.result&&r.result[0]&&r.result[0].id)||'')")
+
+          if [ -z "$ZONE_ID" ]; then
+            echo "Skipping stale worker route cleanup: zone lookup failed for $DOMAIN"
+            exit 0
+          fi
+
+          ROUTES_RESP=$(curl -s -X GET \
+            "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/workers/routes" \
+            -H "Authorization: Bearer $CF_TOKEN" \
+            -H "Content-Type: application/json")
+
+          echo "Scanning worker routes for stale domain intercepts..."
+          MATCH_IDS=$(ROUTES_JSON="$ROUTES_RESP" DOMAIN="$DOMAIN" node -e "const r=JSON.parse(process.env.ROUTES_JSON||'{}');const d=(process.env.DOMAIN||'').toLowerCase();const rows=r.result||[];const hit=rows.filter(x=>{const p=String(x.pattern||'').toLowerCase();return p===d+'/*'||p==='www.'+d+'/*'||p==='*'+d+'/*';});process.stdout.write(hit.map(x=>x.id).join(' '));")
+          MATCH_INFO=$(ROUTES_JSON="$ROUTES_RESP" DOMAIN="$DOMAIN" node -e "const r=JSON.parse(process.env.ROUTES_JSON||'{}');const d=(process.env.DOMAIN||'').toLowerCase();const rows=r.result||[];const hit=rows.filter(x=>{const p=String(x.pattern||'').toLowerCase();return p===d+'/*'||p==='www.'+d+'/*'||p==='*'+d+'/*';});console.log(JSON.stringify(hit));")
+          echo "Matched routes: $MATCH_INFO"
+
+          if [ -z "$MATCH_IDS" ]; then
+            echo "No stale worker routes found."
+            exit 0
+          fi
+
+          for route_id in $MATCH_IDS; do
+            echo "Deleting worker route $route_id"
+            DEL_RESP=$(curl -s -X DELETE \
+              "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/workers/routes/$route_id" \
+              -H "Authorization: Bearer $CF_TOKEN" \
+              -H "Content-Type: application/json")
+            DEL_JSON="$DEL_RESP" node -e "const r=JSON.parse(process.env.DEL_JSON||'{}');if(!r.success){console.warn('Worker route delete failed (non-blocking):', JSON.stringify(r));process.exit(0)};console.log('Worker route delete OK:', JSON.stringify(r));"
+          done
+
       - name: Add custom domain to CF Pages
         continue-on-error: true
         env:
