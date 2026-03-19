@@ -37,6 +37,21 @@ function isGitUrl(source) {
   return /^https?:\/\/|^git@/.test(source || '');
 }
 
+function normalizeGitSource(source) {
+  if (!source) return source;
+  // git@github.com:org/repo.git -> https://github.com/org/repo.git
+  const sshMatch = source.match(/^git@github\.com:(.+)$/);
+  if (sshMatch) return `https://github.com/${sshMatch[1]}`;
+  return source;
+}
+
+function applyGithubTokenIfNeeded(url) {
+  const token = process.env.SOURCE_REPO_PAT || '';
+  if (!token) return url;
+  if (!/^https:\/\/github\.com\//.test(url)) return url;
+  return url.replace('https://github.com/', `https://x-access-token:${token}@github.com/`);
+}
+
 function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
 }
@@ -59,7 +74,9 @@ function writeFile(file, content) {
 function cloneIfNeeded(source) {
   if (!isGitUrl(source)) return { workSource: path.resolve(source), cleanup: null };
   const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'vite-to-astro-'));
-  run('git', ['clone', '--depth', '1', source, tmpRoot]);
+  const normalized = normalizeGitSource(source);
+  const cloneUrl = applyGithubTokenIfNeeded(normalized);
+  run('git', ['clone', '--depth', '1', cloneUrl, tmpRoot]);
   return {
     workSource: tmpRoot,
     cleanup: () => fs.rmSync(tmpRoot, { recursive: true, force: true }),
