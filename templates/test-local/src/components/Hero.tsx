@@ -2,16 +2,10 @@ import { useState } from 'react';
 import { z } from 'zod';
 
 interface HeroProps {
-  brand?: string;
   h1?: string;
-  sub?: string;
   cta?: string;
   amountMin?: string;
   amountMax?: string;
-  amountMinRaw?: string;
-  amountMaxRaw?: string;
-  aprMin?: string;
-  aprMax?: string;
 }
 
 // Zod schema สำหรับตรวจสอบ ZIP code (5 หลักเท่านั้น)
@@ -19,16 +13,10 @@ interface HeroProps {
 const zipCodeSchema = z.string().regex(/^\d{5}$/, 'Please enter a valid 5-digit ZIP code');
 
 export default function Hero({ 
-  brand = 'TPL-USA-B02',
   h1 = 'Get Up to $5,000 Today',
-  sub = 'Fast approval. No hard credit check.',
   cta = 'Apply Now',
   amountMin = '100',
-  amountMax = '5000',
-  amountMinRaw = '100',
-  amountMaxRaw = '5000',
-  aprMin = '5.99',
-  aprMax = '35.99'
+  amountMax = '5000'
 }: HeroProps) {
   const [zipCode, setZipCode] = useState('');
   const [cityName, setCityName] = useState('');
