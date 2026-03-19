@@ -167,14 +167,15 @@ const ctaHref = '/apply';
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta http-equiv="refresh" content="0; url=/index.html" />
     <title>${templateName}</title>
-    <link rel="canonical" href="/index.html" />
   </head>
-  <body>
-    <a href={ctaHref}>Apply Now</a>
-    <p>Redirecting to landing page...</p>
-    <script>location.replace('/index.html')</script>
+  <body style="font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin:0; background:#0b1220; color:#f8fafc;">
+    <main style="max-width:720px; margin:0 auto; padding:48px 20px; text-align:center;">
+      <h1 style="margin:0 0 12px; font-size:32px; line-height:1.2;">${templateName}</h1>
+      <p style="margin:0 0 20px; color:#cbd5e1;">Astro fallback entry for FusionOps deploy compatibility.</p>
+      <p style="margin:0 0 24px;"><a href={ctaHref} style="display:inline-block; padding:12px 18px; border-radius:10px; text-decoration:none; background:#2563eb; color:white; font-weight:600;">Apply Now</a></p>
+      <p style="font-size:13px; color:#94a3b8;">If this page appears in preview, use <code>public/index.html</code> for visual output.</p>
+    </main>
   </body>
 </html>
 `;
@@ -186,13 +187,14 @@ const ctaHref = '/apply';
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta http-equiv="refresh" content="0; url=/apply.html" />
     <title>Apply</title>
-    <link rel="canonical" href="/apply.html" />
   </head>
-  <body>
-    <p>Redirecting to apply page...</p>
-    <script>location.replace('/apply.html')</script>
+  <body style="font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin:0; background:#0b1220; color:#f8fafc;">
+    <main style="max-width:720px; margin:0 auto; padding:48px 20px; text-align:center;">
+      <h1 style="margin:0 0 12px; font-size:30px; line-height:1.2;">Apply</h1>
+      <p style="margin:0 0 16px; color:#cbd5e1;">Template-owned apply experience is expected at <code>public/apply.html</code>.</p>
+      <p style="font-size:13px; color:#94a3b8;">This Astro page is only a safe fallback to avoid preview-domain redirect loops.</p>
+    </main>
   </body>
 </html>
 `;
