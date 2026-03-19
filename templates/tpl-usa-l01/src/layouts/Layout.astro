@@ -1,0 +1,33 @@
+---
+const { title = 'Template', description = '' } = Astro.props;
+const PX_ENDPOINT = 'https://t.' + (typeof window !== 'undefined' ? window.location.hostname : 'example.com') + '/e';
+const PUBLIC_VOLUUMDOMAIN = import.meta.env.PUBLIC_VOLUUMDOMAIN || '';
+const PUBLIC_FORMSTARTLABEL = import.meta.env.PUBLIC_FORMSTARTLABEL || 'form_start';
+const PUBLIC_FORMSUBMITLABEL = import.meta.env.PUBLIC_FORMSUBMITLABEL || 'form_submit';
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    <script is:inline>
+      window.__fusionops = window.__fusionops || {};
+      window.__fusionops.PX_ENDPOINT = 'https://t.' + window.location.hostname + '/e';
+      window.__fusionops.PUBLIC_VOLUUMDOMAIN = '{PUBLIC_VOLUUMDOMAIN}';
+      window.__fusionops.PUBLIC_FORMSTARTLABEL = '{PUBLIC_FORMSTARTLABEL}';
+      window.__fusionops.PUBLIC_FORMSUBMITLABEL = '{PUBLIC_FORMSUBMITLABEL}';
+      if (window.__fusionops.PUBLIC_VOLUUMDOMAIN) {
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://' + window.__fusionops.PUBLIC_VOLUUMDOMAIN + '/dtpCallback.js';
+        document.head.appendChild(s);
+      }
+    </script>
+    <slot name="head" />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

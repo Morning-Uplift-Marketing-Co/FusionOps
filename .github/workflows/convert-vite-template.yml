@@ -1,0 +1,46 @@
+name: Convert Vite Template To Astro
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_repo:
+        description: "Git repository URL containing Vite template"
+        required: true
+        type: string
+      template_id:
+        description: "Output template folder id (under templates/)"
+        required: true
+        type: string
+      template_name:
+        description: "Display name used in generated index title"
+        required: false
+        type: string
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Convert Template
+        run: >
+          node scripts/convert-vite-to-astro-template.mjs
+          --source "${{ inputs.source_repo }}"
+          --out templates
+          --template-id "${{ inputs.template_id }}"
+          --name "${{ inputs.template_name || inputs.template_id }}"
+
+      - name: Validate Tracking
+        run: node scripts/validate-template-tracking.mjs "templates/${{ inputs.template_id }}"
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: converted-template-${{ inputs.template_id }}
+          path: templates/${{ inputs.template_id }}
