@@ -547,9 +547,13 @@ function getTemplateQualityGateReport({ files = {}, sourceCode = '', category = 
   const categoryLower = String(category || '').toLowerCase();
   const keys = Object.keys(fileMap);
   const combined = source + JSON.stringify(fileMap);
+  const htmlCombined = keys
+    .filter((k) => k.toLowerCase().endsWith('.html'))
+    .map((k) => (typeof fileMap[k] === 'string' ? fileMap[k] : ''))
+    .join('\n') + '\n' + (/<html|<!doctype html/i.test(source) ? source : '');
   const hasEntry = keys.some((k) => k.endsWith('index.astro') || k.endsWith('index.html')) || /<html|<!doctype html/i.test(source);
   const hasPixelMarker = /sendBeacon|sendPixelBeacon|fpPixel|__fpPixel|PX_ENDPOINT|t\.[^"' ]+\/e|window\.__fusionopsTrack|window\.pixel/i.test(combined);
-  const hasAstroLeak = /\{\s*noindex\s*\?|\{\s*[a-zA-Z_$][\w$]*\s*&&\s*\(/.test(combined);
+  const hasAstroLeak = /\{title\}|\{\s*noindex\s*\?|\{\s*[a-zA-Z_$][\w$]*\s*&&\s*\(/.test(htmlCombined);
   const hasViewport = /<meta[^>]+name=["']viewport["']/i.test(combined);
   const hasCta = /<button|href=["']#apply["']|type=["']submit["']/i.test(combined);
   const hasCalculator = /calculator|monthly payment|calcMonthly|loanAmount|payment estimate/i.test(combined);

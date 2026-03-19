@@ -9,12 +9,16 @@ function validateTemplateQuality(template) {
   const category = String(template.category || "").toLowerCase();
   const keys = Object.keys(files);
   const combined = sourceCode + JSON.stringify(files);
+  const htmlCombined = keys
+    .filter((k) => k.toLowerCase().endsWith(".html"))
+    .map((k) => (typeof files[k] === "string" ? files[k] : ""))
+    .join("\n") + "\n" + (/<html|<!doctype html/i.test(sourceCode) ? sourceCode : "");
   const entryOk = keys.some((k) => k.endsWith("index.astro") || k.endsWith("index.html")) || /<html|<!doctype html/i.test(sourceCode);
   const pixelMarker = /sendBeacon|sendPixelBeacon|fpPixel|__fpPixel|PX_ENDPOINT|t\.[^"' ]+\/e|window\.pixel/i.test(combined);
   const trackingMarker = /gtag\(|AW-\d+|form_start|form_submit/i.test(combined);
   const hasViewport = /<meta[^>]+name=["']viewport["']/i.test(combined);
-  const hasPrimaryToken = /--color-primary|--primary\s*:|var\(--color-primary\)|var\(--primary\)|hsl\(var\(--primary\)\)/i.test(combined);
-  const hasExpressionLeak = /\{\s*noindex\s*\?|\{\s*[a-zA-Z_$][\w$]*\s*&&\s*\(/.test(combined);
+  const hasPrimaryToken = /--color-primary|--primary\s*:|--fo-primary|var\(--color-primary\)|var\(--primary\)|var\(--fo-primary\)|hsl\(var\(--primary\)\)/i.test(combined);
+  const hasExpressionLeak = /\{title\}|\{\s*noindex\s*\?|\{\s*[a-zA-Z_$][\w$]*\s*&&\s*\(/.test(htmlCombined);
   const hasCalculator = /calculator|monthly payment|calcMonthly|loanAmount|payment estimate/i.test(combined);
   const hasAprCompare = /representative apr|apr range|<table[\s\S]*apr|term[\s\S]*apr/i.test(combined);
   const bannedPatterns = [/guaranteed approval/i, /guaranteed loan/i, /100%\s*approval/i, /everyone approved/i, /instant cash now/i, /free money/i, /zero risk/i];
