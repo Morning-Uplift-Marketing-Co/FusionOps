@@ -363,3 +363,43 @@ jobs:
 
           upsert_cname "$DOMAIN"
           upsert_cname "www.$DOMAIN"
+
+      - name: Purge Cloudflare Cache (post-deploy)
+        if: always()
+        env:
+          CF_TOKEN_FROM_CONFIG: ${{ steps.template.outputs.cf_api_token }}
+          CF_ACCOUNT_FROM_CONFIG: ${{ steps.template.outputs.cf_account_id }}
+          CF_TOKEN_FROM_SECRET: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_FROM_SECRET: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          export CF_TOKEN="${CF_TOKEN_FROM_SECRET:-$CF_TOKEN_FROM_CONFIG}"
+          export CF_ACCOUNT="${CF_ACCOUNT_FROM_SECRET:-$CF_ACCOUNT_FROM_CONFIG}"
+          CONFIG_FILE="${{ steps.config.outputs.file }}"
+          DOMAIN=$(node -e "const c=require('./$CONFIG_FILE');const d=String(c.domain||'').trim().toLowerCase().replace(/^https?:\/\//,'').replace(/^\/\//,'').replace(/[/?#].*$/,'').replace(/\.+$/,'').replace(/^www\./,'');console.log(d)")
+
+          if [ -z "$DOMAIN" ] || [ -z "$CF_TOKEN" ] || [ -z "$CF_ACCOUNT" ]; then
+            echo "Skipping cache purge: missing domain, token, or account"
+            exit 0
+          fi
+
+          ZONE_RESP=$(curl -s -X GET \
+            "https://api.cloudflare.com/client/v4/zones?name=$DOMAIN&account.id=$CF_ACCOUNT" \
+            -H "Authorization: Bearer $CF_TOKEN" \
+            -H "Content-Type: application/json")
+          ZONE_ID=$(ZONE_RESP="$ZONE_RESP" node -e "const r=JSON.parse(process.env.ZONE_RESP||'{}');console.log((r.result&&r.result[0]&&r.result[0].id)||'')")
+
+          if [ -z "$ZONE_ID" ]; then
+            echo "Skipping cache purge: zone lookup failed for $DOMAIN"
+            echo "$ZONE_RESP"
+            exit 0
+          fi
+
+          echo "Purging cache for zone $ZONE_ID ($DOMAIN)..."
+          PURGE_RESP=$(curl -s -X POST \
+            "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache" \
+            -H "Authorization: Bearer $CF_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"purge_everything":true}')
+
+          PURGE_JSON="$PURGE_RESP" node -e "const r=JSON.parse(process.env.PURGE_JSON||'{}');if(!r.success){console.warn('Cache purge failed (non-blocking):', JSON.stringify(r));process.exit(0)};console.log('Cache purge OK:', JSON.stringify(r));"
