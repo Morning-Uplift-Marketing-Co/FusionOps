@@ -2,7 +2,7 @@
 import Layout from "../../layouts/Layout.astro";
 
 // Pre-compute code blocks with escaped curly braces
-const quickStartCode = `curl -X POST https://lp-factory-api.misty-feather-556e.workers.devapi/automation/registrar/ping \\
+const quickStartCode = `curl -X POST https://lp-factory-api.misty-feather-556e.workers.dev/api/automation/registrar/ping \\
   -H "Content-Type: application/json" \\
   -d '{"provider": "internetbs"}'`;
 
@@ -11,7 +11,7 @@ const jsonExample = `{
   "provider": "internetbs"
 }`;
 
-const bashExample = `curl -X POST https://lp-factory-api.misty-feather-556e.workers.devapi/automation/registrar/check \\
+const bashExample = `curl -X POST https://lp-factory-api.misty-feather-556e.workers.dev/api/automation/registrar/check \\
   -H "Content-Type: application/json" \\
   -d '{"domain": "example.com", "provider": "internetbs"}'`;
 
