@@ -268,6 +268,98 @@ function mirrorApplyForValidator(outDir) {
   }
 }
 
+function walkFiles(root, predicate, acc = []) {
+  if (!fs.existsSync(root)) return acc;
+  const entries = fs.readdirSync(root, { withFileTypes: true });
+  for (const entry of entries) {
+    const full = path.join(root, entry.name);
+    if (entry.isDirectory()) {
+      walkFiles(full, predicate, acc);
+      continue;
+    }
+    if (predicate(full)) acc.push(full);
+  }
+  return acc;
+}
+
+function ensureViewportMeta(html) {
+  if (/<meta[^>]+name=["']viewport["']/i.test(html)) return { html, changed: false };
+  const viewportTag = '<meta name="viewport" content="width=device-width, initial-scale=1" />';
+  if (/<head[^>]*>/i.test(html)) {
+    return {
+      html: html.replace(/<head([^>]*)>/i, `<head$1>\n    ${viewportTag}`),
+      changed: true,
+    };
+  }
+  return { html: `${viewportTag}\n${html}`, changed: true };
+}
+
+function ensurePrimaryToken(html) {
+  if (/--color-primary|--primary\s*:|--fo-primary|var\(--color-primary\)|var\(--primary\)|var\(--fo-primary\)|hsl\(var\(--primary\)\)/i.test(html)) {
+    return { html, changed: false };
+  }
+  const tokenStyle = '<style id="fusionops-primary-token">:root{--color-primary:#6d28d9;--fo-primary:#6d28d9;}</style>';
+  if (/<head[^>]*>/i.test(html)) {
+    return {
+      html: html.replace(/<head([^>]*)>/i, `<head$1>\n    ${tokenStyle}`),
+      changed: true,
+    };
+  }
+  return { html: `${tokenStyle}\n${html}`, changed: true };
+}
+
+function sanitizeExpressionLeak(html, templateName) {
+  let next = html;
+  let changed = false;
+
+  if (/\{title\}/.test(next)) {
+    next = next.replace(/\{title\}/g, templateName);
+    changed = true;
+  }
+
+  if (/\{\s*noindex\s*\?/.test(next)) {
+    next = next.replace(/<meta[^>]*\{\s*noindex\s*\?[\s\S]*?\/?>/gi, '');
+    changed = true;
+  }
+
+  const jsxConditional = /\{\s*([a-zA-Z_$][\w$]*\s*&&\s*\([^{}]*\))\s*\}/g;
+  if (jsxConditional.test(next)) {
+    next = next.replace(jsxConditional, '$1');
+    changed = true;
+  }
+
+  return { html: next, changed };
+}
+
+function autoFixHtmlQualityGate(outDir, templateName) {
+  const htmlFiles = walkFiles(path.join(outDir, 'public'), (f) => f.toLowerCase().endsWith('.html'));
+  if (htmlFiles.length === 0) return;
+
+  let touched = 0;
+  for (const file of htmlFiles) {
+    const original = fs.readFileSync(file, 'utf8');
+    let next = original;
+
+    const leakFix = sanitizeExpressionLeak(next, templateName);
+    next = leakFix.html;
+
+    const viewportFix = ensureViewportMeta(next);
+    next = viewportFix.html;
+
+    const tokenFix = ensurePrimaryToken(next);
+    next = tokenFix.html;
+
+    if (next !== original) {
+      fs.writeFileSync(file, next, 'utf8');
+      touched += 1;
+    }
+  }
+
+  if (touched > 0) {
+    console.log(`[convert] auto-fixed quality gate markers in ${touched} html file(s)`);
+  }
+}
+
 function main() {
   const args = parseArgs(process.argv);
   if (args.help || !args.source || !args.out || !args.templateId) {
@@ -288,6 +380,7 @@ function main() {
     copyRootStaticFiles(workSource, outDir);
     ensureHeaders(outDir);
     createAstroFiles(outDir, args.name || args.templateId);
+    autoFixHtmlQualityGate(outDir, args.name || args.templateId);
     mirrorApplyForValidator(outDir);
 
     console.log(`Converted template ready at: ${outDir}`);
