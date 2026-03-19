@@ -4,7 +4,7 @@
  * Routes through Worker proxy to avoid CORS issues.
  */
 
-const PROXY_PASS = "https://lp-factory-api.misty-feather-556e.workers.devapi/proxy/pass";
+const PROXY_PASS = "https://lp-factory-api.misty-feather-556e.workers.dev/api/proxy/pass";
 
 async function proxyFetch(url, opts = {}) {
   // Route through Worker proxy to bypass CORS
