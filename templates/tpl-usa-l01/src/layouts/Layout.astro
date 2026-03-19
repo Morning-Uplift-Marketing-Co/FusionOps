@@ -1,9 +1,14 @@
 ---
-const { title = 'Template', description = '' } = Astro.props;
-const PX_ENDPOINT = 'https://t.' + (typeof window !== 'undefined' ? window.location.hostname : 'example.com') + '/e';
-const PUBLIC_VOLUUMDOMAIN = import.meta.env.PUBLIC_VOLUUMDOMAIN || '';
-const PUBLIC_FORMSTARTLABEL = import.meta.env.PUBLIC_FORMSTARTLABEL || 'form_start';
-const PUBLIC_FORMSUBMITLABEL = import.meta.env.PUBLIC_FORMSUBMITLABEL || 'form_submit';
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title = "Template", description = "" } = Astro.props as Props;
+const conversionId = import.meta.env.PUBLIC_CONVERSIONID || "";
+const formStartLabel = import.meta.env.PUBLIC_FORMSTARTLABEL || "form_start";
+const formSubmitLabel = import.meta.env.PUBLIC_FORMSUBMITLABEL || "form_submit";
+const voluumDomain = import.meta.env.PUBLIC_VOLUUMDOMAIN || "";
 ---
 <!doctype html>
 <html lang="en">
@@ -12,22 +17,72 @@ const PUBLIC_FORMSUBMITLABEL = import.meta.env.PUBLIC_FORMSUBMITLABEL || 'form_s
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     {description && <meta name="description" content={description} />}
-    <script is:inline>
-      window.__fusionops = window.__fusionops || {};
-      window.__fusionops.PX_ENDPOINT = 'https://t.' + window.location.hostname + '/e';
-      window.__fusionops.PUBLIC_VOLUUMDOMAIN = '{PUBLIC_VOLUUMDOMAIN}';
-      window.__fusionops.PUBLIC_FORMSTARTLABEL = '{PUBLIC_FORMSTARTLABEL}';
-      window.__fusionops.PUBLIC_FORMSUBMITLABEL = '{PUBLIC_FORMSUBMITLABEL}';
-      if (window.__fusionops.PUBLIC_VOLUUMDOMAIN) {
-        var s = document.createElement('script');
-        s.async = true;
-        s.src = 'https://' + window.__fusionops.PUBLIC_VOLUUMDOMAIN + '/dtpCallback.js';
-        document.head.appendChild(s);
-      }
-    </script>
     <slot name="head" />
+
+    {conversionId && (
+      <script
+        data-cfasync="false"
+        async
+        src={`https://www.googletagmanager.com/gtag/js?id=${conversionId}`}
+        is:inline
+      ></script>
+    )}
+    {voluumDomain && (
+      <script data-cfasync="false" is:inline define:vars={{ voluumDomain }}>
+        (function () {
+          var s = document.createElement("script");
+          s.async = true;
+          s.src = "https://" + voluumDomain + "/dtpCallback.js";
+          document.head.appendChild(s);
+        })();
+      </script>
+    )}
+    <script data-cfasync="false" is:inline define:vars={{ conversionId, formStartLabel, formSubmitLabel }}>
+      (function () {
+        window.dataLayer = window.dataLayer || [];
+        function gtag() {
+          window.dataLayer.push(arguments);
+        }
+        if (conversionId) {
+          gtag("js", new Date());
+          gtag("config", conversionId);
+        }
+        window.__gtagConversionId = conversionId;
+        window.__formStartLabel = formStartLabel;
+        window.__formSubmitLabel = formSubmitLabel;
+      })();
+    </script>
   </head>
   <body>
+    <script data-cfasync="false" is:inline>
+      (function () {
+        function fpPixel(eventName, extra) {
+          try {
+            var endpoint = "https://t." + window.location.hostname + "/e";
+            var payload = Object.assign(
+              { e: eventName, d: window.location.hostname, ts: Date.now() },
+              extra || {}
+            );
+            navigator.sendBeacon(endpoint, JSON.stringify(payload));
+          } catch (_) {}
+        }
+        var p = new URLSearchParams(window.location.search);
+        var cid =
+          p.get("gclid") ||
+          p.get("vlcid") ||
+          p.get("clickid") ||
+          p.get("click_id") ||
+          p.get("cid") ||
+          p.get("cpid") ||
+          "";
+        window.__fpClickId = cid;
+        window.__fpPixel = fpPixel;
+        if (!window.__fpPageTracked) {
+          window.__fpPageTracked = true;
+          fpPixel("pv", cid ? { click_id: cid } : {});
+        }
+      })();
+    </script>
     <slot />
   </body>
 </html>
