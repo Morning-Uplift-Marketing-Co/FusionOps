@@ -1,5 +1,5 @@
 {
-  "templateId": "tpl-usa-b02",
+  "templateId": "tpl-usa-l01",
   "cfPagesProject": "lp-jora-creditz-main",
   "cfApiToken": "",
   "cfAccountId": "",
@@ -36,5 +36,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-19T22:56:33.215Z"
+  "deployedAt": "2026-03-19T23:06:17.589Z"
 }
