@@ -28,7 +28,15 @@ jobs:
         with:
           node-version: 20
 
+      - name: Configure Git auth for private source repo
+        if: ${{ secrets.SOURCE_REPO_PAT != '' }}
+        run: |
+          git config --global url."https://x-access-token:${{ secrets.SOURCE_REPO_PAT }}@github.com/".insteadOf "https://github.com/"
+          git config --global url."https://x-access-token:${{ secrets.SOURCE_REPO_PAT }}@github.com/".insteadOf "git@github.com:"
+
       - name: Convert Template
+        env:
+          SOURCE_REPO_PAT: ${{ secrets.SOURCE_REPO_PAT }}
         run: >
           node scripts/convert-vite-to-astro-template.mjs
           --source "${{ inputs.source_repo }}"
