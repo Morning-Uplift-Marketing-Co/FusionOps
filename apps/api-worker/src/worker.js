@@ -2467,7 +2467,10 @@ export default {
         const id = body.id || uid();
         const now = new Date().toISOString();
         const filesJson = body.files ? JSON.stringify(body.files) : '{}';
-        const status = 'draft';
+        const statusRaw = String(body.status || '').trim().toLowerCase();
+        const allowedStatuses = ['draft', 'active', 'deprecated', 'archived'];
+        const hasExplicitStatus = Object.prototype.hasOwnProperty.call(body, 'status') && statusRaw !== '';
+        const status = allowedStatuses.includes(statusRaw) ? statusRaw : 'draft';
         const source = String(body.source || 'mcp').toLowerCase();
         const badge = String(body.badge || (source === 'bolt' ? 'Bolt' : 'MCP')).trim() || (source === 'bolt' ? 'Bolt' : 'MCP');
 
@@ -2479,28 +2482,48 @@ export default {
         const resolvedCategory = resolveCategory(body.category, templateId, name, body.description, body.files);
 
         if (existing) {
-          // Update existing template
-          await db.prepare(`
-            UPDATE templates SET
-              name = ?, description = ?, category = ?, badge = ?,
-              source_code = ?, files = ?, updated_at = ?
-            WHERE id = ?
-          `).bind(
-            name,
-            body.description || '',
-            resolvedCategory,
-            badge,
-            body.sourceCode || body.source_code || '',
-            filesJson,
-            now,
-            existing.id
-          ).run();
+          // Update existing template (status is only updated when explicitly provided)
+          if (hasExplicitStatus) {
+            await db.prepare(`
+              UPDATE templates SET
+                name = ?, description = ?, category = ?, badge = ?,
+                source_code = ?, files = ?, status = ?, archived_at = ?, updated_at = ?
+              WHERE id = ?
+            `).bind(
+              name,
+              body.description || '',
+              resolvedCategory,
+              badge,
+              body.sourceCode || body.source_code || '',
+              filesJson,
+              status,
+              status === 'archived' ? now : null,
+              now,
+              existing.id
+            ).run();
+          } else {
+            await db.prepare(`
+              UPDATE templates SET
+                name = ?, description = ?, category = ?, badge = ?,
+                source_code = ?, files = ?, updated_at = ?
+              WHERE id = ?
+            `).bind(
+              name,
+              body.description || '',
+              resolvedCategory,
+              badge,
+              body.sourceCode || body.source_code || '',
+              filesJson,
+              now,
+              existing.id
+            ).run();
+          }
 
           const updated = await db.prepare('SELECT * FROM templates WHERE id = ?').bind(existing.id).first();
           if (updated) {
             await createTemplateVersionSnapshot(db, updated, `Updated via MCP (${source})`);
           }
-          return json({ id: existing.id, action: 'updated', success: true });
+          return json({ id: existing.id, action: 'updated', success: true, status: hasExplicitStatus ? status : undefined });
         }
 
         // Insert new template
@@ -2517,7 +2540,7 @@ export default {
             resolvedCategory,
             badge,
             body.sourceCode || body.source_code || '',
-            filesJson, now, now, status, null
+            filesJson, now, now, status, status === 'archived' ? now : null
           ).run();
         } catch (insertErr) {
           if (String(insertErr?.message || '').includes('UNIQUE constraint failed')) {
@@ -2531,7 +2554,7 @@ export default {
           await createTemplateVersionSnapshot(db, templateRow, `Imported via MCP (${source})`);
         }
 
-        return json({ id, action: 'created', success: true }, 201);
+        return json({ id, action: 'created', success: true, status }, 201);
       }
 
       // GET /api/mcp/templates — list templates (lightweight, for MCP server to poll)
