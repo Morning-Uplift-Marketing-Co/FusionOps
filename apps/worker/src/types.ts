@@ -10,7 +10,13 @@ export interface Env {
 export interface AccountConfig {
   account_id: string;
   callback_token: string;
+  callback_token_hash?: string | null;
+  callback_token_version?: number | null;
+  callback_token_migrated_at?: string | null;
   voluum_api_key: string;
+  voluum_api_key_enc?: string | null;
+  voluum_api_key_version?: number | null;
+  voluum_api_key_migrated_at?: string | null;
   domains: string;
   active: number;
 }

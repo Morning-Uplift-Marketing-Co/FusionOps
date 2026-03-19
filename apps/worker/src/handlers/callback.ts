@@ -18,8 +18,74 @@
 
 import type { AccountConfig, Env, LeadsGateCallback } from '../types';
 import { validatePayload, validateToken } from '../lib/validation';
-import { generateDedupKey, insertDedupKey, isDuplicate } from '../lib/dedup';
+import {
+  claimConversion,
+  completeConversionClaim,
+  failConversionClaim,
+  generateDedupKey,
+} from '../lib/dedup';
 import { uploadConversion } from '../lib/voluum';
+
+const MAX_CALLBACK_BODY_BYTES = 64 * 1024;
+const MAX_RAW_PAYLOAD_CHARS = 10_000;
+const JSON_HEADERS = { 'Content-Type': 'application/json' } as const;
+const CALLBACK_ERROR = 'callback_processing_error';
+const CALLBACK_REJECTION = 'callback_rejected';
+
+function jsonResponse(body: unknown, status: number): Response {
+  return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
+}
+
+function unauthorizedResponse(): Response {
+  return jsonResponse({ error: 'Unauthorized' }, 401);
+}
+
+function payloadTooLargeResponse(): Response {
+  return jsonResponse({ error: 'Payload too large' }, 413);
+}
+
+function parseContentLength(request: Request): number | null {
+  const header = request.headers.get('Content-Length');
+  if (!header) return null;
+  const parsed = Number(header);
+  if (!Number.isFinite(parsed) || parsed < 0) return null;
+  return parsed;
+}
+
+function byteLength(value: string): number {
+  return new TextEncoder().encode(value).byteLength;
+}
+
+function toBoundedRawPayload(rawBody: string): string {
+  if (rawBody.length <= MAX_RAW_PAYLOAD_CHARS) return rawBody;
+  return `${rawBody.slice(0, MAX_RAW_PAYLOAD_CHARS)}...[truncated]`;
+}
+
+function toErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
+
+function logCallbackError(
+  stage: string,
+  context: Record<string, unknown>,
+  error: unknown
+): void {
+  console.error(CALLBACK_ERROR, {
+    stage,
+    ...context,
+    message: toErrorMessage(error),
+    timestamp: new Date().toISOString(),
+  });
+}
+
+function logCallbackRejection(stage: string, context: Record<string, unknown>): void {
+  console.warn(CALLBACK_REJECTION, {
+    stage,
+    ...context,
+    timestamp: new Date().toISOString(),
+  });
+}
 
 /**
  * Resolve account configuration from D1.
@@ -29,7 +95,7 @@ async function resolveAccount(
   accountId: string
 ): Promise<AccountConfig | null> {
   return db
-    .prepare('SELECT * FROM accounts WHERE account_id = ? AND active = 1')
+    .prepare('SELECT * FROM accounts WHERE account_id = ?')
     .bind(accountId)
     .first<AccountConfig>();
 }
@@ -94,20 +160,21 @@ export async function handleLeadsGateCallback(
   // --- Step 1: Resolve account ---
   const account = await resolveAccount(db, accountId);
   if (!account) {
-    return new Response(JSON.stringify({ error: 'Account not found' }), {
-      status: 404,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    logCallbackRejection('account_lookup', { account_id: accountId, reason: 'account_not_found' });
+    return unauthorizedResponse();
   }
 
   // --- Step 2: Validate token ---
   const token = request.headers.get('X-Callback-Token');
-  const tokenResult = validateToken(token, account);
+  const tokenResult = await validateToken(token, account);
   if (!tokenResult.valid) {
-    return new Response(JSON.stringify({ error: tokenResult.error }), {
-      status: tokenResult.statusCode,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    logCallbackRejection('auth', { account_id: accountId, reason: 'invalid_token' });
+    return unauthorizedResponse();
+  }
+
+  const declaredLength = parseContentLength(request);
+  if (declaredLength !== null && declaredLength > MAX_CALLBACK_BODY_BYTES) {
+    return payloadTooLargeResponse();
   }
 
   // --- Step 3: Parse body ---
@@ -116,52 +183,56 @@ export async function handleLeadsGateCallback(
 
   try {
     rawBody = await request.text();
+    if (byteLength(rawBody) > MAX_CALLBACK_BODY_BYTES) {
+      return payloadTooLargeResponse();
+    }
     payload = JSON.parse(rawBody) as LeadsGateCallback;
-  } catch {
-    return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+  } catch (error) {
+    logCallbackError('payload_parse', { account_id: accountId }, error);
+    return jsonResponse({ error: 'Invalid JSON body' }, 400);
   }
 
   // --- Step 4: Validate payload ---
   const payloadResult = validatePayload(payload);
   if (!payloadResult.valid) {
-    return new Response(JSON.stringify({ error: payloadResult.error }), {
-      status: payloadResult.statusCode,
-      headers: { 'Content-Type': 'application/json' },
+    logCallbackRejection('payload_validate', {
+      account_id: accountId,
+      error: payloadResult.error,
+      status_code: payloadResult.statusCode,
     });
+    return jsonResponse({ error: payloadResult.error }, payloadResult.statusCode);
   }
 
   // --- Step 5: Always log raw callback ---
   try {
-    await logRawCallback(db, accountId, payload, rawBody);
+    await logRawCallback(db, accountId, payload, toBoundedRawPayload(rawBody));
   } catch (err) {
-    // Log failure should not block processing, but we note it
-    console.error('Failed to log raw callback:', err);
+    logCallbackError(
+      'raw_log_insert',
+      { account_id: accountId, type: payload.type, click_id: payload.click_id, lead_id: payload.lead_id },
+      err
+    );
   }
 
   // --- Step 6: Non-soldLead → return 200 ---
   if (payload.type !== 'soldLead') {
-    return new Response(JSON.stringify({ status: 'ok', type: payload.type }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return jsonResponse({ status: 'ok', type: payload.type }, 200);
   }
 
   // --- Step 7: Generate dedup key ---
   const dedupKey = await generateDedupKey(payload.click_id, payload.lead_id);
 
-  // --- Step 8: Check for duplicate ---
-  const duplicate = await isDuplicate(db, dedupKey, accountId);
-  if (duplicate) {
-    return new Response(
-      JSON.stringify({ status: 'ok', deduplicated: true }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+  // --- Step 8: Atomically claim conversion ---
+  const claim = await claimConversion(db, dedupKey, accountId);
+  if (!claim.claimed) {
+    logCallbackRejection('dedup_duplicate', {
+      account_id: accountId,
+      click_id: payload.click_id,
+      lead_id: payload.lead_id,
+      dedup_key: dedupKey,
+      claim_status: claim.status,
+    });
+    return jsonResponse({ status: 'ok', deduplicated: true, claim_status: claim.status }, 200);
   }
 
   // --- Step 9: Upload to Voluum ---
@@ -173,14 +244,15 @@ export async function handleLeadsGateCallback(
 
   // --- Step 10: Handle result ---
   if (conversionResult.success) {
-    // Insert dedup key ONLY after successful upload
+    // Finalize claim after successful upload
     try {
-      await insertDedupKey(db, dedupKey, accountId);
+      await completeConversionClaim(db, dedupKey, accountId);
     } catch (err) {
-      // Dedup insert failed after successful upload.
-      // This is a rare race condition. Log it but don't fail the response.
-      // The next retry will hit the dedup check and return 200.
-      console.error('Dedup insert failed after successful upload:', err);
+      logCallbackError(
+        'claim_finalize_completed',
+        { account_id: accountId, click_id: payload.click_id, lead_id: payload.lead_id, dedup_key: dedupKey },
+        err
+      );
     }
 
     // Log success
@@ -194,19 +266,47 @@ export async function handleLeadsGateCallback(
         'success'
       );
     } catch (err) {
-      console.error('Failed to log successful conversion:', err);
+      logCallbackError(
+        'conversion_log_insert_success',
+        { account_id: accountId, click_id: payload.click_id, lead_id: payload.lead_id, dedup_key: dedupKey },
+        err
+      );
     }
 
     return new Response(
       JSON.stringify({ status: 'ok', conversion: 'uploaded' }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
+      { status: 200, headers: JSON_HEADERS }
     );
   }
 
   // Upload failed
+  logCallbackError(
+    'conversion_upload',
+    {
+      account_id: accountId,
+      click_id: payload.click_id,
+      lead_id: payload.lead_id,
+      dedup_key: dedupKey,
+      claim_status: 'failed',
+    },
+    conversionResult.error || 'Unknown conversion upload failure'
+  );
+
+  try {
+    await failConversionClaim(
+      db,
+      dedupKey,
+      accountId,
+      conversionResult.error || 'Unknown conversion upload failure'
+    );
+  } catch (err) {
+    logCallbackError(
+      'claim_finalize_failed',
+      { account_id: accountId, click_id: payload.click_id, lead_id: payload.lead_id, dedup_key: dedupKey },
+      err
+    );
+  }
+
   try {
     await logConversionUpload(
       db,
@@ -218,14 +318,15 @@ export async function handleLeadsGateCallback(
       conversionResult.error
     );
   } catch (err) {
-    console.error('Failed to log failed conversion:', err);
+    logCallbackError(
+      'conversion_log_insert_failed',
+      { account_id: accountId, click_id: payload.click_id, lead_id: payload.lead_id, dedup_key: dedupKey },
+      err
+    );
   }
 
-  return new Response(
-    JSON.stringify({ error: 'Conversion upload failed', detail: conversionResult.error }),
-    {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    }
+  return jsonResponse(
+    { error: 'Conversion upload failed', detail: conversionResult.error, claim_status: 'failed' },
+    500
   );
 }
