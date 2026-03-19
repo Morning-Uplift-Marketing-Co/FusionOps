@@ -1,0 +1,64 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header';
+import HeroWithModal from '../components/HeroWithModal';
+import HowItWorks from '../components/HowItWorks.astro';
+import Features from '../components/Features';
+import APRComparison from '../components/APRComparison.astro';
+import EligibleExpenses from '../components/EligibleExpenses.astro';
+import Testimonials from '../components/Testimonials';
+import FAQ from '../components/FAQ';
+import FooterWithModals from '../components/FooterWithModals';
+
+// Environment variables
+const brand          = import.meta.env.PUBLIC_BRAND          || 'TPL-USA-B02';
+const domain         = import.meta.env.PUBLIC_DOMAIN         || 'example.com';
+const h1             = import.meta.env.PUBLIC_H1             || 'Get Up to $5,000 Today';
+const sub            = import.meta.env.PUBLIC_SUB            || 'Fast approval. No hard credit check.';
+const cta            = import.meta.env.PUBLIC_CTA            || 'Apply Now';
+const phone          = import.meta.env.PUBLIC_PHONE          || '';
+const email          = import.meta.env.PUBLIC_EMAIL          || `support@${import.meta.env.PUBLIC_DOMAIN || 'example.com'}`;
+const address        = import.meta.env.PUBLIC_ADDRESS        || '';
+const aid            = import.meta.env.PUBLIC_AID            || '';
+const amountMin      = import.meta.env.PUBLIC_AMOUNTMIN      || '100';
+const amountMax      = import.meta.env.PUBLIC_AMOUNTMAX      || '5000';
+const amountMinRaw   = String(Number((amountMin).replace(/[^0-9.]/g,'')) || 100);
+const amountMaxRaw   = String(Number((amountMax).replace(/[^0-9.]/g,'')) || 5000);
+const primaryColor   = import.meta.env.PUBLIC_PRIMARYCOLOR   || '#3b5bdb';
+const accentColor    = import.meta.env.PUBLIC_ACCENTCOLOR    || '#f97316';
+const aprMin         = import.meta.env.PUBLIC_APRMIN         || '5.99';
+const aprMax         = import.meta.env.PUBLIC_APRMAX         || '35.99';
+const conversionId      = import.meta.env.PUBLIC_CONVERSIONID      || '';
+const formStartLabel    = import.meta.env.PUBLIC_FORMSTARTLABEL   || '';
+const formSubmitLabel   = import.meta.env.PUBLIC_FORMSUBMITLABEL  || '';
+const voluumId          = import.meta.env.PUBLIC_VOLUUMID          || '';
+const voluumDomain      = import.meta.env.PUBLIC_VOLUUMDOMAIN      || '';
+const voluumClickUrl    = import.meta.env.PUBLIC_VOLUUM_CLICK_URL  || '';
+const ctaHref           = voluumClickUrl || '#apply';
+const colorId           = import.meta.env.PUBLIC_COLORID           || 'ocean';
+const fontId            = import.meta.env.PUBLIC_FONTID            || 'dm-sans';
+const radiusId          = import.meta.env.PUBLIC_RADIUS            || 'rounded';
+---
+
+<Layout>
+  <Header client:load brand={brand} phone={phone} />
+  <HeroWithModal client:load 
+    brand={brand}
+    h1={h1}
+    sub={sub}
+    cta={cta}
+    amountMin={amountMin}
+    amountMax={amountMax}
+    amountMinRaw={amountMinRaw}
+    amountMaxRaw={amountMaxRaw}
+    aprMin={aprMin}
+    aprMax={aprMax}
+  />
+  <HowItWorks />
+  <Features client:visible accentColor={accentColor} amountMin={amountMin} amountMax={amountMax} />
+  <APRComparison />
+  <EligibleExpenses />
+  <Testimonials client:visible />
+  <FAQ client:visible />
+  <FooterWithModals client:load />
+</Layout>
