@@ -52,6 +52,9 @@ jobs:
       - name: Validate Tracking
         run: node scripts/validate-template-tracking.mjs "templates/${{ inputs.template_id }}"
 
+      - name: Validate Quality Gate Compatibility
+        run: node scripts/validate-template-quality.mjs "templates/${{ inputs.template_id }}"
+
       - name: Import To Dashboard
         env:
           API_BASE: ${{ vars.API_BASE || 'https://lp-factory-api.misty-feather-556e.workers.dev' }}
