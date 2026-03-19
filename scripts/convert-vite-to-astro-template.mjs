@@ -159,7 +159,7 @@ const PUBLIC_FORMSUBMITLABEL = import.meta.env.PUBLIC_FORMSUBMITLABEL || 'form_s
 </html>
 `;
 
-  const index = `---
+  let index = `---
 const ctaHref = '/apply';
 ---
 <!doctype html>
@@ -174,13 +174,13 @@ const ctaHref = '/apply';
       <h1 style="margin:0 0 12px; font-size:32px; line-height:1.2;">${templateName}</h1>
       <p style="margin:0 0 20px; color:#cbd5e1;">Astro fallback entry for FusionOps deploy compatibility.</p>
       <p style="margin:0 0 24px;"><a href={ctaHref} style="display:inline-block; padding:12px 18px; border-radius:10px; text-decoration:none; background:#2563eb; color:white; font-weight:600;">Apply Now</a></p>
-      <p style="font-size:13px; color:#94a3b8;">If this page appears in preview, use <code>public/index.html</code> for visual output.</p>
+      <p style="font-size:13px; color:#94a3b8;">Generated fallback. Real template HTML was not detected.</p>
     </main>
   </body>
 </html>
 `;
 
-  const apply = `---
+  let apply = `---
 ---
 <!doctype html>
 <html lang="en">
@@ -198,6 +198,27 @@ const ctaHref = '/apply';
   </body>
 </html>
 `;
+
+  const publicIndex = path.join(outDir, 'public', 'index.html');
+  if (fs.existsSync(publicIndex)) {
+    const rawIndex = fs.readFileSync(publicIndex, 'utf8');
+    const withMarker = /href=\{ctaHref\}/.test(rawIndex)
+      ? rawIndex
+      : /<\/body>/i.test(rawIndex)
+        ? rawIndex.replace(/<\/body>/i, '<a href={ctaHref} style="display:none" aria-hidden="true">Apply</a></body>')
+        : `${rawIndex}\n<a href={ctaHref} style="display:none" aria-hidden="true">Apply</a>\n`;
+    index = `---
+const ctaHref = '/apply';
+---
+${withMarker}`;
+  }
+
+  const publicApply = path.join(outDir, 'public', 'apply.html');
+  if (fs.existsSync(publicApply)) {
+    apply = `---
+---
+${fs.readFileSync(publicApply, 'utf8')}`;
+  }
 
   const eTs = `export const prerender = true;
 export async function GET() {
