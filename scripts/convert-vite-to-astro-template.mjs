@@ -71,6 +71,10 @@ function writeFile(file, content) {
   fs.writeFileSync(file, content, 'utf8');
 }
 
+function escapeRegExp(s) {
+  return String(s || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function cloneIfNeeded(source) {
   if (!isGitUrl(source)) return { workSource: path.resolve(source), cleanup: null };
   const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'vite-to-astro-'));
@@ -274,12 +278,107 @@ export default defineConfig({
   writeFile(path.join(outDir, 'tsconfig.json'), JSON.stringify(tsconfig, null, 2) + '\n');
 }
 
+function collectExternalOrigins(outDir) {
+  const publicDir = path.join(outDir, 'public');
+  const htmlFiles = walkFiles(publicDir, (f) => f.toLowerCase().endsWith('.html'));
+  const origins = new Set();
+
+  for (const file of htmlFiles) {
+    const html = fs.readFileSync(file, 'utf8');
+    const re = /https:\/\/[^\s"'`<>)]+/gi;
+    for (const match of html.match(re) || []) {
+      try {
+        const u = new URL(match);
+        origins.add(`${u.protocol}//${u.host}`);
+      } catch (_e) {}
+    }
+
+    const voluumVar = html.match(/voluumDomain\s*=\s*["']([^"']+)["']/i);
+    if (voluumVar && voluumVar[1]) {
+      try {
+        const host = voluumVar[1].replace(/^https?:\/\//i, '').replace(/\/.*$/, '');
+        if (host) origins.add(`https://${host}`);
+      } catch (_e) {}
+    }
+  }
+
+  return origins;
+}
+
 function ensureHeaders(outDir) {
   const headersPath = path.join(outDir, 'public', '_headers');
-  if (fs.existsSync(headersPath)) return;
+  const origins = collectExternalOrigins(outDir);
+  const scriptSrc = new Set([
+    "'self'",
+    "'unsafe-inline'",
+    'https:',
+    'https://apikeep.com',
+    'https://www.googletagmanager.com',
+  ]);
+  const styleSrc = new Set([
+    "'self'",
+    "'unsafe-inline'",
+    'https://fonts.googleapis.com',
+  ]);
+  const fontSrc = new Set([
+    "'self'",
+    'https://fonts.gstatic.com',
+  ]);
+  const imgSrc = new Set([
+    "'self'",
+    'data:',
+    'https:',
+    'https://images.pexels.com',
+  ]);
+  const connectSrc = new Set([
+    "'self'",
+    'https:',
+    'https://*.supabase.co',
+    'https://apikeep.com',
+  ]);
+
+  for (const origin of origins) {
+    scriptSrc.add(origin);
+    imgSrc.add(origin);
+    connectSrc.add(origin);
+  }
+
+  const hasGtag =
+    scriptSrc.has('https://www.googletagmanager.com') ||
+    [...origins].some((o) => /googletagmanager|google-analytics/i.test(o));
+  if (hasGtag) {
+    const googleAdsOrigins = [
+      'https://www.google.com',
+      'https://www.googleadservices.com',
+      'https://googleads.g.doubleclick.net',
+      'https://stats.g.doubleclick.net',
+    ];
+    for (const o of googleAdsOrigins) {
+      scriptSrc.add(o);
+      imgSrc.add(o);
+      connectSrc.add(o);
+    }
+  }
+
+  const joined = (set) => [...set].join(' ');
+  const csp = [
+    `default-src 'self'`,
+    `script-src ${joined(scriptSrc)}`,
+    `style-src ${joined(styleSrc)}`,
+    `font-src ${joined(fontSrc)}`,
+    `img-src ${joined(imgSrc)}`,
+    `connect-src ${joined(connectSrc)}`,
+    `frame-src 'none'`,
+  ].join('; ');
+
   writeFile(headersPath, `/*
+  X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
+  X-XSS-Protection: 1; mode=block
   Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+  Content-Security-Policy: ${csp};
 `);
 }
 
@@ -401,9 +500,9 @@ function main() {
     copyDirIfExists(path.join(workSource, 'public'), path.join(outDir, 'public'));
     copyDirIfExists(path.join(workSource, 'functions'), path.join(outDir, 'functions'));
     copyRootStaticFiles(workSource, outDir);
-    ensureHeaders(outDir);
     createAstroFiles(outDir, args.name || args.templateId);
     autoFixHtmlQualityGate(outDir, args.name || args.templateId);
+    ensureHeaders(outDir);
     mirrorApplyForValidator(outDir);
 
     console.log(`Converted template ready at: ${outDir}`);
