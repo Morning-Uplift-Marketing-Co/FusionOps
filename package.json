@@ -21,6 +21,7 @@
     "pack-template": "node scripts/pack-template.mjs",
     "prepare-bolt-astro-import": "node scripts/prepare-bolt-astro-import.mjs",
     "convert-template": "node scripts/convert-template.mjs",
+    "convert:vite-astro": "node scripts/convert-vite-to-astro-template.mjs",
     "release": "standard-version"
   },
   "dependencies": {
