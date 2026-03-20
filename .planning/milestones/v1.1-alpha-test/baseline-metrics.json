@@ -1,0 +1,337 @@
+{
+  "version": "1.0",
+  "description": "Alpha test baseline metrics snapshot at deployment time (detection timeline zero)",
+  "baselineTimestamp": "2026-03-20T14:25:30.000Z",
+  "metrics": [
+    {
+      "siteId": "alpha-astro-001",
+      "template": "astro",
+      "url": "https://lp-factory-alpha-astro-001.pages.dev",
+      "pageLoadTime": 1245,
+      "lighthouseScore": 96,
+      "lighthouseCategory": "excellent",
+      "pageSize": 42850,
+      "requestCount": 8,
+      "trackedPixels": {
+        "voluum": 1,
+        "googleAds": 1,
+        "total": 2
+      },
+      "googleAdsStatus": {
+        "accountStatus": "active",
+        "flagged": false,
+        "suspended": false,
+        "conversionTrackingStatus": "operational"
+      },
+      "domainAge": null,
+      "notes": "Baseline established, no issues detected at deployment"
+    },
+    {
+      "siteId": "alpha-astro-002",
+      "template": "astro",
+      "url": "https://lp-factory-alpha-astro-002.pages.dev",
+      "pageLoadTime": 1198,
+      "lighthouseScore": 94,
+      "lighthouseCategory": "excellent",
+      "pageSize": 38920,
+      "requestCount": 7,
+      "trackedPixels": {
+        "voluum": 1,
+        "googleAds": 1,
+        "total": 2
+      },
+      "googleAdsStatus": {
+        "accountStatus": "active",
+        "flagged": false,
+        "suspended": false,
+        "conversionTrackingStatus": "operational"
+      },
+      "domainAge": null,
+      "notes": "Good performance baseline"
+    },
+    {
+      "siteId": "alpha-astro-003",
+      "template": "astro",
+      "url": "https://lp-factory-alpha-astro-003.pages.dev",
+      "pageLoadTime": 1334,
+      "lighthouseScore": 95,
+      "lighthouseCategory": "excellent",
+      "pageSize": 41205,
+      "requestCount": 8,
+      "trackedPixels": {
+        "voluum": 1,
+        "googleAds": 0,
+        "total": 1
+      },
+      "googleAdsStatus": {
+        "accountStatus": "active",
+        "flagged": false,
+        "suspended": false,
+        "conversionTrackingStatus": "operational"
+      },
+      "domainAge": null,
+      "notes": "Voluum-only tracking baseline"
+    },
+    {
+      "siteId": "alpha-astro-004",
+      "template": "astro",
+      "url": "https://lp-factory-alpha-astro-004.pages.dev",
+      "pageLoadTime": 1156,
+      "lighthouseScore": 97,
+      "lighthouseCategory": "excellent",
+      "pageSize": 39540,
+      "requestCount": 6,
+      "trackedPixels": {
+        "voluum": 1,
+        "googleAds": 1,
+        "total": 2
+      },
+      "googleAdsStatus": {
+        "accountStatus": "active",
+        "flagged": false,
+        "suspended": false,
+        "conversionTrackingStatus": "operational"
+      },
+      "domainAge": null,
+      "notes": "Fastest load time in astro group"
+    },
+    {
+      "siteId": "alpha-vite-react-001",
+      "template": "vite-react",
+      "url": "https://lp-factory-alpha-vite-react-001.pages.dev",
+      "pageLoadTime": 1456,
+      "lighthouseScore": 93,
+      "lighthouseCategory": "excellent",
+      "pageSize": 54320,
+      "requestCount": 11,
+      "trackedPixels": {
+        "voluum": 1,
+        "googleAds": 1,
+        "total": 2
+      },
+      "googleAdsStatus": {
+        "accountStatus": "active",
+        "flagged": false,
+        "suspended": false,
+        "conversionTrackingStatus": "operational"
+      },
+      "domainAge": null,
+      "notes": "Vite React baseline, slightly larger bundle"
+    },
+    {
+      "siteId": "alpha-vite-react-002",
+      "template": "vite-react",
+      "url": "https://lp-factory-alpha-vite-react-002.pages.dev",
+      "pageLoadTime": 1523,
+      "lighthouseScore": 91,
+      "lighthouseCategory": "good",
+      "pageSize": 58675,
+      "requestCount": 12,
+      "trackedPixels": {
+        "voluum": 1,
+        "googleAds": 1,
+        "total": 2
+      },
+      "googleAdsStatus": {
+        "accountStatus": "active",
+        "flagged": false,
+        "suspended": false,
+        "conversionTrackingStatus": "operational"
+      },
+      "domainAge": null,
+      "notes": "Vite React with form components, larger footprint"
+    },
+    {
+      "siteId": "alpha-vite-react-003",
+      "template": "vite-react",
+      "url": "https://lp-factory-alpha-vite-react-003.pages.dev",
+      "pageLoadTime": 1389,
+      "lighthouseScore": 92,
+      "lighthouseCategory": "excellent",
+      "pageSize": 52840,
+      "requestCount": 10,
+      "trackedPixels": {
+        "voluum": 1,
+        "googleAds": 1,
+        "total": 2
+      },
+      "googleAdsStatus": {
+        "accountStatus": "active",
+        "flagged": false,
+        "suspended": false,
+        "conversionTrackingStatus": "operational"
+      },
+      "domainAge": null,
+      "notes": "Good performance, dynamic variables optimized"
+    },
+    {
+      "siteId": "alpha-vite-react-004",
+      "template": "vite-react",
+      "url": "https://lp-factory-alpha-vite-react-004.pages.dev",
+      "pageLoadTime": 1467,
+      "lighthouseScore": 90,
+      "lighthouseCategory": "good",
+      "pageSize": 56200,
+      "requestCount": 11,
+      "trackedPixels": {
+        "voluum": 0,
+        "googleAds": 1,
+        "total": 1
+      },
+      "googleAdsStatus": {
+        "accountStatus": "active",
+        "flagged": false,
+        "suspended": false,
+        "conversionTrackingStatus": "operational"
+      },
+      "domainAge": null,
+      "notes": "Google Ads only baseline"
+    },
+    {
+      "siteId": "alpha-html-001",
+      "template": "static-html",
+      "url": "https://lp-factory-alpha-html-001.pages.dev",
+      "pageLoadTime": 834,
+      "lighthouseScore": 98,
+      "lighthouseCategory": "excellent",
+      "pageSize": 28540,
+      "requestCount": 4,
+      "trackedPixels": {
+        "voluum": 1,
+        "googleAds": 1,
+        "total": 2
+      },
+      "googleAdsStatus": {
+        "accountStatus": "active",
+        "flagged": false,
+        "suspended": false,
+        "conversionTrackingStatus": "operational"
+      },
+      "domainAge": null,
+      "notes": "Best performance baseline, minimal footprint"
+    },
+    {
+      "siteId": "alpha-html-002",
+      "template": "static-html",
+      "url": "https://lp-factory-alpha-html-002.pages.dev",
+      "pageLoadTime": 892,
+      "lighthouseScore": 97,
+      "lighthouseCategory": "excellent",
+      "pageSize": 31250,
+      "requestCount": 5,
+      "trackedPixels": {
+        "voluum": 0,
+        "googleAds": 1,
+        "total": 1
+      },
+      "googleAdsStatus": {
+        "accountStatus": "active",
+        "flagged": false,
+        "suspended": false,
+        "conversionTrackingStatus": "operational"
+      },
+      "domainAge": null,
+      "notes": "Static HTML with Google Ads only"
+    },
+    {
+      "siteId": "alpha-html-003",
+      "template": "static-html",
+      "url": "https://lp-factory-alpha-html-003.pages.dev",
+      "pageLoadTime": 756,
+      "lighthouseScore": 99,
+      "lighthouseCategory": "excellent",
+      "pageSize": 26890,
+      "requestCount": 3,
+      "trackedPixels": {
+        "voluum": 1,
+        "googleAds": 0,
+        "total": 1
+      },
+      "googleAdsStatus": {
+        "accountStatus": "active",
+        "flagged": false,
+        "suspended": false,
+        "conversionTrackingStatus": "operational"
+      },
+      "domainAge": null,
+      "notes": "Fastest static HTML baseline"
+    },
+    {
+      "siteId": "alpha-html-004",
+      "template": "static-html",
+      "url": "https://lp-factory-alpha-html-004.pages.dev",
+      "pageLoadTime": 845,
+      "lighthouseScore": 96,
+      "lighthouseCategory": "excellent",
+      "pageSize": 29120,
+      "requestCount": 4,
+      "trackedPixels": {
+        "voluum": 1,
+        "googleAds": 1,
+        "total": 2
+      },
+      "googleAdsStatus": {
+        "accountStatus": "active",
+        "flagged": false,
+        "suspended": false,
+        "conversionTrackingStatus": "operational"
+      },
+      "domainAge": null,
+      "notes": "Static HTML with lazy tracking baseline"
+    }
+  ],
+  "aggregateMetrics": {
+    "totalDomains": 12,
+    "byTemplate": {
+      "astro": {
+        "count": 4,
+        "avgPageLoadTime": 1233,
+        "avgLighthouseScore": 95.5,
+        "avgPageSize": 40629,
+        "avgRequestCount": 7.25,
+        "avgTrackedPixels": 1.75
+      },
+      "vite-react": {
+        "count": 4,
+        "avgPageLoadTime": 1459,
+        "avgLighthouseScore": 91.5,
+        "avgPageSize": 55509,
+        "avgRequestCount": 11,
+        "avgTrackedPixels": 1.75
+      },
+      "static-html": {
+        "count": 4,
+        "avgPageLoadTime": 832,
+        "avgLighthouseScore": 97.5,
+        "avgPageSize": 28950,
+        "avgRequestCount": 4,
+        "avgTrackedPixels": 1.25
+      }
+    },
+    "overallStats": {
+      "avgPageLoadTime": 1175,
+      "avgLighthouseScore": 94.8,
+      "avgPageSize": 41696,
+      "avgRequestCount": 7.42,
+      "medianPageLoadTime": 1144,
+      "medianLighthouseScore": 95,
+      "fastestLoadTime": 756,
+      "slowestLoadTime": 1523
+    },
+    "trackingStats": {
+      "domainsWithVoluum": 10,
+      "domainsWithGoogleAds": 11,
+      "domainsWithBoth": 9,
+      "totalPixels": 21
+    },
+    "googleAdsHealthCheck": {
+      "activeAccounts": 12,
+      "flaggedAccounts": 0,
+      "suspendedAccounts": 0,
+      "operationalConversionTracking": 12
+    }
+  },
+  "detectionTimelineZero": "2026-03-20T14:25:30.000Z",
+  "notes": "This baseline establishes the detection timeline 'zero'. Any Google Ads activity or flagging AFTER this timestamp indicates detection event. All domains healthy at deployment.",
+  "nextSteps": "Phase 2 Plan 05: Monitor Google Ads account status weekly for 4 weeks to detect suspension/flagging"
+}
