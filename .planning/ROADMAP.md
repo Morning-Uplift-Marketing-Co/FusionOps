@@ -8,7 +8,7 @@
 
 ## Phases
 
-- [ ] **Phase 1: Template Import Fix & Capability Detection** - Fix Astro env var injection, establish multi-level capability detection framework
+- [x] **Phase 1: Template Import Fix & Capability Detection** - Fix Astro env var injection, establish multi-level capability detection framework ✓ 2026-03-20
 - [ ] **Phase 2: Multi-Format Build & Anti-Fingerprint Pipeline** - Complete build isolation for all formats, implement deterministic randomization
 - [ ] **Phase 3: Quality Checks & Deploy Validation** - Comprehensive pre-deploy validation gates, Lighthouse enforcement
 - [ ] **Phase 4: Template Preview & UX Polish** - Live preview with real-time variable injection and error feedback
@@ -32,9 +32,9 @@
   5. Capability detection has confidence scoring; manifest override allows users to correct false positives/negatives
 
 **Plans:** 3 plans
-  - [ ] 01-PLAN.md — Env var injection + template normalization (Wave 1)
-  - [ ] 02-PLAN.md — Capability detection framework (Wave 1)
-  - [ ] 03-PLAN.md — Wizard capability-aware integration (Wave 2)
+  - [x] 01-PLAN.md — Env var injection + template normalization (Wave 1) ✓ 32 tests
+  - [x] 02-PLAN.md — Capability detection framework (Wave 1) ✓ 41 tests
+  - [x] 03-PLAN.md — Wizard capability-aware integration (Wave 2) ✓ 69 tests
 
 ---
 
@@ -97,7 +97,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Import Fix & Capability | 3/3 | Planning complete | — |
+| 1. Import Fix & Capability | 3/3 | Implementation complete | 2026-03-20 |
 | 2. Build & Anti-Fingerprint | 0/6 | Not started | — |
 | 3. Quality & Validation | 0/5 | Not started | — |
 | 4. Preview & Polish | 0/3 | Not started | — |

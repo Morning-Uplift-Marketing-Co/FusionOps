@@ -8,7 +8,7 @@ progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 5
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Project State: LP Factory v1
@@ -32,8 +32,8 @@ progress:
 ## Current Position
 
 Phase: 01 (template-import-capability) — EXECUTING
-Plan: 3 of 5 (Plans 01 & 02 complete)
-Progress: Plans 01 (env injection) & 02 (capability detection) done; Plan 03 (wizard integration) next
+Plan: 4 of 5 (Plans 01, 02 & 03 complete)
+Progress: Plans 01 (env injection), 02 (capability detection), & 03 (wizard integration) done; Plan 04 next
 
 ## Roadmap Snapshot
 
@@ -111,10 +111,13 @@ Progress: Plans 01 (env injection) & 02 (capability detection) done; Plan 03 (wi
 - **COMPLETED:** Manifest loader (manifest-loader.js) — Plan 02 ✓
 - **COMPLETED:** Capability auto-detection (capability-detector.js) — Plan 02 ✓
 - **COMPLETED:** Capability resolver (capability-resolver.js) — Plan 02 ✓
+- **COMPLETED:** Wizard integration with capability detection (step-mapper.js, StepDesign enhancement, graceful degradation tests) — Plan 03 ✓
+  - 69 passing tests (28 step-mapper + 14 wizard-capability + 27 StepReview graceful degradation)
+  - Dynamic step visibility, conditional field rendering, graceful fallbacks implemented
 
 ### What Needs Implementation
 
-- **Plan 03:** Wizard integration (manifest + capability auto-detect in wizard flow)
+- **Plan 04:** Build orchestrator (multi-format builds, anti-fingerprint strategy)
 - Multi-format build adapters + orchestrator (Phase 2)
 - Deterministic fingerprinting plugin (Phase 2)
 - Quality checker validation rules (Phase 3)
