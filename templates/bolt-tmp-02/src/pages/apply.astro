@@ -42,18 +42,17 @@ function getCookie(name) {
 
 function getVoluumClickId() {
   var urlParams = new URLSearchParams(window.location.search);
-  var fromUrl = urlParams.get('vlcid') || urlParams.get('clickid') || urlParams.get('cid') || urlParams.get('click_id') || '';
-  var fromStorage = SafeStorage.get('vlcid') || SafeStorage.get('voluum_cid') || '';
+  var fromUrl = urlParams.get('gclid') || urlParams.get('vlcid') || urlParams.get('clickid') || urlParams.get('cid') || urlParams.get('click_id') || urlParams.get('cpid') || '';
+  var fromStorage = SafeStorage.get('voluum_cpid') || SafeStorage.get('voluum_cid') || SafeStorage.get('vlcid') || '';
   var fromCookie = getCookie('vlcid') || '';
-  var cpid = urlParams.get('cpid') || '';
-  return fromUrl || fromStorage || fromCookie || cpid || '';
+  return fromUrl || fromStorage || fromCookie || '';
 }
 
 var _lg_form_init_ = {
   aid: "{aid}",
   template: "fresh",
   ref: window.location.hostname,
-  click_id: getVoluumClickId(),
+  get click_id() { return getVoluumClickId(); },
 
   hooks: {
     onFormLoad: function() {
