@@ -32,7 +32,7 @@ progress:
 ## Current Position
 
 Phase: 03-quality-checks-deploy-validation — EXECUTING
-Plan: 01 of 04 (COMPLETE)
+Plan: 02 of 04 (COMPLETE)
 
 ## Roadmap Snapshot
 
@@ -125,10 +125,17 @@ Plan: 01 of 04 (COMPLETE)
   - 32 passing tests (9 viewport + 13 pixel + 10 orchestrator) with 100% coverage
   - Immutable result objects; critical/warning separation
   - Ready for Plan 02 integration
+- **COMPLETED:** Astro leak detection + Google Ads validators — Phase 3 Plan 02 ✓
+  - QUAL-03: Astro expression leak detection (checkAstroLeaks) - import.meta.env.PUBLIC_*, ${...env...}, VITE_*
+  - QUAL-04: Google Ads tracking validation (checkGoogleAdMarkers) - gtag script, conversion ID, GCLID detection
+  - 33 passing tests (16 astro + 17 google ads) added
+  - Total 65 quality-check tests passing; 95.95% statement coverage, 90.09% branch coverage
+  - Immutable result objects; line context reporting for debugging
+  - QualityChecker orchestrator updated; 4 of 6 gates complete
+  - Ready for Plan 03 integration (Lighthouse)
 
 ### What Needs Implementation
 
-- **Phase 3 Plan 02:** Astro leak detection + Google Ads validators (QUAL-03, QUAL-04)
 - **Phase 3 Plan 03:** Lighthouse integration + TemplateBuilder orchestration (QUAL-05, QUAL-06)
 - **Phase 3 Plan 04:** Regression testing + E2E validation + comprehensive report
 - **Phase 4:** Preview modal in wizard step 5 (Phase 4)
