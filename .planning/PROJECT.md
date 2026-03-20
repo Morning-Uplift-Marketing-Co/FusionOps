@@ -103,5 +103,39 @@ Import any template from bolt/loveable, inject brand variables + tracking correc
 4. **Extended roadmap:** Plan v2 features (domain registrant variation, batch operations, Next.js support)
 
 ---
+
+## Current Milestone: v1.1 (Preview UX & Performance)
+
+**Status:** Planning
+**Version:** 1.1
+**Scope:** Phase 4 (Template Preview UX) + Alpha Testing + Performance Optimization
+
+### Goals
+
+1. **Phase 4: Live Template Preview** — Enable operators to preview templates with injected variables before deploy
+   - Live preview modal with iframe rendering (PREV-01)
+   - Mobile (320px) / desktop (1024px) viewport toggle (PREV-02)
+   - Real-time preview refresh on variable changes (PREV-03)
+   - Pre/post-fingerprint HTML comparison (PREV-04)
+
+2. **Alpha Test Validation** — Measure fingerprinting effectiveness against Google Ads detection
+   - Deploy 5-10 test domains with randomized HTML/CSS
+   - Monitor days-to-flag by Google Ads system
+   - Validate anti-detection strategy effectiveness
+   - Collect data for v1.1 release notes
+
+3. **Performance Optimization** — Ensure build pipeline scales to 50+ concurrent deployments
+   - Benchmark build isolation memory usage at 20, 40, 50+ concurrent templates
+   - Implement queue if memory > 90% threshold
+   - Plan for batch deploy optimization in v1.2
+
+### Out of Scope (v1.1)
+
+- Domain registrant variation (v2)
+- Batch deploy automation (v1.2)
+- Next.js template support (v2)
+- Template marketplace (v2)
+
+---
 *Last updated: 2026-03-20 after v1.0 shipment
-Status: v1.0 archived, ready for v1.1 planning_
+Status: Starting v1.1 planning (requirements & roadmap)_
