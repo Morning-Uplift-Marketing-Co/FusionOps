@@ -10,7 +10,7 @@ import { Field } from "../ui/field";
 // Custom event for template refresh
 const TEMPLATE_REFRESH_EVENT = 'lp-template-refresh';
 
-export function StepDesign({ c, u, notify }) {
+export function StepDesign({ c, u, notify, fields = {} }) {
     const [genLoading, setGenLoading] = useState(false);
     const [templates, setTemplates] = useState([]);
     const [loadingTemplates, setLoadingTemplates] = useState(true);
@@ -442,6 +442,62 @@ export function StepDesign({ c, u, notify }) {
                     </div>
                 </Field>
             </div>
+
+            {/* Conditional: Calculator Settings (if template supports calculator) */}
+            {fields?.calculator && (
+                <div style={{ marginTop: 16, padding: 12, background: T.input, borderRadius: 8, border: `1px solid ${T.border}` }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: T.text, marginBottom: 8 }}>📊 Calculator Settings</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                        <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                            <span style={{ fontSize: 10, color: T.muted, fontWeight: 600 }}>Min Amount ($)</span>
+                            <input
+                                type="number"
+                                value={c.amountMin || 1000}
+                                onChange={e => u("amountMin", parseInt(e.target.value) || 1000)}
+                                style={{ padding: "6px 8px", background: T.surface || "#111", border: `1px solid ${T.border}`, borderRadius: 4, color: T.text, fontSize: 11 }}
+                            />
+                        </label>
+                        <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                            <span style={{ fontSize: 10, color: T.muted, fontWeight: 600 }}>Max Amount ($)</span>
+                            <input
+                                type="number"
+                                value={c.amountMax || 50000}
+                                onChange={e => u("amountMax", parseInt(e.target.value) || 50000)}
+                                style={{ padding: "6px 8px", background: T.surface || "#111", border: `1px solid ${T.border}`, borderRadius: 4, color: T.text, fontSize: 11 }}
+                            />
+                        </label>
+                    </div>
+                    <div style={{ marginTop: 10, fontSize: 10, color: T.muted }}>
+                        ℹ️ Configure calculator range for loan amounts
+                    </div>
+                </div>
+            )}
+
+            {/* Conditional: Section Reorder (if template supports section reorder) */}
+            {fields?.sectionReorder && (
+                <div style={{ marginTop: 16, padding: 12, background: T.input, borderRadius: 8, border: `1px solid ${T.border}` }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: T.text, marginBottom: 8 }}>🔀 Section Reorder</div>
+                    <div style={{ fontSize: 11, color: T.muted, marginBottom: 10 }}>
+                        This template supports custom section ordering. Drag sections in the preview to reorder them.
+                    </div>
+                    <div style={{ padding: 10, background: T.surface || "#111", borderRadius: 6, border: `1px dashed ${T.border}`, fontSize: 10, color: T.muted, textAlign: "center" }}>
+                        🎯 Section reordering available in preview
+                    </div>
+                </div>
+            )}
+
+            {/* Show warning if no design features are supported */}
+            {!fields?.calculator && !fields?.sectionReorder && !fields?.colorOverride && (
+                <div style={{ marginTop: 16, padding: 12, background: "rgba(245,158,11,0.08)", border: `1px solid rgba(245,158,11,0.35)`, borderRadius: 8 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "hsl(var(--warning))", marginBottom: 4 }}>
+                        ⚠️ Limited Design Customization
+                    </div>
+                    <div style={{ fontSize: 10, color: "hsl(var(--foreground))" }}>
+                        This template doesn't support design customization. Proceeding with default settings.
+                    </div>
+                </div>
+            )}
+
             {/* AI Image Generation */}
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${T.border}` }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 10 }}>🎨 Brand Assets (Use Current Design Colors)</div>
