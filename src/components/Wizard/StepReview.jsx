@@ -2,7 +2,9 @@ import React, { useState, useMemo } from "react";
 import { THEME as T, COLORS, LOAN_TYPES } from "../../constants";
 import { hsl } from "../../utils";
 import { generateAstroProjectByTemplate } from "../../utils/template-router";
+import { buildPreviewHtml } from "../../utils/template-preview-runtime";
 import { getTemplateById } from "./template-utils";
+import { PreviewModal } from "./PreviewModal";
 
 export function StepReview({ c, building }) {
     const co = COLORS.find(x => x.id === c.colorId) || COLORS[0];
@@ -15,6 +17,19 @@ export function StepReview({ c, building }) {
         }
     }, [c.templateId, c.brand, c.domain, c.colorId, c.fontId]);
     const [showTree, setShowTree] = useState(false);
+    const [showPreview, setShowPreview] = useState(false);
+
+    // Generate preview HTML
+    const previewHtml = useMemo(() => {
+        try {
+            if (!selectedTemplate?.files) return "";
+            const colors = { p: co.p, s: co.s, a: co.a };
+            return buildPreviewHtml(selectedTemplate.files, c, colors);
+        } catch (e) {
+            console.warn("[Wizard] Failed to build preview HTML:", e?.message || e);
+            return `<div style="padding: 20px; color: #c00;">Error generating preview: ${e?.message || "unknown error"}</div>`;
+        }
+    }, [c.templateId, c.brand, c.domain, c.colorId, selectedTemplate?.files, co.p, co.s, co.a]);
 
     const rows = [
         ["Brand", c.brand], ["Domain", c.domain || "—"], ["Type", LOAN_TYPES.find(l => l.id === c.loanType)?.label],
@@ -103,6 +118,37 @@ export function StepReview({ c, building }) {
             </div>
 
             {building && <div style={{ textAlign: "center", padding: 12, background: T.primaryGlow, borderRadius: 8, color: T.primary, fontSize: 13, fontWeight: 600, animation: "pulse 1s infinite" }}>⚡ AI is crafting your site...</div>}
+
+            {/* Preview Button */}
+            <div style={{ marginTop: 16, display: "flex", gap: 8 }}>
+                <button
+                    onClick={() => setShowPreview(true)}
+                    style={{
+                        padding: "10px 16px",
+                        borderRadius: 8,
+                        border: `1px solid ${T.border}`,
+                        background: T.input,
+                        color: T.text,
+                        fontSize: 13,
+                        fontWeight: 500,
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = T.muted; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = T.input; }}
+                >
+                    👁️ Preview
+                </button>
+            </div>
+
+            {/* Preview Modal */}
+            <PreviewModal
+                isOpen={showPreview}
+                onClose={() => setShowPreview(false)}
+                config={c}
+                templateId={c.templateId || "classic"}
+                previewHtml={previewHtml}
+            />
         </div>
     );
 }
