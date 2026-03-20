@@ -76,17 +76,11 @@ const FRAMEWORK_SIGNALS = [
     label: 'Static HTML',
     buildRequired: false,
     signals: [
-      { test: (keys) => keys.some(k => k === 'index.html'),                                   weight: 0.35, desc: 'root index.html' },
-      { test: (keys) => !keys.some(k => /\.(astro|tsx?|jsx?)$/.test(k)),                       weight: 0.20, desc: 'no framework files' },
+      { test: (keys) => keys.some(k => k === 'index.html'),                                   weight: 0.70, desc: 'root index.html' },
       { test: (keys, files) => {
         const html = findFileContent(files, 'index.html');
-        return html && /<!doctype html/i.test(html);
-      }, weight: 0.20, desc: 'valid HTML doctype' },
-      { test: (keys) => !keys.some(k => k === 'package.json'),                                weight: 0.15, desc: 'no package.json' },
-      { test: (keys, files) => {
-        const html = findFileContent(files, 'index.html');
-        return html && /<script|<link/.test(html);
-      }, weight: 0.10, desc: 'has script/link tags' },
+        return html && /<!doctype html|<html|<body/i.test(html);
+      }, weight: 0.30, desc: 'valid HTML structure' },
     ],
   },
 ];
@@ -103,6 +97,11 @@ export function identifyFramework(files) {
   }
 
   const keys = Object.keys(files).map(k => k.replace(/\\/g, '/').replace(/^\/+/, ''));
+
+  // Empty file map is unknown, not html-static
+  if (keys.length === 0) {
+    return { id: 'unknown', label: 'Unknown', confidence: 0, evidence: [], buildRequired: false };
+  }
 
   let best = { id: 'unknown', label: 'Unknown', confidence: 0, evidence: [], buildRequired: false };
 
@@ -380,8 +379,12 @@ export function analyzeTemplate(files) {
     warnings.push(`Low confidence framework detection (${(framework.confidence * 100).toFixed(0)}%). Files may not render correctly.`);
   }
 
-  if (framework.buildRequired && !entry.renderable) {
-    warnings.push(`${framework.label} templates require a build step. Preview will show a placeholder.`);
+  if (framework.buildRequired) {
+    if (!entry.renderable) {
+      warnings.push(`${framework.label} requires a build step. Preview will show a placeholder.`);
+    } else {
+      warnings.push(`${framework.label} requires a build step. Deploy will rebuild the project.`);
+    }
   }
 
   const tailwindDep = dependencies.find(d => d.id === 'tailwindcss');
