@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
 status: planning
-last_updated: "2026-03-20T05:12:04.000Z"
+last_updated: "2026-03-20T05:20:15.000Z"
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 6
-  completed_plans: 2
+  completed_plans: 4
 ---
 
 # Project State: LP Factory v1.1
@@ -31,8 +31,8 @@ progress:
 
 ## Current Position
 
-Phase: 01-live-template-preview (Wave 0 test foundation complete, Wave 1 in progress)
-Plan: 01-02 (Preview Components - COMPLETE ✅)
+Phase: 01-live-template-preview (Wave 0 + Wave 1 test foundation complete)
+Plan: 01-04 (DiffViewer + PreviewModal Integration - COMPLETE ✅)
 
 ## Roadmap Snapshot
 
@@ -164,6 +164,14 @@ Plan: 01-02 (Preview Components - COMPLETE ✅)
   - Determinism verified across multiple redeploys (same siteId → identical output)
   - All 8 FINGER-* and IMPORT-04/05 requirements implemented and tested
   - **Phase 2 Plan 01 COMPLETE:** Build infrastructure ready for fingerprinting verification (Plan 02) and integration testing (Plan 03)
+- **COMPLETED:** Live template preview + fingerprint comparison components — Phase 1 Plan 04 (Wave 1) ✓
+  - DiffViewer component: 16 tests passing (side-by-side layout, visual highlighting, truncation)
+  - PreviewModal component: 14 tests passing (viewport toggle, fingerprint toggle, modal UX)
+  - usePreviewDebounce hook: 12 tests passing (debounce timing, dependency updates)
+  - html-diff utility: 19 tests passing (character-level diffs, summary stats)
+  - **All 61 tests passing** (PREV-01 through PREV-04 fully implemented)
+  - Production-ready for Wave 2 integration with StepReview
+  - **Phase 1 Wave 1 COMPLETE:** Preview components ready for operator UX integration
 
 ### What Needs Implementation
 
