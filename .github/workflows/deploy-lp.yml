@@ -217,6 +217,28 @@ jobs:
         working-directory: ${{ steps.template.outputs.dir }}
         run: npm run build
 
+      - name: Generate canonical apply.html (if missing from build)
+        working-directory: ${{ steps.template.outputs.dir }}
+        run: |
+          CONFIG_FILE="${{ steps.config.outputs.file }}"
+          AID=$(node -e "const c=require('$GITHUB_WORKSPACE/$CONFIG_FILE');console.log(c.aid||'14881')")
+          BRAND=$(node -e "const c=require('$GITHUB_WORKSPACE/$CONFIG_FILE');console.log(c.brand||'Apply')")
+
+          # Check if apply.html already exists in dist
+          if [ ! -f dist/apply.html ] && [ ! -f dist/apply/index.html ]; then
+            echo "apply.html not found in build output — generating from unified-tracking module"
+            node --input-type=module -e "
+            import { generateApplyHtml } from '$GITHUB_WORKSPACE/packages/lp-template-generator/src/shared/unified-tracking.js';
+            import fs from 'node:fs';
+            const html = generateApplyHtml('${AID}', '${BRAND}');
+            fs.mkdirSync('dist', { recursive: true });
+            fs.writeFileSync('dist/apply.html', html);
+            console.log('Generated dist/apply.html (' + html.length + ' bytes)');
+            "
+          else
+            echo "apply.html already exists in build output — skipping generation"
+          fi
+
       - name: Deploy to Cloudflare Pages
         id: deploy
         working-directory: ${{ steps.template.outputs.dir }}

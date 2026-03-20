@@ -118,7 +118,9 @@ const {
       </script>
     )}
 
-    {voluumDomain && <meta http-equiv="delegate-ch" content={`sec-ch-ua https://${voluumDomain}; sec-ch-ua-mobile https://${voluumDomain}; sec-ch-ua-arch https://${voluumDomain}; sec-ch-ua-model https://${voluumDomain}; sec-ch-ua-platform https://${voluumDomain}; sec-ch-ua-platform-version https://${voluumDomain}; sec-ch-ua-bitness https://${voluumDomain}; sec-ch-ua-full-version-list https://${voluumDomain}; sec-ch-ua-full-version https://${voluumDomain}`} />}
+    {voluumDomain && (
+      <meta http-equiv="delegate-ch" content={`sec-ch-ua https://${voluumDomain}; sec-ch-ua-mobile https://${voluumDomain}; sec-ch-ua-arch https://${voluumDomain}; sec-ch-ua-model https://${voluumDomain}; sec-ch-ua-platform https://${voluumDomain}; sec-ch-ua-platform-version https://${voluumDomain}; sec-ch-ua-bitness https://${voluumDomain}; sec-ch-ua-full-version-list https://${voluumDomain}; sec-ch-ua-full-version https://${voluumDomain}`} />
+    )}
     {voluumDomain && <style is:inline>{`.dtpcnt{opacity:0;}`}</style>}
     {voluumDomain && (
       <script data-cfasync="false" is:inline define:vars={{ voluumDomain }}>

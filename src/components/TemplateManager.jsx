@@ -8,7 +8,8 @@ function validateTemplateQuality(template) {
   const sourceCode = String(template.source_code || template.sourceCode || "");
   const category = String(template.category || "").toLowerCase();
   const keys = Object.keys(files);
-  const combined = sourceCode + JSON.stringify(files);
+  const fileContents = Object.values(files).filter((v) => typeof v === "string").join("\n");
+  const combined = sourceCode + "\n" + fileContents;
   const htmlCombined = keys
     .filter((k) => k.toLowerCase().endsWith(".html"))
     .map((k) => (typeof files[k] === "string" ? files[k] : ""))

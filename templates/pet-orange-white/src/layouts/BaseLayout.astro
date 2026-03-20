@@ -84,7 +84,16 @@ const cssVars = `--primary:${hsl(...pal[0] as [number,number,number])};--seconda
 
         if (cid) {
           window.__fpClickId = cid;
-          try { sessionStorage.setItem('voluum_cpid', cid); } catch(_){}
+          try {
+            sessionStorage.setItem('voluum_cpid', cid);
+            sessionStorage.setItem('voluum_cid', cid);
+            sessionStorage.setItem('vlcid', cid);
+          } catch(_){}
+        }
+        // Also persist gclid separately for Google Ads tracking
+        var gclid = _c(p.get('gclid'));
+        if (gclid) {
+          try { sessionStorage.setItem('google_gclid', gclid); } catch(_){}
         }
         window.__fpPixel = function(eventName, extra) {
           try {
