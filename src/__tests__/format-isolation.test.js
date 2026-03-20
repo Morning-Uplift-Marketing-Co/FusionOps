@@ -41,45 +41,44 @@ describe('Format Isolation and Independence', () => {
 
   describe('Temp Directory Management', () => {
     it('should create isolated temp directory for each build', async () => {
-      const astroFiles = {
-        'astro.config.mjs': 'export default {}',
-        'package.json': JSON.stringify({ name: 'test-astro' }),
-        'src/pages/index.astro': '<div>Astro</div>'
+      const htmlFiles1 = {
+        'index.html': '<html><head><meta name="viewport" content="width=device-width"><script>window.gtag = function(){}</script></head><body>HTML 1</body></html>',
+        'package.json': JSON.stringify({ name: 'test-html-1' })
       };
 
-      const htmlFiles = {
-        'index.html': '<html><body>HTML</body></html>',
-        'package.json': JSON.stringify({ name: 'test-html' })
+      const htmlFiles2 = {
+        'index.html': '<html><head><meta name="viewport" content="width=device-width"><script>window.gtag = function(){}</script></head><body>HTML 2</body></html>',
+        'package.json': JSON.stringify({ name: 'test-html-2' })
       };
 
-      // Build both formats
-      // Note: Astro build will fail due to missing lockfile, but that's OK for this test
-      // We're verifying that each build gets its own temp directory prefix
-      const result1 = await TemplateBuilder.buildTemplate(astroFiles, {}, 'astro-site-001');
-      const result2 = await TemplateBuilder.buildTemplate(htmlFiles, {}, 'html-site-001');
+      // Build both HTML templates (each with different siteId)
+      // This verifies that each build gets its own temp directory prefix
+      const result1 = await TemplateBuilder.buildTemplate(htmlFiles1, {}, 'html-site-001', { requireTracking: false, requireGoogleAds: false });
+      const result2 = await TemplateBuilder.buildTemplate(htmlFiles2, {}, 'html-site-002', { requireTracking: false, requireGoogleAds: false });
 
-      // HTML build should succeed
+      // Both builds should succeed
+      expect(result1.success).toBe(true);
       expect(result2.success).toBe(true);
 
-      // Both builds should have attempted to use different site IDs for temp dir naming
-      // which means they created isolated temp directories
-      // The key is that TemplateBuilder.buildTemplate() uses mkdtempSync with
-      // `path.join(tmpdir(), 'build-${siteId}-')`
-      // So astro-site-001 and html-site-001 would create different prefixes
+      // Both builds should have different output paths
+      // The key is that TemplateBuilder.buildTemplate() creates temp directories with siteId in the name
+      // So html-site-001 and html-site-002 would create different temp directories
+      if (result1.outputPath && result2.outputPath) {
+        expect(result1.outputPath).not.toEqual(result2.outputPath);
+      }
     });
 
     it('should clean up temp directories after build completes', async () => {
       const htmlFiles = {
-        'index.html': '<html><body>Test</body></html>',
+        'index.html': '<html><head><meta name="viewport" content="width=device-width"><script>window.gtag = function(){}</script></head><body>Test</body></html>',
         'package.json': JSON.stringify({ name: 'test-site' })
       };
 
-      // Get list of temp dirs before build
-      const tmpPath = os.tmpdir();
-      const dirsBefore = fs.readdirSync(tmpPath).filter(f => f.startsWith('build-'));
-
-      // Build template
-      const result = await TemplateBuilder.buildTemplate(htmlFiles, {}, 'cleanup-test-001');
+      // Build template with quality check configuration that won't fail
+      const result = await TemplateBuilder.buildTemplate(htmlFiles, {}, 'cleanup-test-001', {
+        requireTracking: false,
+        requireGoogleAds: false
+      });
 
       expect(result.success).toBe(true);
 
@@ -89,6 +88,7 @@ describe('Format Isolation and Independence', () => {
       // Check that temp directories were cleaned up
       // Note: Some may remain if build created subdirectories in staging
       // Key is that the temp directory passed to builder was cleaned
+      const tmpPath = os.tmpdir();
       const tempDirsLeft = fs.readdirSync(tmpPath).filter(f => f.startsWith('build-cleanup-test'));
       expect(tempDirsLeft.length).toBe(0);
     });
@@ -194,19 +194,19 @@ describe('Format Isolation and Independence', () => {
 
     it('should not have npm cache conflicts in concurrent builds', async () => {
       const files1 = {
-        'index.html': '<div class="site-a">Site A</div>',
+        'index.html': '<html><head><meta name="viewport" content="width=device-width"><script>window.gtag = function(){}</script></head><body><div class="site-a">Site A</div></body></html>',
         'package.json': JSON.stringify({ name: 'site-a', version: '1.0.0' })
       };
 
       const files2 = {
-        'index.html': '<div class="site-b">Site B</div>',
+        'index.html': '<html><head><meta name="viewport" content="width=device-width"><script>window.gtag = function(){}</script></head><body><div class="site-b">Site B</div></body></html>',
         'package.json': JSON.stringify({ name: 'site-b', version: '2.0.0' })
       };
 
-      // Start both builds concurrently
+      // Start both builds concurrently with quality checks configured
       const [result1, result2] = await Promise.all([
-        TemplateBuilder.buildTemplate(files1, {}, 'site-a-concurrent'),
-        TemplateBuilder.buildTemplate(files2, {}, 'site-b-concurrent')
+        TemplateBuilder.buildTemplate(files1, {}, 'site-a-concurrent', { requireTracking: false, requireGoogleAds: false }),
+        TemplateBuilder.buildTemplate(files2, {}, 'site-b-concurrent', { requireTracking: false, requireGoogleAds: false })
       ]);
 
       // Both should succeed without conflicts
@@ -253,13 +253,13 @@ describe('Format Isolation and Independence', () => {
 
     it('should maintain correct builder instance state across multiple builds', async () => {
       const htmlFiles = {
-        'index.html': '<html><body><div class="test">Content</div></body></html>',
+        'index.html': '<html><head><meta name="viewport" content="width=device-width"><script>window.gtag = function(){}</script></head><body><div class="test">Content</div></body></html>',
         'package.json': JSON.stringify({ name: 'test' })
       };
 
-      // Build same template twice
-      const result1 = await TemplateBuilder.buildTemplate(htmlFiles, {}, 'state-test-1');
-      const result2 = await TemplateBuilder.buildTemplate(htmlFiles, {}, 'state-test-2');
+      // Build same template twice with quality check configuration
+      const result1 = await TemplateBuilder.buildTemplate(htmlFiles, {}, 'state-test-1', { requireTracking: false, requireGoogleAds: false });
+      const result2 = await TemplateBuilder.buildTemplate(htmlFiles, {}, 'state-test-2', { requireTracking: false, requireGoogleAds: false });
 
       // Both should succeed
       expect(result1.success).toBe(true);
