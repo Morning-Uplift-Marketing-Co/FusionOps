@@ -1,0 +1,230 @@
+{
+  "timestamp": "2026-03-20T05:58:46.507Z",
+  "dryRun": true,
+  "deployments": [
+    {
+      "siteId": "alpha-astro-001",
+      "status": "deployed",
+      "url": "https://lp-factory-alpha-astro-001.pages.dev",
+      "deployedAt": "2026-03-20T05:58:46.506Z",
+      "fingerprint": "a3c5e2f89d7b4c1e6a9f3d2b8c5e7a1f"
+    },
+    {
+      "siteId": "alpha-astro-002",
+      "status": "deployed",
+      "url": "https://lp-factory-alpha-astro-002.pages.dev",
+      "deployedAt": "2026-03-20T05:58:46.506Z",
+      "fingerprint": "b4d6f3a90e8c5d2f7b0e4c3a9d6f2e5b"
+    },
+    {
+      "siteId": "alpha-astro-003",
+      "status": "deployed",
+      "url": "https://lp-factory-alpha-astro-003.pages.dev",
+      "deployedAt": "2026-03-20T05:58:46.507Z",
+      "fingerprint": "c5e7a2b01f9d6c3e8a1f5d4c0e7b3f6c"
+    },
+    {
+      "siteId": "alpha-vite-react-001",
+      "status": "deployed",
+      "url": "https://lp-factory-alpha-vite-react-001.pages.dev",
+      "deployedAt": "2026-03-20T05:58:46.507Z",
+      "fingerprint": "d6f8b3c12a0e7d4f9c2e6b5a1f8d3c7e"
+    },
+    {
+      "siteId": "alpha-vite-react-002",
+      "status": "deployed",
+      "url": "https://lp-factory-alpha-vite-react-002.pages.dev",
+      "deployedAt": "2026-03-20T05:58:46.507Z",
+      "fingerprint": "e7a9c4d23b1f8e5a0d3f7c6b2e9a4d8f"
+    },
+    {
+      "siteId": "alpha-vite-react-003",
+      "status": "deployed",
+      "url": "https://lp-factory-alpha-vite-react-003.pages.dev",
+      "deployedAt": "2026-03-20T05:58:46.507Z",
+      "fingerprint": "f8b0d5e34c2a9f6b1e4a8d7c3f0e5b9a"
+    },
+    {
+      "siteId": "alpha-html-001",
+      "status": "deployed",
+      "url": "https://lp-factory-alpha-html-001.pages.dev",
+      "deployedAt": "2026-03-20T05:58:46.507Z",
+      "fingerprint": "a1c3e5f7b9d1e3f5a7c9e1b3d5f7a9c1"
+    },
+    {
+      "siteId": "alpha-html-002",
+      "status": "deployed",
+      "url": "https://lp-factory-alpha-html-002.pages.dev",
+      "deployedAt": "2026-03-20T05:58:46.507Z",
+      "fingerprint": "b2d4f6a8c0e2a4f6b8d0e2a4f6b8d0e2"
+    },
+    {
+      "siteId": "alpha-html-003",
+      "status": "deployed",
+      "url": "https://lp-factory-alpha-html-003.pages.dev",
+      "deployedAt": "2026-03-20T05:58:46.507Z",
+      "fingerprint": "c3e5a7b9c1d3e5f7a9b1c3d5e7f9a1b3"
+    },
+    {
+      "siteId": "alpha-astro-004",
+      "status": "deployed",
+      "url": "https://lp-factory-alpha-astro-004.pages.dev",
+      "deployedAt": "2026-03-20T05:58:46.507Z",
+      "fingerprint": "d4f6a8c0d2e4a6f8b0c2d4e6a8f0b2d4"
+    },
+    {
+      "siteId": "alpha-vite-react-004",
+      "status": "deployed",
+      "url": "https://lp-factory-alpha-vite-react-004.pages.dev",
+      "deployedAt": "2026-03-20T05:58:46.507Z",
+      "fingerprint": "e5a7b9c1d3e5a7b9c1d3e5a7b9c1d3e5"
+    },
+    {
+      "siteId": "alpha-html-004",
+      "status": "deployed",
+      "url": "https://lp-factory-alpha-html-004.pages.dev",
+      "deployedAt": "2026-03-20T05:58:46.507Z",
+      "fingerprint": "f6b8c0d2e4a6b8c0d2e4a6b8c0d2e4a6"
+    }
+  ],
+  "verifications": [
+    {
+      "siteId": "alpha-astro-001",
+      "passed": false,
+      "checks": {
+        "viewport_ok": true,
+        "tracking_ok": false,
+        "leaks_none": true,
+        "responsive_ok": true,
+        "fingerprinted": false
+      }
+    },
+    {
+      "siteId": "alpha-astro-002",
+      "passed": false,
+      "checks": {
+        "viewport_ok": true,
+        "tracking_ok": false,
+        "leaks_none": true,
+        "responsive_ok": true,
+        "fingerprinted": false
+      }
+    },
+    {
+      "siteId": "alpha-astro-003",
+      "passed": false,
+      "checks": {
+        "viewport_ok": true,
+        "tracking_ok": false,
+        "leaks_none": true,
+        "responsive_ok": true,
+        "fingerprinted": false
+      }
+    },
+    {
+      "siteId": "alpha-vite-react-001",
+      "passed": false,
+      "checks": {
+        "viewport_ok": true,
+        "tracking_ok": false,
+        "leaks_none": true,
+        "responsive_ok": true,
+        "fingerprinted": false
+      }
+    },
+    {
+      "siteId": "alpha-vite-react-002",
+      "passed": false,
+      "checks": {
+        "viewport_ok": true,
+        "tracking_ok": false,
+        "leaks_none": true,
+        "responsive_ok": true,
+        "fingerprinted": false
+      }
+    },
+    {
+      "siteId": "alpha-vite-react-003",
+      "passed": false,
+      "checks": {
+        "viewport_ok": true,
+        "tracking_ok": false,
+        "leaks_none": true,
+        "responsive_ok": true,
+        "fingerprinted": false
+      }
+    },
+    {
+      "siteId": "alpha-html-001",
+      "passed": false,
+      "checks": {
+        "viewport_ok": true,
+        "tracking_ok": false,
+        "leaks_none": true,
+        "responsive_ok": true,
+        "fingerprinted": false
+      }
+    },
+    {
+      "siteId": "alpha-html-002",
+      "passed": false,
+      "checks": {
+        "viewport_ok": true,
+        "tracking_ok": false,
+        "leaks_none": true,
+        "responsive_ok": true,
+        "fingerprinted": false
+      }
+    },
+    {
+      "siteId": "alpha-html-003",
+      "passed": false,
+      "checks": {
+        "viewport_ok": true,
+        "tracking_ok": false,
+        "leaks_none": true,
+        "responsive_ok": true,
+        "fingerprinted": false
+      }
+    },
+    {
+      "siteId": "alpha-astro-004",
+      "passed": false,
+      "checks": {
+        "viewport_ok": true,
+        "tracking_ok": false,
+        "leaks_none": true,
+        "responsive_ok": true,
+        "fingerprinted": false
+      }
+    },
+    {
+      "siteId": "alpha-vite-react-004",
+      "passed": false,
+      "checks": {
+        "viewport_ok": true,
+        "tracking_ok": false,
+        "leaks_none": true,
+        "responsive_ok": true,
+        "fingerprinted": false
+      }
+    },
+    {
+      "siteId": "alpha-html-004",
+      "passed": false,
+      "checks": {
+        "viewport_ok": true,
+        "tracking_ok": false,
+        "leaks_none": true,
+        "responsive_ok": true,
+        "fingerprinted": false
+      }
+    }
+  ],
+  "summary": {
+    "total": 12,
+    "succeeded": 12,
+    "failed": 0,
+    "qaChecksPassed": 0
+  }
+}
