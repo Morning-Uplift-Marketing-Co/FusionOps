@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
 status: planning
-last_updated: "2026-03-20T05:20:15.000Z"
+last_updated: "2026-03-20T12:26:00.000Z"
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 6
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # Project State: LP Factory v1.1
@@ -31,8 +31,8 @@ progress:
 
 ## Current Position
 
-Phase: 01-live-template-preview (Wave 0 + Wave 1 test foundation complete)
-Plan: 01-04 (DiffViewer + PreviewModal Integration - COMPLETE ✅)
+Phase: 01-live-template-preview (Wave 0 + Wave 1 test foundation + Wave 2 integration COMPLETE)
+Plan: 01-05 (Wizard Preview Integration + Edge Case Handling - COMPLETE ✅)
 
 ## Roadmap Snapshot
 
@@ -288,9 +288,36 @@ Plan: 01-04 (DiffViewer + PreviewModal Integration - COMPLETE ✅)
 2. ✅ PreviewModal component (14 tests)
 3. ✅ 01-02-SUMMARY.md
 
+### Phase 01-05: Wizard Preview Integration (COMPLETED)
+
+| Metric | Value |
+|--------|-------|
+| Plan Duration | 15 min |
+| Components Modified | 2 |
+| Integration Tests | 19 passing |
+| Unit Tests | 14 passing (PreviewModal) |
+| Total Wizard Tests | 75 passing |
+| Pass Rate | 100% |
+| Requirements Covered | 4 (PREV-01 to PREV-04) |
+| Commits Made | 2 |
+| Execution Date | 2026-03-20 |
+
+**Completed Tasks:**
+1. ✅ Task 1: Add preview button and state to StepReview
+2. ✅ Task 2: Create integration tests for wizard preview flow (19 tests)
+3. ✅ Task 3: Handle edge cases and error scenarios
+4. ✅ 01-05-SUMMARY.md
+
+**Key Achievements:**
+- StepReview.jsx: Preview button integrated with modal state management
+- PreviewModal.jsx: Edge case handling (missing siteId, no fingerprinted HTML, etc.)
+- wizard-preview-integration.test.jsx: 19 comprehensive integration tests
+- All tests passing; no regressions
+- Wave 2 integration complete
+
 ---
 
-## Next Phase: Wave 1 Implementation
+## Next Phase: Phase 1 Verification
 
 **Parallel Implementation Plans (Ready):**
 - `01-02-PLAN.md` — PreviewModal component implementation (PREV-01, PREV-02, PREV-04)
@@ -301,5 +328,5 @@ All implementation plans will use existing test suite as RED phase validation.
 
 ---
 
-*State updated: 2026-03-20T05:12:04Z*
-*Phase 01-01 COMPLETE — Ready for Wave 1 implementation*
+*State updated: 2026-03-20T12:27:00Z*
+*Phase 01-05 COMPLETE — Wave 2 integration complete; Phase 1 ready for verification*
