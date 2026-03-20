@@ -47,7 +47,7 @@ export class TemplateBuilder {
   static async buildTemplate(files, envVars, siteId, config = {}) {
     // Step 1: Detect framework
     const framework = identifyFramework(files);
-    if (!framework) {
+    if (!framework || framework.id === 'unknown') {
       return {
         success: false,
         outputPath: null,
