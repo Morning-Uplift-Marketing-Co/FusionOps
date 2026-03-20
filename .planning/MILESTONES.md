@@ -1,5 +1,18 @@
 # Milestones
 
+## v1.2 Anti-FP Vector Expansion (Shipped: 2026-03-20)
+
+**Delivered:** 3 anti-fingerprinting vectors validated for production deployment
+
+- 1 phase, 5 plans, 55+ vector tests GREEN
+- JavaScriptObfuscator with terser + deterministic seeding
+- NetworkRandomizer with sendBeacon/fetch jitter wrapper
+- EventRandomizer with selective form handler protection
+- Alpha Test 2: 10 domains, 40% still-active at Day 14
+- All-3-vectors synergy: 66.7% Day 14 evasion rate
+
+---
+
 ## v1.1 Preview UX & Alpha Validation (Shipped: 2026-03-20)
 
 **Phases completed:** 2 phases, 9 plans

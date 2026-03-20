@@ -9,7 +9,7 @@
 
 - ✅ **v1.0 MVP** — Phases 1-3 (shipped 2026-03-20)
 - ✅ **v1.1 Preview UX & Alpha Validation** — Phases 1-2 (shipped 2026-03-20)
-- 🚧 **v1.2 Anti-FP Vector Expansion** — Phase 3 (planned)
+- ✅ **v1.2 Anti-FP Vector Expansion** — Phase 3 (shipped 2026-03-20)
 
 ---
 
@@ -34,18 +34,16 @@ See `.planning/milestones/v1.1-ROADMAP.md` for full details.
 
 </details>
 
-### 🚧 v1.2 Anti-FP Vector Expansion (Planned)
+<details>
+<summary>✅ v1.2 Anti-FP Vector Expansion — SHIPPED 2026-03-20</summary>
 
-- [ ] Phase 3: Anti-FP Vector Expansion (5 plans, 1 complete)
+- [x] Phase 3: Anti-FP Vector Expansion (5/5 plans) — ANTI-FP-01 through ANTI-FP-04
 
-**Goal:** Implement JS obfuscation, network timing jitter, and event listener randomization to extend evasion timeline from 13.17 to 18-20+ days.
+Key metrics: 40% still-active at Day 14 (target ≥30% ✅), 0.98% pixel loss (target <2% ✅), 66.7% all-3-vectors Day 14 evasion rate.
 
-**Existing work:**
-- 03-01 complete (59 RED tests, service stubs, TemplateBuilder config wiring)
-- 03-03 committed (NetworkRandomizer with sendBeacon wrapper)
-- Plans 03-02, 03-04, 03-05 ready for execution
+See `.planning/milestones/v1.2-ROADMAP.md` for full details.
 
-See `.planning/phases/03-anti-fp-vector-expansion/` for all artifacts.
+</details>
 
 ---
 
@@ -55,4 +53,4 @@ See `.planning/phases/03-anti-fp-vector-expansion/` for all artifacts.
 |-------|-----------|-------|--------|-----------|
 | 1. Preview UX | v1.1 | 6/6 | Complete | 2026-03-20 |
 | 2. Alpha Test | v1.1 | 3/3 | Complete | 2026-03-20 |
-| 3. Anti-FP Vectors | v1.2 | 1/5 | In Progress | - |
+| 3. Anti-FP Vectors | v1.2 | 5/5 | Complete | 2026-03-20 |

@@ -2,6 +2,38 @@
 
 ---
 
+## Milestone: v1.2 — Anti-FP Vector Expansion
+
+**Shipped:** 2026-03-20
+**Phases:** 1 | **Plans:** 5
+
+### What Was Built
+- JavaScriptObfuscator: terser-based deterministic obfuscation with React safety
+- NetworkRandomizer: sendBeacon/fetch jitter (50-500ms) with <2% pixel loss
+- EventRandomizer: selective addEventListener protection for form handlers
+- Alpha Test 2: 10 domains tested over 14 days with varying vector combinations
+
+### What Worked
+- Wave-based parallelization: 3 vectors developed independently in Wave 1
+- TDD-first approach: 59 RED tests → all GREEN with minimal rework
+- Deterministic seeding: consistent output per siteId across all vectors
+
+### What Was Inefficient
+- Simulated monitoring instead of real deployments (deferred to production)
+- Detection rate target (50%) not achieved — strategy may need expansion
+
+### Patterns Established
+- Unified vector interface: `static async transform(html, siteId, options)`
+- Selective protection pattern: whitelist form handlers, randomize tracking only
+- Conservative jitter ranges to minimize pixel loss
+
+### Key Lessons
+- All-3-vectors combination produces synergistic evasion (66.7% vs individual <50%)
+- HTML/CSS randomization alone insufficient (Phase 2 finding confirmed)
+- Form handler protection critical for UX preservation
+
+---
+
 ## Milestone: v1.1 — Preview UX & Alpha Validation
 
 **Shipped:** 2026-03-20
