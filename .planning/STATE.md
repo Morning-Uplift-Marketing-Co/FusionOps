@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-03-20T01:44:30.000Z"
+last_updated: "2026-03-20T08:50:00.000Z"
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 5
-  completed_plans: 2
+  completed_plans: 3
 ---
 
 # Project State: LP Factory v1
@@ -32,8 +32,8 @@ progress:
 ## Current Position
 
 Phase: 01 (template-import-capability) — EXECUTING
-Plan: 2 of 5 (Plan 02 complete)
-Progress: Plans 01 & 02 done (env injection + capability detection)
+Plan: 3 of 5 (Plans 01 & 02 complete)
+Progress: Plans 01 (env injection) & 02 (capability detection) done; Plan 03 (wizard integration) next
 
 ## Roadmap Snapshot
 
@@ -105,10 +105,12 @@ Progress: Plans 01 & 02 done (env injection + capability detection)
 - Preview generation (template-preview-runtime.js, 385 lines, <100ms rendering for HTML/Astro)
 - Dashboard, deploy history, Cloudflare Pages integration
 - Voluum tracking, Google Ads conversion tracking, spend dashboards
-- **NEW:** Env var preprocessing (env-preprocessor.js, html-expression-replacer.js) — Plan 01
-- **NEW:** Manifest loader (manifest-loader.js) — Plan 02
-- **NEW:** Capability auto-detection (capability-detector.js) — Plan 02
-- **NEW:** Capability resolver (capability-resolver.js) — Plan 02
+- **COMPLETED:** Env var preprocessing (env-preprocessor.js 95 lines, html-expression-replacer.js 90 lines) — Plan 01 ✓
+  - 32 passing tests (12 preprocessor + 15 replacer + 5 integration)
+  - 90%+ coverage on both modules
+- **COMPLETED:** Manifest loader (manifest-loader.js) — Plan 02 ✓
+- **COMPLETED:** Capability auto-detection (capability-detector.js) — Plan 02 ✓
+- **COMPLETED:** Capability resolver (capability-resolver.js) — Plan 02 ✓
 
 ### What Needs Implementation
 
