@@ -93,7 +93,10 @@
 <a name='L28'></a><a href='#L28'>28</a>
 <a name='L29'></a><a href='#L29'>29</a>
 <a name='L30'></a><a href='#L30'>30</a>
-<a name='L31'></a><a href='#L31'>31</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -109,6 +112,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -124,29 +130,32 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import React from "react";
-import { THEME as T } from "../constants";
-import { Card, Badge } from "./Atoms";
+import { Card } from "./ui/card";
+import { Badge } from "./ui/badge";
 &nbsp;
 export function <span class="fstat-no" title="function not covered" >DeployHistory({</span> deploys }) {
 <span class="cstat-no" title="statement not covered" >    return (</span>
-        &lt;div style={{ animation: "fadeIn .3s ease" }}&gt;
-            &lt;h1 style={{ fontSize: 22, fontWeight: 700, margin: "0 0 4px" }}&gt;🚀 Deploy History&lt;/h1&gt;
-            &lt;p style={{ color: T.muted, fontSize: 12, marginBottom: 20 }}&gt;All Netlify deployments&lt;/p&gt;
+        &lt;div className="animate-[fadeIn_.3s_ease]"&gt;
+            &lt;h1 className="text-[22px] font-bold m-0 mb-1"&gt;🚀 Deploy History&lt;/h1&gt;
+            &lt;p className="text-[hsl(var(--muted-foreground))] text-xs mb-5"&gt;All Netlify deployments&lt;/p&gt;
             {deploys.length === 0 ? (
-                &lt;Card style={{ textAlign: "center", padding: 50 }}&gt;
-                    &lt;div style={{ fontSize: 36, marginBottom: 8 }}&gt;🚀&lt;/div&gt;
-                    &lt;div style={{ fontSize: 15, fontWeight: 600 }}&gt;No deployments yet&lt;/div&gt;
+                &lt;Card className="text-center p-12"&gt;
+                    &lt;div className="text-4xl mb-2"&gt;🚀&lt;/div&gt;
+                    &lt;div className="text-[15px] font-semibold"&gt;No deployments yet&lt;/div&gt;
                 &lt;/Card&gt;
             ) : deploys.map(<span class="fstat-no" title="function not covered" >d =&gt; (</span>
-<span class="cstat-no" title="statement not covered" >                &lt;Card key={d.id} style={{ padding: "12px 18px", marginBottom: 6, display: "flex", alignItems: "center", gap: 12 }}&gt;</span>
-                    &lt;div style={{ width: 36, height: 36, borderRadius: 8, background: d.type === "new" ? `${T.success}22` : `${T.accent}22`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}&gt;{d.type === "new" ? "🆕" : "🔄"}&lt;/div&gt;
-                    &lt;div style={{ flex: 1 }}&gt;
-                        &lt;div style={{ fontSize: 13, fontWeight: 600 }}&gt;{d.brand}&lt;/div&gt;
-                        &lt;a href={d.url} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: T.accent }}&gt;{d.url}&lt;/a&gt;
+<span class="cstat-no" title="statement not covered" >                &lt;Card key={d.id} className="px-4 py-3 mb-1.5 flex items-center gap-3"&gt;</span>
+                    &lt;div className={`w-9 h-9 rounded-lg flex items-center justify-center text-base ${d.type === "new" ? "bg-[hsl(var(--success))/13]" : "bg-[hsl(var(--accent))/13]"}`}&gt;
+                        {d.type === "new" ? "🆕" : "🔄"}
                     &lt;/div&gt;
-                    &lt;div style={{ textAlign: "right" }}&gt;
-                        &lt;Badge color={d.type === "new" ? T.success : T.accent}&gt;{d.type}&lt;/Badge&gt;
-                        &lt;div style={{ fontSize: 10, color: T.dim, marginTop: 2 }}&gt;{new Date(d.ts).toLocaleString()}&lt;/div&gt;
+                    &lt;div className="flex-1 min-w-0"&gt;
+                        &lt;div className="text-[13px] font-semibold"&gt;{d.brand}&lt;/div&gt;
+                        &lt;a href={d.url} target="_blank" rel="noreferrer"
+                            className="text-[11px] text-[hsl(var(--accent))] no-underline"&gt;{d.url}&lt;/a&gt;
+                    &lt;/div&gt;
+                    &lt;div className="text-right"&gt;
+                        &lt;Badge variant={d.type === "new" ? "success" : "default"}&gt;{d.type}&lt;/Badge&gt;
+                        &lt;div className="text-[10px] text-[hsl(var(--muted-foreground))] mt-0.5"&gt;{new Date(d.ts).toLocaleString()}&lt;/div&gt;
                     &lt;/div&gt;
                 &lt;/Card&gt;
             ))}
@@ -160,7 +169,7 @@ export function <span class="fstat-no" title="function not covered" >DeployHisto
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-02-18T00:24:36.068Z
+                at 2026-03-20T01:44:15.725Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

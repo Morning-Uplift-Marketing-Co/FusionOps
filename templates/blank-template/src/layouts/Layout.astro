@@ -124,11 +124,18 @@ const hsl = (h, s, l) => `hsl(${h}, ${s}%, ${l}%)`;
     <script data-cfasync="false" is:inline>
       (function(){
         var p = new URLSearchParams(window.location.search);
-        var cid = p.get('vlcid') || p.get('clickid') || p.get('click_id') || p.get('cid') || p.get('cpid') || '';
+        var _c = function(v) { return (v && /^\{.*\}$/.test(v)) ? '' : (v || ''); };
+        var cid = _c(p.get('gclid')) || _c(p.get('vlcid')) || _c(p.get('clickid')) || _c(p.get('click_id')) || _c(p.get('cid')) || _c(p.get('cpid')) || '';
         if (cid) {
           window.__fpClickId = cid;
-          try { sessionStorage.setItem('voluum_cpid', cid); } catch(_){}
+          try {
+            sessionStorage.setItem('voluum_cpid', cid);
+            sessionStorage.setItem('voluum_cid', cid);
+            sessionStorage.setItem('vlcid', cid);
+          } catch(_){}
         }
+        var gclid = _c(p.get('gclid'));
+        if (gclid) { try { sessionStorage.setItem('google_gclid', gclid); } catch(_){} }
         window.__fpPixel = function(eventName, extra) {
           try {
             var endpoint = 'https://t.' + window.location.hostname + '/e';

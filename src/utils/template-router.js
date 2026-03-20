@@ -2,6 +2,8 @@ import { generateApplyPage } from "./lp-generator.js";
 import { generateAstroProject } from "./astro-generator.jsx";
 import { getTemplateGenerator, resolveTemplateId as resolveId, clearCustomTemplatesCache, fetchCustomTemplates, getCustomTemplatesCache, registry } from "./template-registry.js";
 import { detectTemplateFormat, resolveTemplateEntry } from "./template-standard.js";
+import { identifyFramework } from "./template-analyzer.js";
+import { buildPreviewHtml } from "./template-preview-runtime.js";
 import { generatePhone } from "./phone-gen.js";
 import { generateBusinessAddress } from "./contact-gen.js";
 import { ADAPTER_RUNTIME_VERSION } from "../adapters/runtime-version.ts";
@@ -1019,23 +1021,22 @@ export function generateHtmlByTemplate(site) {
   if (customTemplatesCache) {
     const customTemplate = customTemplatesCache.find(t => t.id === templateId || t.dbId === templateId);
     if (customTemplate && customTemplate.files) {
-      const fileKeys = Object.keys(customTemplate.files);
-      // Detect Vite/React templates (Loveable) — index.html + vite.config + src/main.tsx
-      // These can't render in an iframe preview, so generate a static placeholder
-      const isViteReact = fileKeys.some(k => k === 'vite.config.ts' || k === 'vite.config.js')
-        && fileKeys.some(k => /src\/main\.(tsx?|jsx?)$/.test(k));
-      if (isViteReact) {
-        return ensureTrackingBaselineHtml(generateVitePreviewPlaceholder(customTemplate, site), site);
-      }
-      // HTML-first templates (Bolt/Lovable): serve index.html directly, skip Astro parser
-      const fmt = customTemplate.format || detectTemplateFormat(customTemplate.files);
-      if (fmt === 'html') {
-        const keys = fileKeys;
-        const htmlKey = keys.find(k => k === 'index.html') || keys.find(k => k.endsWith('/index.html'));
-        if (htmlKey) {
-          return ensureTrackingBaselineHtml(String(customTemplate.files[htmlKey]), site);
+      // Use the smart analyzer to choose the right rendering path
+      const framework = identifyFramework(customTemplate.files);
+      const colorObj = getColorObj(site.colorId);
+
+      // Non-Astro templates (HTML-static from Bolt, Vite+React from Lovable, Next.js):
+      // Use the preview runtime with automatic CDN injection, CSS variable override,
+      // and dependency resolution instead of the Astro-specific parser.
+      if (framework.id !== 'astro' || framework.confidence < 0.3) {
+        try {
+          return ensureTrackingBaselineHtml(buildPreviewHtml(customTemplate.files, site, colorObj), site);
+        } catch (e) {
+          console.warn('[Router] Preview runtime failed, falling back to astroToHtmlPreview:', e.message);
         }
       }
+
+      // Astro templates: use the existing Astro-to-HTML compiler
       return ensureTrackingBaselineHtml(astroToHtmlPreview(customTemplate.files, site), site);
     }
   }
@@ -1106,22 +1107,35 @@ export function generateDeployAssetsByTemplate(site) {
   if (customTemplatesCache) {
     const customTemplate = customTemplatesCache.find(t => t.id === templateId || t.dbId === templateId);
     if (customTemplate && customTemplate.files) {
-      // HTML-first (Bolt/Lovable): deploy files as-is, no Astro compilation
-      const fmt = customTemplate.format || detectTemplateFormat(customTemplate.files);
-      if (fmt === 'html') {
+      const framework = identifyFramework(customTemplate.files);
+
+      // HTML-static / Bolt / Lovable: deploy files as-is with preview runtime
+      // for tracking injection and CSS variable theming
+      if (framework.id === 'html-static' || (framework.id !== 'astro' && !framework.buildRequired)) {
         const assets = {};
-        for (const [path, content] of Object.entries(customTemplate.files)) {
-          const deployPath = path.startsWith('/') ? path : '/' + path;
-          assets[deployPath] = content;
-        }
-        // Ensure tracking is injected into index.html
-        const indexKey = Object.keys(assets).find(k => k === '/index.html');
-        if (indexKey) {
-          assets['/index.html'] = ensureTrackingBaselineHtml(String(assets[indexKey]), site);
+        const colorObj = getColorObj(site.colorId);
+        try {
+          const html = buildPreviewHtml(customTemplate.files, site, colorObj);
+          assets['/index.html'] = ensureTrackingBaselineHtml(html, site);
           assets['/'] = assets['/index.html'];
+        } catch (_e) {
+          // Fallback: deploy index.html raw with tracking
+          const htmlKey = Object.keys(customTemplate.files).find(k => k === 'index.html' || k.endsWith('/index.html'));
+          if (htmlKey) {
+            assets['/index.html'] = ensureTrackingBaselineHtml(String(customTemplate.files[htmlKey]), site);
+            assets['/'] = assets['/index.html'];
+          }
+        }
+        // Include all non-entry files (CSS, JS, images)
+        for (const [path, content] of Object.entries(customTemplate.files)) {
+          if (path === 'index.html') continue;
+          const deployPath = path.startsWith('/') ? path : '/' + path;
+          if (!assets[deployPath]) assets[deployPath] = content;
         }
         return assets;
       }
+
+      // Astro: use the full asset compiler with component resolution
       return renderTemplateToAssets(customTemplate, site);
     }
   }

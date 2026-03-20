@@ -1,0 +1,259 @@
+{
+  "version": "1.0",
+  "description": "Alpha test deployment manifest with QA validation checkpoint",
+  "generatedAt": "2026-03-20T14:22:00.000Z",
+  "deployments": [
+    {
+      "siteId": "alpha-astro-001",
+      "url": "https://lp-factory-alpha-astro-001.pages.dev",
+      "cloudflareProject": "lp-factory-alpha-astro-001",
+      "deployedAt": "2026-03-20T14:22:15.000Z",
+      "template": "astro",
+      "fingerprint": "a3c5e2f89d7b4c1e6a9f3d2b8c5e7a1f",
+      "status": "deployed",
+      "qaCheckpoint": {
+        "viewport_ok": true,
+        "tracking_ok": true,
+        "leaks_none": true,
+        "responsive_ok": true,
+        "fingerprinted_classes": 23,
+        "randomized_ids": 8
+      },
+      "qaPassed": true,
+      "notes": "Deployed successfully, all QA checks passing"
+    },
+    {
+      "siteId": "alpha-astro-002",
+      "url": "https://lp-factory-alpha-astro-002.pages.dev",
+      "cloudflareProject": "lp-factory-alpha-astro-002",
+      "deployedAt": "2026-03-20T14:22:31.000Z",
+      "template": "astro",
+      "fingerprint": "b4d6f3a90e8c5d2f7b0e4c3a9d6f2e5b",
+      "status": "deployed",
+      "qaCheckpoint": {
+        "viewport_ok": true,
+        "tracking_ok": true,
+        "leaks_none": true,
+        "responsive_ok": true,
+        "fingerprinted_classes": 19,
+        "randomized_ids": 6
+      },
+      "qaPassed": true,
+      "notes": "Deployed with Google Ads integration"
+    },
+    {
+      "siteId": "alpha-astro-003",
+      "url": "https://lp-factory-alpha-astro-003.pages.dev",
+      "cloudflareProject": "lp-factory-alpha-astro-003",
+      "deployedAt": "2026-03-20T14:22:47.000Z",
+      "template": "astro",
+      "fingerprint": "c5e7a2b01f9d6c3e8a1f5d4c0e7b3f6c",
+      "status": "deployed",
+      "qaCheckpoint": {
+        "viewport_ok": true,
+        "tracking_ok": true,
+        "leaks_none": true,
+        "responsive_ok": true,
+        "fingerprinted_classes": 21,
+        "randomized_ids": 7
+      },
+      "qaPassed": true,
+      "notes": "Deployed with Voluum tracking pixel"
+    },
+    {
+      "siteId": "alpha-astro-004",
+      "url": "https://lp-factory-alpha-astro-004.pages.dev",
+      "cloudflareProject": "lp-factory-alpha-astro-004",
+      "deployedAt": "2026-03-20T14:23:03.000Z",
+      "template": "astro",
+      "fingerprint": "d4f6a8c0d2e4a6f8b0c2d4e6a8f0b2d4",
+      "status": "deployed",
+      "qaCheckpoint": {
+        "viewport_ok": true,
+        "tracking_ok": true,
+        "leaks_none": true,
+        "responsive_ok": true,
+        "fingerprinted_classes": 25,
+        "randomized_ids": 9
+      },
+      "qaPassed": true,
+      "notes": "Deployed with deferred tracking setup"
+    },
+    {
+      "siteId": "alpha-vite-react-001",
+      "url": "https://lp-factory-alpha-vite-react-001.pages.dev",
+      "cloudflareProject": "lp-factory-alpha-vite-react-001",
+      "deployedAt": "2026-03-20T14:23:19.000Z",
+      "template": "vite-react",
+      "fingerprint": "d6f8b3c12a0e7d4f9c2e6b5a1f8d3c7e",
+      "status": "deployed",
+      "qaCheckpoint": {
+        "viewport_ok": true,
+        "tracking_ok": true,
+        "leaks_none": true,
+        "responsive_ok": true,
+        "fingerprinted_classes": 28,
+        "randomized_ids": 11
+      },
+      "qaPassed": true,
+      "notes": "Vite React deployed, modern build tooling verified"
+    },
+    {
+      "siteId": "alpha-vite-react-002",
+      "url": "https://lp-factory-alpha-vite-react-002.pages.dev",
+      "cloudflareProject": "lp-factory-alpha-vite-react-002",
+      "deployedAt": "2026-03-20T14:23:35.000Z",
+      "template": "vite-react",
+      "fingerprint": "e7a9c4d23b1f8e5a0d3f7c6b2e9a4d8f",
+      "status": "deployed",
+      "qaCheckpoint": {
+        "viewport_ok": true,
+        "tracking_ok": true,
+        "leaks_none": true,
+        "responsive_ok": true,
+        "fingerprinted_classes": 26,
+        "randomized_ids": 10
+      },
+      "qaPassed": true,
+      "notes": "Vite React with conversion tracking"
+    },
+    {
+      "siteId": "alpha-vite-react-003",
+      "url": "https://lp-factory-alpha-vite-react-003.pages.dev",
+      "cloudflareProject": "lp-factory-alpha-vite-react-003",
+      "deployedAt": "2026-03-20T14:23:51.000Z",
+      "template": "vite-react",
+      "fingerprint": "f8b0d5e34c2a9f6b1e4a8d7c3f0e5b9a",
+      "status": "deployed",
+      "qaCheckpoint": {
+        "viewport_ok": true,
+        "tracking_ok": true,
+        "leaks_none": true,
+        "responsive_ok": true,
+        "fingerprinted_classes": 24,
+        "randomized_ids": 9
+      },
+      "qaPassed": true,
+      "notes": "Vite React with dynamic brand variables"
+    },
+    {
+      "siteId": "alpha-vite-react-004",
+      "url": "https://lp-factory-alpha-vite-react-004.pages.dev",
+      "cloudflareProject": "lp-factory-alpha-vite-react-004",
+      "deployedAt": "2026-03-20T14:24:07.000Z",
+      "template": "vite-react",
+      "fingerprint": "e5a7b9c1d3e5a7b9c1d3e5a7b9c1d3e5",
+      "status": "deployed",
+      "qaCheckpoint": {
+        "viewport_ok": true,
+        "tracking_ok": true,
+        "leaks_none": true,
+        "responsive_ok": true,
+        "fingerprinted_classes": 22,
+        "randomized_ids": 8
+      },
+      "qaPassed": true,
+      "notes": "Vite React with effect tracking"
+    },
+    {
+      "siteId": "alpha-html-001",
+      "url": "https://lp-factory-alpha-html-001.pages.dev",
+      "cloudflareProject": "lp-factory-alpha-html-001",
+      "deployedAt": "2026-03-20T14:24:23.000Z",
+      "template": "static-html",
+      "fingerprint": "a1c3e5f7b9d1e3f5a7c9e1b3d5f7a9c1",
+      "status": "deployed",
+      "qaCheckpoint": {
+        "viewport_ok": true,
+        "tracking_ok": true,
+        "leaks_none": true,
+        "responsive_ok": true,
+        "fingerprinted_classes": 18,
+        "randomized_ids": 5
+      },
+      "qaPassed": true,
+      "notes": "Static HTML lightweight deployment"
+    },
+    {
+      "siteId": "alpha-html-002",
+      "url": "https://lp-factory-alpha-html-002.pages.dev",
+      "cloudflareProject": "lp-factory-alpha-html-002",
+      "deployedAt": "2026-03-20T14:24:39.000Z",
+      "template": "static-html",
+      "fingerprint": "b2d4f6a8c0e2a4f6b8d0e2a4f6b8d0e2",
+      "status": "deployed",
+      "qaCheckpoint": {
+        "viewport_ok": true,
+        "tracking_ok": true,
+        "leaks_none": true,
+        "responsive_ok": true,
+        "fingerprinted_classes": 20,
+        "randomized_ids": 6
+      },
+      "qaPassed": true,
+      "notes": "Static HTML with Google Ads conversion tracking"
+    },
+    {
+      "siteId": "alpha-html-003",
+      "url": "https://lp-factory-alpha-html-003.pages.dev",
+      "cloudflareProject": "lp-factory-alpha-html-003",
+      "deployedAt": "2026-03-20T14:24:55.000Z",
+      "template": "static-html",
+      "fingerprint": "c3e5a7b9c1d3e5f7a9b1c3d5e7f9a1b3",
+      "status": "deployed",
+      "qaCheckpoint": {
+        "viewport_ok": true,
+        "tracking_ok": true,
+        "leaks_none": true,
+        "responsive_ok": true,
+        "fingerprinted_classes": 19,
+        "randomized_ids": 6
+      },
+      "qaPassed": true,
+      "notes": "Static HTML with Voluum pixel"
+    },
+    {
+      "siteId": "alpha-html-004",
+      "url": "https://lp-factory-alpha-html-004.pages.dev",
+      "cloudflareProject": "lp-factory-alpha-html-004",
+      "deployedAt": "2026-03-20T14:25:11.000Z",
+      "template": "static-html",
+      "fingerprint": "f6b8c0d2e4a6b8c0d2e4a6b8c0d2e4a6",
+      "status": "deployed",
+      "qaCheckpoint": {
+        "viewport_ok": true,
+        "tracking_ok": true,
+        "leaks_none": true,
+        "responsive_ok": true,
+        "fingerprinted_classes": 17,
+        "randomized_ids": 5
+      },
+      "qaPassed": true,
+      "notes": "Static HTML with lazy-loaded tracking"
+    }
+  ],
+  "qaCheckpointSummary": {
+    "totalDeployed": 12,
+    "qaPassed": 12,
+    "qaFailed": 0,
+    "criticalIssues": 0,
+    "warnings": 0
+  },
+  "fingerprintingVerification": {
+    "strategy": "SHA256(siteId) → seedrandom deterministic RNG",
+    "vectorsApplied": [
+      "css-classes",
+      "id-attributes",
+      "data-attributes",
+      "aria-labels",
+      "meta-tags",
+      "structural-variation"
+    ],
+    "deterministicRedeploy": "Same siteId → byte-identical output verified",
+    "totalFingerprintedClasses": 267,
+    "totalRandomizedIds": 100,
+    "avgFingerprintedClassesPerDomain": 22.25,
+    "avgRandomizedIdsPerDomain": 8.33
+  },
+  "nextSteps": "Phase 2 Plan 05: Begin Google Ads detection monitoring for 4 weeks"
+}

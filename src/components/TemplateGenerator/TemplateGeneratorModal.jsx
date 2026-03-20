@@ -190,7 +190,7 @@ export function TemplateGeneratorModal({ open, onClose, onSave, templates }) {
                 generatedCode: result.sourceCode,
                 generatedFiles: result.files,
                 templateFormat: result.format || prev?.templateFormat || "astro",
-                templateValidation: result.validation || prev?.templateValidation || null,
+                templateValidation: result.validation || result.analysis || prev?.templateValidation || null,
                 step: 1
             }));
         }

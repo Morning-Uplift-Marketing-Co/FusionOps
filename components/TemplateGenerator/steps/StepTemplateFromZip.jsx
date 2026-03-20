@@ -4,12 +4,24 @@ import { Field } from "../../ui/field";
 import { InputField as Inp } from "../../ui/input-field";
 import { Button } from "../../ui/button";
 import JSZip from 'jszip';
+import { analyzeTemplate } from "../../../utils/template-analyzer";
+
+const MAX_ZIP_SIZE = 15 * 1024 * 1024; // 15 MB
+const MAX_EXTRACTED_SIZE = 30 * 1024 * 1024; // 30 MB uncompressed
+
+const ALLOWED_EXTS = [
+    '.astro', '.js', '.ts', '.jsx', '.tsx', '.mjs', '.cjs',
+    '.json', '.css', '.html', '.md', '.env', '.toml', '.svg', '.txt',
+];
+const SKIP_DIRS = ['node_modules', '.git', 'dist', '.astro', '.wrangler', '.next', '.vercel', '__pycache__'];
 
 export function StepTemplateFromZip({ c, u, onGenerate }) {
     const [dragging, setDragging] = useState(false);
     const [parsing, setParsing] = useState(false);
     const [parseError, setParseError] = useState(null);
+    const [parseWarnings, setParseWarnings] = useState([]);
     const [parsedFiles, setParsedFiles] = useState(null);
+    const [analysis, setAnalysis] = useState(null);
     const fileInputRef = useRef(null);
 
     const [idManuallyEdited, setIdManuallyEdited] = useState(false);
@@ -30,94 +42,134 @@ export function StepTemplateFromZip({ c, u, onGenerate }) {
         u("newFolderId", val.toLowerCase().replace(/[^a-z0-9-]/g, "-"));
     };
 
+    /**
+     * Strip wrapper directories until we find a known entry point.
+     * Handles: project-name/src/pages/index.astro -> src/pages/index.astro
+     * Also handles double-wrapping: outer/inner/src/pages/index.astro
+     */
+    const stripRootWrappers = (inputFiles) => {
+        let current = { ...inputFiles };
+        for (let depth = 0; depth < 3; depth++) {
+            const paths = Object.keys(current);
+            if (paths.length === 0) return current;
+
+            const topDirs = [...new Set(paths.map(p => p.split('/')[0]).filter(Boolean))];
+            if (topDirs.length !== 1) return current;
+
+            const root = topDirs[0];
+            const hasNested = paths.some(p => p.startsWith(root + '/'));
+            if (!hasNested) return current;
+
+            const stripped = {};
+            for (const [p, content] of Object.entries(current)) {
+                const trimmed = p.startsWith(root + '/') ? p.slice(root.length + 1) : p;
+                if (trimmed) stripped[trimmed] = content;
+            }
+
+            if (Object.keys(stripped).length === 0) return current;
+            current = stripped;
+
+            // Check if we've found a valid entry point after stripping
+            const hasEntry = Object.keys(current).some(k =>
+                k === 'src/pages/index.astro' || k === 'index.astro' ||
+                k === 'index.html' || k === 'src/App.tsx' || k === 'src/App.jsx'
+            );
+            if (hasEntry) return current;
+        }
+        return current;
+    };
+
     const handleFile = async (file) => {
         if (!file || !file.name.endsWith('.zip')) {
             setParseError('Please upload a .zip file');
             return;
         }
+        if (file.size > MAX_ZIP_SIZE) {
+            setParseError(`ZIP file is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is ${MAX_ZIP_SIZE / 1024 / 1024} MB.`);
+            return;
+        }
+
         setParsing(true);
         setParseError(null);
+        setParseWarnings([]);
         setParsedFiles(null);
+        setAnalysis(null);
 
         try {
             const zip = await JSZip.loadAsync(file);
             const files = {};
+            let extractedSize = 0;
 
-            // Extract all text files from the zip
-            const ALLOWED_EXTS = ['.astro', '.js', '.ts', '.jsx', '.tsx', '.mjs', '.cjs', '.json', '.css', '.html', '.md', '.env', '.toml'];
-            const SKIP_DIRS = ['node_modules', '.git', 'dist', '.astro'];
-
-            for (const [path, zipEntry] of Object.entries(zip.files)) {
+            for (const [rawPath, zipEntry] of Object.entries(zip.files)) {
                 if (zipEntry.dir) continue;
 
-                // Skip unwanted directories
-                // Normalize path — determine if we should strip a root folder
+                // Normalize path
+                const path = rawPath.replace(/\\/g, '/').replace(/^\/+/, '');
                 const parts = path.split('/');
                 if (parts.some(p => SKIP_DIRS.includes(p))) continue;
 
-                let normalizedPath = path;
-
-                // Simple heuristic: if the first part is clearly a folder and there's a second part,
-                // and it's NOT a standard directory like src/ or public/ at the root, 
-                // we'll check if we should strip it later or just handle it here.
-                // Better approach: collect all files first, then find common prefix.
-
-                const ext = '.' + path.split('.').pop();
+                const ext = '.' + path.split('.').pop().toLowerCase();
                 if (!ALLOWED_EXTS.includes(ext)) continue;
 
                 const content = await zipEntry.async('string');
+                extractedSize += content.length;
+                if (extractedSize > MAX_EXTRACTED_SIZE) {
+                    setParseError(`Extracted content exceeds ${MAX_EXTRACTED_SIZE / 1024 / 1024} MB limit. Remove unnecessary files from the ZIP.`);
+                    setParsing(false);
+                    return;
+                }
+
                 files[path] = content;
             }
 
-            // --- SMART PATH NORMALIZATION ---
-            // If all files share a common root directory, strip it.
-            const filePaths = Object.keys(files);
-            if (filePaths.length > 0) {
-                const firstPathParts = filePaths[0].split('/');
-                if (firstPathParts.length > 1) {
-                    const rootCandidate = firstPathParts[0];
-                    const allShareRoot = filePaths.every(p => p.startsWith(rootCandidate + '/'));
-
-                    if (allShareRoot) {
-                        const newFiles = {};
-                        for (const [p, content] of Object.entries(files)) {
-                            const newPath = p.substring(rootCandidate.length + 1);
-                            if (newPath) newFiles[newPath] = content;
-                        }
-                        // Replace original files with normalized ones
-                        Object.keys(files).forEach(key => delete files[key]);
-                        Object.assign(files, newFiles);
-                    }
-                }
-            }
-            // ---------------------------------
-
-            // Check for index.astro file (robust discovery)
-            let hasIndexAstro = false;
-            let indexPath = null;
-
-            for (const path of Object.keys(files)) {
-                if (path.endsWith('index.astro') || path.endsWith('/index.astro')) {
-                    hasIndexAstro = true;
-                    indexPath = path;
-                    break;
-                }
-            }
-
-            if (!hasIndexAstro) {
-                const foundFiles = Object.keys(files).slice(0, 5).join(', ');
-                setParseError(`ZIP must contain an index.astro file. Found: ${foundFiles}${Object.keys(files).length > 5 ? '...' : ''}`);
+            if (Object.keys(files).length === 0) {
+                setParseError('ZIP contains no supported files. Expected .astro, .html, .tsx, .jsx, .css, .js, or .json files.');
                 setParsing(false);
                 return;
             }
 
-            console.log('[ZIP Upload] Found index.astro at:', indexPath);
+            // Strip wrapper directories
+            const normalizedFiles = stripRootWrappers(files);
 
-            setParsedFiles(files);
-            const sourceCode = `// Uploaded from ZIP: ${file.name}\n// Files: ${Object.keys(files).length}\n// Normalized: ${Object.keys(files).some(k => !k.includes('/')) ? 'Yes' : 'No'}\n// Date: ${new Date().toISOString()}`;
-            onGenerate({ sourceCode, files });
+            // Run full analysis
+            const result = analyzeTemplate(normalizedFiles);
+
+            if (result.errors.length > 0) {
+                setParseError(result.errors.join('\n'));
+                setParsing(false);
+                return;
+            }
+
+            setParseWarnings(result.warnings);
+            setAnalysis(result);
+            setParsedFiles(normalizedFiles);
+
+            // Store analysis metadata in wizard state
+            u("templateFormat", result.framework.id);
+
+            console.log('[ZIP Upload] Analysis:', result.framework.label,
+                `(${(result.framework.confidence * 100).toFixed(0)}%)`,
+                'Entry:', result.entry.path,
+                'Deps:', result.dependencies.map(d => d.label).join(', ') || 'none'
+            );
+
+            const sourceCode = [
+                `// Uploaded from ZIP: ${file.name}`,
+                `// Framework: ${result.framework.label} (${(result.framework.confidence * 100).toFixed(0)}% confidence)`,
+                `// Entry: ${result.entry.path || 'none'}`,
+                `// Dependencies: ${result.dependencies.map(d => d.label).join(', ') || 'none'}`,
+                `// Files: ${Object.keys(normalizedFiles).length}`,
+                `// Date: ${new Date().toISOString()}`,
+            ].join('\n');
+
+            onGenerate({
+                sourceCode,
+                files: normalizedFiles,
+                format: result.framework.id,
+                analysis: result,
+            });
         } catch (err) {
-            setParseError(`Failed to parse ZIP: ${err.message}. Make sure jszip is installed.`);
+            setParseError(`Failed to parse ZIP: ${err.message}`);
         } finally {
             setParsing(false);
         }
@@ -134,13 +186,22 @@ export function StepTemplateFromZip({ c, u, onGenerate }) {
         const file = e.target.files[0];
         if (file) handleFile(file);
     };
+
+    // Framework badge
+    const frameworkBadge = analysis ? {
+        'astro':       { label: 'Astro',         color: '#FF5D01' },
+        'vite-react':  { label: 'Vite + React',  color: '#61DAFB' },
+        'next':        { label: 'Next.js',        color: '#000000' },
+        'html-static': { label: 'Static HTML',   color: '#E34F26' },
+    }[analysis.framework.id] || null : null;
+
     return (
         <>
             <div style={{ textAlign: "center", marginBottom: 24 }}>
                 <div style={{ fontSize: 32, marginBottom: 8 }}>📦</div>
-                <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>Upload from ZIP</h2>
+                <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>Smart Import</h2>
                 <p style={{ fontSize: 13, color: T.muted, marginTop: 4 }}>
-                    Upload an existing Astro project as a .zip file
+                    Supports Astro, Bolt.new, Lovable, v0, and static HTML projects
                 </p>
             </div>
 
@@ -153,7 +214,7 @@ export function StepTemplateFromZip({ c, u, onGenerate }) {
                 />
             </Field>
 
-            <Field label="New Template ID" req help="Unique identifier, hyphens only (e.g. pro-lp-v1)">
+            <Field label="Template ID" req help="Unique identifier, hyphens only (e.g. pro-lp-v1)">
                 <Inp
                     value={c.newFolderId}
                     onChange={handleIdChange}
@@ -207,7 +268,7 @@ export function StepTemplateFromZip({ c, u, onGenerate }) {
                     {parsing ? (
                         <>
                             <div style={{ fontSize: 28, marginBottom: 8 }}>⏳</div>
-                            <div style={{ fontSize: 13, color: T.muted }}>Parsing ZIP...</div>
+                            <div style={{ fontSize: 13, color: T.muted }}>Analyzing template...</div>
                         </>
                     ) : parsedFiles ? (
                         <>
@@ -215,9 +276,23 @@ export function StepTemplateFromZip({ c, u, onGenerate }) {
                             <div style={{ fontSize: 13, fontWeight: 700, color: '#22c55e' }}>
                                 {Object.keys(parsedFiles).length} files loaded
                             </div>
-                            <div style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>
-                                Click to replace
-                            </div>
+                            {frameworkBadge && (
+                                <div style={{
+                                    display: 'inline-block', marginTop: 6, padding: "3px 12px",
+                                    borderRadius: 8, fontSize: 11, fontWeight: 700,
+                                    background: frameworkBadge.color + '18',
+                                    color: frameworkBadge.color,
+                                    border: `1px solid ${frameworkBadge.color}30`,
+                                }}>
+                                    {frameworkBadge.label}
+                                    {analysis && (
+                                        <span style={{ opacity: 0.7, marginLeft: 4 }}>
+                                            {(analysis.framework.confidence * 100).toFixed(0)}%
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+                            <div style={{ fontSize: 11, color: T.muted, marginTop: 6 }}>Click to replace</div>
                         </>
                     ) : (
                         <>
@@ -226,20 +301,117 @@ export function StepTemplateFromZip({ c, u, onGenerate }) {
                                 Drop .zip file here or click to browse
                             </div>
                             <div style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>
-                                Must contain <code style={{ background: T.card, padding: "1px 4px", borderRadius: 3 }}>src/pages/index.astro</code>
+                                Astro projects, Bolt.new exports, Lovable HTML, any static site
                             </div>
                         </>
                     )}
                 </div>
+
                 {parseError && (
-                    <div style={{ fontSize: 12, color: '#ef4444', marginTop: 8, padding: "8px 12px", background: '#ef444410', borderRadius: 6 }}>
-                        ⚠️ {parseError}
+                    <div style={{ fontSize: 12, color: '#ef4444', marginTop: 8, padding: "8px 12px", background: '#ef444410', borderRadius: 6, whiteSpace: 'pre-line' }}>
+                        {parseError}
+                    </div>
+                )}
+
+                {parseWarnings.length > 0 && (
+                    <div style={{ fontSize: 12, color: '#f59e0b', marginTop: 8, padding: "8px 12px", background: '#f59e0b10', borderRadius: 6 }}>
+                        {parseWarnings.map((w, i) => <div key={i}>* {w}</div>)}
                     </div>
                 )}
             </Field>
 
+            {/* Analysis Results */}
+            {analysis && (
+                <div style={{
+                    padding: 16,
+                    background: "#1a1d2e",
+                    borderRadius: 12,
+                    border: "1px solid rgba(255,255,255,0.06)",
+                }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: T.primary, marginBottom: 12 }}>
+                        Analysis Results
+                    </div>
+
+                    {/* Framework */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                        <span style={{ fontSize: 11, color: T.muted, width: 80 }}>Framework:</span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: '#fff' }}>
+                            {analysis.framework.label}
+                        </span>
+                        {analysis.framework.buildRequired && (
+                            <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: '#f59e0b20', color: '#f59e0b', fontWeight: 600 }}>
+                                BUILD REQUIRED
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Entry Point */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                        <span style={{ fontSize: 11, color: T.muted, width: 80 }}>Entry:</span>
+                        <code style={{ fontSize: 11, color: '#22c55e', background: '#22c55e10', padding: "2px 6px", borderRadius: 4 }}>
+                            {analysis.entry.path || 'none found'}
+                        </code>
+                        {analysis.entry.renderable && (
+                            <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: '#22c55e20', color: '#22c55e', fontWeight: 600 }}>
+                                PREVIEWABLE
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Dependencies */}
+                    {analysis.dependencies.length > 0 && (
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
+                            <span style={{ fontSize: 11, color: T.muted, width: 80, flexShrink: 0 }}>Deps:</span>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                {analysis.dependencies.map(dep => (
+                                    <span key={dep.id} style={{
+                                        fontSize: 10, padding: "2px 8px", borderRadius: 6,
+                                        background: dep.critical ? '#3b82f620' : 'rgba(255,255,255,0.05)',
+                                        color: dep.critical ? '#60a5fa' : T.muted,
+                                        fontWeight: 600,
+                                        border: `1px solid ${dep.critical ? '#3b82f630' : 'rgba(255,255,255,0.08)'}`,
+                                    }}>
+                                        {dep.label}
+                                        {dep.cdnUrl && <span style={{ marginLeft: 3, opacity: 0.5 }}>CDN</span>}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* CSS Variables */}
+                    {analysis.cssVars.hasShadcnVars && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 11, color: T.muted, width: 80 }}>Theming:</span>
+                            <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 6, background: '#8b5cf620', color: '#a78bfa', fontWeight: 600, border: '1px solid #8b5cf630' }}>
+                                shadcn/ui CSS Variables
+                            </span>
+                            <span style={{ fontSize: 10, color: T.muted }}>
+                                {Object.keys(analysis.cssVars.variables).length} vars detected
+                            </span>
+                        </div>
+                    )}
+
+                    {/* Evidence */}
+                    {analysis.framework.evidence.length > 0 && (
+                        <details style={{ marginTop: 10 }}>
+                            <summary style={{ fontSize: 10, color: T.muted, cursor: 'pointer' }}>
+                                Detection evidence ({analysis.framework.evidence.length} signals)
+                            </summary>
+                            <div style={{ marginTop: 4, paddingLeft: 8 }}>
+                                {analysis.framework.evidence.map((e, i) => (
+                                    <div key={i} style={{ fontSize: 10, color: T.muted, padding: "1px 0", fontFamily: "monospace" }}>
+                                        + {e}
+                                    </div>
+                                ))}
+                            </div>
+                        </details>
+                    )}
+                </div>
+            )}
+
             {/* File Preview */}
-            {parsedFiles && (
+            {parsedFiles && !analysis && (
                 <div style={{
                     padding: 16,
                     background: "#1e1e1e",
@@ -248,17 +420,17 @@ export function StepTemplateFromZip({ c, u, onGenerate }) {
                     overflowY: "auto",
                 }}>
                     <div style={{ fontSize: 12, color: "#22c55e", marginBottom: 8 }}>
-                        📁 Files detected ({Object.keys(parsedFiles).length}):
+                        Files detected ({Object.keys(parsedFiles).length}):
                     </div>
                     {Object.keys(parsedFiles).sort().map((f) => (
                         <div key={f} style={{ fontSize: 11, color: "#d4d4d4", padding: "2px 0", fontFamily: "monospace" }}>
-                            📄 {f}
+                            {f}
                         </div>
                     ))}
                 </div>
             )}
 
-            {/* Requirements */}
+            {/* Supported formats info */}
             <div style={{
                 marginTop: 16,
                 padding: 14,
@@ -268,12 +440,25 @@ export function StepTemplateFromZip({ c, u, onGenerate }) {
                 fontSize: 12,
                 color: T.muted,
             }}>
-                <div style={{ fontWeight: 700, color: T.primary, marginBottom: 6 }}>📋 ZIP Requirements</div>
-                <ul style={{ margin: 0, paddingLeft: 18 }}>
-                    <li>Must contain <code style={{ background: T.input, padding: "1px 4px", borderRadius: 3 }}>src/pages/index.astro</code></li>
-                    <li>Optionally: <code style={{ background: T.input, padding: "1px 4px", borderRadius: 3 }}>astro.config.mjs</code>, <code style={{ background: T.input, padding: "1px 4px", borderRadius: 3 }}>src/layouts/</code>, <code style={{ background: T.input, padding: "1px 4px", borderRadius: 3 }}>src/components/</code></li>
-                    <li><code style={{ background: T.input, padding: "1px 4px", borderRadius: 3 }}>node_modules/</code> and <code style={{ background: T.input, padding: "1px 4px", borderRadius: 3 }}>dist/</code> are automatically excluded</li>
-                </ul>
+                <div style={{ fontWeight: 700, color: T.primary, marginBottom: 6 }}>Supported Formats</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    <div>
+                        <div style={{ fontWeight: 600, color: T.text, marginBottom: 2 }}>Astro Projects</div>
+                        <div style={{ fontSize: 11 }}>src/pages/index.astro</div>
+                    </div>
+                    <div>
+                        <div style={{ fontWeight: 600, color: T.text, marginBottom: 2 }}>Bolt.new / Static HTML</div>
+                        <div style={{ fontSize: 11 }}>index.html + CSS/JS</div>
+                    </div>
+                    <div>
+                        <div style={{ fontWeight: 600, color: T.text, marginBottom: 2 }}>Lovable / Vite+React</div>
+                        <div style={{ fontSize: 11 }}>Requires build step</div>
+                    </div>
+                    <div>
+                        <div style={{ fontWeight: 600, color: T.text, marginBottom: 2 }}>Auto-detected</div>
+                        <div style={{ fontSize: 11 }}>Tailwind, Lucide, shadcn/ui</div>
+                    </div>
+                </div>
             </div>
         </>
     );

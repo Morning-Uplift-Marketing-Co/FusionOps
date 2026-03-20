@@ -15,8 +15,7 @@ dist
 .DS_Store
 Thumbs.db
 .claude/
-.windsurf/
-.planning/
+# .planning/ — tracked for GSD workflow
 logs/
 *.zip
 *.tar.gz
