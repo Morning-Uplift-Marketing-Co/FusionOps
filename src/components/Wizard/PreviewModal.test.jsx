@@ -7,77 +7,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-
-// Mock component since PreviewModal doesn't exist yet (test-first approach)
-// This allows tests to define the contract before implementation
-import { useState } from 'react';
-
-function PreviewModal({ isOpen, onClose, config, templateId, previewHtml = '', fingerprintedHtml = '' }) {
-  const [viewport, setViewport] = useState('desktop');
-  const [showFingerprint, setShowFingerprint] = useState(false);
-
-  if (!isOpen) return null;
-
-  const currentHtml = showFingerprint ? fingerprintedHtml : previewHtml;
-
-  return (
-    <div role="dialog" aria-label="Template Preview Modal">
-      <div className="preview-modal">
-        <div className="modal-header">
-          <h2>Preview: {config?.brand || 'Template'}</h2>
-          <button onClick={onClose} aria-label="Close preview">
-            Close
-          </button>
-        </div>
-
-        <div className="modal-body">
-          {/* Viewport Toggle */}
-          <div className="controls">
-            <button
-              className="viewport-toggle"
-              data-testid="viewport-toggle"
-              onClick={() => setViewport(viewport === 'mobile' ? 'desktop' : 'mobile')}
-              data-viewport={viewport}
-              aria-label="Toggle viewport"
-            >
-              Toggle Viewport ({viewport})
-            </button>
-
-            {/* Fingerprint Toggle */}
-            <button
-              className="fingerprint-toggle"
-              data-testid="fingerprint-toggle"
-              onClick={() => setShowFingerprint(!showFingerprint)}
-              data-fingerprint={showFingerprint}
-              aria-label="Toggle fingerprint view"
-            >
-              {showFingerprint ? 'Show Original' : 'Show Fingerprint'}
-            </button>
-          </div>
-
-          {/* Preview iframe */}
-          <div
-            className="preview-container"
-            style={{
-              width: viewport === 'mobile' ? '320px' : '1024px',
-            }}
-          >
-            {currentHtml ? (
-              <iframe
-                title="Template Preview"
-                data-testid="preview-iframe"
-                sandbox="allow-scripts allow-same-origin"
-                srcDoc={currentHtml}
-              />
-            ) : (
-              <div className="preview-placeholder">No preview available</div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+import { PreviewModal } from './PreviewModal.jsx';
 
 describe('PreviewModal component', () => {
   const mockConfig = {
