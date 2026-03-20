@@ -1,0 +1,28 @@
+#!/bin/bash
+# Pre-push hook: prevent accidental pushes to main and warn about large branches
+
+remote="$1"
+
+while read local_ref local_sha remote_ref remote_sha; do
+  # Block direct push to main
+  if echo "$remote_ref" | grep -q "refs/heads/main$"; then
+    echo ""
+    echo "BLOCKED: Direct push to main is not allowed."
+    echo "Create a PR instead: gh pr create --base main"
+    echo ""
+    exit 1
+  fi
+
+  # Warn if branch is >50 commits ahead of main
+  if [ "$local_sha" != "0000000000000000000000000000000000000000" ]; then
+    AHEAD=$(git rev-list --count origin/main.."$local_sha" 2>/dev/null || echo 0)
+    if [ "$AHEAD" -gt 50 ]; then
+      echo ""
+      echo "WARNING: This branch is $AHEAD commits ahead of main."
+      echo "Consider merging to main soon to avoid painful conflicts."
+      echo ""
+    fi
+  fi
+done
+
+exit 0

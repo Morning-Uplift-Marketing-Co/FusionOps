@@ -1,0 +1,95 @@
+name: Git Safety
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+  schedule:
+    # Every Monday at 9:00 UTC
+    - cron: "0 9 * * 1"
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  # Auto-tag main before merge so we can always roll back
+  auto-backup-tag:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Create backup tag
+        run: |
+          TIMESTAMP=$(date -u +"%Y-%m-%d-%H%M")
+          PR_NUM=${{ github.event.pull_request.number }}
+          TAG_NAME="pre-merge/${TIMESTAMP}-pr${PR_NUM}"
+          # Tag the commit BEFORE the merge (parent of merge commit)
+          PARENT_SHA=$(git rev-parse HEAD~1)
+          git tag "$TAG_NAME" "$PARENT_SHA"
+          git push origin "$TAG_NAME"
+          echo "Created backup tag: $TAG_NAME at $PARENT_SHA"
+
+  # Weekly: find stale branches and create an issue
+  stale-branch-report:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find stale merged branches
+        id: stale
+        run: |
+          echo "## Stale Branches Report" > report.md
+          echo "" >> report.md
+          FOUND=0
+
+          for branch in $(git branch -r --merged origin/main | grep -v 'HEAD\|main$'); do
+            CLEAN_BRANCH=$(echo "$branch" | sed 's|origin/||')
+            LAST_COMMIT=$(git log -1 --format='%ci' "$branch" 2>/dev/null || echo "unknown")
+            echo "- \`$CLEAN_BRANCH\` (last commit: $LAST_COMMIT)" >> report.md
+            FOUND=$((FOUND + 1))
+          done
+
+          if [ "$FOUND" -eq 0 ]; then
+            echo "No stale branches found." >> report.md
+          fi
+
+          echo "count=$FOUND" >> "$GITHUB_OUTPUT"
+          cat report.md
+
+      - name: Create issue if stale branches found
+        if: steps.stale.outputs.count > 0
+        run: |
+          gh issue create \
+            --title "Weekly: ${{ steps.stale.outputs.count }} stale branches to clean up" \
+            --body-file report.md \
+            --label "housekeeping"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  # Check for leftover worktrees on PR open
+  worktree-check:
+    if: github.event.pull_request && github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for worktree artifacts
+        run: |
+          if [ -d ".claude/worktrees" ] && [ "$(ls -A .claude/worktrees 2>/dev/null)" ]; then
+            echo "WARNING: .claude/worktrees/ directory contains leftover worktrees"
+            ls -la .claude/worktrees/
+            gh pr comment ${{ github.event.pull_request.number }} \
+              --body "**Warning:** \`.claude/worktrees/\` contains leftover worktrees. Run \`git worktree prune\` and remove stale directories before merging."
+          else
+            echo "No leftover worktrees found."
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
