@@ -18,6 +18,9 @@ import { ViteBuilder } from './ViteBuilder.js';
 import { HtmlStaticBuilder } from './HtmlStaticBuilder.js';
 import { AntiFingerprint } from '../AntiFingerprint.js';
 import { QualityChecker } from '../quality-check/QualityChecker.js';
+import { JavaScriptObfuscator } from '../obfuscation-transform.js';
+import { NetworkRandomizer } from '../network-randomization.js';
+import { EventRandomizer } from '../event-randomization.js';
 import { promises as fs } from 'node:fs';
 import { mkdtempSync, rmSync } from 'node:fs';
 import path from 'node:path';
@@ -127,6 +130,52 @@ export class TemplateBuilder {
             outputPath: null,
             framework: framework.label,
             error: `Anti-fingerprinting failed: ${error.message}`
+          };
+        }
+      }
+
+      // Step 6b: Apply Phase 3 vector transforms (if enabled)
+      if (config.vectors && transformedHtml) {
+        try {
+          if (config.vectors.obfuscate) {
+            const obfuscResult = await JavaScriptObfuscator.transform(
+              transformedHtml,
+              siteId,
+              { level: config.vectors.obfuscationLevel || 'moderate' }
+            );
+            transformedHtml = obfuscResult.html;
+            console.log(`[TemplateBuilder] Applied JavaScript obfuscation`);
+          }
+
+          if (config.vectors.networkJitter) {
+            const networkResult = NetworkRandomizer.transform(
+              transformedHtml,
+              siteId,
+              {
+                min: config.vectors.networkJitterMin || 50,
+                max: config.vectors.networkJitterMax || 500
+              }
+            );
+            transformedHtml = networkResult.html;
+            console.log(`[TemplateBuilder] Applied network timing randomization`);
+          }
+
+          if (config.vectors.eventRandomization) {
+            const eventResult = await EventRandomizer.transform(
+              transformedHtml,
+              siteId,
+              { enabled: config.vectors.eventRandomizationEnabled !== false }
+            );
+            transformedHtml = eventResult.html;
+            console.log(`[TemplateBuilder] Applied event listener randomization`);
+          }
+        } catch (error) {
+          console.error(`[TemplateBuilder] Vector transform failed: ${error.message}`);
+          return {
+            success: false,
+            outputPath: null,
+            framework: framework.label,
+            error: `Vector transform failed: ${error.message}`
           };
         }
       }
