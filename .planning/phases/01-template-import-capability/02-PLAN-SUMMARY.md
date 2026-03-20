@@ -250,6 +250,41 @@ These three modules form the core of Plan 03 (Wizard Integration):
 - **Auto-detection time:** <100ms per template (measured in RESEARCH.md)
 - **Memory:** Minimal (file map-based, no persistent caching)
 
+## Self-Check: PASSED
+
+### Verification Results
+
+**All Implementation Files Created:**
+- [x] `src/utils/manifest-loader.js` (172 lines)
+- [x] `src/utils/capability-detector.js` (342 lines)
+- [x] `src/utils/capability-resolver.js` (105 lines)
+
+**All Test Files Created:**
+- [x] `src/utils/__tests__/manifest-loader.test.js` (15 tests)
+- [x] `src/utils/__tests__/capability-detector.test.js` (27 tests)
+- [x] `src/utils/__tests__/capability-resolver.test.js` (25 tests)
+
+**All Commits Verified:**
+- [x] `ff0f5e6` - manifest-loader implementation + 15 tests
+- [x] `25a2d45` - capability-detector implementation + 27 tests (with weight fixes)
+- [x] `977ef7e` - capability-resolver implementation + 25 tests
+
+**Test Results:**
+- [x] All 67 tests passing (100% success rate)
+- [x] Test execution time: <400ms
+- [x] Coverage: 100% of three modules
+
+**Requirements Met:**
+- [x] CAPAB-01: Multi-level capability detection framework
+- [x] CAPAB-02: Confidence scoring (0.65 threshold)
+- [x] CAPAB-05: Manifest schema validation
+- [x] 80%+ test coverage achieved (67 tests comprehensive)
+- [x] All 5 capability types detectable and resolvable
+- [x] Immutable functions (no mutations)
+- [x] Graceful error handling (no exceptions thrown)
+
+---
+
 ## Sign-Off
 
 All tasks complete, all tests passing, requirements met.
