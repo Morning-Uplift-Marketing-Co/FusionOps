@@ -6,71 +6,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-
-// Mock utility function since html-diff doesn't exist yet (test-first approach)
-// This is a wrapper around diff-match-patch for HTML-specific diffs
-function generateHtmlDiff(preHtml, postHtml, options = {}) {
-  // Simple diff implementation for testing
-  // In real implementation, would use diff-match-patch library
-
-  const diffs = [];
-  let preIdx = 0;
-  let postIdx = 0;
-
-  // Simplified diff: find common prefix
-  while (preIdx < preHtml.length && postIdx < postHtml.length && preHtml[preIdx] === postHtml[postIdx]) {
-    preIdx++;
-    postIdx++;
-  }
-
-  // Common prefix
-  if (preIdx > 0) {
-    diffs.push([0, preHtml.substring(0, preIdx)]);
-  }
-
-  // Find common suffix
-  let preSuffix = preHtml.length;
-  let postSuffix = postHtml.length;
-
-  while (preSuffix > preIdx && postSuffix > postIdx && preHtml[preSuffix - 1] === postHtml[postSuffix - 1]) {
-    preSuffix--;
-    postSuffix--;
-  }
-
-  // Middle part (removed in pre, added in post)
-  if (preIdx < preSuffix) {
-    diffs.push([-1, preHtml.substring(preIdx, preSuffix)]);
-  }
-
-  if (postIdx < postSuffix) {
-    diffs.push([1, postHtml.substring(postIdx, postSuffix)]);
-  }
-
-  // Common suffix
-  if (preSuffix < preHtml.length) {
-    diffs.push([0, preHtml.substring(preSuffix)]);
-  }
-
-  // Calculate summary
-  let added = 0;
-  let removed = 0;
-  let unchanged = 0;
-
-  for (const [op, text] of diffs) {
-    if (op === 1) added += text.length;
-    else if (op === -1) removed += text.length;
-    else unchanged += text.length;
-  }
-
-  return {
-    diffs,
-    summary: {
-      added,
-      removed,
-      unchanged,
-    },
-  };
-}
+import { generateHtmlDiff } from './html-diff.js';
 
 describe('html-diff utility', () => {
   beforeEach(() => {
