@@ -7,47 +7,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
-
-// Mock hook since usePreviewDebounce doesn't exist yet (test-first approach)
-// This allows tests to define the contract before implementation
-function usePreviewDebounce(config, templateId, delay = 400) {
-  const [previewHtml, setPreviewHtml] = React.useState('');
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState(null);
-  const timerRef = React.useRef(null);
-  const abortRef = React.useRef(null);
-
-  React.useEffect(() => {
-    // Clear previous timer
-    if (timerRef.current) clearTimeout(timerRef.current);
-
-    setLoading(true);
-    setError(null);
-
-    // Debounce the preview generation
-    timerRef.current = setTimeout(async () => {
-      try {
-        // Simulate generating preview from config and templateId
-        const html = `<div>Preview: ${config?.brand || 'Template'}</div>`;
-        setPreviewHtml(html);
-        setLoading(false);
-      } catch (err) {
-        setError(err.message);
-        setLoading(false);
-      }
-    }, delay);
-
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      if (abortRef.current) abortRef.current.abort();
-    };
-  }, [config, templateId, delay]);
-
-  return { previewHtml, loading, error };
-}
-
-// Import React for the hook implementation
-import React from 'react';
+import { usePreviewDebounce } from './usePreviewDebounce.js';
 
 describe('usePreviewDebounce hook', () => {
   const mockConfig = {
