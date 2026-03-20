@@ -253,11 +253,18 @@ export function LoginPage({ onLogin, loading: extLoading }) {
                 {/* Logo */}
                 <div style={{ textAlign: "center", marginBottom: 28 }}>
                     <div style={{
-                        width: 52, height: 52, borderRadius: 14,
+                        width: 56, height: 56, borderRadius: 16,
                         background: T.grad, display: "inline-flex",
                         alignItems: "center", justifyContent: "center",
-                        fontSize: 24, marginBottom: 12,
-                    }}>⚡</div>
+                        marginBottom: 12,
+                        boxShadow: `0 8px 24px ${T.primaryGlow}`,
+                    }}>
+                        <svg width="26" height="30" viewBox="0 0 26 30" fill="none">
+                            <rect x="2" y="0" width="7" height="30" rx="1.5" fill="white"/>
+                            <rect x="2" y="0" width="22" height="7.5" rx="1.5" fill="white"/>
+                            <rect x="2" y="12" width="16" height="6.5" rx="1.5" fill="white"/>
+                        </svg>
+                    </div>
                     <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>FusionOps 3.0</div>
                     <div style={{ fontSize: 13, color: "hsl(var(--muted-foreground))" }}>
                         {mode === "setup" ? "First-time setup" : mode === "register" ? "Create your account" : "Sign in to your workspace"}
@@ -336,7 +343,7 @@ export function LoginPage({ onLogin, loading: extLoading }) {
 
                 {/* Footer */}
                 <div style={{ marginTop: 22, textAlign: "center", fontSize: 11, color: "hsl(var(--muted-foreground))", lineHeight: 1.6 }}>
-                    FusionOps 3.0 — Internal Dashboard
+                    Every line of code, with love for Uplift ✨
                 </div>
             </div>
         </div>

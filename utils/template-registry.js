@@ -92,7 +92,14 @@ export async function fetchCustomTemplates(force = false) {
           category: t.category || 'custom',
           source: 'api',
           sourceCode: t.source_code,
-          files: t.files ? (typeof t.files === 'string' ? JSON.parse(t.files) : t.files) : {},
+          files: (() => {
+            if (!t.files) return {};
+            let f = t.files;
+            // Handle double-encoded JSON strings (string -> parse -> still string -> parse again)
+            if (typeof f === 'string') { try { f = JSON.parse(f); } catch (_e) { return {}; } }
+            if (typeof f === 'string') { try { f = JSON.parse(f); } catch (_e) { return {}; } }
+            return (typeof f === 'object' && f !== null) ? f : {};
+          })(),
           createdAt: t.created_at,
         }));
         return customTemplatesCache;

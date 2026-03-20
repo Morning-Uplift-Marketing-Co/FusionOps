@@ -109,6 +109,7 @@ export function ProxyHealthTab({ profiles: rawProfiles = [], settings = {}, stan
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastScan, setLastScan] = useState(null);
   const [scanning, setScanning] = useState(false);
+  const [scanProgress, setScanProgress] = useState({ done: 0, total: 0 });
   const [filter, setFilter] = useState("all");
   const [poolProxies, setPoolProxies] = useState([]);
   const [loadingPool, setLoadingPool] = useState(false);
@@ -266,12 +267,19 @@ export function ProxyHealthTab({ profiles: rawProfiles = [], settings = {}, stan
   }, [checkProfile, settings]);
 
   const scanAll = useCallback(async () => {
+    if (!profiles.length) return;
     setScanning(true);
-    for (let i = 0; i < profiles.length; i += 3) {
-      await Promise.allSettled(profiles.slice(i, i + 3).map(p => checkProfile(p)));
-    }
+    setScanProgress({ done: 0, total: profiles.length });
+    await Promise.allSettled(
+      profiles.map(p =>
+        checkProfile(p).finally(() =>
+          setScanProgress(prev => ({ ...prev, done: prev.done + 1 }))
+        )
+      )
+    );
     setLastScan(Date.now());
     setScanning(false);
+    setScanProgress({ done: 0, total: 0 });
   }, [profiles, checkProfile]);
 
   useEffect(() => {
@@ -306,7 +314,11 @@ export function ProxyHealthTab({ profiles: rawProfiles = [], settings = {}, stan
         </div>
         <div className="flex items-center gap-2">
           <label className="flex items-center gap-1.5 text-[10px] cursor-pointer"><input type="checkbox" checked={autoRefresh} onChange={e => setAutoRefresh(e.target.checked)} className="rounded" />Auto (5min)</label>
-          <Button onClick={scanAll} disabled={scanning || !profiles.length} className="px-3 h-7 text-[10px]">{scanning ? "Scanning..." : "Scan All"}</Button>
+          <Button onClick={scanAll} disabled={scanning || !profiles.length} className="px-3 h-7 text-[10px] min-w-[90px]">
+            {scanning && scanProgress.total > 0
+              ? `${scanProgress.done}/${scanProgress.total} ⏳`
+              : scanning ? "Scanning..." : "⚡ Scan All"}
+          </Button>
         </div>
       </div>
       <AlertBanner alerts={alerts} onDismiss={i => setAlerts(a => a.filter((_, j) => j !== i))} />

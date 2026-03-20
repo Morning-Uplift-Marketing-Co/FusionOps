@@ -1,0 +1,237 @@
+{
+  "version": "1.0",
+  "description": "Alpha test domain manifest with deterministic fingerprinting seeds",
+  "generatedAt": "2026-03-20T12:35:00.000Z",
+  "domains": [
+    {
+      "siteId": "alpha-astro-001",
+      "name": "Astro Template 001",
+      "template": "astro",
+      "cloudflareProject": "lp-factory-alpha-astro-001",
+      "seed": "a3c5e2f89d7b4c1e6a9f3d2b8c5e7a1f",
+      "deploymentDate": null,
+      "status": "pending",
+      "randomizationVectors": [
+        "css-classes",
+        "id-attributes",
+        "data-attributes",
+        "aria-labels",
+        "meta-tags",
+        "structural-variation"
+      ],
+      "notes": "Standard Astro template, responsive design, Tailwind CSS"
+    },
+    {
+      "siteId": "alpha-astro-002",
+      "name": "Astro Template 002",
+      "template": "astro",
+      "cloudflareProject": "lp-factory-alpha-astro-002",
+      "seed": "b4d6f3a90e8c5d2f7b0e4c3a9d6f2e5b",
+      "deploymentDate": null,
+      "status": "pending",
+      "randomizationVectors": [
+        "css-classes",
+        "id-attributes",
+        "data-attributes",
+        "aria-labels",
+        "meta-tags",
+        "structural-variation"
+      ],
+      "notes": "Astro template with custom components, Google Ads integration"
+    },
+    {
+      "siteId": "alpha-astro-003",
+      "name": "Astro Template 003",
+      "template": "astro",
+      "cloudflareProject": "lp-factory-alpha-astro-003",
+      "seed": "c5e7a2b01f9d6c3e8a1f5d4c0e7b3f6c",
+      "deploymentDate": null,
+      "status": "pending",
+      "randomizationVectors": [
+        "css-classes",
+        "id-attributes",
+        "data-attributes",
+        "aria-labels",
+        "meta-tags",
+        "structural-variation"
+      ],
+      "notes": "Astro with Voluum tracking, minimal dependencies"
+    },
+    {
+      "siteId": "alpha-vite-react-001",
+      "name": "Vite React Template 001",
+      "template": "vite-react",
+      "cloudflareProject": "lp-factory-alpha-vite-react-001",
+      "seed": "d6f8b3c12a0e7d4f9c2e6b5a1f8d3c7e",
+      "deploymentDate": null,
+      "status": "pending",
+      "randomizationVectors": [
+        "css-classes",
+        "id-attributes",
+        "data-attributes",
+        "aria-labels",
+        "meta-tags",
+        "structural-variation"
+      ],
+      "notes": "Vite + React 19, modern build tooling, CSS modules support"
+    },
+    {
+      "siteId": "alpha-vite-react-002",
+      "name": "Vite React Template 002",
+      "template": "vite-react",
+      "cloudflareProject": "lp-factory-alpha-vite-react-002",
+      "seed": "e7a9c4d23b1f8e5a0d3f7c6b2e9a4d8f",
+      "deploymentDate": null,
+      "status": "pending",
+      "randomizationVectors": [
+        "css-classes",
+        "id-attributes",
+        "data-attributes",
+        "aria-labels",
+        "meta-tags",
+        "structural-variation"
+      ],
+      "notes": "Vite React with conversion tracking, multiple CTAs"
+    },
+    {
+      "siteId": "alpha-vite-react-003",
+      "name": "Vite React Template 003",
+      "template": "vite-react",
+      "cloudflareProject": "lp-factory-alpha-vite-react-003",
+      "seed": "f8b0d5e34c2a9f6b1e4a8d7c3f0e5b9a",
+      "deploymentDate": null,
+      "status": "pending",
+      "randomizationVectors": [
+        "css-classes",
+        "id-attributes",
+        "data-attributes",
+        "aria-labels",
+        "meta-tags",
+        "structural-variation"
+      ],
+      "notes": "Vite React with dynamic brand variables, form integration"
+    },
+    {
+      "siteId": "alpha-html-001",
+      "name": "Static HTML Template 001",
+      "template": "static-html",
+      "cloudflareProject": "lp-factory-alpha-html-001",
+      "seed": "a1c3e5f7b9d1e3f5a7c9e1b3d5f7a9c1",
+      "deploymentDate": null,
+      "status": "pending",
+      "randomizationVectors": [
+        "css-classes",
+        "id-attributes",
+        "data-attributes",
+        "aria-labels",
+        "meta-tags",
+        "structural-variation"
+      ],
+      "notes": "Plain HTML + CSS, minimal JavaScript, lightweight footprint"
+    },
+    {
+      "siteId": "alpha-html-002",
+      "name": "Static HTML Template 002",
+      "template": "static-html",
+      "cloudflareProject": "lp-factory-alpha-html-002",
+      "seed": "b2d4f6a8c0e2a4f6b8d0e2a4f6b8d0e2",
+      "deploymentDate": null,
+      "status": "pending",
+      "randomizationVectors": [
+        "css-classes",
+        "id-attributes",
+        "data-attributes",
+        "aria-labels",
+        "meta-tags",
+        "structural-variation"
+      ],
+      "notes": "Static HTML with inline CSS, Google Ads conversion tracking"
+    },
+    {
+      "siteId": "alpha-html-003",
+      "name": "Static HTML Template 003",
+      "template": "static-html",
+      "cloudflareProject": "lp-factory-alpha-html-003",
+      "seed": "c3e5a7b9c1d3e5f7a9b1c3d5e7f9a1b3",
+      "deploymentDate": null,
+      "status": "pending",
+      "randomizationVectors": [
+        "css-classes",
+        "id-attributes",
+        "data-attributes",
+        "aria-labels",
+        "meta-tags",
+        "structural-variation"
+      ],
+      "notes": "Static HTML with Voluum pixel, brand variable injection"
+    },
+    {
+      "siteId": "alpha-astro-004",
+      "name": "Astro Template 004",
+      "template": "astro",
+      "cloudflareProject": "lp-factory-alpha-astro-004",
+      "seed": "d4f6a8c0d2e4a6f8b0c2d4e6a8f0b2d4",
+      "deploymentDate": null,
+      "status": "pending",
+      "randomizationVectors": [
+        "css-classes",
+        "id-attributes",
+        "data-attributes",
+        "aria-labels",
+        "meta-tags",
+        "structural-variation"
+      ],
+      "notes": "Astro with dynamic imports, deferred tracking setup"
+    },
+    {
+      "siteId": "alpha-vite-react-004",
+      "name": "Vite React Template 004",
+      "template": "vite-react",
+      "cloudflareProject": "lp-factory-alpha-vite-react-004",
+      "seed": "e5a7b9c1d3e5a7b9c1d3e5a7b9c1d3e5",
+      "deploymentDate": null,
+      "status": "pending",
+      "randomizationVectors": [
+        "css-classes",
+        "id-attributes",
+        "data-attributes",
+        "aria-labels",
+        "meta-tags",
+        "structural-variation"
+      ],
+      "notes": "Vite React with useEffect tracking, suspense boundaries"
+    },
+    {
+      "siteId": "alpha-html-004",
+      "name": "Static HTML Template 004",
+      "template": "static-html",
+      "cloudflareProject": "lp-factory-alpha-html-004",
+      "seed": "f6b8c0d2e4a6b8c0d2e4a6b8c0d2e4a6",
+      "deploymentDate": null,
+      "status": "pending",
+      "randomizationVectors": [
+        "css-classes",
+        "id-attributes",
+        "data-attributes",
+        "aria-labels",
+        "meta-tags",
+        "structural-variation"
+      ],
+      "notes": "Static HTML with lazy-loaded tracking pixel"
+    }
+  ],
+  "summary": {
+    "totalDomains": 12,
+    "byTemplate": {
+      "astro": 4,
+      "vite-react": 4,
+      "static-html": 4
+    },
+    "costEstimate": {
+      "cloudflarePages": "Free tier (unlimited deployments)",
+      "trackingPixels": "~50-100 requests/domain/day × 11 domains × 28 days = ~15k-30k tracking calls (within typical limits)",
+      "googleLighthouse": "Estimated 11 free API calls at baseline, then 10/month during monitoring"
+    },
+    "fingerprintingStrategy": "SHA256(siteId) → seedrandom for deterministic byte-identical redeploys"
+  }
+}
