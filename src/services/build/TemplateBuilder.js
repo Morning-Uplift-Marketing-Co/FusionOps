@@ -16,6 +16,8 @@ import { identifyFramework } from '../../utils/template-analyzer.js';
 import { AstroBuilder } from './AstroBuilder.js';
 import { ViteBuilder } from './ViteBuilder.js';
 import { HtmlStaticBuilder } from './HtmlStaticBuilder.js';
+import { AntiFingerprint } from '../AntiFingerprint.js';
+import { QualityChecker } from '../quality-check/QualityChecker.js';
 import { promises as fs } from 'node:fs';
 import { mkdtempSync, rmSync } from 'node:fs';
 import path from 'node:path';
@@ -30,15 +32,19 @@ export class TemplateBuilder {
    * 2. Find matching builder adapter
    * 3. Create isolated temp directory
    * 4. Run builder
-   * 5. Copy output to staging area
-   * 6. Clean up temp directory
+   * 5. Apply anti-fingerprinting transform
+   * 6. Run quality checks (viewport, tracking, astro leaks, google ads, lighthouse)
+   * 7. Copy output to staging area
+   * 8. Clean up temp directory
    *
    * @param {Record<string, string>} files - template file map
    * @param {Record<string, string>} envVars - environment variables
    * @param {string} siteId - unique site identifier
-   * @returns {Promise<{success: boolean, outputPath: string, framework: string, error?: string}>}
+   * @param {Object} config - build configuration
+   * @param {Object} config.qualityConfig - quality check configuration
+   * @returns {Promise<{success: boolean, outputPath: string, framework: string, error?: string, qualityResults?: Object}>}
    */
-  static async buildTemplate(files, envVars, siteId) {
+  static async buildTemplate(files, envVars, siteId, config = {}) {
     // Step 1: Detect framework
     const framework = identifyFramework(files);
     if (!framework) {
@@ -83,18 +89,136 @@ export class TemplateBuilder {
         };
       }
 
-      // Step 5: Copy output to staging area
+      console.log(`[TemplateBuilder] Build completed successfully`);
+
+      // Step 5: Read built HTML and CSS
+      const indexPath = path.join(buildResult.outputDir, 'index.html');
+      const cssPath = path.join(buildResult.outputDir, 'styles.css');
+
+      let htmlContent = '';
+      let cssContent = '';
+
+      try {
+        htmlContent = await fs.readFile(indexPath, 'utf-8');
+      } catch (e) {
+        console.warn(`[TemplateBuilder] index.html not found at ${indexPath}`);
+      }
+
+      try {
+        cssContent = await fs.readFile(cssPath, 'utf-8');
+      } catch (e) {
+        console.warn(`[TemplateBuilder] styles.css not found at ${cssPath}`);
+      }
+
+      // Step 6: Apply anti-fingerprinting transform
+      let transformedHtml = htmlContent;
+      let transformedCss = cssContent;
+
+      if (htmlContent) {
+        try {
+          const transformed = await AntiFingerprint.transform(htmlContent, cssContent, siteId);
+          transformedHtml = transformed.html;
+          transformedCss = transformed.css;
+          console.log(`[TemplateBuilder] Applied anti-fingerprinting transform`);
+        } catch (error) {
+          console.error(`[TemplateBuilder] Anti-fingerprinting failed: ${error.message}`);
+          return {
+            success: false,
+            outputPath: null,
+            framework: framework.label,
+            error: `Anti-fingerprinting failed: ${error.message}`
+          };
+        }
+      }
+
+      // Step 7: Run quality checks (QUAL-06 integration point)
+      let qualityResults = null;
+      if (transformedHtml) {
+        const qualityConfig = config.qualityConfig || {
+          trackingConfig: {
+            required: config.requireTracking ?? true,
+          },
+          googleAdsConfig: {
+            required: config.requireGoogleAds ?? false,
+          },
+          lighthouseConfig: {
+            thresholds: config.lighthouseThresholds || {
+              performance: 95,
+              accessibility: 95,
+              best_practices: 95,
+              seo: 95,
+            },
+            timeout: 120000,
+          },
+        };
+
+        try {
+          qualityResults = await QualityChecker.validatePreDeploy(
+            transformedHtml,
+            transformedCss,
+            qualityConfig
+          );
+
+          console.log(`[TemplateBuilder] Quality checks completed: ${qualityResults.passed ? 'PASSED' : 'FAILED'}`);
+
+          // Block deploy if critical failures
+          if (!qualityResults.passed) {
+            const failures = qualityResults.criticalFailures
+              .map((f) => `${f.id}: ${f.message}`)
+              .join('\n');
+            return {
+              success: false,
+              outputPath: null,
+              framework: framework.label,
+              error: `Quality validation failed:\n${failures}\n\nDeploy blocked. Fix issues and rebuild.`,
+              qualityResults
+            };
+          }
+
+          // Log warnings if any
+          if (qualityResults.warnings && qualityResults.warnings.length > 0) {
+            console.warn('[TemplateBuilder] Quality check warnings:');
+            qualityResults.warnings.forEach((w) => {
+              console.warn(`  ${w.id}: ${w.message}`);
+            });
+          }
+        } catch (error) {
+          console.error(`[TemplateBuilder] Quality check error: ${error.message}`);
+          return {
+            success: false,
+            outputPath: null,
+            framework: framework.label,
+            error: `Quality check failed: ${error.message}`,
+            qualityResults
+          };
+        }
+      }
+
+      // Step 8: Copy output to staging area
       const stagingDir = path.join(tmpdir(), 'lp-factory-staging', siteId);
       await fs.mkdir(stagingDir, { recursive: true });
 
       // Copy entire output directory to staging
       await copyDir(buildResult.outputDir, stagingDir);
+
+      // Also save transformed HTML/CSS to staging
+      if (transformedHtml) {
+        await fs.writeFile(path.join(stagingDir, 'index.html'), transformedHtml, 'utf-8');
+      }
+      if (transformedCss) {
+        await fs.writeFile(path.join(stagingDir, 'styles.css'), transformedCss, 'utf-8');
+      }
+
       console.log(`[TemplateBuilder] Staged output to ${stagingDir}`);
 
       return {
         success: true,
         outputPath: stagingDir,
-        framework: framework.label
+        framework: framework.label,
+        html: transformedHtml,
+        css: transformedCss,
+        qualityResults,
+        deployReady: qualityResults?.passed ?? true
       };
     } catch (error) {
       const message = error.message || String(error);
@@ -106,7 +230,7 @@ export class TemplateBuilder {
         error: message
       };
     } finally {
-      // Step 6: Clean up temp directory
+      // Step 9: Clean up temp directory
       try {
         rmSync(workDir, { recursive: true, force: true });
         console.log(`[TemplateBuilder] Cleaned up temp directory`);
