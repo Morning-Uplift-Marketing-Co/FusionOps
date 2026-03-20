@@ -75,7 +75,11 @@
   5. Lighthouse score on all metrics >= 95; deploy blocked with clear error message if any metric < 95
   6. Quality checks run after fingerprinting; critical failures (missing markers, Astro leaks) block deploy; warnings surface non-blocking issues
 
-**Plans:** TBD
+**Plans:** 4 plans
+  - [ ] 01-PLAN.md — QualityChecker orchestrator + viewport/pixel validators (Wave 1) - QUAL-01, QUAL-02
+  - [ ] 02-PLAN.md — Astro leak detection + Google Ads validation (Wave 1) - QUAL-03, QUAL-04
+  - [ ] 03-PLAN.md — Lighthouse integration + pipeline orchestration (Wave 2) - QUAL-05, QUAL-06
+  - [ ] 04-PLAN.md — Regression testing + e2e validation (Wave 3) - QUAL-01..06
 
 ---
 
@@ -102,7 +106,7 @@
 |-------|----------------|--------|-----------|
 | 1. Import Fix & Capability | 3/3 | Implementation complete | 2026-03-20 |
 | 2. Build & Anti-Fingerprint | 0/3 | Plans created, ready for execution | 2026-03-20 |
-| 3. Quality & Validation | 0/? | Pending Phase 2 completion | — |
+| 3. Quality & Validation | 4/4 | Plans created, ready for execution | 2026-03-20 |
 | 4. Preview & Polish | 0/? | Pending Phase 3 completion | — |
 
 ---
