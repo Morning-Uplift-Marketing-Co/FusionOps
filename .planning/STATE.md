@@ -31,8 +31,8 @@ progress:
 
 ## Current Position
 
-Phase: null — EXECUTING
-Plan: 1 of ?
+Phase: 03-quality-checks-deploy-validation — EXECUTING
+Plan: 01 of 04 (COMPLETE)
 
 ## Roadmap Snapshot
 
@@ -119,14 +119,19 @@ Plan: 1 of ?
   - 62 passing tests (26 seeder + 36 service) with 100% coverage
   - Verified determinism: same siteId → byte-identical output
   - Whitelists: Tailwind utilities, third-party data attributes, framework IDs
+- **COMPLETED:** QualityChecker foundation + viewport/pixel validators — Phase 3 Plan 01 ✓
+  - QUAL-01: Viewport meta tag detection and validation (checkViewportMeta)
+  - QUAL-02: Tracking pixel detection - Voluum + Google conversion (checkTrackingPixels)
+  - 32 passing tests (9 viewport + 13 pixel + 10 orchestrator) with 100% coverage
+  - Immutable result objects; critical/warning separation
+  - Ready for Plan 02 integration
 
 ### What Needs Implementation
 
-- **Plan 04:** Build orchestrator (multi-format builds, anti-fingerprint strategy)
-- Multi-format build adapters + orchestrator (Phase 2)
-- Deterministic fingerprinting plugin (Phase 2)
-- Quality checker validation rules (Phase 3)
-- Preview modal in wizard step 5 (Phase 4)
+- **Phase 3 Plan 02:** Astro leak detection + Google Ads validators (QUAL-03, QUAL-04)
+- **Phase 3 Plan 03:** Lighthouse integration + TemplateBuilder orchestration (QUAL-05, QUAL-06)
+- **Phase 3 Plan 04:** Regression testing + E2E validation + comprehensive report
+- **Phase 4:** Preview modal in wizard step 5 (Phase 4)
 
 ### Key Architecture Patterns
 
