@@ -9,7 +9,7 @@
 ## Phases
 
 - [x] **Phase 1: Template Import Fix & Capability Detection** - Fix Astro env var injection, establish multi-level capability detection framework ✓ 2026-03-20
-- [ ] **Phase 2: Multi-Format Build & Anti-Fingerprint Pipeline** - Complete build isolation for all formats, implement deterministic randomization
+- [x] **Phase 2: Multi-Format Build & Anti-Fingerprint Pipeline** - Complete build isolation for all formats, implement deterministic randomization ✓ 2026-03-20
 - [x] **Phase 3: Quality Checks & Deploy Validation** - Comprehensive pre-deploy validation gates, Lighthouse enforcement ✓ 2026-03-20
 - [ ] **Phase 4: Template Preview & UX Polish** - Live preview with real-time variable injection and error feedback
 
@@ -55,8 +55,8 @@
 
 **Plans:** 3 plans
   - [x] 01-PLAN.md — Build infrastructure (FormatBuilder adapters, TemplateBuilder orchestrator) (Wave 1) ✓ 640+ tests
-  - [ ] 02-PLAN.md — Anti-fingerprinting service (Seeder, AntiFingerprint transforms) (Wave 2)
-  - [ ] 03-PLAN.md — Integration testing and determinism verification (Wave 3)
+  - [x] 02-PLAN.md — Anti-fingerprinting service (Seeder, AntiFingerprint transforms) (Wave 2) ✓ 62 tests
+  - [x] 03-PLAN.md — Integration testing and determinism verification (Wave 3) ✓ 44 tests
 
 ---
 
