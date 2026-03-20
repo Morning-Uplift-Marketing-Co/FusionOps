@@ -9,6 +9,7 @@ import { checkViewportMeta } from './validators/viewport-validator.js';
 import { checkTrackingPixels } from './validators/pixel-validator.js';
 import { checkAstroLeaks } from './validators/astro-leak-validator.js';
 import { checkGoogleAdMarkers } from './validators/google-ads-validator.js';
+import { checkLighthouseScores } from './validators/lighthouse-validator.js';
 
 /**
  * QualityChecker orchestrator service
@@ -69,6 +70,14 @@ export class QualityChecker {
       results.checks.push(adResult);
     }
 
+    // Gate 5: Lighthouse 95+ enforcement (QUAL-05) - ASYNC
+    const lighthouseResult = await checkLighthouseScores(htmlContent, config.lighthouseConfig || {});
+    if (!lighthouseResult.passed && lighthouseResult.severity === 'critical') {
+      results.criticalFailures.push(lighthouseResult);
+    } else {
+      results.checks.push(lighthouseResult);
+    }
+
     // Aggregate results
     results.passed = results.criticalFailures.length === 0;
     results.summary = {
@@ -82,4 +91,4 @@ export class QualityChecker {
 }
 
 // Export validators for direct use and testing
-export { checkViewportMeta, checkTrackingPixels, checkAstroLeaks, checkGoogleAdMarkers };
+export { checkViewportMeta, checkTrackingPixels, checkAstroLeaks, checkGoogleAdMarkers, checkLighthouseScores };
