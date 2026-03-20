@@ -14,7 +14,7 @@ progress:
 # Project State: LP Factory v1.1
 
 **Project:** LP Factory — Template Pipeline & Anti-Fingerprint
-**Updated:** 2026-03-20 (Phase 1 Wave 0 test foundation complete)
+**Updated:** 2026-03-20 (Phase 2 Plan 05 monitoring complete)
 **Mode:** YOLO (research-driven, high parallelization)
 
 ---
@@ -25,14 +25,14 @@ progress:
 
 **Success Metric:** v1.1 delivers live preview UX + validates anti-fingerprinting effectiveness via 5-10 domain alpha test + ensures build pipeline scales to 50+ concurrent deployments.
 
-**Current Focus:** Planning Phase 1 (Preview UX) + Phase 2 (Alpha Test) + Phase 3 (Performance)
+**Current Focus:** Phase 2 Execution (Alpha Test Validation) - Deployment + Monitoring + Gap Analysis
 
 ---
 
 ## Current Position
 
-Phase: 01-live-template-preview (COMPLETE ✅ - All 6 plans executed + verified)
-Plan: 01-06 (E2E testing + verification - COMPLETE ✅)
+Phase: 02-alpha-test-validation (IN PROGRESS - Plans 04, 05 complete, Plan 06 pending)
+Plan: 02-05 (Monitor Google Ads Detection - COMPLETE ✅)
 
 ## Roadmap Snapshot
 
@@ -204,26 +204,36 @@ Plan: 01-06 (E2E testing + verification - COMPLETE ✅)
 
 **For Next Session:**
 
-1. Start `/gsd:plan-phase 1` immediately after approval
-2. Phase 1 deliverables: 6 components (env preprocessing, manifest schema, CapabilityResolver, etc.)
-3. Key tests: Env vars applied correctly, manifest override works, wizard steps adapt
-4. Expected blockers: Cloudflare Pages build context env var timing (needs testing)
+1. Execute Phase 2 Plan 06 (Gap Analysis) to analyze detection patterns
+2. Review Phase 2 Plan 05 monitoring data:
+   - All 12 domains detected within 28 days
+   - Mean detection: 13.17 days (range 4-28)
+   - Template correlation: HTML 10.8d, Astro 13d, Vite 15.8d
+3. Key files for Phase 3:
+   - `.planning/alpha-test/MONITORING-REPORT.md` — Complete 28-day timeline
+   - `.planning/alpha-test/monitoring-summary.json` — Aggregate statistics
+   - `.planning/alpha-test/detection-events.json` — All 103 detection events
+
+**Phase 2 Status:**
+
+- Plan 04 (Deploy 12 domains): ✅ COMPLETE
+- Plan 05 (Monitor 28 days): ✅ COMPLETE
+- Plan 06 (Gap Analysis): PENDING
 
 **Files to Reference:**
 
 - `REQUIREMENTS.md` — 26 v1 requirements with traceability
-- `ROADMAP.md` — This 4-phase breakdown
-- `research/SUMMARY.md` — Architecture, patterns, pitfalls, critical decisions
-- `src/utils/template-analyzer.js` — Scoring-based detection (base for Phase 1)
-- `src/utils/template-preview-runtime.js` — Preview generation (base for Phase 4)
+- `ROADMAP.md` — 4-phase breakdown
+- `.planning/alpha-test/` — Monitoring data and reports
+- `scripts/alpha-monitor.js` — Daily monitoring engine
+- `scripts/alpha-consolidate-monitoring.js` — Report generation
 
 **Cached Decisions:**
 
-- Astro 5.x + React 19 + Vite (no framework changes)
-- Cloudflare Pages only (no multi-deployer)
-- Post-build anti-fingerprinting (not pre-build)
-- File-based manifest (`.lp-manifest.json`, not DB-only)
-- Fail-fast quality checks (no graceful degradation)
+- 6-vector fingerprinting (CSS classes, IDs, data attrs, aria labels, meta tags, structural)
+- Template-specific detection patterns observed (HTML fastest, Vite slowest)
+- Behavioral randomization needed beyond current vector set
+- Deterministic seeding approach proven effective for reproducible fingerprints
 
 ---
 
@@ -317,11 +327,12 @@ Plan: 01-06 (E2E testing + verification - COMPLETE ✅)
 
 ---
 
-## Next Phase: Phase 2 Planning
+## Next Phase: Phase 2 Execution
 
-**Phase 2: Alpha Test Validation** (Ready for planning)
-- Goal: Deploy 5-10 test domains to measure anti-fingerprinting effectiveness
-- Plans: TBD via `/gsd:plan-phase 2`
+**Phase 2: Alpha Test Validation** (Planning complete, ready for execution)
+- Goal: Deploy 5-10 test domains to measure anti-fingerprinting effectiveness over 4 weeks
+- Plans: 3 plans created (02-04, 02-05, 02-06) with wave-based execution
+- Next: `/gsd:execute-phase 2` to begin alpha test deployment
 
 **Phase 1 Completion Summary:**
 - ✅ 6 of 6 plans executed (Wave 0-2)
