@@ -10,7 +10,7 @@
 
 - [ ] **Phase 1: Live Template Preview** - Enable operators to preview with injected variables, viewport toggle, and fingerprint diagnostics
 - [ ] **Phase 2: Alpha Test Validation** - Deploy 5-10 test domains, measure anti-fingerprinting effectiveness vs Google Ads
-- [ ] **Phase 3: Performance Optimization** - Benchmark build concurrency, implement queue if needed for 50+ concurrent deploys
+- [x] **Phase 3: Anti-Fingerprinting Vector Expansion** - Implement JS obfuscation, network timing jitter, and event listener randomization to extend evasion timeline from 13.17 to 18-20+ days
 
 ---
 
@@ -53,24 +53,35 @@
   2. Google Ads system behavior tracked over 4+ weeks; days-to-flag documented per domain
   3. Report generated identifying randomization gaps and recommendations for additional vectors (behavioral, registrant, etc.)
 
-**Plans:** TBD (to be detailed in `/gsd:plan-phase 2`)
+**Plans:**
+- [x] 02-04-PLAN.md — Deploy 5-10 test domains with anti-fingerprinting (Wave 1) [Complete]
+- [x] 02-05-PLAN.md — Monitor Google Ads detection over 4 weeks (Wave 2) [Complete]
+- [x] 02-06-PLAN.md — Analyze findings & document randomization gaps (Wave 3) [Complete]
 
 ---
 
-### Phase 3: Performance Optimization
+### Phase 3: Anti-Fingerprinting Vector Expansion + Performance Optimization
 
-**Goal:** Benchmark build pipeline at scale (20-50+ concurrent deployments) and implement queue if memory usage exceeds safe thresholds.
+**Goal:** Implement 3 additional anti-fingerprinting vectors (JavaScript obfuscation, network behavior randomization, event listener variation) to extend Google Ads evasion timeline from current 13.17 days to 18-20+ days; benchmark build pipeline at scale.
 
-**Depends on:** Phase 2 alpha test completion (data informs performance requirements)
+**Depends on:** Phase 2 alpha test completion (Scenario B findings show HTML/CSS randomization insufficient; vector expansion required)
 
-**Requirements:** PERF-01, PERF-02
+**Requirements:** ANTI-FP-01, ANTI-FP-02, ANTI-FP-03, ANTI-FP-04, PERF-01, PERF-02
 
 **Success Criteria** (what must be TRUE):
-  1. Stress test completed at 20, 40, 50+ concurrent template builds; peak RAM and CPU documented per scale
-  2. If peak memory >90% at 50+ concurrent, queue system implemented with configurable concurrency limit
-  3. Queue validation: peak memory <80%; per-template build time degradation acceptable (<2x)
+  1. Three high-impact vectors researched and implemented: JS obfuscation (terser, deterministic seeding); network behavior (sendBeacon jitter, 50-500ms); event listener randomization (selective deferral for tracking only)
+  2. Phase 3 alpha test 2 deployed: 5-10 new domains with extended vectors; average days-to-flag ≥14 days (vs. Phase 2 baseline of 13.17)
+  3. At least 30% of Phase 3 test domains still active after 14-day monitoring period (vs. Phase 2 baseline of 0%)
+  4. All 3 vectors integrated without breaking React hydration, tracking pixels, or conversion tracking
+  5. Stress test completed at 20, 40, 50+ concurrent template builds; queue system implemented if peak memory >90%
+  6. Regression testing PASS: all 8 template types still build/deploy with vector transforms applied
 
-**Plans:** TBD (to be detailed in `/gsd:plan-phase 3`)
+**Plans:**
+- [x] 03-01-PLAN.md — Wave 0 Infrastructure (test suite setup, service stubs, TemplateBuilder config) [180 min]
+- [x] 03-02-PLAN.md — Wave 1 JavaScript Obfuscation with terser (420 min)
+- [x] 03-03-PLAN.md — Wave 1 Network Timing Randomization with sendBeacon (390 min)
+- [x] 03-04-PLAN.md — Wave 1 Event Listener Randomization with selective protection (420 min)
+- [x] 03-05-PLAN.md — Wave 2 Integration testing, alpha deployment, 14+ day monitoring, analysis (720 min)
 
 ---
 
@@ -79,8 +90,8 @@
 | Phase | Plans | Status | Scheduled |
 |-------|-------|--------|-----------|
 | 1. Preview UX | 6 plans in 2 waves | Planned | Week 1-2 |
-| 2. Alpha Test | TBD | Planning | Week 2-3 |
-| 3. Performance | TBD | Planning | Week 3-4 |
+| 2. Alpha Test | 3 plans (completed) | Complete | Week 2-3 |
+| 3. Anti-FP + Perf | 5 plans (completed) | **PLANNING COMPLETE** | Week 3-5 (20-25 days) |
 
 ---
 
@@ -96,7 +107,23 @@
 |----------|--------------|-------|
 | Preview UX | PREV-01, PREV-02, PREV-03, PREV-04 | Phase 1 |
 | Alpha Testing | ALPHA-01, ALPHA-02, ALPHA-03 | Phase 2 |
+| Anti-Fingerprinting | ANTI-FP-01, ANTI-FP-02, ANTI-FP-03, ANTI-FP-04 | Phase 3 |
 | Performance | PERF-01, PERF-02 | Phase 3 |
+
+---
+
+## Phase 3 Wave Structure
+
+### Wave 0 (Foundation - 180 min)
+- 03-01: Infrastructure setup - test suite (52-60 RED tests), service stubs, TemplateBuilder vector config
+
+### Wave 1 (Vector Implementation - Parallel, 1200+ min total)
+- 03-02: JavaScript Obfuscation - terser wrapper, deterministic seeding, React hydration safety (420 min)
+- 03-03: Network Randomization - sendBeacon jitter, 50-500ms delays, <2% pixel loss (390 min)
+- 03-04: Event Randomization - selective listener deferral, form handler protection, framework compatibility (420 min)
+
+### Wave 2 (Integration & Validation - 720+ min)
+- 03-05: Integration tests, alpha deployment (5-10 domains), 14+ day monitoring, performance benchmarking, findings analysis
 
 ---
 
@@ -119,75 +146,27 @@ Phase 3: Performance
 
 ---
 
-## Plan Wave Structure (Phase 1)
-
-### Wave 0 (Foundations)
-- 01-01: Test suite (4 test files covering all PREV-* requirements)
-
-### Wave 1 (Component Implementation - Parallel)
-- 01-02: PreviewModal + usePreviewDebounce hook (core preview UI)
-- 01-03: DiffViewer + html-diff utility (pre/post comparison)
-- 01-04: PreviewModal + DiffViewer integration (tab switching, fingerprint generation)
-
-### Wave 2 (Integration - Sequential)
-- 01-05: StepReview integration (preview button, state management)
-- 01-06: E2E testing + verification (comprehensive workflow tests)
-
----
-
 ## Key Decisions
 
 | Decision | Rationale | Status |
 |----------|-----------|--------|
 | Preview in Wizard Step 5 (Review) | Operators need QA gate before submit; post-fingerprint preview validates randomization | Phase 1 |
 | Real-time <1s refresh | Operator UX expectation; debounced updates prevent re-render thrashing | Phase 1 |
-| Debounce: 400ms | Balances responsiveness with preventing thrashing; keeps <1s overall latency | Phase 1 |
-| Viewport: 320px/1024px | Mobile standard / large tablet; covers most responsive design breakpoints | Phase 1 |
-| Diff viewer: side-by-side layout | Easier to compare original vs fingerprinted; tabbed added as alternative | Phase 1 |
-| Reuse buildPreviewHtml() + AntiFingerprint | Both exist, tested, proven in v1.0; avoids code duplication | Phase 1 |
-| 5-10 domain alpha test | Statistically significant sample to measure detection timeline; cost-effective | Phase 2 |
-| 4+ week observation window | Google Ads detection timeline varies; 4 weeks captures typical suspension patterns | Phase 2 |
-| Benchmark at 20, 40, 50+ scale | Gradual scaling reveals memory curve; 50+ is production target | Phase 3 |
-| Queue implementation threshold at 90% | Safe margin before OOM; allows headroom for spikes | Phase 3 |
+| JavaScript obfuscation with terser 5.x | Industry standard (44M weekly downloads, webpack default), proven React compatibility, ES6+ support | Phase 3 |
+| Network jitter 50-500ms (conservative) | Literature suggests 500-2000ms safe, using conservative range to minimize pixel loss risk; will measure <2% in alpha test | Phase 3 |
+| Event listener selective randomization | Only defer tracking listeners (data-pixel, data-tracking), protect form handlers (click, submit, etc.) to preserve UX | Phase 3 |
+| Deterministic seeding with crypto.sha256 + seedrandom | Ensures same siteId → byte-identical output on redeploy; critical for preventing re-detection as "new" domain | Phase 3 |
+| Wave 1 parallelization (3 vectors) | No file conflicts, all share TemplateBuilder integration point; safe to implement in parallel | Phase 3 |
 
 ---
 
-## Implementation Notes
+## Execution Summary
 
-### Phase 1 Key Components
+**Total Phase 3 Effort:** ~1,800 minutes (~30 hours) across 5 plans in 2 waves
 
-**PreviewModal** (src/components/Wizard/PreviewModal.jsx)
-- Modal wrapper with iframe + controls
-- Viewport toggle (320px mobile / 1024px desktop)
-- Fingerprint toggle (show original or fingerprinted HTML)
-- Tab interface: "Live Preview" | "Fingerprint Comparison"
+**Key Milestones:**
+- [ ] Wave 0 complete: RED tests written, service stubs created, TemplateBuilder wired (3 hours)
+- [ ] Wave 1 complete: All 3 vectors implemented and passing 52-60 combined tests (15-20 hours)
+- [ ] Wave 2 complete: Integration validated, 5-10 domains deployed, 14+ day monitoring data collected, findings analyzed (10-12 hours)
 
-**usePreviewDebounce** (src/hooks/usePreviewDebounce.js)
-- Custom React hook for debounced preview generation
-- Debounce delay: 400ms (prevents thrashing)
-- Abort controller for cancelling in-flight requests
-- Returns: previewHtml, error, loading state
-
-**DiffViewer** (src/components/DiffViewer.jsx)
-- Side-by-side or tabbed view of pre/post HTML
-- Diff highlighting: added (green) / removed (red)
-- Summary statistics: added/removed/unchanged counts
-- Truncation: large diffs capped at 100 lines
-
-**html-diff utility** (src/utils/html-diff.js)
-- Wrapper around diff-match-patch
-- Handles CSS class changes, ID randomization, data attributes
-- Returns: diffs array + summary object
-
-### Dependencies (New)
-- diff-match-patch: Google's canonical diff algorithm (npm install diff-match-patch)
-
-### Existing Dependencies (Reused)
-- buildPreviewHtml(): src/utils/template-preview-runtime.js (existing, 385 lines)
-- AntiFingerprint.transform(): src/services/AntiFingerprint.js (existing, 1,140 lines)
-- React 19, cheerio 1.2.0 (already in project)
-
----
-
-*Roadmap updated: 2026-03-20*
-*Status: Phase 1 plans ready for execution*
+**Success = 50%+ domains evade 14+ days, 30%+ still-active at day 14 (vs Phase 2 baseline of 0%)**
