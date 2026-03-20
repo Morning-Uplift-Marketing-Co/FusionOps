@@ -5,13 +5,13 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import cheerio from 'cheerio';
+import { load } from 'cheerio';
 import { generateDeterministicString, createDeterministicRng } from '../utils/fingerprint-seeder.js';
 
 describe('Meta Tag Variation', () => {
   it('should inject generator meta tag if missing', () => {
     const html = '<html><head><title>Page</title></head><body>Content</body></html>';
-    const $ = cheerio.load(html);
+    const $ = load(html);
     const siteId = 'test-site';
 
     const generators = [
@@ -56,7 +56,7 @@ describe('Meta Tag Variation', () => {
 
   it('should vary description phrasing with hash suffix', () => {
     const html = '<html><head><meta name="description" content="Original description"></head></html>';
-    const $ = cheerio.load(html);
+    const $ = load(html);
     const siteId = 'test-site';
 
     const descMeta = $('head meta[name="description"]');
@@ -82,7 +82,7 @@ describe('Meta Tag Variation', () => {
 
   it('should preserve og:type tag', () => {
     const html = '<html><head><meta property="og:type" content="website"></head></html>';
-    const $ = cheerio.load(html);
+    const $ = load(html);
 
     const ogType = $('head meta[property="og:type"]');
     expect(ogType.attr('content')).toBe('website');
@@ -93,7 +93,7 @@ describe('Meta Tag Variation', () => {
 
   it('should preserve og:image tag', () => {
     const html = '<html><head><meta property="og:image" content="https://example.com/img.png"></head></html>';
-    const $ = cheerio.load(html);
+    const $ = load(html);
 
     const ogImage = $('head meta[property="og:image"]');
     expect(ogImage.attr('content')).toBe('https://example.com/img.png');
@@ -103,7 +103,7 @@ describe('Meta Tag Variation', () => {
 
   it('should vary og:title tag', () => {
     const html = '<html><head><meta property="og:title" content="Page Title"></head></html>';
-    const $ = cheerio.load(html);
+    const $ = load(html);
     const siteId = 'test-site';
 
     const ogTitle = $('head meta[property="og:title"]');
@@ -121,7 +121,7 @@ describe('Meta Tag Variation', () => {
 
   it('should vary og:description tag', () => {
     const html = '<html><head><meta property="og:description" content="Page description"></head></html>';
-    const $ = cheerio.load(html);
+    const $ = load(html);
     const siteId = 'test-site';
 
     const ogDesc = $('head meta[property="og:description"]');
@@ -137,7 +137,7 @@ describe('Meta Tag Variation', () => {
 
   it('should create head if missing', () => {
     const html = '<html><body>Content</body></html>';
-    const $ = cheerio.load(html);
+    const $ = load(html);
 
     if ($('head').length === 0) {
       $('html').prepend('<head></head>');
@@ -148,7 +148,7 @@ describe('Meta Tag Variation', () => {
 
   it('should handle HTML with no description tag', () => {
     const html = '<html><head><title>Page</title></head><body>Content</body></html>';
-    const $ = cheerio.load(html);
+    const $ = load(html);
 
     const descMeta = $('head meta[name="description"]');
     if (descMeta.length === 0) {
@@ -169,7 +169,7 @@ describe('Meta Tag Variation', () => {
         </head>
       </html>
     `;
-    const $ = cheerio.load(html);
+    const $ = load(html);
     const siteId = 'test-site';
 
     // Vary non-critical tags only
@@ -196,7 +196,7 @@ describe('Meta Tag Variation', () => {
 
   it('should verify HTML validity after meta tag variation', () => {
     const html = '<html><head><title>Page</title></head><body>Content</body></html>';
-    const $ = cheerio.load(html);
+    const $ = load(html);
     const siteId = 'test-site';
 
     // Add generator
@@ -205,7 +205,7 @@ describe('Meta Tag Variation', () => {
 
     // Parse result to verify validity
     const finalHtml = $.html();
-    const $2 = cheerio.load(finalHtml);
+    const $2 = load(finalHtml);
 
     expect($2('meta[name="generator"]').length).toBe(1);
     expect($2('html').length).toBe(1);
@@ -225,7 +225,7 @@ describe('Meta Tag Variation', () => {
 
   it('should handle generator tag replacement', () => {
     const html = '<html><head><meta name="generator" content="old-generator"></head></html>';
-    const $ = cheerio.load(html);
+    const $ = load(html);
 
     // Remove old, add new
     $('head meta[name="generator"]').remove();

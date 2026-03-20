@@ -5,13 +5,13 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import cheerio from 'cheerio';
+import { load } from 'cheerio';
 import { generateDeterministicString } from '../utils/fingerprint-seeder.js';
 
 describe('DOM Attribute Transformation', () => {
   it('should randomize ID attributes', () => {
     const html = '<div id="hero-section">Content</div>';
-    const $ = cheerio.load(html);
+    const $ = load(html);
     const siteId = 'test-site';
 
     const oldId = $('[id]').attr('id');
@@ -25,7 +25,7 @@ describe('DOM Attribute Transformation', () => {
 
   it('should preserve internal framework IDs (__ prefix)', () => {
     const html = '<div id="__internal-123">Content</div>';
-    const $ = cheerio.load(html);
+    const $ = load(html);
 
     const id = $('[id]').attr('id');
     if (!id.startsWith('__')) {
@@ -39,7 +39,7 @@ describe('DOM Attribute Transformation', () => {
       <div id="hero-section">Hero</div>
       <a href="#hero-section">Link</a>
     `;
-    const $ = cheerio.load(html);
+    const $ = load(html);
     const siteId = 'test-site';
 
     const oldId = $('#hero-section').attr('id');
@@ -57,7 +57,7 @@ describe('DOM Attribute Transformation', () => {
 
   it('should randomize data-* attributes', () => {
     const html = '<div data-tracking="event-click">Button</div>';
-    const $ = cheerio.load(html);
+    const $ = load(html);
     const siteId = 'test-site';
 
     const oldValue = $('[data-tracking]').attr('data-tracking');
@@ -73,7 +73,7 @@ describe('DOM Attribute Transformation', () => {
     const html = `
       <div data-ga-event="view" data-tracking="custom">Content</div>
     `;
-    const $ = cheerio.load(html);
+    const $ = load(html);
 
     // Verify GA attribute exists
     expect($('[data-ga-event]').attr('data-ga-event')).toBe('view');
@@ -84,7 +84,7 @@ describe('DOM Attribute Transformation', () => {
 
   it('should randomize aria-label values', () => {
     const html = '<button aria-label="Close dialog">X</button>';
-    const $ = cheerio.load(html);
+    const $ = load(html);
     const siteId = 'test-site';
 
     const { createHash } = await import('node:crypto');
@@ -103,7 +103,7 @@ describe('DOM Attribute Transformation', () => {
       <div id="heading" aria-label="Title">Title</div>
       <div aria-labelledby="heading">Content</div>
     `;
-    const $ = cheerio.load(html);
+    const $ = load(html);
 
     // Verify aria-labelledby exists (structural, not randomized)
     expect($('[aria-labelledby]').attr('aria-labelledby')).toBe('heading');
@@ -111,7 +111,7 @@ describe('DOM Attribute Transformation', () => {
 
   it('should avoid randomizing UUID values in data attributes', () => {
     const html = '<div data-id="550e8400-e29b-41d4-a716-446655440000">Content</div>';
-    const $ = cheerio.load(html);
+    const $ = load(html);
 
     const originalValue = $('[data-id]').attr('data-id');
     // UUID should not be randomized (would break external systems)
@@ -146,7 +146,7 @@ describe('DOM Attribute Transformation', () => {
       <div id="about">About</div>
       <div id="contact">Contact</div>
     `;
-    const $ = cheerio.load(html);
+    const $ = load(html);
     const siteId = 'test-site';
 
     const mapping = {};
@@ -170,7 +170,7 @@ describe('DOM Attribute Transformation', () => {
 
   it('should handle empty and missing attributes gracefully', () => {
     const html = '<div id="" data-attr="">Content</div><span>No ID</span>';
-    const $ = cheerio.load(html);
+    const $ = load(html);
 
     // Should handle empty id gracefully
     const emptyId = $('#div').attr('id');
@@ -182,7 +182,7 @@ describe('DOM Attribute Transformation', () => {
 
   it('should preserve data attribute prefixes in randomized values', () => {
     const html = '<div data-custom="value">Content</div>';
-    const $ = cheerio.load(html);
+    const $ = load(html);
     const siteId = 'test-site';
 
     const oldValue = $('[data-custom]').attr('data-custom');
@@ -197,7 +197,7 @@ describe('DOM Attribute Transformation', () => {
 
   it('should handle aria-label with special characters', () => {
     const html = '<button aria-label="Close &amp; confirm">OK</button>';
-    const $ = cheerio.load(html);
+    const $ = load(html);
     const siteId = 'test-site';
 
     const oldLabel = $('[aria-label]').attr('aria-label');
