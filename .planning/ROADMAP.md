@@ -30,7 +30,13 @@
   3. Real-time preview refresh when user changes brand variables; debounced <1s latency
   4. Toggle view shows pre-fingerprint (original) and post-fingerprint (randomized) HTML side-by-side or tabbed
 
-**Plans:** TBD (to be detailed in `/gsd:plan-phase 1`)
+**Plans:**
+- [ ] 01-01-PLAN.md — Test suite (Wave 0)
+- [ ] 01-02-PLAN.md — PreviewModal + usePreviewDebounce hooks (Wave 1)
+- [ ] 01-03-PLAN.md — DiffViewer + html-diff utility (Wave 1)
+- [ ] 01-04-PLAN.md — PreviewModal + DiffViewer integration (Wave 1)
+- [ ] 01-05-PLAN.md — StepReview integration (Wave 2)
+- [ ] 01-06-PLAN.md — E2E testing + verification (Wave 2)
 
 ---
 
@@ -70,11 +76,11 @@
 
 ## Progress Table
 
-| Phase | Plans Complete | Status | Scheduled |
-|-------|----------------|--------|-----------|
-| 1. Preview UX | 0/? | Planning | Week 1-2 |
-| 2. Alpha Test | 0/? | Planning | Week 2-3 |
-| 3. Performance | 0/? | Planning | Week 3-4 |
+| Phase | Plans | Status | Scheduled |
+|-------|-------|--------|-----------|
+| 1. Preview UX | 6 plans in 2 waves | Planned | Week 1-2 |
+| 2. Alpha Test | TBD | Planning | Week 2-3 |
+| 3. Performance | TBD | Planning | Week 3-4 |
 
 ---
 
@@ -113,12 +119,32 @@ Phase 3: Performance
 
 ---
 
+## Plan Wave Structure (Phase 1)
+
+### Wave 0 (Foundations)
+- 01-01: Test suite (4 test files covering all PREV-* requirements)
+
+### Wave 1 (Component Implementation - Parallel)
+- 01-02: PreviewModal + usePreviewDebounce hook (core preview UI)
+- 01-03: DiffViewer + html-diff utility (pre/post comparison)
+- 01-04: PreviewModal + DiffViewer integration (tab switching, fingerprint generation)
+
+### Wave 2 (Integration - Sequential)
+- 01-05: StepReview integration (preview button, state management)
+- 01-06: E2E testing + verification (comprehensive workflow tests)
+
+---
+
 ## Key Decisions
 
 | Decision | Rationale | Status |
 |----------|-----------|--------|
 | Preview in Wizard Step 5 (Review) | Operators need QA gate before submit; post-fingerprint preview validates randomization | Phase 1 |
 | Real-time <1s refresh | Operator UX expectation; debounced updates prevent re-render thrashing | Phase 1 |
+| Debounce: 400ms | Balances responsiveness with preventing thrashing; keeps <1s overall latency | Phase 1 |
+| Viewport: 320px/1024px | Mobile standard / large tablet; covers most responsive design breakpoints | Phase 1 |
+| Diff viewer: side-by-side layout | Easier to compare original vs fingerprinted; tabbed added as alternative | Phase 1 |
+| Reuse buildPreviewHtml() + AntiFingerprint | Both exist, tested, proven in v1.0; avoids code duplication | Phase 1 |
 | 5-10 domain alpha test | Statistically significant sample to measure detection timeline; cost-effective | Phase 2 |
 | 4+ week observation window | Google Ads detection timeline varies; 4 weeks captures typical suspension patterns | Phase 2 |
 | Benchmark at 20, 40, 50+ scale | Gradual scaling reveals memory curve; 50+ is production target | Phase 3 |
@@ -126,5 +152,42 @@ Phase 3: Performance
 
 ---
 
-*Roadmap created: 2026-03-20*
-*Status: Ready for Phase 1 planning*
+## Implementation Notes
+
+### Phase 1 Key Components
+
+**PreviewModal** (src/components/Wizard/PreviewModal.jsx)
+- Modal wrapper with iframe + controls
+- Viewport toggle (320px mobile / 1024px desktop)
+- Fingerprint toggle (show original or fingerprinted HTML)
+- Tab interface: "Live Preview" | "Fingerprint Comparison"
+
+**usePreviewDebounce** (src/hooks/usePreviewDebounce.js)
+- Custom React hook for debounced preview generation
+- Debounce delay: 400ms (prevents thrashing)
+- Abort controller for cancelling in-flight requests
+- Returns: previewHtml, error, loading state
+
+**DiffViewer** (src/components/DiffViewer.jsx)
+- Side-by-side or tabbed view of pre/post HTML
+- Diff highlighting: added (green) / removed (red)
+- Summary statistics: added/removed/unchanged counts
+- Truncation: large diffs capped at 100 lines
+
+**html-diff utility** (src/utils/html-diff.js)
+- Wrapper around diff-match-patch
+- Handles CSS class changes, ID randomization, data attributes
+- Returns: diffs array + summary object
+
+### Dependencies (New)
+- diff-match-patch: Google's canonical diff algorithm (npm install diff-match-patch)
+
+### Existing Dependencies (Reused)
+- buildPreviewHtml(): src/utils/template-preview-runtime.js (existing, 385 lines)
+- AntiFingerprint.transform(): src/services/AntiFingerprint.js (existing, 1,140 lines)
+- React 19, cheerio 1.2.0 (already in project)
+
+---
+
+*Roadmap updated: 2026-03-20*
+*Status: Phase 1 plans ready for execution*
