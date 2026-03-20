@@ -1,0 +1,1262 @@
+{
+  "events": [
+    {
+      "domainId": "alpha-html-001",
+      "detectedAt": "2026-03-20T06:07:48.337Z",
+      "daysToFlag": 4,
+      "initialStatus": "active",
+      "detectedStatus": "flagged",
+      "severity": "medium",
+      "changeTypes": [
+        "flagged",
+        "bid_reduction"
+      ],
+      "cause": "Detected via flagged, bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-001",
+      "detectedAt": "2026-03-20T06:07:48.381Z",
+      "daysToFlag": 5,
+      "initialStatus": "flagged",
+      "detectedStatus": "flagged",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-002",
+      "detectedAt": "2026-03-20T06:07:48.381Z",
+      "daysToFlag": 5,
+      "initialStatus": "active",
+      "detectedStatus": "flagged",
+      "severity": "medium",
+      "changeTypes": [
+        "flagged",
+        "bid_reduction"
+      ],
+      "cause": "Detected via flagged, bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-001",
+      "detectedAt": "2026-03-20T06:07:48.424Z",
+      "daysToFlag": 6,
+      "initialStatus": "active",
+      "detectedStatus": "flagged",
+      "severity": "medium",
+      "changeTypes": [
+        "flagged",
+        "bid_reduction"
+      ],
+      "cause": "Detected via flagged, bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-001",
+      "detectedAt": "2026-03-20T06:07:48.504Z",
+      "daysToFlag": 7,
+      "initialStatus": "flagged",
+      "detectedStatus": "flagged",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-001",
+      "detectedAt": "2026-03-20T06:07:48.504Z",
+      "daysToFlag": 7,
+      "initialStatus": "flagged",
+      "detectedStatus": "suspended",
+      "severity": "critical",
+      "changeTypes": [
+        "suspended",
+        "bid_reduction"
+      ],
+      "cause": "Detected via suspended, bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-001",
+      "detectedAt": "2026-03-20T06:07:48.546Z",
+      "daysToFlag": 8,
+      "initialStatus": "flagged",
+      "detectedStatus": "flagged",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-002",
+      "detectedAt": "2026-03-20T06:07:48.546Z",
+      "daysToFlag": 8,
+      "initialStatus": "active",
+      "detectedStatus": "flagged",
+      "severity": "medium",
+      "changeTypes": [
+        "flagged",
+        "bid_reduction"
+      ],
+      "cause": "Detected via flagged, bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-001",
+      "detectedAt": "2026-03-20T06:07:48.546Z",
+      "daysToFlag": 8,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-002",
+      "detectedAt": "2026-03-20T06:07:48.546Z",
+      "daysToFlag": 8,
+      "initialStatus": "flagged",
+      "detectedStatus": "suspended",
+      "severity": "critical",
+      "changeTypes": [
+        "suspended",
+        "bid_reduction"
+      ],
+      "cause": "Detected via suspended, bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-003",
+      "detectedAt": "2026-03-20T06:07:48.546Z",
+      "daysToFlag": 8,
+      "initialStatus": "active",
+      "detectedStatus": "flagged",
+      "severity": "medium",
+      "changeTypes": [
+        "flagged",
+        "bid_reduction"
+      ],
+      "cause": "Detected via flagged, bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-001",
+      "detectedAt": "2026-03-20T06:07:48.587Z",
+      "daysToFlag": 9,
+      "initialStatus": "flagged",
+      "detectedStatus": "suspended",
+      "severity": "critical",
+      "changeTypes": [
+        "suspended",
+        "bid_reduction"
+      ],
+      "cause": "Detected via suspended, bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-002",
+      "detectedAt": "2026-03-20T06:07:48.587Z",
+      "daysToFlag": 9,
+      "initialStatus": "flagged",
+      "detectedStatus": "flagged",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-001",
+      "detectedAt": "2026-03-20T06:07:48.587Z",
+      "daysToFlag": 9,
+      "initialStatus": "active",
+      "detectedStatus": "flagged",
+      "severity": "medium",
+      "changeTypes": [
+        "flagged",
+        "bid_reduction"
+      ],
+      "cause": "Detected via flagged, bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-001",
+      "detectedAt": "2026-03-20T06:07:48.587Z",
+      "daysToFlag": 9,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-002",
+      "detectedAt": "2026-03-20T06:07:48.587Z",
+      "daysToFlag": 9,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-001",
+      "detectedAt": "2026-03-20T06:07:48.630Z",
+      "daysToFlag": 10,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-002",
+      "detectedAt": "2026-03-20T06:07:48.630Z",
+      "daysToFlag": 10,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-003",
+      "detectedAt": "2026-03-20T06:07:48.630Z",
+      "daysToFlag": 10,
+      "initialStatus": "flagged",
+      "detectedStatus": "flagged",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-002",
+      "detectedAt": "2026-03-20T06:07:48.673Z",
+      "daysToFlag": 11,
+      "initialStatus": "flagged",
+      "detectedStatus": "suspended",
+      "severity": "critical",
+      "changeTypes": [
+        "suspended",
+        "bid_reduction"
+      ],
+      "cause": "Detected via suspended, bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-003",
+      "detectedAt": "2026-03-20T06:07:48.673Z",
+      "daysToFlag": 11,
+      "initialStatus": "active",
+      "detectedStatus": "flagged",
+      "severity": "medium",
+      "changeTypes": [
+        "flagged",
+        "bid_reduction"
+      ],
+      "cause": "Detected via flagged, bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-001",
+      "detectedAt": "2026-03-20T06:07:48.673Z",
+      "daysToFlag": 11,
+      "initialStatus": "flagged",
+      "detectedStatus": "flagged",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-003",
+      "detectedAt": "2026-03-20T06:07:48.673Z",
+      "daysToFlag": 11,
+      "initialStatus": "flagged",
+      "detectedStatus": "suspended",
+      "severity": "critical",
+      "changeTypes": [
+        "suspended",
+        "bid_reduction"
+      ],
+      "cause": "Detected via suspended, bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-003",
+      "detectedAt": "2026-03-20T06:07:48.715Z",
+      "daysToFlag": 12,
+      "initialStatus": "flagged",
+      "detectedStatus": "flagged",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-001",
+      "detectedAt": "2026-03-20T06:07:48.715Z",
+      "daysToFlag": 12,
+      "initialStatus": "flagged",
+      "detectedStatus": "suspended",
+      "severity": "critical",
+      "changeTypes": [
+        "suspended",
+        "bid_reduction"
+      ],
+      "cause": "Detected via suspended, bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-002",
+      "detectedAt": "2026-03-20T06:07:48.715Z",
+      "daysToFlag": 12,
+      "initialStatus": "active",
+      "detectedStatus": "flagged",
+      "severity": "medium",
+      "changeTypes": [
+        "flagged",
+        "bid_reduction"
+      ],
+      "cause": "Detected via flagged, bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-001",
+      "detectedAt": "2026-03-20T06:07:48.715Z",
+      "daysToFlag": 12,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-002",
+      "detectedAt": "2026-03-20T06:07:48.715Z",
+      "daysToFlag": 12,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-001",
+      "detectedAt": "2026-03-20T06:07:48.757Z",
+      "daysToFlag": 13,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-001",
+      "detectedAt": "2026-03-20T06:07:48.757Z",
+      "daysToFlag": 13,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-002",
+      "detectedAt": "2026-03-20T06:07:48.757Z",
+      "daysToFlag": 13,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-003",
+      "detectedAt": "2026-03-20T06:07:48.795Z",
+      "daysToFlag": 14,
+      "initialStatus": "flagged",
+      "detectedStatus": "suspended",
+      "severity": "critical",
+      "changeTypes": [
+        "suspended",
+        "bid_reduction"
+      ],
+      "cause": "Detected via suspended, bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-003",
+      "detectedAt": "2026-03-20T06:07:48.795Z",
+      "daysToFlag": 14,
+      "initialStatus": "active",
+      "detectedStatus": "flagged",
+      "severity": "medium",
+      "changeTypes": [
+        "flagged",
+        "bid_reduction"
+      ],
+      "cause": "Detected via flagged, bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-002",
+      "detectedAt": "2026-03-20T06:07:48.795Z",
+      "daysToFlag": 14,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-003",
+      "detectedAt": "2026-03-20T06:07:48.795Z",
+      "daysToFlag": 14,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-001",
+      "detectedAt": "2026-03-20T06:07:48.842Z",
+      "daysToFlag": 15,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-002",
+      "detectedAt": "2026-03-20T06:07:48.842Z",
+      "daysToFlag": 15,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-003",
+      "detectedAt": "2026-03-20T06:07:48.842Z",
+      "daysToFlag": 15,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-002",
+      "detectedAt": "2026-03-20T06:07:48.842Z",
+      "daysToFlag": 15,
+      "initialStatus": "flagged",
+      "detectedStatus": "suspended",
+      "severity": "critical",
+      "changeTypes": [
+        "suspended",
+        "bid_reduction"
+      ],
+      "cause": "Detected via suspended, bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-003",
+      "detectedAt": "2026-03-20T06:07:48.842Z",
+      "daysToFlag": 15,
+      "initialStatus": "flagged",
+      "detectedStatus": "flagged",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-003",
+      "detectedAt": "2026-03-20T06:07:48.884Z",
+      "daysToFlag": 16,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-001",
+      "detectedAt": "2026-03-20T06:07:48.884Z",
+      "daysToFlag": 16,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-001",
+      "detectedAt": "2026-03-20T06:07:48.884Z",
+      "daysToFlag": 16,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-002",
+      "detectedAt": "2026-03-20T06:07:48.884Z",
+      "daysToFlag": 16,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-003",
+      "detectedAt": "2026-03-20T06:07:48.884Z",
+      "daysToFlag": 16,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-002",
+      "detectedAt": "2026-03-20T06:07:48.924Z",
+      "daysToFlag": 17,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-003",
+      "detectedAt": "2026-03-20T06:07:48.924Z",
+      "daysToFlag": 17,
+      "initialStatus": "flagged",
+      "detectedStatus": "suspended",
+      "severity": "critical",
+      "changeTypes": [
+        "suspended",
+        "bid_reduction"
+      ],
+      "cause": "Detected via suspended, bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-003",
+      "detectedAt": "2026-03-20T06:07:48.924Z",
+      "daysToFlag": 17,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-001",
+      "detectedAt": "2026-03-20T06:07:48.964Z",
+      "daysToFlag": 18,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-002",
+      "detectedAt": "2026-03-20T06:07:48.964Z",
+      "daysToFlag": 18,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-002",
+      "detectedAt": "2026-03-20T06:07:48.964Z",
+      "daysToFlag": 18,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-003",
+      "detectedAt": "2026-03-20T06:07:48.964Z",
+      "daysToFlag": 18,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-001",
+      "detectedAt": "2026-03-20T06:07:48.964Z",
+      "daysToFlag": 18,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-001",
+      "detectedAt": "2026-03-20T06:07:49.004Z",
+      "daysToFlag": 19,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-002",
+      "detectedAt": "2026-03-20T06:07:49.004Z",
+      "daysToFlag": 19,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-003",
+      "detectedAt": "2026-03-20T06:07:49.004Z",
+      "daysToFlag": 19,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-002",
+      "detectedAt": "2026-03-20T06:07:49.043Z",
+      "daysToFlag": 20,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-001",
+      "detectedAt": "2026-03-20T06:07:49.083Z",
+      "daysToFlag": 21,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-002",
+      "detectedAt": "2026-03-20T06:07:49.083Z",
+      "daysToFlag": 21,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-001",
+      "detectedAt": "2026-03-20T06:07:49.083Z",
+      "daysToFlag": 21,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-003",
+      "detectedAt": "2026-03-20T06:07:49.083Z",
+      "daysToFlag": 21,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-001",
+      "detectedAt": "2026-03-20T06:07:49.083Z",
+      "daysToFlag": 21,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-002",
+      "detectedAt": "2026-03-20T06:07:49.083Z",
+      "daysToFlag": 21,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-003",
+      "detectedAt": "2026-03-20T06:07:49.083Z",
+      "daysToFlag": 21,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-002",
+      "detectedAt": "2026-03-20T06:07:49.128Z",
+      "daysToFlag": 22,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-001",
+      "detectedAt": "2026-03-20T06:07:49.128Z",
+      "daysToFlag": 22,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-002",
+      "detectedAt": "2026-03-20T06:07:49.128Z",
+      "daysToFlag": 22,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-002",
+      "detectedAt": "2026-03-20T06:07:49.169Z",
+      "daysToFlag": 23,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-001",
+      "detectedAt": "2026-03-20T06:07:49.169Z",
+      "daysToFlag": 23,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-002",
+      "detectedAt": "2026-03-20T06:07:49.169Z",
+      "daysToFlag": 23,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-003",
+      "detectedAt": "2026-03-20T06:07:49.169Z",
+      "daysToFlag": 23,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-001",
+      "detectedAt": "2026-03-20T06:07:49.169Z",
+      "daysToFlag": 23,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-003",
+      "detectedAt": "2026-03-20T06:07:49.169Z",
+      "daysToFlag": 23,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-001",
+      "detectedAt": "2026-03-20T06:07:49.209Z",
+      "daysToFlag": 24,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-001",
+      "detectedAt": "2026-03-20T06:07:49.209Z",
+      "daysToFlag": 24,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-002",
+      "detectedAt": "2026-03-20T06:07:49.209Z",
+      "daysToFlag": 24,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-002",
+      "detectedAt": "2026-03-20T06:07:49.209Z",
+      "daysToFlag": 24,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-001",
+      "detectedAt": "2026-03-20T06:07:49.253Z",
+      "daysToFlag": 25,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-003",
+      "detectedAt": "2026-03-20T06:07:49.253Z",
+      "daysToFlag": 25,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-003",
+      "detectedAt": "2026-03-20T06:07:49.253Z",
+      "daysToFlag": 25,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-002",
+      "detectedAt": "2026-03-20T06:07:49.292Z",
+      "daysToFlag": 26,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-003",
+      "detectedAt": "2026-03-20T06:07:49.292Z",
+      "daysToFlag": 26,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-001",
+      "detectedAt": "2026-03-20T06:07:49.292Z",
+      "daysToFlag": 26,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-003",
+      "detectedAt": "2026-03-20T06:07:49.292Z",
+      "daysToFlag": 26,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-004",
+      "detectedAt": "2026-03-20T06:07:49.292Z",
+      "daysToFlag": 26,
+      "initialStatus": "active",
+      "detectedStatus": "flagged",
+      "severity": "medium",
+      "changeTypes": [
+        "flagged",
+        "bid_reduction"
+      ],
+      "cause": "Detected via flagged, bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-004",
+      "detectedAt": "2026-03-20T06:07:49.334Z",
+      "daysToFlag": 27,
+      "initialStatus": "active",
+      "detectedStatus": "flagged",
+      "severity": "medium",
+      "changeTypes": [
+        "flagged",
+        "bid_reduction"
+      ],
+      "cause": "Detected via flagged, bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-001",
+      "detectedAt": "2026-03-20T06:07:49.334Z",
+      "daysToFlag": 27,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-002",
+      "detectedAt": "2026-03-20T06:07:49.334Z",
+      "daysToFlag": 27,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-003",
+      "detectedAt": "2026-03-20T06:07:49.334Z",
+      "daysToFlag": 27,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-001",
+      "detectedAt": "2026-03-20T06:07:49.334Z",
+      "daysToFlag": 27,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-004",
+      "detectedAt": "2026-03-20T06:07:49.334Z",
+      "daysToFlag": 27,
+      "initialStatus": "flagged",
+      "detectedStatus": "flagged",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-002",
+      "detectedAt": "2026-03-20T06:07:49.378Z",
+      "daysToFlag": 28,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-002",
+      "detectedAt": "2026-03-20T06:07:49.378Z",
+      "daysToFlag": 28,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-004",
+      "detectedAt": "2026-03-20T06:07:49.378Z",
+      "daysToFlag": 28,
+      "initialStatus": "active",
+      "detectedStatus": "flagged",
+      "severity": "medium",
+      "changeTypes": [
+        "flagged",
+        "bid_reduction"
+      ],
+      "cause": "Detected via flagged, bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-002",
+      "detectedAt": "2026-03-20T06:07:49.378Z",
+      "daysToFlag": 28,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-001",
+      "detectedAt": "2026-03-20T06:07:49.419Z",
+      "daysToFlag": 29,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-002",
+      "detectedAt": "2026-03-20T06:07:49.419Z",
+      "daysToFlag": 29,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-astro-003",
+      "detectedAt": "2026-03-20T06:07:49.419Z",
+      "daysToFlag": 29,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-002",
+      "detectedAt": "2026-03-20T06:07:49.419Z",
+      "daysToFlag": 29,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-vite-react-003",
+      "detectedAt": "2026-03-20T06:07:49.419Z",
+      "daysToFlag": 29,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-002",
+      "detectedAt": "2026-03-20T06:07:49.419Z",
+      "daysToFlag": 29,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-003",
+      "detectedAt": "2026-03-20T06:07:49.419Z",
+      "daysToFlag": 29,
+      "initialStatus": "suspended",
+      "detectedStatus": "suspended",
+      "severity": "low",
+      "changeTypes": [
+        "bid_reduction"
+      ],
+      "cause": "Detected via bid_reduction"
+    },
+    {
+      "domainId": "alpha-html-004",
+      "detectedAt": "2026-03-20T06:07:49.419Z",
+      "daysToFlag": 29,
+      "initialStatus": "flagged",
+      "detectedStatus": "suspended",
+      "severity": "critical",
+      "changeTypes": [
+        "suspended",
+        "bid_reduction"
+      ],
+      "cause": "Detected via suspended, bid_reduction"
+    }
+  ]
+}
