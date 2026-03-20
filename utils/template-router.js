@@ -1,6 +1,8 @@
 import { generateLP, generateAstrodeckLoanPreview, generateApplyPage, generatePDLLoansV1Preview, generateLanderCorePreview, generateWorkerSafeLoanPreview } from "./lp-generator.js";
 import { generateAstroProject } from "./astro-generator.jsx";
 import { getTemplateGenerator, resolveTemplateId as resolveId, clearCustomTemplatesCache, fetchCustomTemplates, getCustomTemplatesCache } from "./template-registry.js";
+import { identifyFramework, resolveEntryPoint } from "./template-analyzer.js";
+import { buildPreviewHtml } from "./template-preview-runtime.js";
 
 // Ensure templates are registered (side-effect import)
 import "#lp-template-generator/templates";
@@ -453,6 +455,22 @@ export function generateHtmlByTemplate(site) {
       if (customTemplatesCache) {
         const customTemplate = customTemplatesCache.find(t => t.id === templateId || t.dbId === templateId);
         if (customTemplate && customTemplate.files) {
+          // Detect framework to choose the right rendering path
+          const framework = identifyFramework(customTemplate.files);
+          const colorObj = getColorObj(site.colorId);
+
+          // Non-Astro templates (HTML-static, Vite+React from Bolt/Lovable):
+          // Use the preview runtime which handles CDN injection, CSS variable
+          // override, and dependency resolution automatically.
+          if (framework.id !== 'astro' || framework.confidence < 0.3) {
+            try {
+              return buildPreviewHtml(customTemplate.files, site, colorObj);
+            } catch (e) {
+              console.warn('[Router] Preview runtime failed, falling back to astroToHtmlPreview:', e.message);
+            }
+          }
+
+          // Astro templates: use the existing Astro-to-HTML compiler
           return astroToHtmlPreview(customTemplate.files, site);
         }
       }
@@ -531,6 +549,25 @@ export function generateDeployAssetsByTemplate(site) {
   if (customTemplatesCache) {
     const customTemplate = customTemplatesCache.find(t => t.id === templateId || t.dbId === templateId);
     if (customTemplate && customTemplate.files) {
+      const framework = identifyFramework(customTemplate.files);
+
+      // HTML-static / Bolt / Lovable: deploy files as-is with tracking injection
+      if (framework.id === 'html-static') {
+        const assets = {};
+        const colorObj = getColorObj(site.colorId);
+        const html = buildPreviewHtml(customTemplate.files, site, colorObj);
+        assets['/index.html'] = html;
+        assets['/'] = html;
+        // Include all non-entry files (CSS, JS, images)
+        for (const [path, content] of Object.entries(customTemplate.files)) {
+          if (path === 'index.html') continue;
+          const deployPath = path.startsWith('/') ? path : '/' + path;
+          if (!assets[deployPath]) assets[deployPath] = content;
+        }
+        return assets;
+      }
+
+      // Astro: use the full asset compiler
       return renderTemplateToAssets(customTemplate, site);
     }
   }

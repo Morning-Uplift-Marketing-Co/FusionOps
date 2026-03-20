@@ -1,5 +1,7 @@
 ## Goal
-Convert any Astro landing page template so all hardcoded text/color values are replaced with `import.meta.env.PUBLIC_*` variables  making it compatible with the GitHub Actions deploy pipeline.
+Convert any Astro landing page template so all hardcoded text/color values are replaced with `import.meta.env.PUBLIC_*` variables making it compatible with the GitHub Actions deploy pipeline.
+
+**Updated: March 20, 2026** - Enhanced LeadsGate form handling and tracking improvements.
 
 
 
@@ -530,13 +532,15 @@ Create `templates/{TEMPLATE_ID}/src/pages/apply.astro` with ONLY the LeadsGate f
 
 **LeadsGate has no installable SDK.** The form is loaded by setting `window._lg_form_init_` config object then injecting `https://apikeep.com/form/applicationInit.js` via `document.createElement('script')`. The script auto-renders into `<div id="_lg_form_">`.
 
-> ⚠️ **LeadsGate NEW hooks API (updated Mar 8, 2026)** — callbacks ต้องอยู่ใน `hooks: {}` object ไม่ใช่ top-level
+> ⚠️ **LeadsGate NEW hooks API (updated Mar 20, 2026)** — callbacks ต้องอยู่ใน `hooks: {}` object ไม่ใช่ top-level
 > - `hooks.onFormLoad()` — form mounted
 > - `hooks.onStepChange(data)` → `data.step`
 > - `hooks.onSubmit()` — form submitted
 > - `hooks.onLeadSold(data)` → `data.leadId`, `data.price` — approved lead
 > - `hooks.onLeadRejected(data)` → `data.leadId`, `data.price` — declined lead
 > - `hooks.onLeadFinished(data)` → `data.leadId`, `data.price` — pending/new lead
+> 
+> **🔧 Enhanced tracking:** Added MutationObserver fallback for form load detection and improved click ID handling across multiple parameter formats.
 
 Replace `AID_HERE` with `import.meta.env.PUBLIC_AID`.
 
@@ -657,7 +661,7 @@ var _lg_form_init_ = {
   var cid = p.get('clickid') || p.get('vlcid') || p.get('click_id') || p.get('cid') || p.get('cpid') || '';
   fpPixel('pv', cid ? { click_id: cid } : {});
 
-  // MutationObserver fallback: fire lg_form_load when LeadsGate mounts the form
+  // Enhanced MutationObserver fallback: fire lg_form_load when LeadsGate mounts the form
   // (in case hooks.onFormLoad fires before our object is read)
   var formLoadFired = false;
   var lgDiv = document.getElementById('_lg_form_');
@@ -667,12 +671,29 @@ var _lg_form_init_ = {
         formLoadFired = true;
         obs.disconnect();
         fpPixel('lg_form_load', { click_id: getVoluumClickId(), source: 'observer' });
+        
+        // Additional form validation tracking
+        setTimeout(function() {
+          var firstInput = lgDiv.querySelector('input, select, textarea');
+          if (firstInput) {
+            fpPixel('lg_form_ready', { click_id: getVoluumClickId(), hasInputs: true });
+          }
+        }, 1000);
       }
     });
     obs.observe(lgDiv, { childList: true, subtree: true });
+    
+    // Extended timeout with better error handling
     setTimeout(function() {
-      if (!formLoadFired) { formLoadFired = true; obs.disconnect(); fpPixel('lg_form_load', { click_id: getVoluumClickId(), source: 'timeout' }); }
-    }, 10000);
+      if (!formLoadFired) { 
+        formLoadFired = true; 
+        obs.disconnect(); 
+        fpPixel('lg_form_load', { click_id: getVoluumClickId(), source: 'timeout', error: 'form_not_loaded' });
+        
+        // Log form loading failure for debugging
+        console.warn('[LeadsGate] Form failed to load within timeout period');
+      }
+    }, 15000); // Increased from 10s to 15s
   }
 })();
 
@@ -699,6 +720,8 @@ document.body.appendChild(script);
 - `data-cfasync="false"` on ALL `<script>` tags to bypass Cloudflare Rocket Loader
 - SDK URL: `https://apikeep.com/form/applicationInit.js`
 - `PUBLIC_AID` is injected by CI build from deploy config `aid` field
+- **NEW:** Enhanced error tracking with `lg_form_ready` event and extended 15s timeout
+- **NEW:** Better debugging with console warnings for form loading failures
 
 ## Step 9: Pre-deploy checklist — 31/31 tracking checks
 
@@ -776,6 +799,8 @@ Before triggering deploy, confirm ALL of these are in the template. Each maps di
 - The deploy pipeline (GitHub Actions) injects all PUBLIC_* values via `.env` before `npm run build`
 - **Gen Reviews** button in Wizard → Step 5 (Copy) generates 3 unique category-aware reviews via Gemini — regenerate anytime before deploy
 - **Voluum CTA**: always use `ctaHref = voluumClickUrl || '#apply'` — never hardcode `#apply` in CTA buttons
+- **Enhanced LeadsGate tracking**: Improved form load detection with MutationObserver fallback and better error handling
+- **Debugging**: Added console warnings and extended timeout for LeadsGate form loading issues
 
 ## Preview Compatibility Rules (Wizard Live Preview)
 
