@@ -1,0 +1,44 @@
+{
+  "timestamp": "2026-03-20T14:01:02.188Z",
+  "baselineHtmlSize": 1640,
+  "vectors": {
+    "obfuscate": true,
+    "networkJitter": true,
+    "eventRandomization": true
+  },
+  "results": [
+    {
+      "concurrency": 20,
+      "totalTimeMs": 41.085899999999995,
+      "avgTimePerBuildMs": 2.0542949999999998,
+      "avgOutputSizeBytes": 3829.6,
+      "memoryDeltaMB": 4.478919982910156,
+      "peakMemoryPercent": 1.3850748538970947
+    },
+    {
+      "concurrency": 40,
+      "totalTimeMs": 38.361900000000006,
+      "avgTimePerBuildMs": 0.9590475000000002,
+      "avgOutputSizeBytes": 3829.625,
+      "memoryDeltaMB": 9.8453369140625,
+      "peakMemoryPercent": 2.3531541228294373
+    },
+    {
+      "concurrency": 50,
+      "totalTimeMs": 45.4761,
+      "avgTimePerBuildMs": 0.909522,
+      "avgOutputSizeBytes": 3829.7,
+      "memoryDeltaMB": -5.560340881347656,
+      "peakMemoryPercent": 1.8108323216438293
+    }
+  ],
+  "targets": {
+    "maxBuildTimeOverhead": "15%",
+    "maxPeakMemoryPercent": 90
+  },
+  "summary": {
+    "memoryPassed": true,
+    "timingPassed": true,
+    "overallPassed": true
+  }
+}
