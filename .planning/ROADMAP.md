@@ -53,7 +53,10 @@
   5. Redeployment of same site produces byte-identical output (determinism verified across multiple redeploys)
   6. Anti-fingerprint transforms applied post-build, before deploy, without modifying source templates
 
-**Plans:** TBD
+**Plans:** 3 plans
+  - [ ] 01-PLAN.md — Build infrastructure (FormatBuilder adapters, TemplateBuilder orchestrator) (Wave 1)
+  - [ ] 02-PLAN.md — Anti-fingerprinting service (Seeder, AntiFingerprint transforms) (Wave 2)
+  - [ ] 03-PLAN.md — Integration testing and determinism verification (Wave 3)
 
 ---
 
@@ -98,9 +101,9 @@
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Import Fix & Capability | 3/3 | Implementation complete | 2026-03-20 |
-| 2. Build & Anti-Fingerprint | 0/6 | Not started | — |
-| 3. Quality & Validation | 0/5 | Not started | — |
-| 4. Preview & Polish | 0/3 | Not started | — |
+| 2. Build & Anti-Fingerprint | 0/3 | Plans created, ready for execution | 2026-03-20 |
+| 3. Quality & Validation | 0/? | Pending Phase 2 completion | — |
+| 4. Preview & Polish | 0/? | Pending Phase 3 completion | — |
 
 ---
 
