@@ -1,0 +1,333 @@
+================================================================================
+                    PHASE 3 PLANNING COMPLETE
+                Quality Checks & Deploy Validation
+================================================================================
+
+DATE: 2026-03-20
+PLANNER: Claude (GSD Planner)
+STATUS: ALL DELIVERABLES CREATED AND COMMITTED
+
+================================================================================
+EXECUTIVE SUMMARY
+================================================================================
+
+Phase 3 planning establishes comprehensive pre-deploy validation gates that
+catch quality issues before Cloudflare upload. The phase is fully planned with:
+
+  - 4 executable PLAN.md files (18 total implementation tasks)
+  - 38+ unit test cases covering all validators
+  - 3 execution waves with optimal parallelization
+  - 100% requirement coverage (QUAL-01 through QUAL-06)
+  - Critical integration point documented (TemplateBuilder)
+  - Comprehensive support documentation
+
+All files are committed to git (feat/tasks branch) and ready for execution.
+
+================================================================================
+PLANNING ARTIFACTS
+================================================================================
+
+4 Executable Plan Files:
+  1. 03-01-PLAN.md (20 KB)
+     - QualityChecker orchestrator + viewport/pixel validators
+     - 5 tasks, QUAL-01 + QUAL-02
+
+  2. 03-02-PLAN.md (19 KB)
+     - Astro leak detection + Google Ads validation
+     - 4 tasks, QUAL-03 + QUAL-04
+
+  3. 03-03-PLAN.md (24 KB)
+     - Lighthouse integration + TemplateBuilder orchestration
+     - 5 tasks, QUAL-05 + QUAL-06
+
+  4. 03-04-PLAN.md (26 KB)
+     - Regression testing + E2E validation + report generation
+     - 4 tasks, covers all 6 requirements
+
+Support Documents:
+  - 03-PLANNING-SUMMARY.md (12 KB) — Planning details, test coverage breakdown
+  - EXECUTE-PHASE-3.md (7.4 KB) — Execution guide, wave structure, checklist
+  - 03-RESEARCH.md (56 KB) — Research findings, patterns, code examples
+  - .planning/ROADMAP.md — Updated with Phase 3 information
+
+Git Commits:
+  - a3a77f0: docs(03): create phase 3 planning - 4 plans...
+  - e2422b0: docs(03): add planning summary and execution guide
+
+Total Planning Artifacts: 7 files, 158 KB
+
+================================================================================
+REQUIREMENT MAPPING (100% Coverage)
+================================================================================
+
+All 6 Phase 3 requirements fully mapped:
+
+  QUAL-01 (Viewport meta tag validation)
+    ├─ Plan 01, Task 2: checkViewportMeta() implementation
+    ├─ Plan 01, Task 4: Unit tests (7 cases)
+    └─ Plan 04: Regression testing validates no breakage
+
+  QUAL-02 (Tracking pixel detection)
+    ├─ Plan 01, Task 3: checkTrackingPixels() implementation
+    ├─ Plan 01, Task 5: Unit tests (8 cases)
+    └─ Plan 04: Regression testing validates no breakage
+
+  QUAL-03 (Astro leak detection)
+    ├─ Plan 02, Task 1: checkAstroLeaks() implementation
+    ├─ Plan 02, Task 3: Unit tests (8 cases)
+    └─ Plan 04: Regression testing validates no breakage
+
+  QUAL-04 (Google Ads validation)
+    ├─ Plan 02, Task 2: checkGoogleAds() implementation
+    ├─ Plan 02, Task 4: Unit tests (9 cases)
+    └─ Plan 04: Regression testing validates no breakage
+
+  QUAL-05 (Lighthouse 95+ enforcement)
+    ├─ Plan 03, Task 1: checkLighthouse() implementation
+    ├─ Plan 03, Task 3: Unit tests (6 cases)
+    └─ Plan 04: Regression testing validates no breakage
+
+  QUAL-06 (Quality checks in deploy pipeline)
+    ├─ Plan 03, Task 4: TemplateBuilder integration
+    ├─ Plan 03, Task 5: Fallback logic + error handling
+    └─ Plan 04: E2E pipeline test validates integration
+
+================================================================================
+EXECUTION PLAN
+================================================================================
+
+Wave Structure (3 waves, optimal parallelization):
+
+  WAVE 1 (Parallel): Both plans run simultaneously
+    Plan 01 + Plan 02
+    Duration: ~45-60 minutes (overlapped)
+    Deliverable: 5 validators + 38+ unit tests pass
+
+  WAVE 2 (Sequential): Depends on Wave 1
+    Plan 03
+    Duration: ~45-60 minutes
+    Deliverable: Lighthouse + TemplateBuilder integration
+
+  WAVE 3 (Sequential): Depends on Wave 2
+    Plan 04
+    Duration: ~45-60 minutes
+    Deliverable: 03-VALIDATION.md comprehensive report
+
+  Total Time: ~180-240 minutes (3-4 hours with parallelization)
+
+Execution Commands:
+  Wave 1: /gsd:execute-phase 03 --plan=01 && /gsd:execute-phase 03 --plan=02
+  Wave 2: /gsd:execute-phase 03 --plan=03
+  Wave 3: /gsd:execute-phase 03 --plan=04
+
+================================================================================
+TECHNICAL FOUNDATION
+================================================================================
+
+Core Patterns:
+
+  1. Immutability Pattern
+     ✓ All validators return immutable result objects
+     ✓ Never throw exceptions
+     ✓ Orchestrator collects all failures before deciding
+
+  2. Orchestrator Pattern
+     ✓ QualityChecker.validate(html) — single entry point
+     ✓ Sequential validation: viewport → pixels → astro → ads → lighthouse
+     ✓ Aggregated results with severity levels
+
+  3. Integration Point
+     ✓ Quality checks run AFTER AntiFingerprint.transform()
+     ✓ Validates fingerprinted output (what users see)
+     ✓ Critical failures block deploy, warnings log only
+
+  4. Performance Optimization
+     ✓ Pre-compiled regex patterns (Astro leak detection)
+     ✓ Whitelist safe Astro builtins (DEV, PROD, SSR)
+     ✓ Line number context to minimize false positives
+
+  5. Lighthouse Strategy
+     ✓ Local execution (offline, no API rate limits)
+     ✓ Chrome launcher with --headless flag
+     ✓ 120-second timeout
+     ✓ PageSpeed API fallback (advisory-only)
+
+Test Strategy:
+
+  Unit Tests (Plans 01-03): 38+ test cases
+    - Viewport: 7 cases
+    - Tracking pixels: 8 cases
+    - Astro leaks: 8 cases
+    - Google Ads: 9 cases
+    - Lighthouse: 6 cases
+
+  Regression Tests (Plan 04): ~15 existing templates
+
+  E2E Tests (Plan 04): Full pipeline validation
+
+  Coverage Target: 80%+ per validator
+
+================================================================================
+KEY DECISIONS
+================================================================================
+
+1. Quality checks are DEPLOY GATES (not advisory)
+   - Critical failures block deploy with clear error messages
+   - Warnings surface non-blocking issues
+   - Enables fail-fast deployment safety
+
+2. Integration happens post-fingerprinting
+   - Validates what users will actually see
+   - Catches fingerprinting issues before deploy
+   - Enables safe caching and redeploy verification
+
+3. Lighthouse runs locally by default
+   - Avoids API rate limits
+   - No rate limit concerns for high-volume deployments
+   - PageSpeed API fallback for offline environments
+
+4. Validators never throw
+   - Orchestrator collects all failures atomically
+   - Enables clear error aggregation
+   - Follows immutable patterns from project rules
+
+5. Backward compatibility is critical
+   - ~15 existing templates must pass without new failures
+   - Plan 04 regression tests ensure no breakage
+   - Validator thresholds adjusted if needed
+
+================================================================================
+DELIVERABLES BY WAVE
+================================================================================
+
+After Wave 1 Complete:
+  - src/services/quality-check/QualityChecker.js (orchestrator)
+  - src/services/quality-check/validators/viewport-validator.js
+  - src/services/quality-check/validators/pixel-validator.js
+  - src/services/quality-check/validators/astro-leak-validator.js
+  - src/services/quality-check/validators/google-ads-validator.js
+  - 4 test files (38+ test cases)
+
+After Wave 2 Complete:
+  - src/services/quality-check/validators/lighthouse-validator.js
+  - Integration into TemplateBuilder.js (transform method)
+  - PageSpeed API fallback logic
+  - 1 test file (6+ test cases)
+
+After Wave 3 Complete:
+  - Regression test suite (~15 templates)
+  - E2E pipeline test
+  - 03-VALIDATION.md comprehensive report
+  - Coverage metrics and recommendations
+
+================================================================================
+SUCCESS CRITERIA
+================================================================================
+
+Planning Complete When:
+  [x] 4 PLAN.md files created and validated
+  [x] All 6 requirements (QUAL-01-06) mapped to tasks
+  [x] 18 implementation tasks clearly defined
+  [x] 38+ unit test cases specified
+  [x] Wave structure maximizes parallelization
+  [x] Integration point documented
+  [x] All files committed to git
+  [x] Support documentation complete
+  [x] Validation passed (4/4 plans)
+
+Execution Success Criteria (to be validated during execution):
+  - [ ] All 5 validators implemented and tested
+  - [ ] 38 unit test cases pass
+  - [ ] Quality checks integrate into TemplateBuilder
+  - [ ] Critical failures block deploy
+  - [ ] Warnings log without blocking
+  - [ ] ~15 existing templates pass regression tests
+  - [ ] Full pipeline E2E test passes
+  - [ ] 03-VALIDATION.md report generated
+
+================================================================================
+CONTEXT & DEPENDENCIES
+================================================================================
+
+Phase 3 Blocking Dependencies:
+  - Phase 1 (Complete) — Template import + capability detection
+  - Phase 2 (Prerequisite) — Multi-format build + anti-fingerprinting
+    Required for: Phase 3 quality checks need built HTML to validate
+
+Phase 3 Unblocks:
+  - Phase 4 (Optional) — Template preview UX polish
+  - v1 Release — Quality gates ensure deploy readiness
+
+Critical Path: Phase 1 → Phase 2 → Phase 3 (Phase 4 is optional polish)
+
+================================================================================
+NEXT IMMEDIATE ACTIONS
+================================================================================
+
+1. Confirm Phase 2 is complete (blocking dependency)
+   - Verify TemplateBuilder.js exists with transform() method
+   - Verify AntiFingerprint service is fully integrated
+   - Ensure Phase 2 validation report is generated
+
+2. Review execution strategy
+   - Read EXECUTE-PHASE-3.md for detailed guidance
+   - Verify wave structure matches project timeline
+   - Confirm resource availability for 3-4 hour execution window
+
+3. Prepare execution environment
+   - Verify Vitest 4.x and happy-dom configured
+   - Ensure Chrome launcher available (for Lighthouse)
+   - Verify project dependencies installed
+
+4. Begin Wave 1 execution
+   - Execute Plan 01 and Plan 02 in parallel
+   - Monitor test outputs and failures
+   - Document any blockers or adjustments needed
+
+================================================================================
+SUPPORT DOCUMENTS
+================================================================================
+
+For Planning Questions:
+  - Read: .planning/phases/03-quality-checks-deploy-validation/03-PLANNING-SUMMARY.md
+  - Covers: Test coverage, technical foundation, requirement mapping
+
+For Execution Guidance:
+  - Read: .planning/phases/03-quality-checks-deploy-validation/EXECUTE-PHASE-3.md
+  - Covers: Wave structure, checklist, troubleshooting guide
+
+For Technical Research:
+  - Read: .planning/phases/03-quality-checks-deploy-validation/03-RESEARCH.md
+  - Covers: Patterns, pitfalls, code examples, libraries
+
+For Project Context:
+  - Read: .planning/ROADMAP.md (updated with Phase 3)
+  - Read: .planning/STATE.md (project state)
+
+For Individual Plans:
+  - 03-01-PLAN.md — Orchestrator + validators 1-2
+  - 03-02-PLAN.md — Validators 3-4
+  - 03-03-PLAN.md — Lighthouse + integration
+  - 03-04-PLAN.md — Regression + E2E + report
+
+================================================================================
+CLOSING NOTES
+================================================================================
+
+Phase 3 planning is comprehensive and ready for execution. The plan structure:
+- Maximizes parallelization (Wave 1 parallel execution saves 45-60 minutes)
+- Ensures backward compatibility (regression tests for ~15 existing templates)
+- Documents critical integration point (post-fingerprinting validation)
+- Provides clear failure semantics (critical block, warnings log)
+- Achieves 100% requirement coverage (all 6 QUAL requirements)
+
+All planning artifacts are committed to git and ready for execution team.
+No further planning updates needed — ready to proceed with Wave 1.
+
+================================================================================
+
+Planning Completed: 2026-03-20
+Status: READY FOR EXECUTION
+Next Step: Execute Wave 1 (Plans 01 + 02 in parallel)
+
+================================================================================
