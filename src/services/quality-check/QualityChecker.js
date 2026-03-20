@@ -7,6 +7,8 @@
 
 import { checkViewportMeta } from './validators/viewport-validator.js';
 import { checkTrackingPixels } from './validators/pixel-validator.js';
+import { checkAstroLeaks } from './validators/astro-leak-validator.js';
+import { checkGoogleAdMarkers } from './validators/google-ads-validator.js';
 
 /**
  * QualityChecker orchestrator service
@@ -51,6 +53,22 @@ export class QualityChecker {
       results.checks.push(pixelResult);
     }
 
+    // Gate 3: Astro expression leaks (QUAL-03)
+    const leakResult = checkAstroLeaks(htmlContent);
+    if (!leakResult.passed) {
+      results.criticalFailures.push(leakResult);
+    } else {
+      results.checks.push(leakResult);
+    }
+
+    // Gate 4: Google Ads markers (QUAL-04)
+    const adResult = checkGoogleAdMarkers(htmlContent, config.googleAdsConfig || {});
+    if (!adResult.passed && config.googleAdsConfig?.required) {
+      results.criticalFailures.push(adResult);
+    } else {
+      results.checks.push(adResult);
+    }
+
     // Aggregate results
     results.passed = results.criticalFailures.length === 0;
     results.summary = {
@@ -64,4 +82,4 @@ export class QualityChecker {
 }
 
 // Export validators for direct use and testing
-export { checkViewportMeta, checkTrackingPixels };
+export { checkViewportMeta, checkTrackingPixels, checkAstroLeaks, checkGoogleAdMarkers };
