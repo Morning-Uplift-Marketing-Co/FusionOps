@@ -378,7 +378,8 @@ Options:
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Run if called directly
+if (process.argv[1].endsWith('alpha-monitor.js')) {
   main().catch(error => {
     console.error(error);
     process.exit(1);
