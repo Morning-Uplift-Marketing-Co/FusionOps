@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import cheerio from 'cheerio';
+import { load } from 'cheerio';
 import { createClassNameMap, generateDeterministicString } from '../utils/fingerprint-seeder.js';
 
 describe('Class Name Transformation', () => {
@@ -17,7 +17,7 @@ describe('Class Name Transformation', () => {
       </div>
     `;
 
-    const $ = cheerio.load(html);
+    const $ = load(html);
     const classNames = new Set();
     $('[class]').each((i, el) => {
       const classes = $(el).attr('class');
@@ -91,7 +91,7 @@ describe('Class Name Transformation', () => {
       </div>
     `;
 
-    const $ = cheerio.load(html);
+    const $ = load(html);
     const classNames = new Set();
     $('[class]').each((i, el) => {
       const classes = $(el).attr('class');
@@ -248,7 +248,7 @@ describe('Class Name Transformation', () => {
 
     // Apply same mapping multiple times
     const html = '<div class="hero container"><button class="button">Click</button></div>';
-    const $ = cheerio.load(html);
+    const $ = load(html);
 
     for (let i = 0; i < 5; i++) {
       $('[class]').each((j, el) => {

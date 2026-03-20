@@ -54,7 +54,7 @@
   6. Anti-fingerprint transforms applied post-build, before deploy, without modifying source templates
 
 **Plans:** 3 plans
-  - [ ] 01-PLAN.md — Build infrastructure (FormatBuilder adapters, TemplateBuilder orchestrator) (Wave 1)
+  - [x] 01-PLAN.md — Build infrastructure (FormatBuilder adapters, TemplateBuilder orchestrator) (Wave 1) ✓ 640+ tests
   - [ ] 02-PLAN.md — Anti-fingerprinting service (Seeder, AntiFingerprint transforms) (Wave 2)
   - [ ] 03-PLAN.md — Integration testing and determinism verification (Wave 3)
 
@@ -105,7 +105,7 @@
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Import Fix & Capability | 3/3 | Implementation complete | 2026-03-20 |
-| 2. Build & Anti-Fingerprint | 0/3 | Plans created, ready for execution | 2026-03-20 |
+| 2. Build & Anti-Fingerprint | 1/3 | Plan 01 complete (640+ tests), Plan 02-03 in progress | 2026-03-20 |
 | 3. Quality & Validation | 4/4 | Implementation complete | 2026-03-20 |
 | 4. Preview & Polish | 0/? | Pending Phase 2 completion | — |
 
