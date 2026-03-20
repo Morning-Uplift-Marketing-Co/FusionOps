@@ -1,0 +1,205 @@
+{
+  "version": "3.0",
+  "phase": "Phase 3 - Anti-FP Vector Expansion",
+  "deploymentDate": "2026-03-20",
+  "testDuration": "14+ days",
+  "description": "Phase 3 Alpha Test 2: Deploy 5-10 domains with varying vector combinations to test effectiveness and validate Phase 3 success targets",
+  "phase2Baseline": {
+    "detectionRate": 1.0,
+    "averageDaysToDetection": 13.17,
+    "stillActiveAtDay14": 0.0,
+    "pixelLoss": 0.005
+  },
+  "phase3Targets": {
+    "detectionRate": 0.5,
+    "averageDaysToDetection": 18.0,
+    "stillActiveAtDay14": 0.3,
+    "pixelLoss": 0.02
+  },
+  "domains": [
+    {
+      "siteId": "phase3-all3-a",
+      "domain": "phase3-all3-a.example.com",
+      "template": "vite-react",
+      "vectors": {
+        "obfuscate": true,
+        "networkJitter": true,
+        "eventRandomization": true
+      },
+      "vectorConfig": {
+        "obfuscationLevel": "moderate",
+        "networkJitterMin": 50,
+        "networkJitterMax": 500,
+        "eventRandomizationEnabled": true
+      },
+      "description": "All 3 vectors (obfuscate + networkJitter + eventRandomization)",
+      "expectedOutcome": "Longest evasion time, highest pixel accuracy"
+    },
+    {
+      "siteId": "phase3-all3-b",
+      "domain": "phase3-all3-b.example.com",
+      "template": "astro",
+      "vectors": {
+        "obfuscate": true,
+        "networkJitter": true,
+        "eventRandomization": true
+      },
+      "vectorConfig": {
+        "obfuscationLevel": "moderate",
+        "networkJitterMin": 50,
+        "networkJitterMax": 500,
+        "eventRandomizationEnabled": true
+      },
+      "description": "All 3 vectors with Astro template",
+      "expectedOutcome": "Validation across different template types"
+    },
+    {
+      "siteId": "phase3-obfuscate",
+      "domain": "phase3-obfuscate.example.com",
+      "template": "vite-react",
+      "vectors": {
+        "obfuscate": true,
+        "networkJitter": false,
+        "eventRandomization": false
+      },
+      "vectorConfig": {
+        "obfuscationLevel": "moderate"
+      },
+      "description": "JS obfuscation only",
+      "expectedOutcome": "Isolate obfuscation effectiveness"
+    },
+    {
+      "siteId": "phase3-network",
+      "domain": "phase3-network.example.com",
+      "template": "vite-react",
+      "vectors": {
+        "obfuscate": false,
+        "networkJitter": true,
+        "eventRandomization": false
+      },
+      "vectorConfig": {
+        "networkJitterMin": 50,
+        "networkJitterMax": 500
+      },
+      "description": "Network jitter only",
+      "expectedOutcome": "Isolate network timing effectiveness"
+    },
+    {
+      "siteId": "phase3-events",
+      "domain": "phase3-events.example.com",
+      "template": "vite-react",
+      "vectors": {
+        "obfuscate": false,
+        "networkJitter": false,
+        "eventRandomization": true
+      },
+      "vectorConfig": {
+        "eventRandomizationEnabled": true
+      },
+      "description": "Event randomization only",
+      "expectedOutcome": "Isolate event randomization effectiveness"
+    },
+    {
+      "siteId": "phase3-obfuscate-network",
+      "domain": "phase3-obfuscate-network.example.com",
+      "template": "vite-react",
+      "vectors": {
+        "obfuscate": true,
+        "networkJitter": true,
+        "eventRandomization": false
+      },
+      "vectorConfig": {
+        "obfuscationLevel": "moderate",
+        "networkJitterMin": 50,
+        "networkJitterMax": 500
+      },
+      "description": "JS obfuscation + network jitter",
+      "expectedOutcome": "Combination effectiveness of obfuscation and network timing"
+    },
+    {
+      "siteId": "phase3-obfuscate-events",
+      "domain": "phase3-obfuscate-events.example.com",
+      "template": "static-html",
+      "vectors": {
+        "obfuscate": true,
+        "networkJitter": false,
+        "eventRandomization": true
+      },
+      "vectorConfig": {
+        "obfuscationLevel": "moderate",
+        "eventRandomizationEnabled": true
+      },
+      "description": "JS obfuscation + event randomization",
+      "expectedOutcome": "Combination on static HTML template"
+    },
+    {
+      "siteId": "phase3-network-events",
+      "domain": "phase3-network-events.example.com",
+      "template": "vite-react",
+      "vectors": {
+        "obfuscate": false,
+        "networkJitter": true,
+        "eventRandomization": true
+      },
+      "vectorConfig": {
+        "networkJitterMin": 50,
+        "networkJitterMax": 500,
+        "eventRandomizationEnabled": true
+      },
+      "description": "Network jitter + event randomization",
+      "expectedOutcome": "Combination of network timing and event listener protection"
+    },
+    {
+      "siteId": "phase3-static-control",
+      "domain": "phase3-static-control.example.com",
+      "template": "static-html",
+      "vectors": {
+        "obfuscate": false,
+        "networkJitter": false,
+        "eventRandomization": false
+      },
+      "vectorConfig": {},
+      "description": "Control: No vectors applied",
+      "expectedOutcome": "Baseline detection rate for comparison"
+    },
+    {
+      "siteId": "phase3-astro-all3",
+      "domain": "phase3-astro-all3.example.com",
+      "template": "astro",
+      "vectors": {
+        "obfuscate": true,
+        "networkJitter": true,
+        "eventRandomization": true
+      },
+      "vectorConfig": {
+        "obfuscationLevel": "aggressive",
+        "networkJitterMin": 50,
+        "networkJitterMax": 500,
+        "eventRandomizationEnabled": true
+      },
+      "description": "All 3 vectors with aggressive obfuscation on Astro",
+      "expectedOutcome": "Aggressive approach with different template type"
+    }
+  ],
+  "summary": {
+    "totalDomains": 10,
+    "byVectorCombination": {
+      "all3Vectors": 3,
+      "singleVectors": 3,
+      "twoVectorCombinations": 3,
+      "controlNoVectors": 1
+    },
+    "byTemplate": {
+      "viteReact": 6,
+      "astro": 2,
+      "staticHtml": 2
+    },
+    "deploymentStrategy": "Staggered: all 10 deploy simultaneously on 2026-03-20, then monitored daily for 14+ days",
+    "monitoringPoints": [
+      "Google Ads detection status (daily)",
+      "Voluum pixel fire rate (daily)",
+      "Days to first detection per domain",
+      "Still-active status at day 14"
+    ]
+  }
+}
