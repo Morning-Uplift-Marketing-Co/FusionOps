@@ -1,5 +1,5 @@
 {
-  "templateId": "tpl-usa-b02",
+  "templateId": "trustlend-emerald-fintech",
   "cfPagesProject": "lp-jora-creditz-main",
   "cfApiToken": "",
   "cfAccountId": "",
@@ -36,5 +36,5 @@
   "radius": "subtle",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-20T20:25:56.012Z"
+  "deployedAt": "2026-03-20T22:46:08.080Z"
 }
