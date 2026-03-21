@@ -36,8 +36,8 @@ function validateTemplateQuality(template) {
   const matchedBanned = bannedPatterns.filter((p) => p.test(combined)).map((p) => p.toString());
   const blocking = [];
   const warnings = [];
+  // Import-time checks (template must have these)
   if (!entryOk) blocking.push("Missing template entry (index.astro or index.html).");
-  if (!pixelMarker) blocking.push("Missing first-party pixel marker.");
   if (hasExpressionLeak) blocking.push("Potential Astro expression leak detected.");
   if (matchedBanned.length > 0) blocking.push(`Policy-risk copy: ${matchedBanned.join(", ")}`);
   if (/(installment|loan|pdl|pet-care)/i.test(category)) {
@@ -46,7 +46,9 @@ function validateTemplateQuality(template) {
   }
   if (!hasViewport) warnings.push("Viewport meta not detected.");
   if (!hasPrimaryToken) warnings.push("Primary color token not detected.");
-  if (!trackingMarker) warnings.push("Google Ads tracking markers not detected.");
+  // Deploy-time checks (injected by CI build pipeline — skip at import)
+  if (!pixelMarker) warnings.push("First-party pixel not yet injected (added at deploy).");
+  if (!trackingMarker) warnings.push("Google Ads tracking not yet injected (added at deploy).");
   return { pass: blocking.length === 0, blocking, warnings };
 }
 
