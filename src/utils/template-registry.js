@@ -241,6 +241,7 @@ export async function fetchCustomTemplates(force = false) {
             badge: t.badge || 'Custom',
             category: resolveCategoryClient(t.category, t.template_id || t.id, t.name, t.description),
             source: 'api',
+            status: t.status || 'draft',
             sourceCode: t.source_code,
             createdAt: t.created_at,
             thumbnailUrl: t.thumbnail_url || null,
