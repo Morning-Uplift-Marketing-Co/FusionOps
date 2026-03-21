@@ -168,7 +168,7 @@ GOOD (static URL — dashboard can display):
 BAD (dynamic — dashboard cannot parse):
   <meta property="og:image" content={`https://${domain}/og-image.jpg`} />
 
-Upload your og:image to imgur, imagekit, or any public CDN before importing.
+Upload your og:image to Cloudflare R2, imgur, or any public CDN before importing.
 If no og:image is found, the dashboard shows a gradient fallback — still works, just no preview.
 
 === DESIGN ===
