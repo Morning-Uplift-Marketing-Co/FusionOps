@@ -63,7 +63,7 @@ const S = {
 function analyzeHtml(html) {
   const checks = {
     // Layer 1: gtag.js (AW-only)
-    gtagScript: /gtag\/js\?id=AW-/.test(html),
+    gtagScript: /gtag\/js\?id=AW-|googletagmanager\.com\/gtag\/js.*id.*\+.*cid|gtag\s*\(\s*['"]js['"]/.test(html),
     gtagConfig: /gtag\s*\(\s*['"]config['"]/.test(html),
     conversionId: (html.match(/AW-(\d+)/) || [])[1] || null,
     formStartLabel: /form_start/.test(html) || /formStartLabel/.test(html),
@@ -71,12 +71,12 @@ function analyzeHtml(html) {
 
     // Layer 2: First-Party Pixel
     pixelInit: /sendBeacon|__pixel|pixel\s*\(/.test(html),
-    pixelEndpoint: (html.match(/['"]https?:\/\/t\.([^'"\/]+)\/e['"]/) || [])[1] || null,
-    pixelPV: /pixel\s*\(\s*['"](?:pv|page_view)['"]/.test(html) || /event.*(?:pv|page_view)/.test(html),
-    pixelScroll: /scroll_25|scroll_50|scroll_75|scroll_100|scroll_depth|pixel\s*\(\s*['"]s(?:25|50|75|100)['"]/.test(html),
-    pixelTime: /time_on_page|time_on_page_30s|time_on_page_60s|pixel\s*\(\s*['"]t(?:30|60)['"]/.test(html),
-    pixelAmt: /pixel\s*\(\s*['"](?:amt|amount_selected)['"]/.test(html) || /amount_selected/.test(html),
-    pixelZip: /pixel\s*\(\s*['"](?:ze|zip_entered)['"]/.test(html) || /zip_entered/.test(html),
+    pixelEndpoint: (html.match(/['"]https?:\/\/t\.([^'"\/]+)\/e['"]/) || [])[1] || /t\.\s*['"]?\s*\+\s*window\.location\.hostname\s*\+\s*['"]?\/e/.test(html) || /PX_ENDPOINT/.test(html) || null,
+    pixelPV: /pixel\s*\(\s*['"](?:pv|page_view)['"]/.test(html) || /fpPixel\s*\(\s*['"]pv['"]/.test(html) || /event.*(?:pv|page_view)/.test(html),
+    pixelScroll: /scroll_25|scroll_50|scroll_75|scroll_100|scroll_depth|[fp]*[Pp]ixel\s*\(\s*['"]s(?:croll_)?(?:25|50|75|100)/.test(html),
+    pixelTime: /top_30s|top_60s|time_on_page|[fp]*[Pp]ixel\s*\(\s*['"]t(?:op_)?(?:30|60)/.test(html),
+    pixelAmt: /[fp]*[Pp]ixel\s*\(\s*['"](?:amt|amount)['"]/.test(html) || /amount_selected/.test(html),
+    pixelZip: /[fp]*[Pp]ixel\s*\(\s*['"](?:ze|zip)['"]/.test(html) || /zip_entered/.test(html),
 
     // Layer 3: Voluum
     voluumScript: /dtpCallback|delegate-ch|voluum/i.test(html),
