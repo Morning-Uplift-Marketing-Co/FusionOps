@@ -1,5 +1,5 @@
 {
-  "templateId": "goldrush-lending",
+  "templateId": "lionfunds",
   "cfPagesProject": "lp-scratchpayeasy-com",
   "cfApiToken": "",
   "cfAccountId": "",
@@ -36,5 +36,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-21T14:11:23.595Z"
+  "deployedAt": "2026-03-21T16:24:47.062Z"
 }
