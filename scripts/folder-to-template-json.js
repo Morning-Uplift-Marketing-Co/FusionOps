@@ -78,7 +78,7 @@ const SKIP_DIRS = new Set([
 
   'node_modules', '.git', 'dist', '.astro', '.cache',
 
-  '.netlify', '.vercel', '.wrangler', 'coverage',
+  '.netlify', '.vercel', '.wrangler', '.windsurf', 'coverage',
 
 ]);
 
@@ -404,7 +404,8 @@ async function main() {
 
 
 
-      console.log(`✅ Uploaded successfully! Template ID: ${data.id}`);
+      const tid = data.id || data.templateId || (data.data && (data.data.templateId || data.data.id)) || 'unknown';
+      console.log(`✅ Uploaded successfully! Template ID: ${tid}`);
 
       console.log(`   Template "${templateName}" is now available in LP Wizard.`);
 
