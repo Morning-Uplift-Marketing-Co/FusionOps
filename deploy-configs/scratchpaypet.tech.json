@@ -1,5 +1,5 @@
 {
-  "templateId": "tpl-usa-l01",
+  "templateId": "pet-orange-white",
   "cfPagesProject": "lp-scratchpaypet-tech",
   "cfApiToken": "",
   "cfAccountId": "",
@@ -36,5 +36,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-20T09:20:00.000Z"
+  "deployedAt": "2026-03-21T13:28:21.379Z"
 }
