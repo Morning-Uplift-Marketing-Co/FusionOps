@@ -45,13 +45,11 @@ function getAstroValidationIssues(template) {
     ...(pkg?.dependencies || {}),
     ...(pkg?.devDependencies || {}),
   };
+  // Only check template-authored files — e.ts, robots.txt.ts, _headers are injected by pipeline
   const requiredFiles = [
     'package.json',
     'src/pages/index.astro',
     'src/layouts/Layout.astro',
-    'src/pages/e.ts',
-    'src/pages/robots.txt.ts',
-    'public/_headers',
   ];
   const issues = [];
 
