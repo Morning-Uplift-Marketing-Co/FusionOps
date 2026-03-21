@@ -64,6 +64,24 @@ const VOLUUM_HEAD_SNIPPET = `
 <noscript><link id="vlnoscript" rel="stylesheet"/></noscript>
 `;
 
+// GCLID capture + URL parameter handling (auto-injected)
+// Captures gclid, vlcid, clickid, click_id, cid, cpid from URL and stores in window.__fpClickId
+const GCLID_CAPTURE_SNIPPET = `
+<!-- GCLID/Click ID capture (auto-injected) -->
+<script data-cfasync="false">
+(function(){
+  var p = new URLSearchParams(window.location.search);
+  var cid = p.get('gclid') || p.get('vlcid') || p.get('clickid') || p.get('click_id') || p.get('cid') || p.get('cpid') || '';
+  window.__fpClickId = cid || '';
+  if (cid) {
+    try {
+      sessionStorage.setItem('__fpClickId', cid);
+    } catch(_) {}
+  }
+})();
+</script>
+`;
+
 const PIXEL_BODY_SNIPPET = `
 <!-- First-party pixel + Google Ads gtag (auto-injected) -->
 <script data-cfasync="false">
@@ -158,6 +176,10 @@ function hasTracking(content) {
   return /dtpCallback|__fpPixel|fpPixel\(|auto-injected/.test(content);
 }
 
+function hasGclIdCapture(content) {
+  return /window\.__fpClickId|gclid.*sessionStorage|sessionStorage.*gclid|__fpClickId/.test(content);
+}
+
 function injectIntoHtmlOrVite(filePath, isVite) {
   let html = fs.readFileSync(filePath, 'utf8');
 
@@ -175,6 +197,11 @@ function injectIntoHtmlOrVite(filePath, isVite) {
   } else {
     // No </head> tag — prepend
     html = headInject + '\n' + html;
+  }
+
+  // Inject GCLID capture before </body> if missing
+  if (!hasGclIdCapture(html) && html.includes('</body>')) {
+    html = html.replace('</body>', GCLID_CAPTURE_SNIPPET + '\n</body>');
   }
 
   // Inject pixel + gtag before </body>
@@ -245,7 +272,12 @@ const __voluumClickUrl = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '';`;
     content = content.replace('</head>', astroRuntime + '\n' + VOLUUM_HEAD_SNIPPET + '\n</head>');
   }
 
-  // Inject before </body>
+  // Inject GCLID capture before </body> if missing
+  if (!hasGclIdCapture(content) && content.includes('</body>')) {
+    content = content.replace('</body>', GCLID_CAPTURE_SNIPPET + '\n</body>');
+  }
+
+  // Inject pixel + gtag before </body>
   if (content.includes('</body>')) {
     content = content.replace('</body>', PIXEL_BODY_SNIPPET + '\n</body>');
   }
