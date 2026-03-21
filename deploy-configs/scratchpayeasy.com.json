@@ -1,5 +1,5 @@
 {
-  "templateId": "bolt-loan-landing-01",
+  "templateId": "bolt-loan-v1",
   "cfPagesProject": "lp-scratchpayeasy-com",
   "cfApiToken": "",
   "cfAccountId": "",
@@ -36,5 +36,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-21T05:47:40.540Z"
+  "deployedAt": "2026-03-21T05:49:31.028Z"
 }
