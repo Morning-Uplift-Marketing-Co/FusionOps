@@ -10,7 +10,7 @@
  *
  * Used by:
  *   - scripts/inject-tracking.mjs (CI build-time injection)
- *   - templates/*/src/layouts/Layout.astro (Astro templates)
+ *   - templates/[name]/src/layouts/Layout.astro - Astro templates
  *   - packages/lp-template-generator (module templates)
  *   - src/utils/template-router.js (preview)
  *
