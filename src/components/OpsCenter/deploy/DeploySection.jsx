@@ -12,6 +12,7 @@ import { deployTo, getAvailableTargets, saveDeployConfig, getDeployConfig } from
 import cloudflareDns from "../../../services/cloudflare-dns";
 import { generateHtmlByTemplate, generateApplyPageByTemplate, generateDeployAssetsByTemplate } from "../../../utils/template-router";
 import { validateAccountId } from "../../../services/account-lock";
+import { DeployStatusTracker } from "./DeployStatusTracker";
 
 const S = {
     section: { marginBottom: 24 },
@@ -54,6 +55,7 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
     const [deployProgress, setDeployProgress] = useState(0);
     const [deployStatus, setDeployStatus] = useState("idle"); // idle, deploying, success, error
     const [deployResult, setDeployResult] = useState(null);
+    const [trackingInfo, setTrackingInfo] = useState(null); // { commitSha, repo }
     const [availableTargets, setAvailableTargets] = useState([]);
     const [updateDns, setUpdateDns] = useState(true);
     const [deployLog, setDeployLog] = useState([]);
@@ -142,6 +144,7 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
         setDeployProgress(0);
         setDeployLog([]);
         setDeployResult(null);
+        setTrackingInfo(null);
 
         // Simulate progress
         const progressInterval = setInterval(() => {
@@ -188,6 +191,11 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
                 if (result.queued) {
                     addLog(`Deployment queued! ⏳`);
                     addLog(`Workflow: ${result.url}`);
+                    // Start tracking GitHub Actions status
+                    if (result.commitSha && result.repo) {
+                        setTrackingInfo({ commitSha: result.commitSha, repo: result.repo });
+                        addLog(`Tracking workflow status...`);
+                    }
                 } else {
                     addLog(`Deployment successful! ✓`);
                     addLog(`URL: ${result.url}`);
@@ -522,6 +530,16 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
                         </div>
                     )}
                 </Card>
+            )}
+
+            {/* GitHub Actions Status Tracker */}
+            {trackingInfo && (
+                <DeployStatusTracker
+                    githubToken={settings.githubToken}
+                    repo={trackingInfo.repo}
+                    commitSha={trackingInfo.commitSha}
+                    onClose={() => setTrackingInfo(null)}
+                />
             )}
 
             {/* Deploy Button */}

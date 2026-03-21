@@ -101,7 +101,9 @@ async function pushFile({ githubToken, repo, branch, path, content, message }) {
   }
 
   const data = await res.json();
-  return data.commit?.html_url || `https://github.com/${repo}/commits/${branch}`;
+  const commitSha = data.commit?.sha || null;
+  const commitUrl = data.commit?.html_url || `https://github.com/${repo}/commits/${branch}`;
+  return { url: commitUrl, sha: commitSha };
 }
 
 /**
@@ -217,7 +219,7 @@ export async function deploy(assets, site, settings) {
   const commitMsg = `deploy: ${domain} via GitHub Actions (Astro Build)`;
 
   try {
-    const commitUrl = await pushFile({
+    const { url: commitUrl, sha: commitSha } = await pushFile({
       githubToken,
       repo: githubRepo,
       branch,
@@ -230,6 +232,8 @@ export async function deploy(assets, site, settings) {
       success: true,
       queued: true,
       url: commitUrl,
+      commitSha,
+      repo: githubRepo,
       deployId: `gh-actions-${Date.now()}`,
       target: 'github-actions',
       message: `Pushed config → GitHub Actions building Astro. Track: https://github.com/${githubRepo}/actions`,
