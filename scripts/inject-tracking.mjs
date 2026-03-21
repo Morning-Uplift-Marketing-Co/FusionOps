@@ -416,7 +416,7 @@ function getVoluumClickId() {
 }
 
 var _lg_form_init_ = {
-  aid: \`${aid}\`,
+  aid: \`\${aid}\`,
   template: "fresh",
   ref: window.location.hostname,
   get click_id() { return getVoluumClickId(); },
