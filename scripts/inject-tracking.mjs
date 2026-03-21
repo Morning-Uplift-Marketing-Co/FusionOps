@@ -107,6 +107,38 @@ const PIXEL_BODY_SNIPPET = `
     fpPixel('pv');
   }
   window.__fpPixel = fpPixel;
+  window.__pixel = fpPixel;
+
+  // Scroll depth tracking (25/50/75/100)
+  var scrollFired = {};
+  window.addEventListener('scroll', function(){
+    var scrolled = window.scrollY + window.innerHeight;
+    var total = document.documentElement.scrollHeight;
+    var pct = Math.round((scrolled / total) * 100);
+    [25,50,75,100].forEach(function(t){
+      if (!scrollFired['s'+t] && pct >= t) { scrollFired['s'+t] = true; fpPixel('scroll_'+t+'%', {depth:t}); }
+    });
+  }, {passive:true});
+
+  // Time on page (30s/60s)
+  setTimeout(function(){ fpPixel('top_30s'); }, 30000);
+  setTimeout(function(){ fpPixel('top_60s'); }, 60000);
+
+  // Amount slider tracking
+  document.addEventListener('DOMContentLoaded', function(){
+    var slider = document.querySelector('input[type="range"][id*="amount"], input[type="range"][name*="amount"], .amountSlider, [data-amt]');
+    if (slider) {
+      var debounce;
+      slider.addEventListener('input', function(){ clearTimeout(debounce); debounce = setTimeout(function(){ fpPixel('amt', {amount: slider.value}); }, 400); });
+    }
+    // ZIP input tracking
+    var zip = document.querySelector('input[id*="zip"], input[name*="zip"], input[placeholder*="ZIP"], .zipCode, input[type="text"][maxlength="5"]');
+    if (zip) {
+      var zfired = false;
+      zip.addEventListener('focus', function(){ if (!zfired) { zfired = true; fpPixel('ze', {source:'focus'}); } });
+      zip.addEventListener('input', function(){ if (zip.value.length === 5) fpPixel('ze', {zip: zip.value}); });
+    }
+  });
 })();
 </script>
 <script data-cfasync="false">
@@ -122,6 +154,25 @@ const PIXEL_BODY_SNIPPET = `
   gtag('js', new Date());
   gtag('config', cid);
   window.__gtag = gtag;
+  window.__gtagConversionId = cid;
+  // form_start / form_submit labels
+  window.__formStartLabel = window.__FORM_START_LABEL__ || '';
+  window.__formSubmitLabel = window.__FORM_SUBMIT_LABEL__ || '';
+})();
+</script>
+<script data-cfasync="false">
+(function(){
+  // GCLID + UTM capture to sessionStorage
+  try {
+    var p = new URLSearchParams(window.location.search);
+    var gclid = p.get('gclid');
+    var clickid = p.get('clickid') || p.get('vlcid') || p.get('click_id') || p.get('cid');
+    if (gclid) sessionStorage.setItem('gclid', gclid);
+    if (clickid) { sessionStorage.setItem('clickid', clickid); sessionStorage.setItem('vlcid', clickid); }
+    ['utm_source','utm_medium','utm_campaign'].forEach(function(k){ var v=p.get(k); if(v) sessionStorage.setItem(k,v); });
+  } catch(_){}
+  // firedFormStart guard for micro-conversion dedup
+  window.firedFormStart = false;
 })();
 </script>
 `;
