@@ -1,0 +1,97 @@
+---
+// คอมโพเนนต์แสดงตาราง Representative APR ตามข้อกำหนด Google Ads Financial Services
+interface Props {
+  aprMin: string;
+  aprMax: string;
+}
+const { aprMin = '5.99', aprMax = '35.99' } = Astro.props;
+---
+<section class="py-16 bg-white" id="rates">
+  <div class="max-w-4xl mx-auto px-4">
+    <div class="text-center mb-10">
+      <h2 class="text-2xl md:text-3xl font-bold text-foreground mb-3">Representative APR Rates</h2>
+      <p class="text-gray-500 max-w-2xl mx-auto">
+        The following table shows example rates based on credit profile and loan term.
+        Your actual rate will depend on your individual circumstances.
+      </p>
+    </div>
+
+    <!-- ตาราง Representative APR ตามมาตรฐาน compliance -->
+    <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="bg-primary text-white">
+            <th class="px-5 py-4 text-left font-semibold">Credit Tier</th>
+            <th class="px-5 py-4 text-left font-semibold">Term</th>
+            <th class="px-5 py-4 text-left font-semibold">Representative APR</th>
+            <th class="px-5 py-4 text-left font-semibold">Example Payment</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <!-- แถวที่ 1: เครดิตดีเยี่ยม -->
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-5 py-4">
+              <div class="flex items-center gap-2">
+                <span class="inline-block w-2.5 h-2.5 rounded-full bg-secondary"></span>
+                <span class="font-medium text-foreground">Excellent (720+)</span>
+              </div>
+            </td>
+            <td class="px-5 py-4 text-gray-600">36 months</td>
+            <td class="px-5 py-4">
+              <span class="font-semibold text-secondary">{aprMin}% APR</span>
+            </td>
+            <td class="px-5 py-4 text-gray-600">$304/mo on $10,000</td>
+          </tr>
+          <!-- แถวที่ 2: เครดิตดี -->
+          <tr class="bg-gray-50/50 hover:bg-gray-50 transition-colors">
+            <td class="px-5 py-4">
+              <div class="flex items-center gap-2">
+                <span class="inline-block w-2.5 h-2.5 rounded-full bg-primary/70"></span>
+                <span class="font-medium text-foreground">Good (680–719)</span>
+              </div>
+            </td>
+            <td class="px-5 py-4 text-gray-600">48 months</td>
+            <td class="px-5 py-4">
+              <span class="font-semibold text-primary">12.99% APR</span>
+            </td>
+            <td class="px-5 py-4 text-gray-600">$269/mo on $10,000</td>
+          </tr>
+          <!-- แถวที่ 3: เครดิตปานกลาง -->
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-5 py-4">
+              <div class="flex items-center gap-2">
+                <span class="inline-block w-2.5 h-2.5 rounded-full bg-accent/80"></span>
+                <span class="font-medium text-foreground">Fair (620–679)</span>
+              </div>
+            </td>
+            <td class="px-5 py-4 text-gray-600">60 months</td>
+            <td class="px-5 py-4">
+              <span class="font-semibold text-accent">24.99% APR</span>
+            </td>
+            <td class="px-5 py-4 text-gray-600">$292/mo on $10,000</td>
+          </tr>
+          <!-- แถวที่ 4: เครดิตต่ำ -->
+          <tr class="bg-gray-50/50 hover:bg-gray-50 transition-colors">
+            <td class="px-5 py-4">
+              <div class="flex items-center gap-2">
+                <span class="inline-block w-2.5 h-2.5 rounded-full bg-gray-400"></span>
+                <span class="font-medium text-foreground">Rebuilding (&lt;620)</span>
+              </div>
+            </td>
+            <td class="px-5 py-4 text-gray-600">60 months</td>
+            <td class="px-5 py-4">
+              <span class="font-semibold text-gray-600">Up to {aprMax}% APR</span>
+            </td>
+            <td class="px-5 py-4 text-gray-600">$369/mo on $10,000</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ข้อความ APR Range disclaimer -->
+    <p class="mt-4 text-xs text-gray-400 text-center">
+      APR Range: {aprMin}%–{aprMax}%. Representative APR shown. Your rate may vary.
+      Rates are provided for illustrative purposes only and are not a guarantee of credit terms.
+    </p>
+  </div>
+</section>
