@@ -333,6 +333,10 @@ const __voluumClickUrl = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '';`;
     content = content.replace('</body>', PIXEL_BODY_SNIPPET + '\n</body>');
   }
 
+  // Astro requires is:inline for scripts to render as-is (not bundled)
+  content = content.replace(/<script data-cfasync="false">/g, '<script is:inline data-cfasync="false">');
+  content = content.replace(/<script is:inline data-cfasync="false" is:inline>/g, '<script is:inline data-cfasync="false">');
+
   fs.writeFileSync(filePath, content, 'utf8');
   console.log(`  ✓ Injected tracking into ${path.basename(filePath)}`);
   return true;
