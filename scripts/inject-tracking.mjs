@@ -546,25 +546,59 @@ export const GET: APIRoute = () => {
     }
   }
 
-  // Inject ctaHref into index.astro if missing
+  // Inject env var declarations into index.astro if missing
   const indexAstro = path.join(templateDir, 'src', 'pages', 'index.astro');
   if (fs.existsSync(indexAstro)) {
     let indexContent = fs.readFileSync(indexAstro, 'utf8');
-    if (!indexContent.includes('const ctaHref')) {
-      // Add ctaHref declaration in frontmatter
+    let changed = false;
+
+    // Add content env vars if not present
+    if (!indexContent.includes('PUBLIC_BRAND') && indexContent.includes('---')) {
+      const parts = indexContent.split('---');
+      if (parts.length >= 3) {
+        parts[1] = parts[1].trimEnd() + `
+const brand     = import.meta.env.PUBLIC_BRAND     || 'Your Brand';
+const domain    = import.meta.env.PUBLIC_DOMAIN    || 'example.com';
+const h1        = import.meta.env.PUBLIC_H1        || '';
+const sub       = import.meta.env.PUBLIC_SUB       || '';
+const cta       = import.meta.env.PUBLIC_CTA       || 'Apply Now';
+const phone     = import.meta.env.PUBLIC_PHONE     || '';
+const email     = import.meta.env.PUBLIC_EMAIL     || '';
+const aprMin    = import.meta.env.PUBLIC_APRMIN    || '5.99';
+const aprMax    = import.meta.env.PUBLIC_APRMAX    || '35.99';
+const amountMin = import.meta.env.PUBLIC_AMOUNTMIN || '500';
+const amountMax = import.meta.env.PUBLIC_AMOUNTMAX || '10000';
+const ctaHref   = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '/apply';
+`;
+        indexContent = parts.join('---');
+        changed = true;
+        console.log('📄 Injected content env vars into index.astro');
+      }
+    }
+
+    // Add ctaHref if not present (for templates that already have other env vars)
+    if (!indexContent.includes('const ctaHref') && !indexContent.includes('ctaHref')) {
       if (indexContent.includes('---')) {
         const parts = indexContent.split('---');
         if (parts.length >= 3) {
-          parts[1] = parts[1].trimEnd() + `\nconst ctaHref = import.meta.env.PUBLIC_VOLUUMURL || '/apply';\n`;
+          parts[1] = parts[1].trimEnd() + `\nconst ctaHref = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '/apply';\n`;
           indexContent = parts.join('---');
+          changed = true;
         }
       }
-      // Replace common CTA href patterns with ctaHref
+    }
+
+    // Replace common CTA href patterns with ctaHref
+    if (indexContent.includes('href="/apply"') || indexContent.includes("href='/apply'") || indexContent.includes('href="#apply"')) {
       indexContent = indexContent
         .replace(/href=["']\/apply["']/g, 'href={ctaHref}')
         .replace(/href=["']#apply["']/g, 'href={ctaHref}');
+      changed = true;
+      console.log('📄 Replaced CTA hrefs with ctaHref');
+    }
+
+    if (changed) {
       fs.writeFileSync(indexAstro, indexContent);
-      console.log('📄 Injected ctaHref into index.astro');
     }
   }
 
