@@ -37,7 +37,7 @@ export async function deploy(content, site, settings) {
     githubToken,
     repoOwner: settings.githubRepoOwner || "",
     repoName: settings.githubRepoName || "",
-    branch: settings.githubRepoBranch || "deploy/auto",
+    branch: settings.githubRepoBranch || "main",
     workflowFile: settings.githubDeployWorkflow || "deploy-sites.yml",
     netlifyTarget: settings.netlifyTarget || "",
     cfPagesTarget: settings.cfPagesTarget || "",
