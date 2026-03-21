@@ -12,6 +12,7 @@ import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { cn } from "../lib/utils";
+import { DeployStatusTracker } from "./OpsCenter/deploy/DeployStatusTracker";
 
 export function Sites({ sites, del, notify, startCreate, startDuplicate, settings, addDeploy, ops, updateSite }) {
     const [search, setSearch] = useState("");
@@ -28,6 +29,7 @@ export function Sites({ sites, del, notify, startCreate, startDuplicate, setting
         return allowed.includes(stored) ? stored : "issues-first";
     });
     const [deploying, setDeploying] = useState(null); // { siteId, target }
+    const [activeTracking, setActiveTracking] = useState(null); // { siteId, commitSha, repo }
     const [editingPolicySite, setEditingPolicySite] = useState(null);
     const [bulkDeleting, setBulkDeleting] = useState(false);
     const [deployUrls, setDeployUrls] = useState(() => {
@@ -228,6 +230,9 @@ export function Sites({ sites, del, notify, startCreate, startDuplicate, setting
                 }
                 if (result.queued) {
                     notify(`Queued ${DEPLOY_TARGETS.find(t => t.id === target)?.label}. CI is running: ${result.url}`);
+                    if (result.commitSha && result.repo) {
+                        setActiveTracking({ siteId: site.id, commitSha: result.commitSha, repo: result.repo });
+                    }
                 } else {
                     notify(`Deployed to ${DEPLOY_TARGETS.find(t => t.id === target)?.label}! ${result.url}`);
                 }
@@ -764,6 +769,15 @@ export function Sites({ sites, del, notify, startCreate, startDuplicate, setting
                                                     deployedTargets={deployed}
                                                     settings={settings}
                                                 />
+
+                                                {activeTracking?.siteId === s.id && (
+                                                    <DeployStatusTracker
+                                                        githubToken={settings.githubToken}
+                                                        repo={activeTracking.repo}
+                                                        commitSha={activeTracking.commitSha}
+                                                        onClose={() => setActiveTracking(null)}
+                                                    />
+                                                )}
 
                                                 <div className="flex flex-wrap gap-1.5 mt-3">
                                                     {!!landerTrackingUrl && (
