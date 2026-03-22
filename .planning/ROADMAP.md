@@ -53,6 +53,11 @@ See `.planning/milestones/v1.2-ROADMAP.md` for full details.
 
 **Requirements:** CLR-01, CLR-02
 
+**Plans:** 1 plan
+
+**Plan List:**
+- [ ] 04-01-PLAN.md — Update TEMPLATE-PROMPT.md with ocean defaults, update goldrush-lending.template.json with color defaults
+
 **Success Criteria:**
 1. User can see default ocean colors in local dev environment (no build step needed)
 2. Global.css includes ocean HSL fallback for all color variables
