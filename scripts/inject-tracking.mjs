@@ -412,170 +412,106 @@ const aid = import.meta.env.PUBLIC_AID || '14881';
   <meta name="robots" content="noindex, nofollow" />
   <title>Apply</title>
   <link rel="dns-prefetch" href="//apikeep.com" />
-  <style>html,body{height:100%;min-height:100vh;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}body{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:24px 16px 48px;}#_lg_form_{width:100%;max-width:640px;}</style>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; min-height: 100vh; background: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    body { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 24px 16px 48px; }
+    #_lg_form_ { width: 100%; max-width: 640px; }
+  </style>
 </head>
 <body>
+
 <script is:inline define:vars={{ aid }}>
 window.dataLayer = window.dataLayer || [];
-
-var SafeStorage = {
-  _mem: {},
-  set: function(k, v) {
-    if(!v) return;
-    try {
-      var d = new Date(); d.setTime(d.getTime() + (30*24*60*60*1000));
-      document.cookie = k + "=" + v + "; expires=" + d.toUTCString() + "; path=/; domain=." + window.location.hostname.replace(/^www\\./, '');
-    } catch (e) { this._mem[k] = v; }
-  },
-  get: function(k) {
-    try {
-      var m = document.cookie.match(new RegExp('(^| )' + k + '=([^;]+)'));
-      return m ? m.pop() : (this._mem[k] || null);
-    } catch (e) { return this._mem[k] || null; }
-  }
-};
-
-function getCookie(name) {
-  var match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-  return match ? match.pop() : null;
-}
-
-function getVoluumClickId() {
-  var urlParams = new URLSearchParams(window.location.search);
-  var cid = urlParams.get('cid') || urlParams.get('click_id') || urlParams.get('clickid') || urlParams.get('vlcid') || urlParams.get('gclid');
-  return cid || SafeStorage.get('clickid') || SafeStorage.get('vlcid') || getCookie('clickid') || getCookie('vlcid') || '';
-}
 
 function fpPixel(eventName, extra) {
   try {
     var endpoint = 'https://t.' + window.location.hostname + '/e';
     var payload = Object.assign({ e: eventName, d: window.location.hostname, ts: Math.floor(Date.now()/1000) }, extra || {});
-    var q = new URLSearchParams();
-    Object.keys(payload || {}).forEach(function(k){
-      var v = payload[k];
-      if (v !== undefined && v !== null) q.set(k, String(v));
-    });
-    var i = new Image(1, 1);
-    i.src = endpoint + '?' + q.toString();
+    navigator.sendBeacon(endpoint, JSON.stringify(payload));
   } catch(_) {}
 }
+
+var SafeStorage = {
+  _mem: {},
+  set: function(k, v) {
+    try { sessionStorage.setItem(k, v); }
+    catch (e) { this._mem[k] = v; }
+  },
+  get: function(k) {
+    try { return sessionStorage.getItem(k); }
+    catch (e) { return this._mem[k] || null; }
+  }
+};
+
+function getVoluumClickId() {
+  var urlParams = new URLSearchParams(window.location.search);
+  var fromUrl = urlParams.get('gclid') || urlParams.get('vlcid') || urlParams.get('clickid') || urlParams.get('cid') || urlParams.get('click_id') || urlParams.get('cpid') || '';
+  var fromStorage = SafeStorage.get('clickid') || SafeStorage.get('vlcid') || SafeStorage.get('voluum_cpid') || SafeStorage.get('voluum_cid') || '';
+  return fromUrl || fromStorage || '';
+}
+
+// Fire pv on apply page load
+(function() {
+  var p = new URLSearchParams(window.location.search);
+  var cid = p.get('clickid') || p.get('vlcid') || p.get('click_id') || p.get('cid') || p.get('cpid') || '';
+  fpPixel('pv', cid ? { click_id: cid } : {});
+})();
 
 var _lg_form_init_ = {
   aid: aid,
   template: "fresh",
   ref: window.location.hostname,
   get click_id() { return getVoluumClickId(); },
-  
-  hooks: {
-    onFormLoad: function() {
-      console.log('📋 LeadsGate form loaded');
-      window.dataLayer.push({
-        'event': 'leadsgate_form_start',
-        'clickId': getVoluumClickId(),
-        'gclid': SafeStorage.get('google_gclid'),
-        'timestamp': new Date().toISOString()
-      });
-      fpPixel('lg_form_load', { click_id: getVoluumClickId() });
-    },
-    
-    onStepChange: function(data) {
-      var step = data && data.step ? data.step : data;
-      console.log('📊 Form step:', step);
-      window.dataLayer.push({
-        'event': 'leadsgate_form_progress',
-        'step': step,
-        'clickId': getVoluumClickId()
-      });
-      fpPixel('lg_step', { step: step, click_id: getVoluumClickId() });
-    },
-    
-    onSubmit: function() {
-      console.log('📤 Form submitted');
-      window.dataLayer.push({
-        'event': 'leadsgate_form_submit',
-        'clickId': getVoluumClickId(),
-        'timestamp': new Date().toISOString()
-      });
-      fpPixel('lg_submit', { click_id: getVoluumClickId() });
-    },
-    
-    onSuccess: function(data) {
-      console.log('✅ LeadsGate Response:', data);
+
+  onFormLoad: function() {
+    try {
+      var cid = getVoluumClickId();
+      fpPixel('lg_form_load', { click_id: cid });
+      window.dataLayer.push({ 'event': 'leadsgate_form_start', 'clickId': cid, 'timestamp': new Date().toISOString() });
+    } catch(_) {}
+  },
+
+  onStepChange: function(step) {
+    try {
+      var cid = getVoluumClickId();
+      var s = (step && typeof step === 'object') ? step.step || step : step;
+      window.dataLayer.push({ 'event': 'leadsgate_form_progress', 'step': s, 'clickId': cid });
+    } catch(_) {}
+  },
+
+  onSubmit: function() {
+    try {
+      var cid = getVoluumClickId();
+      fpPixel('lg_submit', { click_id: cid });
+      window.dataLayer.push({ 'event': 'leadsgate_form_submit', 'clickId': cid, 'timestamp': new Date().toISOString() });
+    } catch(_) {}
+  },
+
+  onSuccess: function(data) {
+    try {
+      if (!data) return;
       var voluumCid = getVoluumClickId();
-      var googleGclid = SafeStorage.get('google_gclid');
-      
-      var type = data.type;
-      var leadId = data.lead_id;
+      var type = data.type || 'unknown';
+      var leadId = data.lead_id || '';
       var payout = data.price || 0;
-      
-      var status = 'pending';
-      if (type === 'soldLead') status = 'approved';
-      else if (type === 'rejectLead') status = 'declined';
-      
+      var status = type === 'soldLead' ? 'approved' : type === 'rejectLead' ? 'declined' : 'pending';
       var finalPayout = payout > 0 ? payout : (status === 'declined' ? 5.00 : 50.00);
-      
-      var conversionData = {
-        transaction_id: leadId,
-        value: finalPayout,
-        currency: 'USD',
-        status: status,
-        type: type,
-        click_id: voluumCid,
-        gclid: googleGclid,
-        created: data.created || new Date().toISOString()
-      };
-      
-      window.dataLayer.push({
-        'event': 'lead_conversion_all',
-        'leadData': conversionData,
-        'conversionValue': finalPayout,
-        'leadStatus': status,
-        'leadType': type,
-        'transactionId': leadId,
-        'clickId': voluumCid,
-        'gclid': googleGclid
-      });
-      fpPixel('lg_success_all', { click_id: voluumCid, status: status, payout: finalPayout });
-      
+
+      fpPixel('lg_' + status, { click_id: voluumCid, lead_id: leadId, status: status, payout: finalPayout });
+
+      window.dataLayer.push({ 'event': 'lead_conversion_all', 'leadStatus': status, 'leadType': type, 'transactionId': leadId, 'conversionValue': finalPayout, 'clickId': voluumCid });
+
       if (type === 'soldLead') {
-        window.dataLayer.push({
-          'event': 'lead_conversion_approved', 'leadData': conversionData, 'conversionValue': finalPayout, 'transactionId': leadId, 'clickId': voluumCid, 'gclid': googleGclid
-        });
-        fpPixel('lg_success', { click_id: voluumCid, status: 'approved', payout: finalPayout });
+        window.dataLayer.push({ 'event': 'lead_conversion_approved', 'transactionId': leadId, 'conversionValue': finalPayout, 'clickId': voluumCid });
+      } else if (type === 'rejectLead') {
+        window.dataLayer.push({ 'event': 'lead_declined', 'transactionId': leadId, 'conversionValue': finalPayout, 'clickId': voluumCid });
+      } else {
+        window.dataLayer.push({ 'event': 'lead_pending', 'transactionId': leadId, 'conversionValue': finalPayout, 'clickId': voluumCid });
       }
-      
-      if (type === 'rejectLead') {
-        window.dataLayer.push({
-          'event': 'lead_declined', 'leadData': conversionData, 'conversionValue': finalPayout, 'transactionId': leadId, 'clickId': voluumCid, 'gclid': googleGclid
-        });
-      }
-      
-      if (type === 'newLead') {
-        window.dataLayer.push({
-           'event': 'lead_pending', 'leadData': conversionData, 'conversionValue': finalPayout, 'transactionId': leadId, 'clickId': voluumCid, 'gclid': googleGclid
-        });
-      }
-    }
+    } catch(_) {}
   }
 };
-
-(function() {
-  var p = new URLSearchParams(window.location.search);
-  var cid = p.get('clickid') || p.get('vlcid') || p.get('click_id') || p.get('cid') || p.get('cpid') || '';
-  fpPixel('pv', cid ? { click_id: cid } : {});
-
-  // Fallback observer just in case form takes a while to inject
-  var formLoadFired = false;
-  var lgDiv = document.getElementById('_lg_form_');
-  if (lgDiv) {
-    var obs = new MutationObserver(function() {
-      if (!formLoadFired && lgDiv.children.length > 0) {
-         formLoadFired = true; obs.disconnect();
-      }
-    });
-    obs.observe(lgDiv, { childList: true, subtree: true });
-  }
-})();
 
 var script = document.createElement('script');
 script.setAttribute('data-cfasync', 'false');
@@ -583,6 +519,7 @@ script.type = 'text/javascript';
 script.async = true;
 script.src = 'https://apikeep.com/form/applicationInit.js';
 document.body.appendChild(script);
+
 </script>
 
 <div id="_lg_form_"></div>
@@ -624,10 +561,11 @@ export const GET: APIRoute = () => {
 
   for (const [relPath, content] of Object.entries(scaffoldFiles)) {
     const fullPath = path.join(templateDir, relPath);
-    if (!fs.existsSync(fullPath)) {
+    const isApply = relPath.includes('apply.astro');
+    if (isApply || !fs.existsSync(fullPath)) {
       fs.mkdirSync(path.dirname(fullPath), { recursive: true });
       fs.writeFileSync(fullPath, content);
-      console.log(`📄 Scaffolded missing file: ${relPath}`);
+      console.log(`📄 ${isApply ? 'Force-updated' : 'Scaffolded missing file'}: ${relPath}`);
     }
   }
 
