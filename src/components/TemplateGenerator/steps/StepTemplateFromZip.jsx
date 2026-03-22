@@ -13,7 +13,7 @@ const ALLOWED_EXTS = [
     '.astro', '.js', '.ts', '.jsx', '.tsx', '.mjs', '.cjs',
     '.json', '.css', '.html', '.md', '.env', '.toml', '.svg', '.txt',
 ];
-const SKIP_DIRS = ['node_modules', '.git', 'dist', '.astro', '.wrangler', '.next', '.vercel', '__pycache__'];
+const SKIP_DIRS = ['node_modules', '.git', '.astro', '.wrangler', '.next', '.vercel', '__pycache__'];
 
 export function StepTemplateFromZip({ c, u, onGenerate }) {
     const [dragging, setDragging] = useState(false);

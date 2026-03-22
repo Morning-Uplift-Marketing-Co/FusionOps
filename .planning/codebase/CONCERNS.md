@@ -1,101 +1,166 @@
-# Concerns
+# Codebase Concerns
+
+**Analysis Date:** 2026-03-22
 
 ## Tech Debt
 
-### Dual Directory Structure (HIGH)
-Files duplicated between root-level (`components/`, `services/`, `utils/`) and `src/` directories. The root-level versions appear to be legacy mirrors. Risk of edits diverging between the two.
-- `components/TemplateGenerator/` ↔ `src/components/TemplateGenerator/`
-- `services/api.js` ↔ `src/services/api.js`
-- `utils/template-router.js` ↔ `src/utils/template-router.js`
+**Monolithic UI modules:**
+- Issue: Several React modules exceed 1k lines and mix routing, API calls, and presentation, increasing merge conflict risk and slowing refactors.
+- Files: `src/components/OpsCenter.jsx` (~3085 lines), `src/utils/astro-generator.jsx` (~2647 lines), `src/utils/lp-generator.js` (~1151 lines), `src/components/ProfileManager.jsx` (~1077 lines), `src/App.jsx` (~1064 lines), `src/utils/template-router.js` (~1017 lines), `src/components/Wizard/StepTracking.jsx` (~1004 lines), `src/components/Settings.jsx` (~963 lines), `src/components/Sites.jsx` (~915 lines)
+- Impact: Harder onboarding, higher bug rate when touching flows, limited unit-test surface without splitting.
+- Fix approach: Extract sub-features into colocated folders (e.g. `OpsCenter/` with hooks + presentational pieces), shared hooks for API calls, and thin route/container components.
 
-### Monolithic App.jsx (HIGH)
-`App.jsx` is ~800+ lines with all state management, side effects, and routing logic in one component. Contains 15+ `useState` calls and complex initialization logic.
+**Duplicate component trees:**
+- Issue: The same filenames exist under `src/components/` and a root-level `components/` directory (e.g. `ChangelogViewer.jsx` in both). Edits can land in the wrong tree and diverge.
+- Files: `src/components/ChangelogViewer.jsx`, `components/ChangelogViewer.jsx` (and similar duplication patterns elsewhere)
+- Impact: Stale UI, inconsistent fixes, confusing imports for contributors.
+- Fix approach: Pick a single canonical path (`src/components/`), delete or re-export from the other, add lint/import rules to block the duplicate root.
 
-### No State Management Library (MEDIUM)
-All app state lifted to `App.jsx` and passed as props. This creates prop drilling and makes state updates hard to trace. No context providers or state library used.
+**Hardcoded production API base:**
+- Issue: `resolveApiBase()` falls back to a fixed Cloudflare Workers URL when `window.__LP_API__` and `VITE_API_BASE` are unset.
+- Files: `src/services/api.js`
+- Impact: Wrong environment targeting if misconfigured; harder to swap staging/canary without code changes.
+- Fix approach: Require explicit `PUBLIC_` / build-time API base for production builds; fail fast in CI when unset.
 
-### Accumulated Artifacts (LOW)
-Multiple debug/log/screenshot files at root level: `astro_check*.txt`, `deploy_output*.txt`, `*.jpg` screenshots, `*.log` files, `tmp_check.html`. Should be gitignored or cleaned.
+**Hardcoded org in deploy helper:**
+- Issue: `scripts/deploy-org.js` embeds a fixed GitHub org string for repo creation.
+- Files: `scripts/deploy-org.js`
+- Impact: Script is not reusable; wrong org if copied to another project.
+- Fix approach: Read org from `process.env` or CLI args with validation.
 
-### Debug Console.log Pollution (MEDIUM)
-~209 `console.log` calls across 51 files. Should be cleaned up or replaced with structured logging.
+**Unused dependency:**
+- Issue: The `install` package is listed in `package.json` dependencies but has no imports in the repo.
+- Files: `package.json`
+- Impact: Larger install surface and potential confusion; `install` is a known typo-squat style package name in the ecosystem.
+- Fix approach: Remove after confirming no transitive requirement; run install and tests.
 
-### Deprecated Backup Files (LOW)
+**E2E fixture stubs:**
+- Issue: Playwright fixtures reference future auth flows with TODO comments.
+- Files: `tests/e2e/fixtures/fixtures.ts`
+- Impact: Auth-gated journeys may be skipped or manually patched.
+- Fix approach: Implement login/logout helpers when auth exists, or document explicit `@skip` reasons.
 
-Files like `DeploySection_OLD.jsx.bak` still in the codebase. Should be removed.
+**Template generator placeholders:**
+- Issue: `StepTemplateFromDir.jsx` contains TODOs for customization and extra assets.
+- Files: `src/components/TemplateGenerator/steps/StepTemplateFromDir.jsx`
+- Impact: Incomplete guidance for operators extending templates.
+- Fix approach: Replace TODOs with concrete extension points or docs links.
 
-## Security Concerns
+## Known Bugs
 
-### LocalStorage Token Storage (MEDIUM)
-JWT tokens and settings stored in `localStorage` — vulnerable to XSS. The `LS` utility wrapper doesn't encrypt sensitive data.
+**Not enumerated:** No separate bug tracker was consulted; triage should use issue tracker and failing tests.
 
-### Client-Side CSRF (LOW)
-CSRF token is generated client-side via `crypto.randomUUID()` and stored in `sessionStorage`. This is a partial CSRF implementation — server-side validation status unclear.
+## Security Considerations
 
-### Environment Files in Repo (HIGH)
-`.env`, `.env.local`, `.env.lock` present in working directory. `.env` and `.env.local` should be gitignored — verify they aren't committed.
+**Server-side logging of pixel payloads:**
+- Risk: `POST` handler parses JSON and logs the body; production logs may capture PII or click identifiers.
+- Files: `src/pages/e.ts`
+- Current mitigation: Errors swallowed; returns `204` without echoing body to client.
+- Recommendations: Redact or sample logs; gate verbose logging behind `import.meta.env.DEV`; consider structured logging with field allowlists.
 
-### `unsafe-inline` and `unsafe-eval` in CSP (MEDIUM)
-Content Security Policy in `astro.config.mjs` allows `'unsafe-inline'` and `'unsafe-eval'` for scripts — weakens XSS protection.
+**Client-only CSRF token:**
+- Risk: `getCsrfToken()` stores a random token in `sessionStorage` and sends `X-CSRF-Token` on mutations; effectiveness depends on the Workers API validating it.
+- Files: `src/services/api.js`
+- Current mitigation: Token sent only for same-origin targets (per URL origin check).
+- Recommendations: Confirm server-side CSRF/session binding; document contract in API docs.
 
-## Performance Concerns
+**Dynamic code execution in template preview:**
+- Risk: `Function(...)` parses array literals extracted from uploaded/custom template files for Astro preview.
+- Files: `src/utils/template-router.js` (array scope parsing)
+- Current mitigation: Scoped to array literal text; failures ignored.
+- Recommendations: Treat custom templates as untrusted input in multi-tenant scenarios; sandbox or restrict upload sources; add tests for malicious literals.
 
-### Synchronous Template Loading (MEDIUM)
-Template registry and custom templates loaded synchronously during app boot. Large template collections could slow initial load.
+**Markdown rendered to HTML:**
+- Risk: `ChangelogViewer` uses `dangerouslySetInnerHTML` after a regex-based markdown transform.
+- Files: `src/components/ChangelogViewer.jsx`
+- Current mitigation: Source is bundled `CHANGELOG.md` from the repo (trusted at build time).
+- Recommendations: If the source ever becomes user-editable or fetched remotely, switch to a hardened markdown pipeline (sanitize HTML).
 
-### No Code Splitting (MEDIUM)
-All components imported eagerly in `App.jsx`. No `React.lazy()` or dynamic imports for page-level code splitting. Entire app bundle loaded upfront.
+**Deploy script token use:**
+- Risk: `scripts/deploy-org.js` uses `GITHUB_TOKEN` from the environment for org API calls.
+- Files: `scripts/deploy-org.js`
+- Current mitigation: Token not committed; standard env usage.
+- Recommendations: Never log token; use least-privilege PAT/scopes; rotate if leaked.
 
-### Large Bundle Dependencies (LOW)
-`recharts` (SpendDashboard) and `jszip` (template import) are heavy dependencies loaded regardless of whether user visits those features.
+## Performance Bottlenecks
+
+**Large client bundles / hot paths:**
+- Problem: Very large JSX utilities may increase parse/hydration cost and slow edits.
+- Files: `src/components/OpsCenter.jsx`, `src/utils/astro-generator.jsx`, `src/utils/template-router.js`
+- Cause: Single-module responsibility growth without code-splitting.
+- Improvement path: Lazy-load tabs/sections (`React.lazy`), split generators, memoize heavy child trees.
+
+**Template router preview pipeline:**
+- Problem: Multiple fallback paths (module generator, Astro preview, regex transforms) can run in sequence on failure.
+- Files: `src/utils/template-router.js`
+- Cause: Defensive fallbacks and logging on failure paths.
+- Improvement path: Short-circuit when format is known; cache preview HTML per template version.
 
 ## Fragile Areas
 
-### Blank Mode Template Bug (CRITICAL)
+**Template routing and preview (`template-router`):**
+- Files: `src/utils/template-router.js`
+- Why fragile: Combines regex transforms, optional `new Function` parsing, and framework detection; small input changes can break preview parity with real Astro builds.
+- Safe modification: Add golden-file tests for representative templates; avoid broad regex edits without fixtures.
+- Test coverage: Partially covered by `src/__tests__` and build pipeline tests; large JSX surface in OpsCenter remains mostly E2E (`tests/e2e/ops-center/`).
 
-Blank mode template generation saves empty files and no template ID. Documented in `docs/gen-template-verification-report.md`.
+**Module template ID list:**
+- Problem: `MODULE_TEMPLATE_IDS` is a hand-maintained array; drift when adding templates causes wrong code paths.
+- Files: `src/utils/template-router.js`
+- Safe modification: Generate from `packages/lp-template-generator` manifest or a single registry module.
+- Test coverage: Add unit test that every exported template id is listed.
 
-### Template Router Hardcoding (HIGH)
+**Deploy and site generation flows:**
+- Files: `src/components/Sites.jsx` (verbose `console.log` debug blocks), `src/utils/deployers/*`
+- Why fragile: Many branches (git-push vs other targets); failures surface late in deploy.
+- Safe modification: Centralize deploy orchestration in a small service module with typed results; reduce console noise in production builds.
 
-`utils/template-router.js` (~900 lines) maps template IDs to implementations with brittle regex parsing. Adding new templates requires code changes rather than configuration.
+## Scaling Limits
 
-### Oversized OpsCenter Component (HIGH)
+**Single default API host:**
+- Current capacity: One production Workers hostname in client fallback.
+- Limit: No client-side load balancing or regional routing.
+- Scaling path: DNS/API gateway, env-specific bases, health-aware client selection.
 
-OpsCenter component is 1000+ lines — should be decomposed into smaller focused components.
+**Neon serverless usage:**
+- Files: `src/services/neon.js`, `src/services/profile-linker.js`
+- Limit: Connection limits and latency for bursty UI operations.
+- Scaling path: Pool tuning (where applicable), batching writes, moving heavy work to background jobs.
 
-### Deploy Config as JSON Files (MEDIUM)
-Deploy configurations stored as individual JSON files in `deploy-configs/`. No validation schema enforcement at runtime. Manual file management.
+## Dependencies at Risk
 
-### Multi-Database Sync (HIGH)
-Uses both Neon (PostgreSQL) and Cloudflare D1 (SQLite). No clear sync mechanism between them. Data consistency between the two databases is a risk.
+**`install` (npm package):**
+- Risk: Unused direct dependency; name is commonly mistaken for npm CLI behavior.
+- Impact: Noise in audits and supply-chain review surface.
+- Migration plan: Remove from `package.json` after verification.
 
-### Worker CORS Handling (MEDIUM)
-CORS headers manually managed in each worker (`apps/worker/src/index.ts`). Inconsistent CORS handling across different workers possible.
+## Missing Critical Features
 
-## Missing Features
+**Authenticated E2E flows:**
+- Problem: Fixtures note missing login/logout; protected flows may lack automation.
+- Blocks: Full regression coverage for multi-user scenarios.
+- Files: `tests/e2e/fixtures/fixtures.ts`
 
-### Error Reporting (MEDIUM)
-Sentry is included as dependency but integration appears selective. No structured error reporting pipeline from Workers.
+## Test Coverage Gaps
 
-### Rate Limiting (HIGH)
-No visible rate limiting on API endpoints or Worker routes. Callbacks and tracking endpoints could be abused.
+**Excluded generated templates in coverage:**
+- What's not tested: `src/templates/**` is excluded from Vitest coverage (`vitest.config.ts`).
+- Files: `vitest.config.ts`, large trees under `src/templates/`
+- Risk: Generated or copied landers can drift without unit signal.
+- Priority: Medium (mitigated by E2E and manual QA for some flows).
 
-### Monitoring/Observability (MEDIUM)
-No structured logging, metrics, or alerting beyond basic `console.error`. Health endpoint exists but no uptime monitoring configured.
+**Very large components with sparse unit tests:**
+- What's not tested: Deep branches in `OpsCenter.jsx` and `astro-generator.jsx` relative to file size.
+- Files: `src/components/OpsCenter.jsx`, `src/utils/astro-generator.jsx`
+- Risk: Regressions in rarely used tabs/actions.
+- Priority: High for revenue-critical paths; Medium elsewhere.
 
-### Database Migrations (MEDIUM)
-Migration scripts exist (`scripts/migrate-neon.js`, `scripts/migrate-d1.js`) but no migration versioning system or rollback capability visible.
+**Pixel API route:**
+- What's not tested: `src/pages/e.ts` has no dedicated test for POST body handling or logging behavior.
+- Files: `src/pages/e.ts`
+- Risk: Logging or parsing changes break analytics silently.
+- Priority: Low–Medium depending on compliance requirements.
 
-## Test Gaps
+---
 
-### Worker Tests (HIGH)
-`apps/worker/` and `apps/api-worker/` have no test configuration or test files. Backend logic is untested.
-
-### Service Layer Tests (HIGH)
-`services/` directory (API client, Cloudflare DNS, Neon DB, Voluum) has no dedicated tests. These are critical integration points.
-
-### Component Tests (MEDIUM)
-No component-level tests for React components. Only utility functions have tests.
-
-### Template Adapter Tests (MEDIUM)
-`src/adapters/` TypeScript interfaces have no tests verifying adapter implementations conform to the interface.
+*Concerns audit: 2026-03-22*

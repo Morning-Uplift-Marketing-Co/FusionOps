@@ -78,6 +78,13 @@ export function PreviewModal({
   // Disable fingerprint toggle if no fingerprinted HTML available
   const canShowFingerprint = hasFingerprinted;
 
+  const openInNewTab = () => {
+    if (!currentHtml) return;
+    const blob = new Blob([currentHtml], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+  };
+
   return (
     <div role="dialog" aria-label="Template Preview Modal">
       <div className="preview-modal">
@@ -90,7 +97,7 @@ export function PreviewModal({
 
         <div className="modal-body">
           {/* Viewport and Fingerprint Toggle Buttons */}
-          <div className="controls">
+          <div className="controls" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <button
               className="viewport-toggle"
               data-testid="viewport-toggle"
@@ -112,6 +119,14 @@ export function PreviewModal({
             >
               {showFingerprint ? 'Show Original' : 'Show Fingerprint'}
               {!canShowFingerprint && <span style={{ marginLeft: '4px', fontSize: '0.85em' }}>(unavailable)</span>}
+            </button>
+            
+            <button
+              className="viewport-toggle"
+              onClick={openInNewTab}
+              style={{ marginLeft: 'auto', background: '#e0e7ff', color: '#4f46e5', borderColor: '#c7d2fe', fontWeight: 600 }}
+            >
+              🚀 Open in New Tab (Tracking Test)
             </button>
           </div>
 
@@ -139,6 +154,7 @@ export function PreviewModal({
             style={{
               width: iframeWidth,
               height: iframeHeight,
+              marginTop: '16px'
             }}
           >
             {currentHtml ? (
@@ -146,13 +162,14 @@ export function PreviewModal({
                 ref={iframeRef}
                 title="Template Preview"
                 data-testid="preview-iframe"
-                sandbox="allow-scripts allow-same-origin allow-forms"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
                 srcDoc={currentHtml}
                 style={{
                   width: '100%',
                   height: '100%',
                   border: '1px solid #ddd',
                   borderRadius: '8px',
+                  background: '#fff'
                 }}
               />
             ) : (

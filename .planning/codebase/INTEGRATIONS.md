@@ -1,188 +1,95 @@
 # External Integrations
 
-**Analysis Date:** 2026-03-20
+**Analysis Date:** 2026-03-22
 
 ## APIs & External Services
 
-**Proxy Management:**
-- Multilogin X - Browser profile management and automation
-  - Remote API: `https://api.multilogin.com`
-  - Local Launcher: `https://launcher.mlx.yt:45001`
-  - SDK/Client: Direct HTTP integration (`src/services/multilogin.js`)
-  - Credentials: MLX API key stored in settings
+**FusionOps / LP Factory backend (HTTP API):**
+- Cloudflare Worker API — primary REST backend for dashboard operations; base URL from `import.meta.env.VITE_API_BASE`, `window.__LP_API__`, or default in `src/services/api.js` and `astro.config.mjs` (`VITE_API_BASE` / dev proxy `/api`)
+  - SDK/Client: `fetch` via `src/services/api.js` (`api.get`, `api.post`, …)
+  - Auth: CSRF header `X-CSRF-Token` for same-origin mutations (`src/services/api.js`); Worker auth as implemented server-side in `apps/api-worker/`
 
-- NodeMaven - Residential proxy provider
-  - Gateway: `gate.nodemaven.com` (HTTP ports 8080–9080, SOCKS5 ports 1080–2080)
-  - Sticky sessions up to 24h, geo-targeting, IP rotation
-  - Credentials: username/password in settings (`src/services/nodemaven.js`)
+**Cloudflare (product APIs):**
+- Cloudflare REST API v4 — zone and DNS operations; direct `https://api.cloudflare.com/client/v4` in `src/services/cloudflare-zone.js`; credentials passed as parameters from UI/settings (not hardcoded)
+- Cloudflare Pages & Workers — deployment via `wrangler` in `.github/workflows/deploy-dashboard.yml` (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` GitHub secrets)
 
-**Domain Management:**
-- Internet.bs - Domain registrar API
-  - API Base: `https://api.internet.bs`
-  - Operations: domain check, registration, nameserver updates, listing, balance query
-  - Via Worker proxy: `/api/automation/registrar/` endpoints
-  - Implementation: `src/services/registrar.js`
+**Neon (PostgreSQL):**
+- Neon serverless Postgres — HTTP driver `@neondatabase/serverless` in `src/services/neon.js`; connection from app configuration (e.g. `VITE_NEON_URL` referenced in `src/services/account-lock.js` for sanitization/display)
 
-**DNS & Infrastructure:**
-- Cloudflare DNS - DNS record management
-  - API Base: `https://api.cloudflare.com/client/v4`
-  - Operations: Zone management, DNS records, Workers routes
-  - Auth: Cloudflare API token (`VITE_CF_API_TOKEN`)
-  - Implementation: `src/services/cloudflare-dns.js`, `src/services/cloudflare-zone.js`
+**Observability:**
+- Sentry — `@sentry/react` in `src/services/sentry.js`; DSN via `PUBLIC_SENTRY_DSN` or `VITE_SENTRY_DSN`; optional dev enablement via `PUBLIC_SENTRY_DEV` / `VITE_SENTRY_DEV`
 
-**Analytics & Tracking:**
-- Voluum - Traffic tracking and analytics platform
-  - API: Via Worker proxy at `/voluum` endpoints
-  - Operations: Session authentication, report generation (visits, clicks, conversions, ROI)
-  - Auth: Access Key ID + Secret credentials stored in settings
-  - Implementation: `src/services/voluum.js`
+**Affiliate / tracking:**
+- Voluum — session and reporting through Worker routes under `/voluum` and `src/services/voluum.js`; credentials env names include `VITE_VOLUUM_ACCESS_KEY_ID`, `VITE_VOLUUM_ACCESS_KEY` (`src/services/account-lock.js`); CTA link env `PUBLIC_VOLUUMURL` in `src/pages/index.astro`. **LP head / Wizard → deploy → Astro flow:** see [VOLUUM_LP.md](./VOLUUM_LP.md).
 
-**IP & Fraud Detection:**
-- IPQualityScore (IPQS) - IP fraud scoring and blacklist checking
-  - Used in proxy preflight validation (`src/services/proxy-checker.js`)
-  - Detects proxy hosting, datacenter IPs, fraud scores
+**Automation / anti-detect:**
+- Multilogin X — `https://api.multilogin.com` and launcher `https://launcher.mlx.yt:45001` in `src/services/multilogin.js`; base override via `src/utils/api-proxy.js` (`getMlxApiBase`)
 
-- ip-api.com - Basic IP geolocation and proxy detection
-  - Free tier: 45 requests/min (no auth key required)
-  - Returns: country, region, city, ISP, proxy/hosting flags
-  - Implementation: `src/services/proxy-checker.js`
+**Deploy targets (utilities):**
+- GitHub REST API — repo creation in `scripts/deploy-org.js` (`GITHUB_TOKEN`); Actions and contents APIs in `src/utils/deployers/github-actions.js`, `src/utils/deployers/github-status.js`
+- Vercel API — deployments/domains in `src/utils/deployers/vercel.js`
+- AWS S3 / CloudFront — uploads and invalidation patterns in `src/utils/deployers/s3-cloudfront.js` (requests may go through Worker proxy URL)
 
-- IPinfo.io - ASN and geolocation data
-  - Auth: API token in settings (`ipinfoToken`)
-  - Used in IP quality pipeline for ASN verification (`src/services/ip-quality-pipeline.js`)
-
-- Scamalytics - Fraud reputation scoring
-  - Auth: API key in settings (`scamalyticsKey`)
-  - Used in IP quality pipeline for fraud detection (`src/services/ip-quality-pipeline.js`)
-
-- IP2Location.io - IP type detection (residential vs datacenter vs VPN)
-  - Auth: API key in settings (`ip2locationKey`)
-  - Used in IP quality pipeline (`src/services/ip-quality-pipeline.js`)
+**Worker-specific (related repo area):**
+- `apps/api-worker/` — `@cloudflare/puppeteer` for browser automation; exposes HTTP API deployed with Wrangler (see `apps/api-worker/package.json`)
 
 ## Data Storage
 
 **Databases:**
-- Neon (PostgreSQL) - Primary serverless database
-  - Client: `@neondatabase/serverless` HTTP driver
-  - Connection: Environment variable for connection string
-  - Tables:
-    - `settings` - Key-value configuration store
-    - `sites` - Landing page deployment records
-    - `deploy_history` - Deployment history with timestamps
-    - `cf_accounts` - Cloudflare account credentials
-    - `registrar_accounts` - Domain registrar credentials (Internet.bs, etc.)
-    - `daily_spend` - Daily spend tracking and ROI calculations
-    - `lendingcard_transactions` - Financial transaction history
-  - Implementation: `src/services/neon.js`
-
-- Cloudflare D1 - Distributed SQLite database (optional)
-  - API: REST API integration via Cloudflare API
-  - Used for edge-side queries
-  - Credentials: Account ID, Database ID, API token
-  - Implementation: `src/services/d1.js`
+- Neon PostgreSQL — primary app metadata/settings pattern in `src/services/neon.js` (tables created via `ensureTables()`)
+- Cloudflare D1 — referenced by Worker package migrations under `apps/api-worker/migrations/` (not used directly by root Astro client code)
 
 **File Storage:**
-- Local filesystem (template files, ZIP packaging)
-  - ZIP creation via `jszip` for template distribution
-  - No cloud file storage detected
+- Deploy flows may target S3 (`src/utils/deployers/s3-cloudfront.js`); local static assets live under `public/`
 
 **Caching:**
-- None explicitly configured (Astro/Vite default caching)
+- Browser `sessionStorage` for CSRF token key in `src/services/api.js`; no separate Redis/cache service in front-end code
 
 ## Authentication & Identity
 
 **Auth Provider:**
-- Custom authentication system (self-hosted)
-  - Implementation: `src/services/auth.js`
-  - Method: PBKDF2 password hashing (Web Crypto API, 100k iterations)
-  - Session storage: localStorage with `lpf2-session` key
-  - Session TTL: 365 days (1 year, long-lived sessions)
-  - User data stored in Neon PostgreSQL
-
-**External Integrations:**
-- Cloudflare API authentication via bearer token
-- Multilogin X authentication via API key
-- NodeMaven proxy auth via username/password
-- Internet.bs registrar auth via API credentials
-- Voluum auth via Access Key ID + Secret
+- Custom — dashboard relies on Worker API + client-side settings; Cloudflare API tokens and account IDs supplied by user/env (`VITE_CF_ACCOUNT_ID`, `VITE_CF_API_TOKEN` in `src/services/account-lock.js`)
 
 ## Monitoring & Observability
 
 **Error Tracking:**
-- Sentry - Error and performance monitoring
-  - DSN: Environment variable (`PUBLIC_SENTRY_DSN` or `VITE_SENTRY_DSN`)
-  - Initialization: `src/services/sentry.js`
-  - Configuration:
-    - Traces sample rate: 20% production, 100% development
-    - Session Replay: 10% production, 0% development
-    - Error replay: 100% on error
-    - Ignores: ResizeObserver errors, chunk loading failures
-    - Breadcrumb masking: Token values masked in URLs
-    - Context: App state, component, action tracking
+- Sentry — `src/services/sentry.js`, `src/App.jsx` (context), `src/AppRoot.jsx` (`Sentry.ErrorBoundary`)
 
 **Logs:**
-- Console logging throughout services
-- Breadcrumb tracking via Sentry for user actions
-- Error context capture with component and action tags
+- `console` logging across services (e.g. `src/services/neon.js`, `src/services/api.js` warnings)
 
 ## CI/CD & Deployment
 
 **Hosting:**
-- Cloudflare Workers - API and automation endpoints
-  - Primary API: `https://lp-factory-api.misty-feather-556e.workers.dev`
-- Netlify - Potential static hosting (referenced in `astro.config.mjs`)
+- Cloudflare Pages for static dashboard (`dist/` after `npm run build`)
+- Cloudflare Workers for API (`apps/api-worker`)
 
 **CI Pipeline:**
-- GitHub Actions (GitHub integration detected, build environment checks)
-- Environment: `CI` env variable for CI detection
-- Wrangler CLI for Cloudflare Workers deployment
+- GitHub Actions — `.github/workflows/deploy-dashboard.yml` (Node 20, `npm ci`, `npm run build`, `wrangler deploy` / `wrangler pages deploy`); additional workflows under `.github/workflows/` for other automation
 
 ## Environment Configuration
 
-**Required env vars:**
-- `VITE_API_BASE` - API server URL (defaults to Cloudflare Worker)
-- `VITE_CF_API_TOKEN` or `CF_API_TOKEN` - Cloudflare API authentication
-- `VITE_NEON_CONNECTION_STRING` - Neon database connection string
-- `VITE_SENTRY_DSN` or `PUBLIC_SENTRY_DSN` - Sentry error tracking
-
-**Optional env vars (user-configurable in Settings):**
-- `d1AccountId`, `d1DatabaseId`, `d1ApiToken` - Cloudflare D1
-- `nmProxyUser`, `nmProxyPassword` - NodeMaven proxy
-- `ipinfoToken` - IPinfo.io API key
-- `scamalyticsKey` - Scamalytics API key
-- `ip2locationKey` - IP2Location API key
-- Multilogin API key
-- Voluum Access Key ID + Secret
+**Required env vars (representative names — set in hosting/CI, not documented here with values):**
+- `VITE_API_BASE` — API origin for production builds
+- `PUBLIC_SENTRY_DSN` / `VITE_SENTRY_DSN` — Sentry client DSN
+- `VITE_NEON_URL` — Neon connection string for client-side Neon usage when configured
+- `VITE_CF_ACCOUNT_ID`, `VITE_CF_API_TOKEN` — Cloudflare account lock / automation (`src/services/account-lock.js`)
+- `VITE_VOLUUM_ACCESS_KEY_ID`, `VITE_VOLUUM_ACCESS_KEY` — Voluum integration
+- `PUBLIC_VOLUUMURL` — default CTA href (`src/pages/index.astro`)
+- `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` — CI deploy secrets (`.github/workflows/deploy-dashboard.yml`)
+- `GITHUB_TOKEN` — org script `scripts/deploy-org.js`
 
 **Secrets location:**
-- `.env` and `.env.lock` files (local development)
-- `.env.production` (production build variables)
-- Environment variables in deployment platform (Cloudflare, Netlify)
-- LocalStorage under `lpf2-settings` key (user-provided credentials)
+- GitHub Actions secrets for CI; local `.env` / `.env.lock` patterns may exist — never commit or paste values into planning docs
 
 ## Webhooks & Callbacks
 
 **Incoming:**
-- None explicitly detected
+- Worker routes defined in `apps/api-worker` (not enumerated here); dashboard calls outbound APIs only
 
 **Outgoing:**
-- Cloudflare Workers routes for automation callbacks
-- Potential registrar webhooks (Internet.bs domain events)
-
-## Request Routing & Proxying
-
-**API Proxy Layer:**
-- Custom proxy implementation in Worker handles:
-  - Cloudflare API calls (prevents CORS issues)
-  - Registrar automation endpoints
-  - Voluum API routing
-  - Multilogin integration
-  - IP quality check APIs
-
-**Dev Server Proxy:**
-- Vite dev server proxies `/api` to `VITE_API_BASE` (configured in `astro.config.mjs`)
-- CORS headers and CSP configured for local development
+- `fetch` to Worker API, Cloudflare API, Voluum (via Worker), Multilogin, GitHub, Vercel, S3 endpoints as triggered by UI flows in `src/services/` and `src/utils/deployers/`
 
 ---
 
-*Integration audit: 2026-03-20*
+*Integration audit: 2026-03-22*
