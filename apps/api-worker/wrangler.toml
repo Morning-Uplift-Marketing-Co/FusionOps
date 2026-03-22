@@ -27,3 +27,7 @@ binding = "BROWSER"
 [[r2_buckets]]
 binding = "THUMBS"
 bucket_name = "lp-factory-thumbs"
+
+# Optional Worker var: max bytes for POST /api/templates JSON body (default 41943040 = 40 MiB).
+# Set in dashboard: Workers → lp-factory-api → Settings → Variables, or wrangler secret/vars.
+# TEMPLATE_POST_MAX_BYTES = "52428800"
