@@ -1,112 +1,83 @@
 # Technology Stack
 
-**Analysis Date:** 2026-03-20
+**Analysis Date:** 2026-03-22
 
 ## Languages
 
 **Primary:**
-- JavaScript/JSX - React components, frontend application logic
-- TypeScript - Configuration files, type definitions (optional)
+- JavaScript (ES modules) — `src/**/*.js`, `src/**/*.jsx`, scripts under `scripts/`
+- TypeScript — `src/**/*.ts`, `src/**/*.tsx`, `tests/**/*.ts`, config files (`vitest.config.ts`, `playwright.config.ts`)
+- Astro — `src/pages/**/*.astro`, `src/layouts/**/*.astro`
 
 **Secondary:**
-- TOML - Wrangler configuration
+- SQL — migrations and D1 usage in `apps/api-worker/migrations/` (Worker backend, not the root Astro app)
 
 ## Runtime
 
 **Environment:**
-- Node.js (implied from package.json, npm scripts)
+- Node.js — build, dev server, tests, and CI (GitHub Actions uses Node 20 in `.github/workflows/deploy-dashboard.yml`; no `.nvmrc` in repo root)
 
 **Package Manager:**
-- npm - primary package manager
-- Lockfile: Not specified in package.json (presumed package-lock.json or similar)
+- npm — lockfile `package-lock.json` at repository root
 
 ## Frameworks
 
 **Core:**
-- Astro 5.18.0 - Full-stack web framework, integrates React and Tailwind
-- React 19.2.0 - UI library for interactive components
-- React DOM 19.2.0 - React rendering into DOM
-
-**Build/Dev:**
-- @tailwindcss/vite 4.2.0 - Tailwind CSS v4 Vite integration
-- Tailwind CSS 4.2.0 - Utility-first CSS framework
-- Vite (implicit, via Astro) - Modern build tool and dev server
+- Astro `^5.18.0` — SSG/SSR app shell, routing via `src/pages/`, Vite-powered dev server (`astro.config.mjs` sets dev port `4323`)
+- React `^19.2.0` with `@astrojs/react` — dashboard UI hydrated with `client:only="react"` (see `src/pages/index.astro`)
 
 **Testing:**
-- Vitest 4.0.18 - Fast unit test runner (Vite-native)
-- @playwright/test 1.58.2 - E2E testing framework
-- @testing-library/react 16.3.2 - React testing utilities
-- @testing-library/jest-dom 6.9.1 - DOM assertions
-- @testing-library/user-event 14.6.1 - User interaction simulation
-- happy-dom 20.6.2 - Lightweight DOM implementation for tests
-- jsdom 28.1.0 - Alternative DOM environment
+- Vitest `^4.0.18` — unit/component tests; config `vitest.config.ts` (happy-dom, `@/` alias)
+- Playwright `@playwright/test` — E2E; config `playwright.config.ts` (`tests/e2e/`, webServer runs `npm run dev`)
 
-**Linting/Format:**
-- ESLint 9.39.1 - Code linting
-- @eslint/js 9.39.1 - ESLint core rules
-- eslint-plugin-react-hooks 7.0.1 - React hooks linting
-- eslint-plugin-react-refresh 0.4.24 - Vite React refresh plugin linting
-- globals 16.5.0 - Global variable definitions
+**Build/Dev:**
+- Vite (via Astro) — aliases and Tailwind in `astro.config.mjs`
+- Tailwind CSS `^4.2.0` with `@tailwindcss/vite` — Vite plugin in `astro.config.mjs`
+- ESLint `^9` flat config — `eslint.config.js`
+- Wrangler `^4.35.0` (devDependency) — Cloudflare Pages/Workers deploy from CI and local CLI
 
 ## Key Dependencies
 
 **Critical:**
-- @neondatabase/serverless 1.0.2 - HTTP driver for Neon Postgres (used in `src/services/neon.js`)
-- @sentry/react 10.40.0 - Error tracking and monitoring
-- wrangler 4.67.0 - Cloudflare Workers CLI (deployment)
+- `@neondatabase/serverless` — browser-capable Postgres client; data layer in `src/services/neon.js`
+- `@sentry/react` — error monitoring; init in `src/services/sentry.js`, boundary in `src/AppRoot.jsx`
+- `astro` / `@astrojs/react` — application framework integration
+- `cheerio` — HTML parsing/transform in build/quality tooling
+- `recharts` — charts in dashboard components
+- `@radix-ui/react-slot`, `@radix-ui/react-tabs` — UI primitives (`src/components/ui/`)
 
-**UI/Rendering:**
-- @astrojs/react 4.4.2 - React integration for Astro
-- @radix-ui/react-slot 1.2.4 - Radix UI composition primitive
-- @radix-ui/react-tabs 1.1.13 - Accessible tab component
-- lucide-react 0.575.0 - Icon library
-- recharts 3.7.0 - Chart and graph library
-- class-variance-authority 0.7.1 - Variant management utility
-- clsx 2.1.1 - Conditional className utility
-- tailwind-merge 3.5.0 - Merge Tailwind classes
+**Infrastructure:**
+- `node-fetch` — used by Node scripts (e.g. `scripts/deploy-org.js`)
+- `dotenv` — dependency for tooling that loads env (do not commit secrets; see Configuration)
+- `wrangler` — deploy dashboard static output (`dist/`) to Cloudflare Pages per `.github/workflows/deploy-dashboard.yml`
+- `terser`, `jszip`, `seedrandom` — build/packaging and deterministic behavior in tooling
 
-**Utilities:**
-- jszip 3.10.1 - ZIP file creation/reading (template packing)
-- node-fetch 3.3.2 - Fetch API for Node.js environments
-- dotenv 17.3.1 - Environment variable loading
-- install 0.13.0 - Package installation utility
-
-**Release Management:**
-- standard-version 9.5.0 - Semantic versioning and changelog generation
+**Backend (separate package):**
+- `apps/api-worker/` — Cloudflare Worker API (`lp-factory-api`), Wrangler scripts in `apps/api-worker/package.json`; uses `@cloudflare/puppeteer`, `@neondatabase/serverless`, D1 migrations — not bundled with root `astro build`
 
 ## Configuration
 
 **Environment:**
-- Environment variables loaded via `dotenv` from `.env`, `.env.local`, `.env.lock`
-- Astro uses standard `import.meta.env` for Vite env variables
-- Both `VITE_*` (client-side) and `PUBLIC_*` (Astro public) prefixes supported
-- Wrangler config file: `.wrangler/` directory
+- Client/build: Vite-style `import.meta.env` — `VITE_*`, `PUBLIC_*` (see `src/services/sentry.js`, `src/pages/index.astro`)
+- Local dev: optional `.env.lock` merge into `process.env` when not `NETLIFY` or `CI` — logic in `astro.config.mjs` (file may exist; do not commit secrets)
+- `.env` / `.env.*` — may exist in subprojects; never read contents in docs; use names only in `INTEGRATIONS.md`
 
 **Build:**
-- Configuration files:
-  - `astro.config.mjs` - Astro configuration, Vite setup, resolve aliases
-  - `tsconfig.json` - TypeScript configuration (strict mode, React JSX)
-  - `vitest.config.ts` - Vitest setup with happy-dom environment
-  - `playwright.config.ts` - E2E test configuration (Chrome, Firefox, WebKit, mobile)
-  - `eslint.config.js` - ESLint rules for JS/JSX
-
-**Development Server:**
-- Port: 4323 (configured in `astro.config.mjs`)
-- Hot module reload: Enabled (Astro default)
-- CORS headers and CSP configured in dev server
+- `astro.config.mjs` — React integration, Tailwind Vite plugin, dev proxy `/api` → `VITE_API_BASE` or default Worker URL, path aliases `@` and `#lp-template-generator`
+- `tsconfig.json` — extends `astro/tsconfigs/strict`, `paths`: `@/*` → `src/*` (excludes `apps/`, `packages/`, `templates/` from main project compile)
+- `public/_headers` — static headers for deployed static hosting (cache, security, `X-Robots-Tag`)
 
 ## Platform Requirements
 
 **Development:**
-- Node.js (version unspecified, typically 18+)
-- npm or compatible package manager
-- Optional: Chrome Dev for E2E testing (configurable via `CHROME_DEV_PATH`)
+- Node.js compatible with Astro 5 and React 19 (align with CI: Node 20)
+- npm for `npm ci` / `npm install`
+- Browsers for Playwright E2E (Chromium path override via `CHROME_DEV_PATH` in `playwright.config.ts` on Windows)
 
 **Production:**
-- Cloudflare Workers (primary deployment target)
-- Neon PostgreSQL database (remote serverless Postgres)
-- API base: `https://lp-factory-api.misty-feather-556e.workers.dev` (Cloudflare Worker URL)
+- Static site output: `astro build` → `dist/` deployed to Cloudflare Pages (`wrangler pages deploy`) per `.github/workflows/deploy-dashboard.yml`
+- API: Cloudflare Workers (`apps/api-worker`, `npx wrangler deploy`) — default base URL referenced in `astro.config.mjs` and `src/services/api.js`
 
 ---
 
-*Stack analysis: 2026-03-20*
+*Stack analysis: 2026-03-22*

@@ -1,4 +1,4 @@
-import { TemplateAdapter } from './template-adapter'
+import type { TemplateAdapter } from './template-adapter'
 
 export type TemplateRegistryEntry = {
   id: string

@@ -2,6 +2,9 @@
 /**
  * Auto-inject tracking stack into any template (Astro or Vite/Loveable/HTML)
  *
+ * Called from .github/workflows/deploy-lp.yml after deploy-config is merged into .env
+ * (PUBLIC_VOLUUMDOMAIN, PUBLIC_VOLUUM_CLICK_URL, PUBLIC_CONVERSIONID, etc.).
+ *
  * Injects:
  *   1. Voluum dtpCallback (Direct Tracking Pixel) — reads VOLUUM_DOMAIN from env
  *   2. First-party pixel (fpPixel) — sends to t.{domain}/e

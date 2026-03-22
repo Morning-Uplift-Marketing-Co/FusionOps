@@ -1,87 +1,171 @@
-# Testing
+# Testing Patterns
 
-## Frameworks
+**Analysis Date:** 2026-03-22
 
-| Type | Framework | Config |
-|------|-----------|--------|
-| Unit | Vitest 4.x | `vitest.config.ts` |
-| E2E | Playwright 1.58 | `playwright.config.ts` |
-| Coverage | v8 (via `@vitest/coverage-v8`) | Configured in vitest.config.ts |
+## Test Framework
 
-## Unit Tests
+**Runner:**
+- Vitest `^4.0.18`
+- Config: `vitest.config.ts`
 
-### Configuration (`vitest.config.ts`)
-- Environment: `happy-dom`
-- Globals: `true` (no explicit imports for `describe`, `it`, `expect`)
-- Setup file: `tests/unit/setup.ts`
-- Include patterns: `src/**/*.{test,spec}.{js,ts,jsx,tsx}`, `tests/unit/**/*`
-- Coverage excludes: `src/templates/**`, `src/main.jsx`, test files
+**Assertion Library:**
+- Vitest built-in `expect`; DOM: `@testing-library/jest-dom` matchers (loaded in setup).
 
-### Test Locations
-- `src/utils/__tests__/` — utility function tests
-  - `template-registry.test.js`
-  - `template-router.integration.test.js`
-  - `template-analyzer.test.js`
-  - `template-preview-runtime.test.js`
-- `tests/unit/` — general unit tests
-  - `setup.ts` — test setup (DOM mocks, etc.)
-  - `test-utils.tsx` — shared test utilities
-  - `utils/` — utility test helpers
+**Environment:**
+- `happy-dom` (see `test.environment` in `vitest.config.ts`); `jsdom` imported in config for potential advanced use.
 
-### Test Utilities
-- `tests/unit/test-utils.tsx` — shared rendering utilities
-- `tests/fixtures/api-mocks.ts` — API mock data for tests
-
-### Running Tests
+**Run Commands:**
 ```bash
-npm test              # Run all unit tests
-npm run test:ui       # Vitest UI mode
-npm run test:coverage # With v8 coverage report
+npm test                 # vitest
+npm run test:ui          # vitest --ui
+npm run test:coverage    # vitest --coverage
+npm run test:e2e         # playwright test
+npm run test:e2e:headed  # playwright test --headed
+npm run test:e2e:debug   # playwright test --debug
+npm run test:e2e:ui      # playwright test --ui
+npm run test:report      # playwright show-report
 ```
 
-## E2E Tests
+## Test File Organization
 
-### Configuration (`playwright.config.ts`)
-- Located in `tests/e2e/`
-- Page Object Model: `tests/pages/`
-- Fixtures: `tests/e2e/fixtures/`
-- Global setup: `tests/e2e/global-setup.ts`
+**Location:**
+- Co-located: `src/**/__tests__/*.test.js` (e.g. `src/utils/__tests__/capability-resolver.test.js`), `src/hooks/usePreviewDebounce.test.js`.
+- Central unit suite: `tests/unit/**/*.spec.ts` (e.g. `tests/unit/utils/index.spec.ts`, `tests/unit/workers/*.spec.ts`).
+- E2E: `tests/e2e/**/*.spec.ts` (configured in `playwright.config.ts` as `testDir`).
 
-### Test Suites
-- `tests/e2e/suite.spec.ts` — main test suite
-- `tests/e2e/deploy/` — deploy flow tests
-- `tests/e2e/ops-center/` — operations center tests
-- `tests/e2e/settings/` — settings page tests
-- `tests/e2e/sites/` — sites management tests
-- `tests/e2e/wizard/` — LP creation wizard tests
+**Naming:**
+- `*.test.js` or `*.spec.ts` / `*.spec.js` per Vitest `include` patterns in `vitest.config.ts`.
 
-### Running E2E
-```bash
-npm run test:e2e         # Run all E2E tests
-npm run test:e2e:headed  # With browser visible
-npm run test:e2e:debug   # Debug mode
-npm run test:e2e:ui      # Playwright UI
-npm run test:report      # Show HTML report
+**Structure:**
 ```
+src/
+  __tests__/              # top-level regression / integration tests
+  utils/__tests__/        # unit tests next to utils
+  services/**/__tests__/
+tests/
+  unit/
+    setup.ts              # referenced as setupFiles (path: tests/unit/setup.ts)
+    utils/
+    workers/
+  e2e/
+    fixtures/             # Playwright fixtures
+    *.spec.ts
+```
+
+## Test Structure
+
+**Suite Organization:**
+
+```typescript
+// tests/unit/utils/index.spec.ts
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { LS } from '../../../src/utils';
+
+describe('LocalStorage Utility', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  describe('get()', () => {
+    it('should return null for non-existent key', () => {
+      expect(LS.get('nonexistent')).toBeNull();
+    });
+  });
+});
+```
+
+**Vitest globals:** `globals: true` in `vitest.config.ts` — `describe`/`it`/`expect` available without import in principle; many files still import explicitly from `vitest`.
+
+**Setup (`tests/unit/setup.ts`):**
+- `afterEach` → `@testing-library/react` `cleanup()`.
+- Mocks: `window.matchMedia`, `IntersectionObserver`, `ResizeObserver`, `requestAnimationFrame` / `cancelAnimationFrame`.
+
+## Mocking
+
+**Framework:** Vitest `vi`.
+
+**Patterns:**
+
+```typescript
+// tests/unit/utils/index.spec.ts
+vi.stubGlobal('localStorage', mockLocalStorage);
+// ...
+vi.unstubAllGlobals();
+```
+
+```typescript
+// tests/unit/workers/callback-security.spec.ts
+vi.mock('../../../apps/worker/src/lib/dedup', () => ({
+  generateDedupKey: vi.fn().mockResolvedValue('dedup-key'),
+}));
+```
+
+**What to mock:** External modules with side effects (DB, dedup, Voluum); browser globals not provided by `happy-dom` (see setup file).
+
+**What NOT to mock:** Prefer real `localStorage` when possible; tests override only for error paths (e.g. quota exceeded).
+
+## Fixtures and Factories
+
+**Test Data:**
+- Inline constants and objects in test files (e.g. `SAMPLE_FILES`, `MANIFEST_WITH_CAPABILITIES` in `src/utils/__tests__/capability-resolver.test.js`).
+- Helper factories in E2E: `TestDataGenerator`, page helpers (`AppHelpers`, `WizardHelpers`) via `tests/e2e/fixtures/fixtures.ts`.
+
+**Location:**
+- Unit: co-located in spec files or `__tests__` folders.
+- E2E: `tests/e2e/utils/test-helpers` (imported by `tests/e2e/fixtures/fixtures.ts`).
 
 ## Coverage
 
-- Provider: `v8`
-- Reporters: text, json, html
-- Include: `src/**/*.{js,jsx,ts,tsx}`, `tests/unit/**/*`
-- Exclude: templates, main.jsx, test files, node_modules, dist
-- Output: `coverage/` directory
+**Requirements:** No enforced threshold in config; CI not defined in `vitest.config.ts`.
 
-## Mocking Patterns
+**Provider:** `@vitest/coverage-v8` (`provider: 'v8'` in `vitest.config.ts`).
 
-- API mocks defined in `tests/fixtures/api-mocks.ts`
-- DOM environment: `happy-dom` (lighter than jsdom)
-- `jsdom` also available as devDependency for specific cases
-- Testing Library: `@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`
+**Reporters:** `text`, `json`, `html`.
 
-## Test Gaps (Observed)
+**Include / exclude:** See `coverage.include` and `coverage.exclude` in `vitest.config.ts` — excludes test files, `src/templates/**`, `src/main.jsx`, etc.
 
-- Root-level `services/` and `utils/` have no dedicated test files
-- Worker code (`apps/worker/`, `apps/api-worker/`) has no test setup
-- Template adapters (`src/adapters/`) have no tests
-- Coverage focused on template system utilities; other areas sparse
+**View coverage:**
+```bash
+npm run test:coverage
+# open coverage/index.html after generation
+```
+
+## Test Types
+
+**Unit tests:**
+- Pure logic and utilities under `src/utils`, `src/services`, hooks — `describe`/`it` with `expect`.
+
+**Integration tests:**
+- Files named `*.integration.test.js` (e.g. `src/utils/__tests__/template-router.integration.test.js`); build pipeline tests under `src/services/build/__tests__/`.
+
+**E2E tests:**
+- Playwright `@playwright/test` — `playwright.config.ts` sets `testDir: './tests/e2e'`, multi-browser `projects`, `webServer` running `npm run dev` on port `4323`, artifacts under `test-artifacts/`.
+
+**Example E2E import:**
+
+```typescript
+// tests/e2e/suite.spec.ts
+import { test, expect } from './fixtures/fixtures';
+
+test.describe('Smoke Tests - Critical Paths', () => {
+  test('should load application', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByText(/Dashboard|My Sites/i).first()).toBeVisible({ timeout: 15000 });
+  });
+});
+```
+
+## Common Patterns
+
+**Async testing:**
+- `async`/`await` with `expect` on resolved values; API mocks use `mockResolvedValue` (see `tests/unit/workers/callback-security.spec.ts`).
+
+**Error testing:**
+- Force failures via stubbed globals or mocked `setItem` throwing; assert boolean return values (e.g. `LS.set` returns `false` on quota errors in `tests/unit/utils/index.spec.ts`).
+
+**React component tests:**
+- Use `@testing-library/react` with setup cleanup; import paths align with Vitest aliases in `vitest.config.ts`.
+
+---
+
+*Testing analysis: 2026-03-22*
