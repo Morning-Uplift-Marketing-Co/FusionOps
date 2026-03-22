@@ -1,5 +1,5 @@
 ---
-const aid = import.meta.env.PUBLIC_AID || '14881';
+const aid = '14881';
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -12,7 +12,7 @@ const aid = import.meta.env.PUBLIC_AID || '14881';
   <style>html,body{height:100%;min-height:100vh;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}body{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:24px 16px 48px;}#_lg_form_{width:100%;max-width:640px;}</style>
 </head>
 <body>
-<script is:inline define:vars={{ aid }} data-cfasync="false">
+<script is:inline data-cfasync="false">
 window.dataLayer = window.dataLayer || [];
 
 var SafeStorage = {
@@ -58,7 +58,7 @@ function fpPixel(eventName, extra) {
 }
 
 var _lg_form_init_ = {
-  aid: aid,
+  aid: "14881",
   template: "fresh",
   ref: window.location.hostname,
   get click_id() { return getVoluumClickId(); },
