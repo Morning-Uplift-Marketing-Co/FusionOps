@@ -32,6 +32,13 @@ Voluum tracking, clickid persistence, and first-party pixel all inject and fire 
 - Exact JavaScript implementation of the cookie setter/getter in `inject-tracking.mjs`.
 - Logic for handling multiple clickid variants in the URL params.
 
+### Integration Details Added
+- **D-08**: Voluum snippet must match the provided template precisely, including `delegate-ch` and `dtpcnt` opacity protection. (`https://link.scratchpayeasy.com`)
+- **D-09**: Use the provided `onSuccess` logic for LeadsGate conversion tracking, mapping `soldLead`, `rejectLead`, and `newLead` to the correct `dataLayer` events.
+- **D-10**: Update `SafeStorage` to use the 30-day cookie strategy instead of `sessionStorage`.
+- **D-11**: Ensure `onStepChange` and `onFormLoad` are correctly firing for conversion optimization.
+- **D-12**: Fix the issue where the first-party pixel is currently missing or not firing. Ensure `__fpPixel` is injected correctly and fires beacons.
+
 </decisions>
 
 <canonical_refs>
