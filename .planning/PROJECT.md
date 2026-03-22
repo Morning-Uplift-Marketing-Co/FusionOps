@@ -85,9 +85,21 @@ Import any template from bolt/loveable, inject brand variables + tracking correc
 
 ---
 
-## Current State: v1.2 Shipped
+## Current Milestone: v1.3 Template Reliability
 
-**Status:** ✓ Production Ready
+**Goal:** Any template created from TEMPLATE-PROMPT.md works end-to-end on first try — colors visible, Voluum tracking fires, apply page functional.
+
+**Target features:**
+- Default colors in global.css (ocean fallback) so templates show colors locally/preview without CI
+- Updated TEMPLATE-PROMPT.md with correct color defaults
+- Local inject script (`npm run inject`) to test full pipeline locally
+- Template validator that confirms color/tracking/apply/clickid readiness before deploy
+
+---
+
+## Previous: v1.2 Shipped
+
+**Status:** Production Ready
 **Shipped:** 2026-03-20
 **Milestones:** v1.0 (core pipeline) + v1.1 (preview UX + alpha test) + v1.2 (anti-FP vectors)
 **Test Coverage:** 91.66% (121+ tests, 100% passing)
