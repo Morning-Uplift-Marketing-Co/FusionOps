@@ -1,6 +1,6 @@
 # Roadmap: LP Factory
 
-**Updated:** 2026-03-20
+**Updated:** 2026-03-22
 **Mode:** YOLO (research-driven, parallelization enabled)
 
 ---
@@ -10,6 +10,7 @@
 - ✅ **v1.0 MVP** — Phases 1-3 (shipped 2026-03-20)
 - ✅ **v1.1 Preview UX & Alpha Validation** — Phases 1-2 (shipped 2026-03-20)
 - ✅ **v1.2 Anti-FP Vector Expansion** — Phase 3 (shipped 2026-03-20)
+- ◆ **v1.3 Template Reliability** — Phases 4-6
 
 ---
 
@@ -45,6 +46,42 @@ See `.planning/milestones/v1.2-ROADMAP.md` for full details.
 
 </details>
 
+## v1.3 Template Reliability
+
+### Phase 4: Color Defaults
+**Goal:** Templates display default colors (ocean palette) immediately in local dev and preview without CI injection
+
+**Requirements:** CLR-01, CLR-02
+
+**Success Criteria:**
+1. User can see default ocean colors in local dev environment (no build step needed)
+2. Global.css includes ocean HSL fallback for all color variables
+3. TEMPLATE-PROMPT.md instructs AI to include default HSL values instead of "LEAVE EMPTY"
+4. Existing templates remain unaffected (backwards compatible)
+
+### Phase 5: Tracking Verification
+**Goal:** Voluum tracking, clickid persistence, and first-party pixel all inject and fire correctly
+
+**Requirements:** TRK-01, TRK-02, TRK-03
+
+**Success Criteria:**
+1. Voluum dtpCallback injects correctly and fires pageview event
+2. GCLID/clickid captured from URL and persisted to sessionStorage
+3. Clickid passed through to apply page form submission
+4. First-party pixel (fpPixel) injects and fires pageview + form events
+5. All tracking fires observable in browser DevTools
+
+### Phase 6: Apply Page & Local Testing
+**Goal:** Apply page functional with LeadsGate form, plus local testing tooling
+
+**Requirements:** APPLY-01, TEST-01, TEST-02
+
+**Success Criteria:**
+1. apply.astro scaffolded with LeadsGate form + clickid passthrough
+2. `npm run inject` replicates full CI pipeline locally
+3. `npm run validate` reports color/tracking/pixel/apply/clickid readiness
+4. Validator output human-readable with clear pass/fail
+
 ---
 
 ## Progress
@@ -54,3 +91,6 @@ See `.planning/milestones/v1.2-ROADMAP.md` for full details.
 | 1. Preview UX | v1.1 | 6/6 | Complete | 2026-03-20 |
 | 2. Alpha Test | v1.1 | 3/3 | Complete | 2026-03-20 |
 | 3. Anti-FP Vectors | v1.2 | 5/5 | Complete | 2026-03-20 |
+| 4. Color Defaults | v1.3 | 0/? | Not started | - |
+| 5. Tracking Verification | v1.3 | 0/? | Not started | - |
+| 6. Apply & Local Testing | v1.3 | 0/? | Not started | - |
