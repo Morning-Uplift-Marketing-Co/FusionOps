@@ -1,0 +1,650 @@
+---
+// หน้า Landing Page หลักสำหรับ Loan Affiliate - Financial Options
+import Layout from '../layouts/Layout.astro';
+import TrustBadges from '../components/TrustBadges.astro';
+import APRTable from '../components/APRTable.astro';
+import Footer from '../components/Footer.astro';
+
+// อ่านค่า Environment Variables จาก deploy pipeline
+const brand     = import.meta.env.PUBLIC_BRAND     || 'LoanMatch';
+const h1        = import.meta.env.PUBLIC_H1        || 'Explore Your Financial Options Today';
+const sub       = import.meta.env.PUBLIC_SUB       || 'Compare online loan options from our network of trusted lenders — fast, secure, and no commitment required.';
+const cta       = import.meta.env.PUBLIC_CTA       || 'Check My Options';
+const aprMin    = import.meta.env.PUBLIC_APRMIN    || '5.99';
+const aprMax    = import.meta.env.PUBLIC_APRMAX    || '35.99';
+const amountMin = import.meta.env.PUBLIC_AMOUNTMIN || '1000';
+const amountMax = import.meta.env.PUBLIC_AMOUNTMAX || '50000';
+const phone     = import.meta.env.PUBLIC_PHONE     || '1-800-555-0100';
+const emailAddr = import.meta.env.PUBLIC_EMAIL     || 'support@example.com';
+
+// ค่าเริ่มต้นสำหรับ Calculator
+const defaultAmount = Math.round((Number(amountMin) + Number(amountMax)) / 2 / 1000) * 1000;
+const defaultApr    = Number(aprMin);
+---
+
+<Layout
+  title={`${brand} — Online Loan Options & Financial Solutions`}
+  description={`${brand}: Compare online loan options from our lender network. APR ${aprMin}%–${aprMax}%. Quick matching, no obligation. ${sub}`}
+>
+
+  <!-- ===== HERO SECTION ===== -->
+  <header class="relative bg-foreground text-white overflow-hidden">
+    <!-- Subtle background pattern -->
+    <div class="absolute inset-0 opacity-5">
+      <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+        <defs>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" stroke-width="1"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid)" />
+      </svg>
+    </div>
+
+    <!-- Gradient accent overlay -->
+    <div class="absolute inset-0 bg-gradient-to-br from-primary/30 via-transparent to-secondary/20 pointer-events-none"></div>
+
+    <div class="relative max-w-6xl mx-auto px-4 pt-16 pb-20 md:pt-24 md:pb-28">
+      <!-- Nav Bar -->
+      <nav class="flex justify-between items-center mb-12">
+        <div class="text-2xl font-bold tracking-tight">{brand}</div>
+        <a
+          href={`tel:${phone}`}
+          class="hidden sm:flex items-center gap-2 text-sm text-white/80 hover:text-white transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+          </svg>
+          {phone}
+        </a>
+      </nav>
+
+      <!-- Hero Content -->
+      <div class="grid md:grid-cols-2 gap-12 items-center">
+        <!-- Left: Headline + CTA -->
+        <div>
+          <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm text-white/90 text-xs font-medium px-3 py-1.5 rounded-full mb-6 border border-white/20">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            No obligation · No hard credit pull
+          </div>
+
+          <h1 class="text-3xl md:text-5xl font-extrabold leading-tight mb-5 tracking-tight">
+            {h1}
+          </h1>
+          <p class="text-white/75 text-base md:text-lg leading-relaxed mb-8 max-w-md">
+            {sub}
+          </p>
+
+          <!-- Zip Code Input Form -->
+          <form id="zip-form" class="flex flex-col sm:flex-row gap-3 max-w-md" novalidate>
+            <div class="flex-1 relative">
+              <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <input
+                id="zip-input"
+                type="text"
+                inputmode="numeric"
+                maxlength="5"
+                placeholder="Enter ZIP Code"
+                class="w-full bg-white text-gray-800 pl-10 pr-4 py-3.5 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-secondary placeholder-gray-400"
+                aria-label="ZIP Code"
+              />
+            </div>
+            <a
+              id="hero-cta"
+              href="/apply"
+              class="bg-primary text-white px-6 py-3.5 rounded-xl font-semibold text-sm hover:bg-primary/90 active:scale-95 transition-all shadow-lg shadow-primary/30 text-center whitespace-nowrap"
+            >
+              {cta}
+            </a>
+          </form>
+
+          <!-- Micro disclaimer under CTA -->
+          <p class="text-white/50 text-xs mt-3">
+            By continuing, you agree to our <span class="underline cursor-pointer" id="hero-terms-link">Terms</span> &amp; <span class="underline cursor-pointer" id="hero-privacy-link">Privacy Policy</span>. Submitting does not guarantee loan approval.
+          </p>
+        </div>
+
+        <!-- Right: Key Benefits Card -->
+        <div class="hidden md:block">
+          <div class="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-7 space-y-5">
+            <h3 class="font-semibold text-white text-lg mb-4">Why choose {brand}?</h3>
+            {[
+              { icon: 'M13 10V3L4 14h7v7l9-11h-7z', text: 'Fast matching — results in under 3 minutes' },
+              { icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', text: 'Bank-level security & data protection' },
+              { icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z', text: 'Compare multiple online loan options at once' },
+              { icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z', text: '300+ lenders in our network nationwide' },
+            ].map(item => (
+              <div class="flex items-start gap-3">
+                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-secondary/20 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d={item.icon} />
+                  </svg>
+                </div>
+                <span class="text-white/80 text-sm leading-snug pt-1">{item.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== TRUST BADGES ===== -->
+  <TrustBadges />
+
+  <!-- ===== HOW IT WORKS ===== -->
+  <section class="py-16 bg-background">
+    <div class="max-w-5xl mx-auto px-4">
+      <div class="text-center mb-12">
+        <h2 class="text-2xl md:text-3xl font-bold text-foreground mb-3">How It Works</h2>
+        <p class="text-gray-500">Three simple steps to explore your financial options</p>
+      </div>
+      <div class="grid md:grid-cols-3 gap-8">
+        {[
+          {
+            step: '01',
+            title: 'Enter Your Details',
+            desc: 'Provide basic information about your financial situation — takes less than 2 minutes.',
+            icon: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z',
+          },
+          {
+            step: '02',
+            title: 'See Matched Options',
+            desc: 'We instantly compare online loan options from our network of 300+ lenders to find potential matches.',
+            icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
+          },
+          {
+            step: '03',
+            title: 'Choose & Apply',
+            desc: 'Review offers and apply directly with your chosen lender. You are never obligated to accept any offer.',
+            icon: 'M5 13l4 4L19 7',
+          },
+        ].map(item => (
+          <div class="relative flex flex-col items-center text-center p-6 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+            <div class="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center text-xs font-bold shadow-md shadow-primary/30">
+              {item.step}
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 mt-4">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d={item.icon} />
+              </svg>
+            </div>
+            <h3 class="font-semibold text-foreground mb-2">{item.title}</h3>
+            <p class="text-gray-500 text-sm leading-relaxed">{item.desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PAYMENT CALCULATOR ===== -->
+  <section class="py-16 bg-white border-t border-gray-100" id="calculator">
+    <div class="max-w-4xl mx-auto px-4">
+      <div class="text-center mb-10">
+        <h2 class="text-2xl md:text-3xl font-bold text-foreground mb-3">Payment Calculator</h2>
+        <p class="text-gray-500 max-w-xl mx-auto">
+          Estimate your potential monthly payment. Actual rates and terms are set by the lender.
+        </p>
+      </div>
+
+      <div class="bg-gray-50 rounded-2xl p-6 md:p-8 border border-gray-100 shadow-sm">
+        <div class="grid md:grid-cols-2 gap-8">
+          <!-- ฝั่งซ้าย: Input Controls -->
+          <div class="space-y-7">
+
+            <!-- Loan Amount Slider -->
+            <div>
+              <div class="flex justify-between items-center mb-3">
+                <label for="calc-amount" class="text-sm font-semibold text-foreground">Loan Amount</label>
+                <span id="calc-amount-display" class="text-lg font-bold text-primary">$10,000</span>
+              </div>
+              <input
+                id="calc-amount"
+                type="range"
+                min={amountMin}
+                max={amountMax}
+                step="500"
+                value={defaultAmount}
+                class="range-slider w-full bg-primary/20"
+                aria-label="Loan Amount"
+              />
+              <div class="flex justify-between text-xs text-gray-400 mt-1.5">
+                <span>${Number(amountMin).toLocaleString()}</span>
+                <span>${Number(amountMax).toLocaleString()}</span>
+              </div>
+
+              <!-- Quick-select Amount Buttons -->
+              <div class="flex gap-2 mt-3 flex-wrap">
+                {[5000, 10000, 20000, 35000].filter(v => v >= Number(amountMin) && v <= Number(amountMax)).map(v => (
+                  <button
+                    type="button"
+                    class="calc-preset-amount text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-gray-600 hover:border-primary hover:text-primary hover:bg-primary/5 transition-colors font-medium"
+                    data-value={v}
+                  >
+                    ${v.toLocaleString()}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <!-- Loan Term Selector -->
+            <div>
+              <label class="text-sm font-semibold text-foreground block mb-3">Loan Term</label>
+              <div class="grid grid-cols-4 gap-2" role="radiogroup" aria-label="Loan Term">
+                {[12, 24, 36, 48, 60, 72, 84].slice(0, 4).map((m, i) => (
+                  <button
+                    type="button"
+                    class={`calc-term-btn text-sm rounded-xl py-2.5 font-medium transition-all border ${i === 2 ? 'bg-primary text-white border-primary shadow-md shadow-primary/20' : 'bg-white text-gray-600 border-gray-200 hover:border-primary hover:text-primary'}`}
+                    data-months={m}
+                    aria-pressed={i === 2 ? 'true' : 'false'}
+                  >
+                    {m}mo
+                  </button>
+                ))}
+              </div>
+              <div class="grid grid-cols-3 gap-2 mt-2">
+                {[12, 24, 36, 48, 60, 72, 84].slice(4).map(m => (
+                  <button
+                    type="button"
+                    class="calc-term-btn text-sm rounded-xl py-2.5 font-medium transition-all border bg-white text-gray-600 border-gray-200 hover:border-primary hover:text-primary"
+                    data-months={m}
+                    aria-pressed="false"
+                  >
+                    {m}mo
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <!-- APR Input -->
+            <div>
+              <div class="flex justify-between items-center mb-3">
+                <label for="calc-apr" class="text-sm font-semibold text-foreground">
+                  Est. APR
+                  <span class="ml-1 text-xs text-gray-400 font-normal">({aprMin}%–{aprMax}%)</span>
+                </label>
+                <div class="flex items-center gap-1">
+                  <input
+                    id="calc-apr"
+                    type="number"
+                    min={aprMin}
+                    max={aprMax}
+                    step="0.1"
+                    value={defaultApr}
+                    class="w-20 text-right border border-gray-200 rounded-lg px-2 py-1 text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary bg-white"
+                    aria-label="APR percentage"
+                  />
+                  <span class="text-sm text-gray-500">%</span>
+                </div>
+              </div>
+              <input
+                id="calc-apr-slider"
+                type="range"
+                min={aprMin}
+                max={aprMax}
+                step="0.1"
+                value={defaultApr}
+                class="range-slider w-full bg-secondary/20"
+                aria-label="APR Slider"
+              />
+            </div>
+          </div>
+
+          <!-- ฝั่งขวา: Output & Summary -->
+          <div class="flex flex-col">
+            <!-- Monthly Payment Display -->
+            <div class="bg-primary rounded-2xl p-6 text-white text-center flex-1 flex flex-col justify-center mb-5">
+              <p class="text-sm text-white/70 mb-1">Estimated Monthly Payment</p>
+              <div id="calc-monthly" class="text-5xl font-extrabold tracking-tight mb-1">$0</div>
+              <p class="text-xs text-white/50">Based on your inputs</p>
+            </div>
+
+            <!-- Breakdown Summary -->
+            <div class="bg-gray-50 border border-gray-100 rounded-xl p-4 space-y-3 text-sm">
+              <div class="flex justify-between">
+                <span class="text-gray-500">Principal Amount</span>
+                <span id="calc-principal" class="font-semibold text-foreground">$10,000</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-500">Total Interest</span>
+                <span id="calc-interest" class="font-semibold text-foreground">—</span>
+              </div>
+              <div class="flex justify-between border-t border-gray-200 pt-3">
+                <span class="text-gray-600 font-medium">Total Repayment</span>
+                <span id="calc-total" class="font-bold text-foreground">—</span>
+              </div>
+            </div>
+
+            <!-- CTA under calculator -->
+            <a
+              href="/apply"
+              class="mt-5 block w-full bg-primary text-white text-center py-3.5 rounded-xl font-semibold hover:bg-primary/90 active:scale-95 transition-all shadow-lg shadow-primary/25"
+            >
+              {cta}
+            </a>
+            <p class="text-center text-xs text-gray-400 mt-2">
+              No obligation. Checking options won't affect your credit score.
+            </p>
+          </div>
+        </div>
+
+        <!-- Amortization Schedule Toggle -->
+        <div class="mt-8 border-t border-gray-200 pt-6">
+          <button
+            id="toggle-amortization"
+            type="button"
+            class="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+            aria-expanded="false"
+          >
+            <svg id="amort-chevron" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+            View Amortization Schedule
+          </button>
+
+          <div id="amortization-table-wrap" class="hidden overflow-hidden mt-4">
+            <div class="overflow-x-auto max-h-72 no-scrollbar rounded-xl border border-gray-200">
+              <table class="w-full text-xs">
+                <thead class="sticky top-0 bg-foreground text-white">
+                  <tr>
+                    <th class="px-4 py-2.5 text-left">Month</th>
+                    <th class="px-4 py-2.5 text-right">Payment</th>
+                    <th class="px-4 py-2.5 text-right">Principal</th>
+                    <th class="px-4 py-2.5 text-right">Interest</th>
+                    <th class="px-4 py-2.5 text-right">Balance</th>
+                  </tr>
+                </thead>
+                <tbody id="amortization-body" class="divide-y divide-gray-100">
+                  <!-- Rows injected by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-center text-xs text-gray-400 mt-4">
+        This calculator provides estimates for informational purposes only. Actual loan terms, rates, and payments are determined solely by the lender.
+      </p>
+    </div>
+  </section>
+
+  <!-- ===== REPRESENTATIVE APR TABLE ===== -->
+  <APRTable aprMin={aprMin} aprMax={aprMax} />
+
+  <!-- ===== TESTIMONIALS ===== -->
+  <section class="py-16 bg-background">
+    <div class="max-w-5xl mx-auto px-4">
+      <div class="text-center mb-10">
+        <h2 class="text-2xl md:text-3xl font-bold text-foreground mb-3">What Our Users Say</h2>
+        <p class="text-gray-500">Experiences from people who used our matching service</p>
+      </div>
+      <div class="grid md:grid-cols-3 gap-6">
+        {[
+          { name: 'Sarah M.', location: 'Austin, TX', rating: 5, text: 'The process was straightforward and I had multiple financial options to review within minutes. Very transparent about terms and rates.' },
+          { name: 'James K.', location: 'Denver, CO', rating: 5, text: 'I appreciated that checking my options had no impact on my credit score. Found a great rate from one of their lending partners.' },
+          { name: 'Maria L.', location: 'Miami, FL', rating: 4, text: 'Easy to use, no pressure to accept any offer. The payment calculator helped me understand what I could afford before applying.' },
+        ].map(review => (
+          <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+            <div class="flex mb-3">
+              {Array.from({ length: review.rating }).map(() => (
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-accent" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+              ))}
+            </div>
+            <p class="text-gray-600 text-sm leading-relaxed mb-4">"{review.text}"</p>
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-primary font-semibold text-sm">
+                {review.name[0]}
+              </div>
+              <div>
+                <div class="text-sm font-semibold text-foreground">{review.name}</div>
+                <div class="text-xs text-gray-400">{review.location}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FINAL CTA SECTION ===== -->
+  <section class="py-16 bg-primary text-white">
+    <div class="max-w-3xl mx-auto px-4 text-center">
+      <h2 class="text-2xl md:text-3xl font-bold mb-4">Ready to Explore Your Financial Options?</h2>
+      <p class="text-white/75 mb-8 text-base leading-relaxed max-w-xl mx-auto">
+        Checking your options is free, fast, and won't affect your credit score.
+        See what online loan options may be available to you.
+      </p>
+      <a
+        href="/apply"
+        class="inline-block bg-white text-primary px-10 py-4 rounded-xl font-bold text-base hover:bg-white/90 active:scale-95 transition-all shadow-xl shadow-black/20"
+      >
+        {cta}
+      </a>
+      <p class="text-white/50 text-xs mt-4">
+        No commitment required. Not all applicants will qualify. Submitting your information does not guarantee loan approval.
+      </p>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <Footer brand={brand} phone={phone} email={emailAddr} />
+
+  <!-- ===== STICKY MOBILE CTA ===== -->
+  <div class="fixed bottom-0 left-0 right-0 z-40 p-3 bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-lg md:hidden" id="sticky-cta">
+    <a
+      href="/apply"
+      class="block w-full bg-primary text-white text-center py-3.5 rounded-xl font-bold text-sm hover:bg-primary/90 active:scale-95 transition-all shadow-md shadow-primary/25"
+    >
+      {cta} — No Credit Impact
+    </a>
+    <p class="text-center text-xs text-gray-400 mt-1.5">Not all applicants qualify. See terms.</p>
+  </div>
+
+</Layout>
+
+<script define:vars={{ amountMin, amountMax, aprMin, aprMax, defaultAmount, defaultApr }}>
+  // ===== PAYMENT CALCULATOR LOGIC =====
+  // สูตรคำนวณ Monthly Payment: M = P * [r(1+r)^n] / [(1+r)^n - 1]
+
+  // กำหนด state ปัจจุบัน
+  let currentAmount = defaultAmount;
+  let currentMonths = 36;
+  let currentApr    = defaultApr;
+
+  // ดึง DOM elements สำหรับ Calculator
+  const elAmount        = document.getElementById('calc-amount');
+  const elAmountDisplay = document.getElementById('calc-amount-display');
+  const elApr           = document.getElementById('calc-apr');
+  const elAprSlider     = document.getElementById('calc-apr-slider');
+  const elMonthly       = document.getElementById('calc-monthly');
+  const elPrincipal     = document.getElementById('calc-principal');
+  const elInterest      = document.getElementById('calc-interest');
+  const elTotal         = document.getElementById('calc-total');
+  const amortBody       = document.getElementById('amortization-body');
+
+  // ฟังก์ชันฟอร์แมตตัวเลขเป็นสกุลเงิน USD
+  const fmt = (n) => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  // ฟังก์ชันหลักคำนวณ payment และ amortization
+  function calculate() {
+    const P = currentAmount;
+    const r = currentApr / 100 / 12;  // อัตราดอกเบี้ยต่อเดือน
+    const n = currentMonths;
+
+    let monthly, totalInterest, totalPayment;
+
+    if (r === 0) {
+      // กรณีอัตราดอกเบี้ย 0%
+      monthly      = P / n;
+      totalInterest = 0;
+    } else {
+      // สูตร amortization มาตรฐาน
+      const factor = Math.pow(1 + r, n);
+      monthly      = P * (r * factor) / (factor - 1);
+      totalInterest = monthly * n - P;
+    }
+
+    totalPayment = P + totalInterest;
+
+    // อัพเดท UI
+    if (elMonthly)       elMonthly.textContent       = fmt(monthly);
+    if (elPrincipal)     elPrincipal.textContent     = fmt(P);
+    if (elInterest)      elInterest.textContent      = fmt(totalInterest);
+    if (elTotal)         elTotal.textContent         = fmt(totalPayment);
+
+    // สร้าง Amortization Schedule
+    buildAmortizationTable(P, r, n, monthly);
+  }
+
+  // สร้างตาราง Amortization Schedule แบบ real-time
+  function buildAmortizationTable(P, r, n, monthly) {
+    if (!amortBody) return;
+    let balance = P;
+    const rows  = [];
+
+    for (let i = 1; i <= n; i++) {
+      const interest  = balance * r;
+      const principal = monthly - interest;
+      balance         = Math.max(0, balance - principal);
+
+      rows.push(`
+        <tr class="${i % 2 === 0 ? 'bg-gray-50/50' : ''}">
+          <td class="px-4 py-2 text-gray-600">${i}</td>
+          <td class="px-4 py-2 text-right text-gray-700">${fmt(monthly)}</td>
+          <td class="px-4 py-2 text-right text-secondary font-medium">${fmt(principal)}</td>
+          <td class="px-4 py-2 text-right text-gray-500">${fmt(interest)}</td>
+          <td class="px-4 py-2 text-right font-medium text-foreground">${fmt(balance)}</td>
+        </tr>
+      `);
+    }
+
+    amortBody.innerHTML = rows.join('');
+  }
+
+  // Event: เปลี่ยน Loan Amount slider
+  elAmount?.addEventListener('input', (e) => {
+    currentAmount = Number(e.target.value);
+    if (elAmountDisplay) elAmountDisplay.textContent = '$' + currentAmount.toLocaleString();
+    calculate();
+  });
+
+  // Event: เปลี่ยน APR text input
+  elApr?.addEventListener('input', (e) => {
+    let val = Math.min(Math.max(Number(e.target.value), Number(aprMin)), Number(aprMax));
+    currentApr = val;
+    if (elAprSlider) elAprSlider.value = String(val);
+    calculate();
+  });
+
+  // Event: เปลี่ยน APR slider
+  elAprSlider?.addEventListener('input', (e) => {
+    currentApr = Number(e.target.value);
+    if (elApr) elApr.value = String(currentApr);
+    calculate();
+  });
+
+  // Event: เลือก Term Buttons
+  document.querySelectorAll('.calc-term-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentMonths = Number(btn.dataset.months);
+
+      // อัพเดท style ของปุ่ม
+      document.querySelectorAll('.calc-term-btn').forEach(b => {
+        b.classList.remove('bg-primary', 'text-white', 'border-primary', 'shadow-md', 'shadow-primary/20');
+        b.classList.add('bg-white', 'text-gray-600', 'border-gray-200');
+        b.setAttribute('aria-pressed', 'false');
+      });
+      btn.classList.add('bg-primary', 'text-white', 'border-primary', 'shadow-md', 'shadow-primary/20');
+      btn.classList.remove('bg-white', 'text-gray-600', 'border-gray-200');
+      btn.setAttribute('aria-pressed', 'true');
+
+      calculate();
+    });
+  });
+
+  // Event: Quick-select Amount Preset Buttons
+  document.querySelectorAll('.calc-preset-amount').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const val    = Number(btn.dataset.value);
+      currentAmount = val;
+      if (elAmount)        elAmount.value              = String(val);
+      if (elAmountDisplay) elAmountDisplay.textContent  = '$' + val.toLocaleString();
+      calculate();
+    });
+  });
+
+  // Event: Toggle Amortization Schedule
+  const toggleBtn    = document.getElementById('toggle-amortization');
+  const amortWrap    = document.getElementById('amortization-table-wrap');
+  const amortChevron = document.getElementById('amort-chevron');
+
+  toggleBtn?.addEventListener('click', () => {
+    const isHidden = amortWrap?.classList.contains('hidden');
+    amortWrap?.classList.toggle('hidden', !isHidden);
+    amortChevron?.classList.toggle('rotate-180', isHidden);
+    toggleBtn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+  });
+
+  // คำนวณครั้งแรกเมื่อโหลดหน้า
+  calculate();
+
+  // ===== ZIP CODE FORM =====
+  // เพิ่ม zip code ต่อท้าย URL apply เมื่อ submit
+  const zipForm  = document.getElementById('zip-form');
+  const zipInput = document.getElementById('zip-input');
+  const heroCta  = document.getElementById('hero-cta');
+
+  zipForm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const zip = zipInput?.value?.trim();
+    if (zip && /^\d{5}$/.test(zip)) {
+      heroCta.href = `/apply?zip=${zip}`;
+    }
+    heroCta?.click();
+  });
+
+  // อัพเดท href เมื่อพิมพ์ zip code
+  zipInput?.addEventListener('input', (e) => {
+    const zip = e.target.value.trim();
+    if (heroCta) {
+      heroCta.href = zip.length === 5 && /^\d{5}$/.test(zip)
+        ? `/apply?zip=${zip}`
+        : '/apply';
+    }
+  });
+
+  // ===== FOOTER MODAL LINKS IN HERO =====
+  // เชื่อม link ใน hero กับ modal ใน footer
+  document.getElementById('hero-terms-link')?.addEventListener('click', () => {
+    document.getElementById('open-terms')?.click();
+  });
+  document.getElementById('hero-privacy-link')?.addEventListener('click', () => {
+    document.getElementById('open-privacy')?.click();
+  });
+
+  // ===== STICKY CTA HIDE ON SCROLL UP =====
+  // ซ่อน sticky CTA เมื่อ scroll ถึง footer เพื่อไม่บัง content
+  const stickyCta = document.getElementById('sticky-cta');
+  let lastScroll  = 0;
+
+  window.addEventListener('scroll', () => {
+    const scrollTop        = window.scrollY;
+    const docHeight        = document.documentElement.scrollHeight;
+    const winHeight        = window.innerHeight;
+    const nearBottom       = scrollTop + winHeight > docHeight - 200;
+
+    if (stickyCta) {
+      stickyCta.style.transform = nearBottom ? 'translateY(100%)' : 'translateY(0)';
+      stickyCta.style.transition = 'transform 0.3s ease';
+    }
+    lastScroll = scrollTop;
+  }, { passive: true });
+</script>

@@ -1,0 +1,51 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Hero from '../components/Hero.astro';
+import HowItWorks from '../components/HowItWorks.astro';
+import Calculator from '../components/Calculator.astro';
+import APRTable from '../components/APRTable.astro';
+import Testimonials from '../components/Testimonials.astro';
+import Eligibility from '../components/Eligibility.astro';
+import FAQ from '../components/FAQ.astro';
+import Footer from '../components/Footer.astro';
+
+const brand = import.meta.env.PUBLIC_BRAND || 'GoldRush Lending';
+---
+
+<Layout
+  title={`${brand} — Premium Installment Loans Up to $35,000`}
+  description="Apply for a personal installment loan in minutes. Fixed monthly payments, competitive APR, no hidden fees. Borrow $1,000–$35,000."
+>
+  <Hero />
+  <HowItWorks />
+  <hr class="section-divider" />
+  <Calculator />
+  <hr class="section-divider" />
+  <APRTable />
+  <hr class="section-divider" />
+  <Testimonials />
+  <hr class="section-divider" />
+  <Eligibility />
+  <hr class="section-divider" />
+  <FAQ />
+  <Footer />
+
+  <style is:inline>
+    @media (max-width: 768px) {
+      body { padding-bottom: 88px; }
+    }
+  </style>
+
+  <script is:inline>
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -32px 0px' });
+
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  </script>
+</Layout>
