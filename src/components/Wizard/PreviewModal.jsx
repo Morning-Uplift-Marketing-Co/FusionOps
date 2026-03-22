@@ -79,10 +79,8 @@ export function PreviewModal({
   const canShowFingerprint = hasFingerprinted;
 
   const openInNewTab = () => {
-    if (!currentHtml) return;
-    const blob = new Blob([currentHtml], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    window.open(url, "_blank");
+    if (!templateId) return;
+    window.open(`/templates/${templateId}/dist/index.html`, "_blank");
   };
 
   return (
@@ -157,13 +155,13 @@ export function PreviewModal({
               marginTop: '16px'
             }}
           >
-            {currentHtml ? (
+            {templateId ? (
               <iframe
                 ref={iframeRef}
                 title="Template Preview"
                 data-testid="preview-iframe"
                 sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
-                srcDoc={currentHtml}
+                src={`/templates/${templateId}/dist/index.html`}
                 style={{
                   width: '100%',
                   height: '100%',
