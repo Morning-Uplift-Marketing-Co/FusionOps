@@ -1,0 +1,44 @@
+{
+  "brand": "GoldRush Lending",
+  "variant": "goldrush-ocean",
+  "domain": "goldrush-lending.com",
+
+  "colors": {
+    "primary": "217 91% 35%",
+    "secondary": "158 64% 42%",
+    "accent": "15 92% 62%",
+    "background": "210 40% 98%",
+    "foreground": "222 47% 11%"
+  },
+  "radius": "0.75rem",
+  "font": "DM Sans",
+  "fontFamily": "DM Sans",
+  "colorId": "ocean",
+  "fontId": "dm-sans",
+  "radiusId": "rounded",
+
+  "content": {
+    "brand": "GoldRush Lending",
+    "h1": "Explore Your Financial Options Today",
+    "sub": "Compare online loan options from our network of trusted lenders.",
+    "cta": "Check My Options",
+    "phone": "1-800-555-0100",
+    "email": "support@goldrush-lending.com"
+  },
+
+  "loan": {
+    "amountMin": 1000,
+    "amountMax": 50000,
+    "aprMin": 5.99,
+    "aprMax": 35.99
+  },
+
+  "tracking": {
+    "conversionId": "",
+    "formStartLabel": "",
+    "formSubmitLabel": "",
+    "aid": "",
+    "voluumDomain": "",
+    "voluumClickUrl": ""
+  }
+}
