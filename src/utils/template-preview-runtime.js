@@ -103,6 +103,16 @@ export function buildPreviewHtml(files, site = {}, colors = null) {
 // ─── Raw HTML Extraction ─────────────────────────────────────────────────────
 
 function extractRawHtml(files, entry, framework) {
+  // Prefer dist/index.html if it exists (pre-built by user/CI)
+  const distHtmlPaths = [
+    'dist/index.html',
+    'out/index.html',
+    'build/index.html'
+  ];
+  for (const path of distHtmlPaths) {
+    if (files[path]) return files[path];
+  }
+
   if (!entry.path) {
     // Last resort: try to find any HTML file
     const htmlKey = Object.keys(files).find(k => k.endsWith('.html'));
