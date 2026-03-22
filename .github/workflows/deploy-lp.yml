@@ -239,6 +239,17 @@ jobs:
             echo "apply.html already exists in build output — skipping generation"
           fi
 
+          # Pages serves /apply/ from dist/apply/index.html; flat dist/apply.html alone leaves /apply/ empty.
+          if [ -f dist/apply.html ] && [ ! -f dist/apply/index.html ]; then
+            mkdir -p dist/apply
+            cp dist/apply.html dist/apply/index.html
+            echo "Mirrored dist/apply.html → dist/apply/index.html for /apply/"
+          fi
+          if [ -f dist/apply/index.html ] && [ ! -f dist/apply.html ]; then
+            cp dist/apply/index.html dist/apply.html
+            echo "Mirrored dist/apply/index.html → dist/apply.html for /apply"
+          fi
+
       - name: Deploy to Cloudflare Pages
         id: deploy
         working-directory: ${{ steps.template.outputs.dir }}
