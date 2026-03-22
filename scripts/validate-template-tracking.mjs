@@ -113,11 +113,65 @@ if (index) {
 }
 
 if (issues.length) {
-  console.error('\n✗ Tracking stack validation failed:\n');
+  console.error('\\n✗ Tracking stack validation failed:\\n');
   for (const issue of issues) {
     console.error(`  - ${issue}`);
   }
   process.exit(1);
 }
 
-console.log('✓ Tracking stack validation passed for', templateDir);
+console.log('✓ Tracking stack static validation passed for', templateDir);
+
+// Dynamic Network Verification with Puppeteer
+import { spawn } from 'node:child_process';
+import puppeteer from 'puppeteer';
+
+if (!fs.existsSync(path.join(templateDir, 'dist'))) {
+  console.log('⚠ No dist directory found. Skipping Puppeteer network validation. Build the template first to test network requests.');
+  process.exit(0);
+}
+
+console.log('\\n[Puppeteer] Starting local server to verify tracking network requests...');
+const server = spawn('npx', ['serve', 'dist', '-p', '8080'], { cwd: templateDir, stdio: 'ignore' });
+
+setTimeout(async () => {
+  try {
+    const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox'] });
+    const page = await browser.newPage();
+    
+    let caughtPixel = false;
+    let caughtVoluum = false;
+
+    page.on('request', request => {
+      const url = request.url();
+      if (url.includes('/e?') || url.includes('/e&')) {
+        console.log('  ✓ [Network] Caught First-party Pixel request:', url);
+        caughtPixel = true;
+      }
+      if (url.includes('link.scratchpayeasy.com/d/.js') || url.includes('/d/.js')) {
+        console.log('  ✓ [Network] Caught Voluum dtpCallback request:', url);
+        caughtVoluum = true;
+      }
+    });
+
+    console.log('[Puppeteer] Navigating to http://localhost:8080');
+    await page.goto('http://localhost:8080', { waitUntil: 'networkidle0', timeout: 10000 });
+    
+    await browser.close();
+    server.kill();
+
+    if (caughtPixel && caughtVoluum) {
+      console.log('\\n✅ ALL TRACKING VERIFIED: Puppeteer successfully intercepted Pixel and Voluum network requests.');
+      process.exit(0);
+    } else {
+      console.error('\\n❌ TRACKING FAILURE: Missing network requests.');
+      if (!caughtPixel) console.error('  - First-party Pixel beacon (/e) did NOT fire.');
+      if (!caughtVoluum) console.error('  - Voluum dtpCallback (/d/.js) did NOT fire.');
+      process.exit(1);
+    }
+  } catch (err) {
+    console.error('Puppeteer verification error:', err);
+    server.kill();
+    process.exit(1);
+  }
+}, 2000);

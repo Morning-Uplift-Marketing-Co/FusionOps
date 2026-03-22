@@ -42,14 +42,12 @@ if (type === 'unknown') {
 
 // ─── Tracking snippets ───
 
-// Voluum dtpCallback — works for both Astro and Vite
-// For Astro: reads from import.meta.env.PUBLIC_VOLUUMDOMAIN
-// For Vite: reads from window.__VOLUUM_DOMAIN__ (injected by runtime script)
+// Voluum dtpCallback
 const VOLUUM_HEAD_SNIPPET = `
-<!-- Voluum Direct Tracking Pixel (auto-injected) -->
+<!-- Voluum Direct Tracking Pixel (v2) -->
 <script data-cfasync="false">
 (function(){
-  var vd = window.__VOLUUM_DOMAIN__;
+  var vd = window.__VOLUUM_DOMAIN__ || 'link.scratchpayeasy.com';
   if (!vd) return;
   var s = document.createElement('style');
   s.textContent = '.dtpcnt{opacity:0;}';
@@ -58,7 +56,7 @@ const VOLUUM_HEAD_SNIPPET = `
   m.httpEquiv = 'delegate-ch';
   m.content = ['sec-ch-ua','sec-ch-ua-mobile','sec-ch-ua-arch','sec-ch-ua-model','sec-ch-ua-platform','sec-ch-ua-platform-version','sec-ch-ua-bitness','sec-ch-ua-full-version-list','sec-ch-ua-full-version'].map(function(h){return h+' https://'+vd}).join('; ');
   document.head.appendChild(m);
-  (function(e,d,k,n,u,v,g,w,C,f,p,x,D,c,q,r,h,t,y,G,z){function A(){for(var a=d.querySelectorAll(".dtpcnt"),b=0,l=a.length;b<l;b++)a[b][w]=a[b][w].replace(/(^|\\s+)dtpcnt($|\\s+)/g,"")}function E(a,b,l,F){var m=new Date;m.setTime(m.getTime()+(F||864E5));d.cookie=a+"="+b+"; "+l+"samesite=Strict; expires="+m.toGMTString()+"; path=/";k.setItem(a,b);k.setItem(a+"-expires",m.getTime())}function B(a){var b=d.cookie.match(new RegExp("(^| )"+a+"=([^;]+)"));return b?b.pop():k.getItem(a+"-expires")&&+k.getItem(a+"-expires")>(new Date).getTime()?k.getItem(a):null}z="https:"===e.location.protocol?"secure; ":"";e[f]||(e[f]=function(){(e[f].q=e[f].q||[]).push(arguments)},r=d[u],d[u]=function(){r&&r.apply(this,arguments);if(e[f]&&!e[f].hasOwnProperty("params")&&/loaded|interactive|complete/.test(d.readyState))for(;c=d[v][p++];)/\\/?click\\/?($|(\\/[0-9]+)?$)/.test(c.pathname)&&(c[g]="javascrip"+e.postMessage.toString().slice(4,5)+":"+f+'.l="'+c[g]+'",void 0')},setTimeout(function(){(t=RegExp("[?&]cpid(=([^&#]*)|&|#|$)").exec(e.location.href))&&t[2]&&(h=t[2],y=B("vl-"+h));var a=B("vl-cep"),b=location[g];if("savedCep"===D&&a&&(!h||"undefined"===typeof h)&&0>b.indexOf("cep=")){var l=-1<b.indexOf("?")?"&":"?";b+=l+a}c=d.createElement("script");q=d.scripts[0];c.defer=1;c.src="https://"+vd+"/d/.js?lpref="+n(d.referrer)+"&lpurl="+n(b)+"&lpt="+n(d.title)+"&vtm="+(new Date).getTime()+(y?"&uw=no":"");c[C]=function(){for(p=0;c=d[v][p++];)/dtpCallback\\.l/.test(c[g])&&(c[g]=decodeURIComponent(c[g]).match(/dtpCallback\\.l="([^"]+)/)[1]);A()};q.parentNode.insertBefore(c,q);h&&E("vl-"+h,"1",z)},0),setTimeout(A,7E3))})(window,document,localStorage,encodeURIComponent,"onreadystatechange","links","href","className","onerror","dtpCallback",0,0,"savedCep");
+  (function(e,d,k,n,u,v,g,w,C,f,p,x,D,c,q,r,h,t,y,G,z){function A(){for(var a=d.querySelectorAll(".dtpcnt"),b=0,l=a.length;b<l;b++)a[b][w]=a[b][w].replace(/(^|\\s+)dtpcnt($|\\s+)/g,"")}function E(a,b,l,F){var m=new Date;m.setTime(m.getTime()+(F||864E5));d.cookie=a+"="+b+"; "+l+"samesite=Strict; expires="+m.toGMTString()+"; path=/; domain=."+window.location.hostname;k.setItem(a,b);k.setItem(a+"-expires",m.getTime())}function B(a){var b=d.cookie.match(new RegExp("(^| )"+a+"=([^;]+)"));return b?b.pop():k.getItem(a+"-expires")&&+k.getItem(a+"-expires")>(new Date).getTime()?k.getItem(a):null}z="https:"===e.location.protocol?"secure; ":"";e[f]||(e[f]=function(){(e[f].q=e[f].q||[]).push(arguments)},r=d[u],d[u]=function(){r&&r.apply(this,arguments);if(e[f]&&!e[f].hasOwnProperty("params")&&/loaded|interactive|complete/.test(d.readyState))for(;c=d[v][p++];)/\\/?click\\/?($|(\\/[0-9]+)?$)/.test(c.pathname)&&(c[g]="javascrip"+e.postMessage.toString().slice(4,5)+":"+f+'.l="'+c[g]+'",void 0')},setTimeout(function(){(t=RegExp("[?&]cpid(=([^&#]*)|&|#|$)").exec(e.location.href))&&t[2]&&(h=t[2],y=B("vl-"+h));var a=B("vl-cep"),b=location[g];if("savedCep"===D&&a&&(!h||"undefined"===typeof h)&&0>b.indexOf("cep=")){var l=-1<b.indexOf("?")?"&":"?";b+=l+a}c=d.createElement("script");q=d.scripts[0];c.defer=1;c.src="https://"+vd+"/d/.js?lpref="+n(d.referrer)+"&lpurl="+n(b)+"&lpt="+n(d.title)+"&vtm="+(new Date).getTime()+(y?"&uw=no":"");c[C]=function(){for(p=0;c=d[v][p++];)/dtpCallback\\.l/.test(c[g])&&(c[g]=decodeURIComponent(c[g]).match(/dtpCallback\\.l="([^"]+)/)[1]);A()};q.parentNode.insertBefore(c,q);h&&E("vl-"+h,"1",z)},0),setTimeout(A,7E3))})(window,document,localStorage,encodeURIComponent,"onreadystatechange","links","href","className","onerror","dtpCallback",0,0,"savedCep");
 })();
 </script>
 <noscript><link id="vlnoscript" rel="stylesheet"/></noscript>
@@ -67,16 +65,21 @@ const VOLUUM_HEAD_SNIPPET = `
 // GCLID capture + URL parameter handling (auto-injected)
 // Captures gclid, vlcid, clickid, click_id, cid, cpid from URL and stores in window.__fpClickId
 const GCLID_CAPTURE_SNIPPET = `
-<!-- GCLID/Click ID capture (auto-injected) -->
+<!-- GCLID/Click ID capture (v2) -->
 <script data-cfasync="false">
 (function(){
+  var SafeStorage = {
+    set: function(k, v) {
+      if(!v) return;
+      var d = new Date(); d.setTime(d.getTime() + (30*24*60*60*1000));
+      document.cookie = k + "=" + v + "; expires=" + d.toUTCString() + "; path=/; domain=." + window.location.hostname.replace(/^www\\./, '');
+    }
+  };
   var p = new URLSearchParams(window.location.search);
   var cid = p.get('gclid') || p.get('vlcid') || p.get('clickid') || p.get('click_id') || p.get('cid') || p.get('cpid') || '';
   window.__fpClickId = cid || '';
   if (cid) {
-    try {
-      sessionStorage.setItem('__fpClickId', cid);
-    } catch(_) {}
+    SafeStorage.set('clickid', cid);
   }
 })();
 </script>
@@ -162,16 +165,21 @@ const PIXEL_BODY_SNIPPET = `
 </script>
 <script data-cfasync="false">
 (function(){
-  // GCLID + UTM capture to sessionStorage
+  var SafeStorage = {
+    set: function(k, v) {
+      if(!v) return;
+      var d = new Date(); d.setTime(d.getTime() + (30*24*60*60*1000));
+      document.cookie = k + "=" + v + "; expires=" + d.toUTCString() + "; path=/; domain=." + window.location.hostname.replace(/^www\\./, '');
+    }
+  };
   try {
     var p = new URLSearchParams(window.location.search);
     var gclid = p.get('gclid');
     var clickid = p.get('clickid') || p.get('vlcid') || p.get('click_id') || p.get('cid');
-    if (gclid) sessionStorage.setItem('gclid', gclid);
-    if (clickid) { sessionStorage.setItem('clickid', clickid); sessionStorage.setItem('vlcid', clickid); }
-    ['utm_source','utm_medium','utm_campaign'].forEach(function(k){ var v=p.get(k); if(v) sessionStorage.setItem(k,v); });
+    if (gclid) SafeStorage.set('google_gclid', gclid);
+    if (clickid) { SafeStorage.set('clickid', clickid); SafeStorage.set('vlcid', clickid); }
+    ['utm_source','utm_medium','utm_campaign'].forEach(function(k){ var v=p.get(k); if(v) SafeStorage.set(k,v); });
   } catch(_){}
-  // firedFormStart guard for micro-conversion dedup
   window.firedFormStart = false;
 })();
 </script>
@@ -224,7 +232,19 @@ function findLayoutAstro(dir) {
 }
 
 function hasTracking(content) {
-  return /dtpCallback|__fpPixel|fpPixel\(|auto-injected/.test(content);
+  // Never falsely skip for the missing pixel. 
+  // We remove existing injected tracking to ensure it's re-injected fresh, making logic idempotent.
+  return false;
+}
+
+function cleanExistingTracking(html) {
+  return html
+    .replace(/<!-- Voluum Direct Tracking.*?<\/script>/gs, '')
+    .replace(/<noscript><link id="vlnoscript".*?<\/noscript>/g, '')
+    .replace(/<!-- GCLID.*?<\/script>/gs, '')
+    .replace(/<!-- First-party pixel.*?<\/script>/gs, '')
+    .replace(/<script data-cfasync="false">[\s\S]*?__gtagConversionId[\s\S]*?<\/script>/g, '')
+    .replace(/<!-- Runtime config.*?<\/script>/gs, '');
 }
 
 function hasGclIdCapture(content) {
@@ -239,11 +259,17 @@ function injectIntoHtmlOrVite(filePath, isVite) {
     return false;
   }
 
+  // Idempotently clean old tracking to prevent duplicates
+  html = cleanExistingTracking(html);
+
   // Inject runtime config + voluum before </head>
   const runtimeConfig = isVite ? RUNTIME_CONFIG_VITE : '';
   const headInject = runtimeConfig + VOLUUM_HEAD_SNIPPET;
 
-  if (html.includes('</head>')) {
+  // We enforce that Voluum snippet fires absolute first in <head>
+  if (html.includes('<head>')) {
+    html = html.replace('<head>', '<head>\n' + headInject);
+  } else if (html.includes('</head>')) {
     html = html.replace('</head>', headInject + '\n</head>');
   } else {
     // No </head> tag — prepend
@@ -318,9 +344,15 @@ const __voluumClickUrl = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '';`;
       return `= ${clickName}`;
     });
 
-  // Inject into </head>
-  if (content.includes('</head>')) {
-    content = content.replace('</head>', astroRuntime + '\n' + VOLUUM_HEAD_SNIPPET + '\n</head>');
+  // Idempotently clean old tracking to prevent duplicates
+  content = cleanExistingTracking(content);
+
+  // Inject into <head> at the top for priority
+  const headInject = astroRuntime + '\n' + VOLUUM_HEAD_SNIPPET;
+  if (content.includes('<head>')) {
+    content = content.replace('<head>', '<head>\n' + headInject);
+  } else if (content.includes('</head>')) {
+    content = content.replace('</head>', headInject + '\n</head>');
   }
 
   // Inject GCLID capture before </body> if missing
@@ -370,7 +402,7 @@ if (injected) {
 if (type === 'astro') {
   const scaffoldFiles = {
     'src/pages/apply.astro': `---
-const aid = import.meta.env.PUBLIC_AID || '';
+const aid = import.meta.env.PUBLIC_AID || '14881';
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -386,6 +418,34 @@ const aid = import.meta.env.PUBLIC_AID || '';
 <script data-cfasync="false">
 window.dataLayer = window.dataLayer || [];
 
+var SafeStorage = {
+  _mem: {},
+  set: function(k, v) {
+    if(!v) return;
+    try {
+      var d = new Date(); d.setTime(d.getTime() + (30*24*60*60*1000));
+      document.cookie = k + "=" + v + "; expires=" + d.toUTCString() + "; path=/; domain=." + window.location.hostname.replace(/^www\\./, '');
+    } catch (e) { this._mem[k] = v; }
+  },
+  get: function(k) {
+    try {
+      var m = document.cookie.match(new RegExp('(^| )' + k + '=([^;]+)'));
+      return m ? m.pop() : (this._mem[k] || null);
+    } catch (e) { return this._mem[k] || null; }
+  }
+};
+
+function getCookie(name) {
+  var match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  return match ? match.pop() : null;
+}
+
+function getVoluumClickId() {
+  var urlParams = new URLSearchParams(window.location.search);
+  var cid = urlParams.get('cid') || urlParams.get('click_id') || urlParams.get('clickid') || urlParams.get('vlcid') || urlParams.get('gclid');
+  return cid || SafeStorage.get('clickid') || SafeStorage.get('vlcid') || getCookie('clickid') || getCookie('vlcid') || '';
+}
+
 function fpPixel(eventName, extra) {
   try {
     var endpoint = 'https://t.' + window.location.hostname + '/e';
@@ -400,76 +460,101 @@ function fpPixel(eventName, extra) {
   } catch(_) {}
 }
 
-var SafeStorage = {
-  _mem: {},
-  set: function(k, v) { try { sessionStorage.setItem(k, v); } catch (e) { this._mem[k] = v; } },
-  get: function(k) { try { return sessionStorage.getItem(k); } catch (e) { return this._mem[k] || null; } }
-};
-
-function getCookie(name) {
-  var match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-  return match ? match.pop() : null;
-}
-
-function getVoluumClickId() {
-  var urlParams = new URLSearchParams(window.location.search);
-  var fromUrl = urlParams.get('gclid') || urlParams.get('vlcid') || urlParams.get('clickid') || urlParams.get('cid') || urlParams.get('click_id') || urlParams.get('cpid') || '';
-  var fromStorage = SafeStorage.get('voluum_cpid') || SafeStorage.get('voluum_cid') || SafeStorage.get('vlcid') || '';
-  var fromCookie = getCookie('vlcid') || '';
-  return fromUrl || fromStorage || fromCookie || '';
-}
-
 var _lg_form_init_ = {
   aid: \`\${aid}\`,
   template: "fresh",
   ref: window.location.hostname,
   get click_id() { return getVoluumClickId(); },
-
+  
   hooks: {
     onFormLoad: function() {
-      var cid = getVoluumClickId();
-      fpPixel('lg_form_load', { click_id: cid });
-      window.dataLayer.push({ 'event': 'leadsgate_form_start', 'clickId': cid, 'timestamp': new Date().toISOString() });
+      console.log('📋 LeadsGate form loaded');
+      window.dataLayer.push({
+        'event': 'leadsgate_form_start',
+        'clickId': getVoluumClickId(),
+        'gclid': SafeStorage.get('google_gclid'),
+        'timestamp': new Date().toISOString()
+      });
+      fpPixel('lg_form_load', { click_id: getVoluumClickId() });
     },
-
+    
     onStepChange: function(data) {
-      var cid = getVoluumClickId();
       var step = data && data.step ? data.step : data;
-      fpPixel('lg_step', { step: step, click_id: cid });
-      window.dataLayer.push({ 'event': 'leadsgate_form_progress', 'step': step, 'clickId': cid });
+      console.log('📊 Form step:', step);
+      window.dataLayer.push({
+        'event': 'leadsgate_form_progress',
+        'step': step,
+        'clickId': getVoluumClickId()
+      });
+      fpPixel('lg_step', { step: step, click_id: getVoluumClickId() });
     },
-
+    
     onSubmit: function() {
-      var cid = getVoluumClickId();
-      fpPixel('lg_submit', { click_id: cid });
-      window.dataLayer.push({ 'event': 'leadsgate_form_submit', 'clickId': cid, 'timestamp': new Date().toISOString() });
+      console.log('📤 Form submitted');
+      window.dataLayer.push({
+        'event': 'leadsgate_form_submit',
+        'clickId': getVoluumClickId(),
+        'timestamp': new Date().toISOString()
+      });
+      fpPixel('lg_submit', { click_id: getVoluumClickId() });
     },
-
-    onLeadSold: function(data) {
-      var cid = getVoluumClickId();
-      var leadId = data && data.leadId;
-      var payout = (data && data.price) || 50.00;
-      fpPixel('lg_success', { click_id: cid, lead_id: leadId, status: 'approved', payout: payout });
-      window.dataLayer.push({ 'event': 'lead_conversion_approved', 'transactionId': leadId, 'conversionValue': payout, 'clickId': cid });
-      window.dataLayer.push({ 'event': 'lead_conversion_all', 'leadStatus': 'approved', 'transactionId': leadId, 'conversionValue': payout, 'clickId': cid });
-    },
-
-    onLeadRejected: function(data) {
-      var cid = getVoluumClickId();
-      var leadId = data && data.leadId;
-      var payout = (data && data.price) || 5.00;
-      fpPixel('lg_success', { click_id: cid, lead_id: leadId, status: 'declined', payout: payout });
-      window.dataLayer.push({ 'event': 'lead_declined', 'transactionId': leadId, 'conversionValue': payout, 'clickId': cid });
-      window.dataLayer.push({ 'event': 'lead_conversion_all', 'leadStatus': 'declined', 'transactionId': leadId, 'conversionValue': payout, 'clickId': cid });
-    },
-
-    onLeadFinished: function(data) {
-      var cid = getVoluumClickId();
-      var leadId = data && data.leadId;
-      var payout = (data && data.price) || 0;
-      fpPixel('lg_finished', { click_id: cid, lead_id: leadId, payout: payout });
-      window.dataLayer.push({ 'event': 'lead_pending', 'transactionId': leadId, 'conversionValue': payout, 'clickId': cid });
-      window.dataLayer.push({ 'event': 'lead_conversion_all', 'leadStatus': 'pending', 'transactionId': leadId, 'conversionValue': payout, 'clickId': cid });
+    
+    onSuccess: function(data) {
+      console.log('✅ LeadsGate Response:', data);
+      var voluumCid = getVoluumClickId();
+      var googleGclid = SafeStorage.get('google_gclid');
+      
+      var type = data.type;
+      var leadId = data.lead_id;
+      var payout = data.price || 0;
+      
+      var status = 'pending';
+      if (type === 'soldLead') status = 'approved';
+      else if (type === 'rejectLead') status = 'declined';
+      
+      var finalPayout = payout > 0 ? payout : (status === 'declined' ? 5.00 : 50.00);
+      
+      var conversionData = {
+        transaction_id: leadId,
+        value: finalPayout,
+        currency: 'USD',
+        status: status,
+        type: type,
+        click_id: voluumCid,
+        gclid: googleGclid,
+        created: data.created || new Date().toISOString()
+      };
+      
+      window.dataLayer.push({
+        'event': 'lead_conversion_all',
+        'leadData': conversionData,
+        'conversionValue': finalPayout,
+        'leadStatus': status,
+        'leadType': type,
+        'transactionId': leadId,
+        'clickId': voluumCid,
+        'gclid': googleGclid
+      });
+      fpPixel('lg_success_all', { click_id: voluumCid, status: status, payout: finalPayout });
+      
+      if (type === 'soldLead') {
+        window.dataLayer.push({
+          'event': 'lead_conversion_approved', 'leadData': conversionData, 'conversionValue': finalPayout, 'transactionId': leadId, 'clickId': voluumCid, 'gclid': googleGclid
+        });
+        fpPixel('lg_success', { click_id: voluumCid, status: 'approved', payout: finalPayout });
+      }
+      
+      if (type === 'rejectLead') {
+        window.dataLayer.push({
+          'event': 'lead_declined', 'leadData': conversionData, 'conversionValue': finalPayout, 'transactionId': leadId, 'clickId': voluumCid, 'gclid': googleGclid
+        });
+      }
+      
+      if (type === 'newLead') {
+        window.dataLayer.push({
+           'event': 'lead_pending', 'leadData': conversionData, 'conversionValue': finalPayout, 'transactionId': leadId, 'clickId': voluumCid, 'gclid': googleGclid
+        });
+      }
     }
   }
 };
@@ -479,20 +564,16 @@ var _lg_form_init_ = {
   var cid = p.get('clickid') || p.get('vlcid') || p.get('click_id') || p.get('cid') || p.get('cpid') || '';
   fpPixel('pv', cid ? { click_id: cid } : {});
 
+  // Fallback observer just in case form takes a while to inject
   var formLoadFired = false;
   var lgDiv = document.getElementById('_lg_form_');
   if (lgDiv) {
     var obs = new MutationObserver(function() {
       if (!formLoadFired && lgDiv.children.length > 0) {
-        formLoadFired = true;
-        obs.disconnect();
-        fpPixel('lg_form_load', { click_id: getVoluumClickId(), source: 'observer' });
+         formLoadFired = true; obs.disconnect();
       }
     });
     obs.observe(lgDiv, { childList: true, subtree: true });
-    setTimeout(function() {
-      if (!formLoadFired) { formLoadFired = true; obs.disconnect(); fpPixel('lg_form_load', { click_id: getVoluumClickId(), source: 'timeout' }); }
-    }, 10000);
   }
 })();
 
