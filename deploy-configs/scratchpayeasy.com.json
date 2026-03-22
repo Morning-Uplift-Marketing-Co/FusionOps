@@ -1,5 +1,5 @@
 {
-  "templateId": "mcp-loan-06",
+  "templateId": "pet-orange-white",
   "cfPagesProject": "lp-scratchpayeasy-com",
   "cfApiToken": "",
   "cfAccountId": "",
@@ -17,7 +17,7 @@
   "aprMin": 5.99,
   "aprMax": 35.99,
   "primaryColor": "#3b5bdb",
-  "accentColor": "#f97316",
+  "accentColor": "#4d3e32",
   "conversionId": "AW-102123548",
   "gtagFormStartLabel": "form_start ",
   "gtagFormSubmitLabel": "form_submit",
@@ -36,5 +36,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-22T04:42:11.842Z"
+  "deployedAt": "2026-03-22T05:11:08.855Z"
 }
