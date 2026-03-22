@@ -737,13 +737,14 @@ function astroToHtmlPreview(files, site, options = {}) {
     html = html.replace(/__LP_STYLE_BLOCK_(\d+)__/g, (_m, idx) => styleBlocks[Number(idx)] || '');
   }
 
-  // If template has substantial inline CSS (> 200 chars in <style> blocks) AND does NOT use
-  // Tailwind utility classes, strip any Tailwind CDN that was baked into the source —
-  // it overrides/resets inline CSS and breaks layout.
-  // But if template USES Tailwind utilities (bg-primary, text-xl, p-4 etc.), keep the CDN
-  // even with inline CSS — the inline CSS is supplementary (sliders, animations), not a replacement.
+  // Detect Tailwind usage early — needed by inline CSS stripping decision below
+  const usesTailwindClassesEarly = /class="[^"]*\b(bg-(?:blue|red|green|gray|white|black|slate|zinc|orange|yellow|purple|pink|indigo|teal|cyan|lime|emerald|violet|fuchsia|rose|amber|sky|neutral|stone|warm|cool|dark|light)-\d|text-(?:xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl)|text-(?:blue|red|green|gray|white|black|slate)-\d|p-\d+\b|px-\d+\b|py-\d+\b|pt-\d+\b|pb-\d+\b|pl-\d+\b|pr-\d+\b|m-\d+\b|mx-\d+\b|my-\d+\b|mt-\d+\b|mb-\d+\b|ml-\d+\b|mr-\d+\b|gap-\d+\b|w-\d+\b|h-\d+\b|flex-col\b|flex-row\b|flex-wrap\b|grid-cols-|items-center\b|items-start\b|items-end\b|justify-center\b|justify-between\b|justify-start\b|rounded-(?:sm|md|lg|xl|full)\b|border-\d+\b|font-bold\b|font-semibold\b|font-medium\b|leading-\d|tracking-wide|space-x-|space-y-|overflow-hidden\b|overflow-auto\b|z-\d+\b|min-h-|max-w-)\b/.test(html);
+
+  // If template has substantial inline CSS (> 200 chars) AND does NOT use Tailwind utility
+  // classes, strip any Tailwind CDN — it overrides inline CSS and breaks layout.
+  // But if template USES Tailwind utilities, keep the CDN — inline CSS is supplementary.
   const inlineStyleContent = styleBlocks.concat(componentStyles).join('');
-  const hasSubstantialInlineCss = inlineStyleContent.length > 200 && !usesTailwindClasses;
+  const hasSubstantialInlineCss = inlineStyleContent.length > 200 && !usesTailwindClassesEarly;
   if (hasSubstantialInlineCss) {
     // Remove <script> tags that load Tailwind CDN from the source HTML
     html = html.replace(/<script\b[^>]*src=["'][^"']*cdn\.tailwindcss\.com[^"']*["'][^>]*><\/script>/gi, '');
