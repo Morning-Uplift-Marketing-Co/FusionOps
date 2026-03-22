@@ -1032,6 +1032,12 @@ export function generateHtmlByTemplate(site) {
   if (customTemplatesCache) {
     const customTemplate = customTemplatesCache.find(t => t.id === templateId || t.dbId === templateId);
     if (customTemplate && customTemplate.files) {
+      // Prefer pre-built HTML (dist/index.html) — 100% accurate, no conversion needed
+      const builtHtml = customTemplate.files['dist/index.html'];
+      if (builtHtml) {
+        return ensureTrackingBaselineHtml(builtHtml, site);
+      }
+
       // Use the smart analyzer to choose the right rendering path
       const framework = identifyFramework(customTemplate.files);
       const colorObj = getColorObj(site.colorId);
