@@ -428,6 +428,7 @@ function SidePanel({ tpl, quality, usage, versions, defaultId, publishing, hidde
         <div className="space-y-2">
           <div className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Actions</div>
           <div className="flex flex-wrap gap-1.5">
+            <Btn onClick={() => window.open(`/templates/${tpl.id || tpl.template_id}/dist/index.html`, '_blank')}>Preview</Btn>
             {!isDefault && <Btn onClick={onSetDefault}>Set Default</Btn>}
             {isCustom && (
               <>
