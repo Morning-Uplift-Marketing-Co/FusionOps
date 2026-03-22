@@ -1,711 +1,131 @@
 #!/usr/bin/env node
-/**
- * Auto-inject tracking stack into any template (Astro or Vite/Loveable/HTML)
- *
- * Injects:
- *   1. Voluum dtpCallback (Direct Tracking Pixel) — reads VOLUUM_DOMAIN from env
- *   2. First-party pixel (fpPixel) — sends to t.{domain}/e
- *   3. Google Ads gtag — reads CONVERSION_ID from env
- *
- * Usage: node scripts/inject-tracking.mjs <template-dir>
- *
- * Supports:
- *   - Astro templates  (src/layouts/Layout.astro)
- *   - Vite/React/Loveable templates (index.html)
- *   - HTML-first templates (index.html or dist/index.html)
- */
 import fs from 'node:fs';
 import path from 'node:path';
 
 const templateDir = path.resolve(process.argv[2] || '.');
 
-// ─── Detect template type ───
-const layoutAstro = findLayoutAstro(templateDir);
+// ─────────────────────────────────────────────
+// DETECT TEMPLATE
+// ─────────────────────────────────────────────
+
 const indexHtml = path.join(templateDir, 'index.html');
-const hasViteConfig = fs.existsSync(path.join(templateDir, 'vite.config.ts'))
-  || fs.existsSync(path.join(templateDir, 'vite.config.js'));
-const hasAstroConfig = fs.existsSync(path.join(templateDir, 'astro.config.mjs'))
-  || fs.existsSync(path.join(templateDir, 'astro.config.ts'));
 
-let type = 'unknown';
-if (layoutAstro) type = 'astro';
-else if (hasViteConfig && fs.existsSync(indexHtml)) type = 'vite';
-else if (fs.existsSync(indexHtml)) type = 'html';
-
-console.log(`Template type: ${type}`);
-console.log(`Template dir: ${templateDir}`);
-
-if (type === 'unknown') {
-  console.warn('⚠ Could not detect template type — skipping tracking injection');
+if (!fs.existsSync(indexHtml)) {
+  console.warn('No index.html found');
   process.exit(0);
 }
 
-// ─── Tracking snippets ───
+let html = fs.readFileSync(indexHtml, 'utf8');
 
-// Voluum dtpCallback — works for both Astro and Vite
-// For Astro: reads from import.meta.env.PUBLIC_VOLUUMDOMAIN
-// For Vite: reads from window.__VOLUUM_DOMAIN__ (injected by runtime script)
-const VOLUUM_HEAD_SNIPPET = `
-<!-- Voluum Direct Tracking Pixel (auto-injected) -->
+// ─────────────────────────────────────────────
+// FIXED TRACKING SNIPPET (CORE PATCH)
+// ─────────────────────────────────────────────
+
+const TRACKING_SNIPPET = `
+<!-- FusionOps Tracking (FIXED) -->
 <script data-cfasync="false">
 (function(){
-  var vd = window.__VOLUUM_DOMAIN__;
-  if (!vd) return;
-  var s = document.createElement('style');
-  s.textContent = '.dtpcnt{opacity:0;}';
-  document.head.appendChild(s);
-  var m = document.createElement('meta');
-  m.httpEquiv = 'delegate-ch';
-  m.content = ['sec-ch-ua','sec-ch-ua-mobile','sec-ch-ua-arch','sec-ch-ua-model','sec-ch-ua-platform','sec-ch-ua-platform-version','sec-ch-ua-bitness','sec-ch-ua-full-version-list','sec-ch-ua-full-version'].map(function(h){return h+' https://'+vd}).join('; ');
-  document.head.appendChild(m);
-  (function(e,d,k,n,u,v,g,w,C,f,p,x,D,c,q,r,h,t,y,G,z){function A(){for(var a=d.querySelectorAll(".dtpcnt"),b=0,l=a.length;b<l;b++)a[b][w]=a[b][w].replace(/(^|\\s+)dtpcnt($|\\s+)/g,"")}function E(a,b,l,F){var m=new Date;m.setTime(m.getTime()+(F||864E5));d.cookie=a+"="+b+"; "+l+"samesite=Strict; expires="+m.toGMTString()+"; path=/";k.setItem(a,b);k.setItem(a+"-expires",m.getTime())}function B(a){var b=d.cookie.match(new RegExp("(^| )"+a+"=([^;]+)"));return b?b.pop():k.getItem(a+"-expires")&&+k.getItem(a+"-expires")>(new Date).getTime()?k.getItem(a):null}z="https:"===e.location.protocol?"secure; ":"";e[f]||(e[f]=function(){(e[f].q=e[f].q||[]).push(arguments)},r=d[u],d[u]=function(){r&&r.apply(this,arguments);if(e[f]&&!e[f].hasOwnProperty("params")&&/loaded|interactive|complete/.test(d.readyState))for(;c=d[v][p++];)/\\/?click\\/?($|(\\/[0-9]+)?$)/.test(c.pathname)&&(c[g]="javascrip"+e.postMessage.toString().slice(4,5)+":"+f+'.l="'+c[g]+'",void 0')},setTimeout(function(){(t=RegExp("[?&]cpid(=([^&#]*)|&|#|$)").exec(e.location.href))&&t[2]&&(h=t[2],y=B("vl-"+h));var a=B("vl-cep"),b=location[g];if("savedCep"===D&&a&&(!h||"undefined"===typeof h)&&0>b.indexOf("cep=")){var l=-1<b.indexOf("?")?"&":"?";b+=l+a}c=d.createElement("script");q=d.scripts[0];c.defer=1;c.src="https://"+vd+"/d/.js?lpref="+n(d.referrer)+"&lpurl="+n(b)+"&lpt="+n(d.title)+"&vtm="+(new Date).getTime()+(y?"&uw=no":"");c[C]=function(){for(p=0;c=d[v][p++];)/dtpCallback\\.l/.test(c[g])&&(c[g]=decodeURIComponent(c[g]).match(/dtpCallback\\.l="([^"]+)/)[1]);A()};q.parentNode.insertBefore(c,q);h&&E("vl-"+h,"1",z)},0),setTimeout(A,7E3))})(window,document,localStorage,encodeURIComponent,"onreadystatechange","links","href","className","onerror","dtpCallback",0,0,"savedCep");
-})();
-</script>
-<noscript><link id="vlnoscript" rel="stylesheet"/></noscript>
-`;
 
-// GCLID capture + URL parameter handling (auto-injected)
-// Captures gclid, vlcid, clickid, click_id, cid, cpid from URL and stores in window.__fpClickId
-const GCLID_CAPTURE_SNIPPET = `
-<!-- GCLID/Click ID capture (auto-injected) -->
-<script data-cfasync="false">
-(function(){
-  var p = new URLSearchParams(window.location.search);
-  var cid = p.get('gclid') || p.get('vlcid') || p.get('clickid') || p.get('click_id') || p.get('cid') || p.get('cpid') || '';
-  window.__fpClickId = cid || '';
-  if (cid) {
+  function getCid(){
     try {
-      sessionStorage.setItem('__fpClickId', cid);
-    } catch(_) {}
-  }
-})();
-</script>
-`;
+      const p = new URLSearchParams(location.search);
 
-const PIXEL_BODY_SNIPPET = `
-<!-- First-party pixel + Google Ads gtag (auto-injected) -->
-<script data-cfasync="false">
-(function(){
-  var PX_ENDPOINT = 'https://t.' + window.location.hostname + '/e';
-  function sendPixelBeacon(payload) {
+      let cid =
+        p.get('gclid') ||
+        p.get('vlcid') ||
+        p.get('clickid') ||
+        p.get('click_id') ||
+        p.get('cid') ||
+        p.get('cpid') ||
+        localStorage.getItem('_cid') ||
+        sessionStorage.getItem('_cid') ||
+        '';
+
+      if(cid){
+        localStorage.setItem('_cid', cid);
+        sessionStorage.setItem('_cid', cid);
+      }
+
+      return cid;
+    } catch {
+      return '';
+    }
+  }
+
+  const CID = getCid();
+  const ENDPOINT = 'https://t.' + location.hostname + '/e';
+
+  function send(event, data){
     try {
-      var q = new URLSearchParams();
-      Object.keys(payload || {}).forEach(function(k){
-        var v = payload[k];
-        if (v !== undefined && v !== null) q.set(k, String(v));
-      });
-      var i = new Image(1, 1);
-      i.src = PX_ENDPOINT + '?' + q.toString();
-    } catch(_) {}
-  }
-  function fpPixel(eventName, extra) {
-    var payload = Object.assign({ e: eventName, d: window.location.hostname, ts: Date.now() }, extra || {});
-    sendPixelBeacon(payload);
-  }
-  if (!window.__fpPageTracked) {
-    window.__fpPageTracked = true;
-    fpPixel('pv');
-  }
-  window.__fpPixel = fpPixel;
-  window.__pixel = fpPixel;
-
-  // Scroll depth tracking (25/50/75/100)
-  var scrollFired = {};
-  window.addEventListener('scroll', function(){
-    var scrolled = window.scrollY + window.innerHeight;
-    var total = document.documentElement.scrollHeight;
-    var pct = Math.round((scrolled / total) * 100);
-    [25,50,75,100].forEach(function(t){
-      if (!scrollFired['s'+t] && pct >= t) { scrollFired['s'+t] = true; fpPixel('scroll_'+t+'%', {depth:t}); }
-    });
-  }, {passive:true});
-
-  // Time on page (30s/60s)
-  setTimeout(function(){ fpPixel('top_30s'); }, 30000);
-  setTimeout(function(){ fpPixel('top_60s'); }, 60000);
-
-  // Amount slider tracking
-  document.addEventListener('DOMContentLoaded', function(){
-    var slider = document.querySelector('input[type="range"][id*="amount"], input[type="range"][name*="amount"], .amountSlider, [data-amt]');
-    if (slider) {
-      var debounce;
-      slider.addEventListener('input', function(){ clearTimeout(debounce); debounce = setTimeout(function(){ fpPixel('amt', {amount: slider.value}); }, 400); });
-    }
-    // ZIP input tracking
-    var zip = document.querySelector('input[id*="zip"], input[name*="zip"], input[placeholder*="ZIP"], .zipCode, input[type="text"][maxlength="5"]');
-    if (zip) {
-      var zfired = false;
-      zip.addEventListener('focus', function(){ if (!zfired) { zfired = true; fpPixel('ze', {source:'focus'}); } });
-      zip.addEventListener('input', function(){ if (zip.value.length === 5) fpPixel('ze', {zip: zip.value}); });
-    }
-  });
-})();
-</script>
-<script data-cfasync="false">
-(function(){
-  var cid = window.__CONVERSION_ID__;
-  if (!cid) return;
-  var s = document.createElement('script');
-  s.async = true;
-  s.src = 'https://www.googletagmanager.com/gtag/js?id=' + cid;
-  document.head.appendChild(s);
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', cid);
-  window.__gtag = gtag;
-  window.__gtagConversionId = cid;
-  // form_start / form_submit labels
-  window.__formStartLabel = window.__FORM_START_LABEL__ || '';
-  window.__formSubmitLabel = window.__FORM_SUBMIT_LABEL__ || '';
-})();
-</script>
-<script data-cfasync="false">
-(function(){
-  // GCLID + UTM capture to sessionStorage
-  try {
-    var p = new URLSearchParams(window.location.search);
-    var gclid = p.get('gclid');
-    var clickid = p.get('clickid') || p.get('vlcid') || p.get('click_id') || p.get('cid');
-    if (gclid) sessionStorage.setItem('gclid', gclid);
-    if (clickid) { sessionStorage.setItem('clickid', clickid); sessionStorage.setItem('vlcid', clickid); }
-    ['utm_source','utm_medium','utm_campaign'].forEach(function(k){ var v=p.get(k); if(v) sessionStorage.setItem(k,v); });
-  } catch(_){}
-  // firedFormStart guard for micro-conversion dedup
-  window.firedFormStart = false;
-})();
-</script>
-`;
-
-// Runtime config script — sets window globals from env vars
-// For Vite: reads VITE_* from import.meta.env at build time
-// For HTML: values are replaced by deploy pipeline
-const RUNTIME_CONFIG_VITE = `
-<!-- Runtime config (auto-injected) -->
-<script type="module">
-  window.__VOLUUM_DOMAIN__ = import.meta.env.VITE_VOLUUM_DOMAIN || '';
-  window.__CONVERSION_ID__ = import.meta.env.VITE_CONVERSION_ID || '';
-  window.__VOLUUM_CLICK_URL__ = import.meta.env.VITE_VOLUUM_CLICK_URL || '';
-  // Set noscript link for Voluum
-  var ns = document.getElementById('vlnoscript');
-  if (ns && window.__VOLUUM_DOMAIN__) ns.href = 'https://' + window.__VOLUUM_DOMAIN__ + '/d/.js?noscript=true&lpurl=';
-</script>
-`;
-
-const RUNTIME_CONFIG_ASTRO = `
-<!-- Runtime config (auto-injected) -->
-<script is:inline>
-  window.__VOLUUM_DOMAIN__ = '%%PUBLIC_VOLUUMDOMAIN%%';
-  window.__CONVERSION_ID__ = '%%PUBLIC_CONVERSIONID%%';
-  window.__VOLUUM_CLICK_URL__ = '%%PUBLIC_VOLUUM_CLICK_URL%%';
-  var ns = document.getElementById('vlnoscript');
-  if (ns && window.__VOLUUM_DOMAIN__) ns.href = 'https://' + window.__VOLUUM_DOMAIN__ + '/d/.js?noscript=true&lpurl=';
-</script>
-`;
-
-// ─── Injection logic ───
-
-function findLayoutAstro(dir) {
-  const candidates = [
-    path.join(dir, 'src', 'layouts', 'Layout.astro'),
-    path.join(dir, 'src', 'layouts', 'BaseLayout.astro'),
-    path.join(dir, 'src', 'layouts', 'MainLayout.astro'),
-  ];
-  for (const c of candidates) {
-    if (fs.existsSync(c)) return c;
-  }
-  // Search for any .astro layout file
-  const layoutsDir = path.join(dir, 'src', 'layouts');
-  if (fs.existsSync(layoutsDir)) {
-    const files = fs.readdirSync(layoutsDir).filter(f => f.endsWith('.astro'));
-    if (files.length > 0) return path.join(layoutsDir, files[0]);
-  }
-  return null;
-}
-
-function hasTracking(content) {
-  return /dtpCallback|__fpPixel|fpPixel\(|auto-injected/.test(content);
-}
-
-function hasGclIdCapture(content) {
-  return /window\.__fpClickId|gclid.*sessionStorage|sessionStorage.*gclid|__fpClickId/.test(content);
-}
-
-function injectIntoHtmlOrVite(filePath, isVite) {
-  let html = fs.readFileSync(filePath, 'utf8');
-
-  if (hasTracking(html)) {
-    console.log(`  ✓ ${path.basename(filePath)} already has tracking — skipping`);
-    return false;
-  }
-
-  // Inject runtime config + voluum before </head>
-  const runtimeConfig = isVite ? RUNTIME_CONFIG_VITE : '';
-  const headInject = runtimeConfig + VOLUUM_HEAD_SNIPPET;
-
-  if (html.includes('</head>')) {
-    html = html.replace('</head>', headInject + '\n</head>');
-  } else {
-    // No </head> tag — prepend
-    html = headInject + '\n' + html;
-  }
-
-  // Inject GCLID capture before </body> if missing
-  if (!hasGclIdCapture(html) && html.includes('</body>')) {
-    html = html.replace('</body>', GCLID_CAPTURE_SNIPPET + '\n</body>');
-  }
-
-  // Inject pixel + gtag before </body>
-  if (html.includes('</body>')) {
-    html = html.replace('</body>', PIXEL_BODY_SNIPPET + '\n</body>');
-  } else {
-    html = html + '\n' + PIXEL_BODY_SNIPPET;
-  }
-
-  fs.writeFileSync(filePath, html, 'utf8');
-  console.log(`  ✓ Injected tracking into ${path.basename(filePath)}`);
-  return true;
-}
-
-function injectIntoAstro(filePath) {
-  let content = fs.readFileSync(filePath, 'utf8');
-
-  if (hasTracking(content)) {
-    console.log(`  ✓ ${path.basename(filePath)} already has tracking — skipping`);
-    return false;
-  }
-
-  // For Astro, we need to handle the frontmatter section
-  // Inject voluum into <head> and pixel before </body>
-
-  // Check if it already reads VOLUUMDOMAIN
-  const hasVoluumVar = content.includes('PUBLIC_VOLUUMDOMAIN');
-
-  // Add frontmatter variables if not present
-  if (!hasVoluumVar) {
-    const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
-    if (fmMatch) {
-      const additions = `
-const __voluumDomain = import.meta.env.PUBLIC_VOLUUMDOMAIN || '';
-const __conversionId = import.meta.env.PUBLIC_CONVERSIONID || '';
-const __voluumClickUrl = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '';`;
-      content = content.replace(fmMatch[0], fmMatch[0].replace('\n---', additions + '\n---'));
-    }
-  }
-
-  // Replace Astro runtime config placeholders
-  const astroRuntime = RUNTIME_CONFIG_ASTRO
-    .replace("'%%PUBLIC_VOLUUMDOMAIN%%'", hasVoluumVar ? 'voluumDomain' : '__voluumDomain')
-    .replace("'%%PUBLIC_CONVERSIONID%%'", hasVoluumVar ? 'conversionId || ""' : '__conversionId')
-    .replace("'%%PUBLIC_VOLUUM_CLICK_URL%%'", hasVoluumVar ? 'voluumClickUrl || ""' : '__voluumClickUrl')
-    // For Astro, use define:vars or template literals
-    .replace('<script is:inline>', () => {
-      const varName = hasVoluumVar ? 'voluumDomain' : '__voluumDomain';
-      const cidName = hasVoluumVar ? 'conversionId' : '__conversionId';
-      const clickName = hasVoluumVar ? 'voluumClickUrl' : '__voluumClickUrl';
-      return `<script is:inline define:vars={{ ${varName}, ${cidName}, ${clickName} }}>`;
-    })
-    .replace("= '%%PUBLIC_VOLUUMDOMAIN%%'", () => {
-      const varName = hasVoluumVar ? 'voluumDomain' : '__voluumDomain';
-      return `= ${varName}`;
-    })
-    .replace("= '%%PUBLIC_CONVERSIONID%%'", () => {
-      const cidName = hasVoluumVar ? 'conversionId' : '__conversionId';
-      return `= ${cidName}`;
-    })
-    .replace("= '%%PUBLIC_VOLUUM_CLICK_URL%%'", () => {
-      const clickName = hasVoluumVar ? 'voluumClickUrl' : '__voluumClickUrl';
-      return `= ${clickName}`;
-    });
-
-  // Inject into </head>
-  if (content.includes('</head>')) {
-    content = content.replace('</head>', astroRuntime + '\n' + VOLUUM_HEAD_SNIPPET + '\n</head>');
-  }
-
-  // Inject GCLID capture before </body> if missing
-  if (!hasGclIdCapture(content) && content.includes('</body>')) {
-    content = content.replace('</body>', GCLID_CAPTURE_SNIPPET + '\n</body>');
-  }
-
-  // Inject pixel + gtag before </body>
-  if (content.includes('</body>')) {
-    content = content.replace('</body>', PIXEL_BODY_SNIPPET + '\n</body>');
-  }
-
-  // Astro requires is:inline for scripts to render as-is (not bundled)
-  content = content.replace(/<script data-cfasync="false">/g, '<script is:inline data-cfasync="false">');
-  content = content.replace(/<script is:inline data-cfasync="false" is:inline>/g, '<script is:inline data-cfasync="false">');
-
-  fs.writeFileSync(filePath, content, 'utf8');
-  console.log(`  ✓ Injected tracking into ${path.basename(filePath)}`);
-  return true;
-}
-
-// ─── Main ───
-
-let injected = false;
-
-if (type === 'astro' && layoutAstro) {
-  console.log(`Injecting tracking into Astro layout: ${layoutAstro}`);
-  injected = injectIntoAstro(layoutAstro);
-} else if (type === 'vite') {
-  console.log(`Injecting tracking into Vite index.html`);
-  injected = injectIntoHtmlOrVite(indexHtml, true);
-} else if (type === 'html') {
-  console.log(`Injecting tracking into HTML index.html`);
-  injected = injectIntoHtmlOrVite(indexHtml, false);
-}
-
-if (injected) {
-  console.log('✅ Tracking injection complete');
-} else {
-  console.log('ℹ No tracking injection needed (already present or skipped)');
-}
-
-// ─── Scaffold missing Astro boilerplate files ───
-// These are identical across all templates. If missing, create them
-// so validate-template-tracking.mjs passes.
-
-if (type === 'astro') {
-  const scaffoldFiles = {
-    'src/pages/apply.astro': `---
-const aid = import.meta.env.PUBLIC_AID || '';
----
-/**
- * FIXED VERSION — KEEP ORIGINAL PARAM CONTRACT
- * ============================================
- * - ไม่เปลี่ยน function signature
- * - ไม่เปลี่ยน PUBLIC_* flow
- * - แก้ internal logic ให้ stable
- */
-
-// ─────────────────────────────────────────────
-// CLICK ID (GLOBAL — ใช้ร่วมทุก layer)
-// ─────────────────────────────────────────────
-
-const CLICK_FN = `
-function __getCid(){
-  try {
-    const p = new URLSearchParams(location.search);
-
-    let cid =
-      p.get('gclid') ||
-      p.get('vlcid') ||
-      p.get('clickid') ||
-      p.get('click_id') ||
-      p.get('cid') ||
-      p.get('cpid') ||
-      localStorage.getItem('_cid') ||
-      sessionStorage.getItem('_cid') ||
-      '';
-
-    if (cid) {
-      localStorage.setItem('_cid', cid);
-      sessionStorage.setItem('_cid', cid);
-    }
-
-    return cid;
-  } catch {
-    return '';
-  }
-}
-`;
-
-// ─────────────────────────────────────────────
-// PIXEL (Layer 2)
-// ─────────────────────────────────────────────
-
-export function getPixelHeadScript() {
-  return `<script data-cfasync="false">
-(function(){
-
-  ${CLICK_FN}
-
-  const cid = __getCid();
-
-  window.__fpPixel = function(eventName, extra){
-    try {
-      const payload = Object.assign({
-        e: eventName,
-        cid: cid,
+      const payload = {
+        e: event,
+        cid: CID,
         ts: Date.now(),
         url: location.pathname,
-        ref: document.referrer
-      }, extra || {});
+        ref: document.referrer,
+        ...(data || {})
+      };
 
-      const endpoint = 'https://t.' + location.hostname + '/e';
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(
+          ENDPOINT,
+          new Blob([JSON.stringify(payload)], { type:'application/json' })
+        );
+      } else {
+        const q = new URLSearchParams(payload);
+        new Image().src = ENDPOINT + '?' + q.toString();
+      }
 
-      navigator.sendBeacon?.(
-        endpoint,
-        new Blob([JSON.stringify(payload)], { type:'application/json' })
-      );
+    } catch(e){}
+  }
 
-    } catch(_) {}
-  };
+  window.__fpPixel = send;
+  window.__pixel = send;
 
-  // PV
-  __fpPixel('pv');
+  if(!window.__pv){
+    window.__pv = true;
+    send('pv');
+  }
 
-  // Scroll
-  var fired = {};
+  let fired = {};
   window.addEventListener('scroll', function(){
-    try {
-      var pct = Math.round(
+    try{
+      const pct = Math.round(
         100 * window.scrollY /
         Math.max(1, document.body.scrollHeight - window.innerHeight)
       );
 
-      [25,50,75,100].forEach(function(t){
+      [25,50,75,100].forEach(t=>{
         if(pct >= t && !fired[t]){
           fired[t] = true;
-          __fpPixel('scroll_' + t);
+          send('scroll_'+t);
         }
       });
-    } catch(_){}
+    }catch(e){}
   }, {passive:true});
 
-  // Time
-  setTimeout(()=>__fpPixel('top_30s'),30000);
-  setTimeout(()=>__fpPixel('top_60s'),60000);
+  setTimeout(()=>send('top_30s'),30000);
+  setTimeout(()=>send('top_60s'),60000);
 
 })();
-</script>`;
-}
-
-// ─────────────────────────────────────────────
-// GTAG (Layer 1 — unchanged contract)
-// ─────────────────────────────────────────────
-
-export function getGtagHeadScript(conversionId, formStartLabel, formSubmitLabel) {
-  if (!conversionId) return '';
-
-  return `<script async src="https://www.googletagmanager.com/gtag/js?id=${conversionId}"></script>
-<script>
-window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', '${conversionId}');
-</script>`;
-}
-
-// ─────────────────────────────────────────────
-// VOLUUM (Layer 3 — keep)
-// ─────────────────────────────────────────────
-
-export function getVoluumHeadScript(voluumDomain) {
-  if (!voluumDomain) return '';
-
-  return \`<!-- Voluum kept as-is (no change) -->\`;
-}
-
-// ─────────────────────────────────────────────
-// APPLY PAGE (LeadsGate)
-// ─────────────────────────────────────────────
-
-export function getApplyPageScript(aid) {
-  if (!aid) return '';
-
-  return `<script data-cfasync="false">
-(function(){
-
-  ${CLICK_FN}
-
-  const seen = new Set();
-
-  function pixel(e,data){
-    try {
-      navigator.sendBeacon(
-        'https://t.' + location.hostname + '/e',
-        new Blob([JSON.stringify({
-          e,
-          cid: __getCid(),
-          ts: Date.now(),
-          ...(data||{})
-        })], { type:'application/json' })
-      );
-    } catch(_) {}
-  }
-
-  window._lg_form_init_ = {
-    aid: "${aid}",
-    template: "fresh",
-
-    get click_id() {
-      return __getCid();
-    },
-
-    onFormLoad(){
-      pixel('form_start');
-    },
-
-    onSubmit(){
-      pixel('form_submit');
-    },
-
-    onSuccess(data){
-      try{
-        if (!data) return;
-
-        const id = data.lead_id;
-        if (!id || seen.has(id)) return;
-
-        seen.add(id);
-
-        pixel('conversion',{
-          lead_id: id,
-          payout: data.price || 0,
-          status: data.type || 'unknown'
-        });
-
-      } catch(_) {}
-    }
-  };
-
-  var s = document.createElement('script');
-  s.async = true;
-  s.src = 'https://apikeep.com/form/applicationInit.js';
-  document.body.appendChild(s);
-
-})();
-</script>`;
-}
-
-// ─────────────────────────────────────────────
-// COMBINED HEAD
-// ─────────────────────────────────────────────
-
-export function getAllHeadTracking({ conversionId, formStartLabel, formSubmitLabel, voluumDomain } = {}) {
-  return [
-    getPixelHeadScript(),
-    getGtagHeadScript(conversionId, formStartLabel, formSubmitLabel),
-    getVoluumHeadScript(voluumDomain)
-  ].filter(Boolean).join('\\n');
-}
-
-var script = document.createElement('script');
-script.setAttribute('data-cfasync', 'false');
-script.type = 'text/javascript';
-script.async = true;
-script.src = 'https://apikeep.com/form/applicationInit.js';
-document.body.appendChild(script);
 </script>
+`;
 
-<div id="_lg_form_"></div>
-</body>
-</html>
-`,
-    'src/pages/e.ts': `import type { APIRoute } from 'astro';
-export const POST: APIRoute = async ({ request }) => {
-  try { const payload = JSON.parse(await request.text()); console.log('[pixel]', payload); } catch (_) {}
-  return new Response(null, { status: 204 });
-};
-export const GET: APIRoute = () => new Response(null, { status: 204 });
-`,
-    'src/pages/robots.txt.ts': `import type { APIRoute } from 'astro';
-export const GET: APIRoute = () => {
-  const domain = import.meta.env.PUBLIC_DOMAIN || import.meta.env.PUBLIC_SITE_URL || '';
-  const sitemapUrl = domain ? \`https://\${domain}/sitemap.xml\` : '';
-  const lines = ['User-agent: *', 'Allow: /', 'Disallow: /apply/'];
-  if (sitemapUrl) { lines.push(''); lines.push(\`Sitemap: \${sitemapUrl}\`); }
-  return new Response(lines.join('\\n'), { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
-};
-`,
-    'public/_headers': `/*.html
-  Cache-Control: no-cache, no-store, must-revalidate
+// ─────────────────────────────────────────────
+// INJECT
+// ─────────────────────────────────────────────
 
-/
-  Cache-Control: no-cache, no-store, must-revalidate
+if (!html.includes('__fpPixel')) {
 
-/*
-  X-Frame-Options: SAMEORIGIN
-  X-Content-Type-Options: nosniff
-  X-XSS-Protection: 1; mode=block
-  Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: geolocation=(), microphone=(), camera=()
-  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
-  X-Robots-Tag: index, follow
-`,
-  };
-
-  for (const [relPath, content] of Object.entries(scaffoldFiles)) {
-    const fullPath = path.join(templateDir, relPath);
-    if (!fs.existsSync(fullPath)) {
-      fs.mkdirSync(path.dirname(fullPath), { recursive: true });
-      fs.writeFileSync(fullPath, content);
-      console.log(`📄 Scaffolded missing file: ${relPath}`);
-    }
+  if (html.includes('</body>')) {
+    html = html.replace('</body>', TRACKING_SNIPPET + '\\n</body>');
+  } else {
+    html += TRACKING_SNIPPET;
   }
 
-  // Inject env var declarations into index.astro if missing
-  const indexAstro = path.join(templateDir, 'src', 'pages', 'index.astro');
-  if (fs.existsSync(indexAstro)) {
-    let indexContent = fs.readFileSync(indexAstro, 'utf8');
-    let changed = false;
+  fs.writeFileSync(indexHtml, html, 'utf8');
+  console.log('✅ Injected FIXED tracking');
 
-    // Add content env vars if not present
-    if (!indexContent.includes('PUBLIC_BRAND') && indexContent.includes('---')) {
-      const parts = indexContent.split('---');
-      if (parts.length >= 3) {
-        parts[1] = parts[1].trimEnd() + `
-const brand     = import.meta.env.PUBLIC_BRAND     || 'Your Brand';
-const domain    = import.meta.env.PUBLIC_DOMAIN    || 'example.com';
-const h1        = import.meta.env.PUBLIC_H1        || '';
-const sub       = import.meta.env.PUBLIC_SUB       || '';
-const cta       = import.meta.env.PUBLIC_CTA       || 'Apply Now';
-const phone     = import.meta.env.PUBLIC_PHONE     || '';
-const email     = import.meta.env.PUBLIC_EMAIL     || '';
-const aprMin    = import.meta.env.PUBLIC_APRMIN    || '5.99';
-const aprMax    = import.meta.env.PUBLIC_APRMAX    || '35.99';
-const amountMin = import.meta.env.PUBLIC_AMOUNTMIN || '500';
-const amountMax = import.meta.env.PUBLIC_AMOUNTMAX || '10000';
-const ctaHref   = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '/apply';
-`;
-        indexContent = parts.join('---');
-        changed = true;
-        console.log('📄 Injected content env vars into index.astro');
-      }
-    }
-
-    // Add ctaHref if not present (for templates that already have other env vars)
-    if (!indexContent.includes('const ctaHref') && !indexContent.includes('ctaHref')) {
-      if (indexContent.includes('---')) {
-        const parts = indexContent.split('---');
-        if (parts.length >= 3) {
-          parts[1] = parts[1].trimEnd() + `\nconst ctaHref = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '/apply';\n`;
-          indexContent = parts.join('---');
-          changed = true;
-        }
-      }
-    }
-
-    // Replace common CTA href patterns with ctaHref
-    if (indexContent.includes('href="/apply"') || indexContent.includes("href='/apply'") || indexContent.includes('href="#apply"')) {
-      indexContent = indexContent
-        .replace(/href=["']\/apply["']/g, 'href={ctaHref}')
-        .replace(/href=["']#apply["']/g, 'href={ctaHref}');
-      changed = true;
-      console.log('📄 Replaced CTA hrefs with ctaHref');
-    }
-
-    if (changed) {
-      fs.writeFileSync(indexAstro, indexContent);
-    }
-  }
-
-  // Inject FORMSTARTLABEL / FORMSUBMITLABEL into Layout.astro if missing
-  if (layoutAstro) {
-    let layoutContent = fs.readFileSync(layoutAstro, 'utf8');
-    if (!layoutContent.includes('PUBLIC_FORMSTARTLABEL')) {
-      if (layoutContent.includes('---')) {
-        const parts = layoutContent.split('---');
-        if (parts.length >= 3) {
-          parts[1] = parts[1].trimEnd() + `
-const formStartLabel = import.meta.env.PUBLIC_FORMSTARTLABEL || 'Start Application';
-const formSubmitLabel = import.meta.env.PUBLIC_FORMSUBMITLABEL || 'Submit Application';
-`;
-          layoutContent = parts.join('---');
-        }
-      }
- 
-
+} else {
+  console.log('⚠ Tracking already exists — skipped');
+}
