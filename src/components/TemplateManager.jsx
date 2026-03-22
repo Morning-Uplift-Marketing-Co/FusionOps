@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { api } from "../services/api";
-import { getAllTemplatesAsync, getTemplateDiagnostics, hideBuiltinTemplate } from "../utils/template-registry";
+import { getAllTemplatesAsync, getTemplateDiagnostics, hideBuiltinTemplate, getTemplateById } from "../utils/template-registry";
+import { PreviewModal } from "./Wizard/PreviewModal";
+import { buildPreviewHtml } from "../utils/template-preview-runtime";
 
 /* ── Extract og:image URL from template files ── */
 function extractOgImage(template) {
@@ -109,6 +111,8 @@ export function TemplateManager({ sites = [], notify, onDefaultTemplateChange })
   const [versions, setVersions] = useState([]);
   const [defaultTemplateId, setDefaultTemplateId] = useState("classic");
   const [publishing, setPublishing] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewData, setPreviewData] = useState({ html: "", id: "" });
 
   /* ── Data loading ── */
   const loadAll = async () => {
@@ -121,6 +125,33 @@ export function TemplateManager({ sites = [], notify, onDefaultTemplateChange })
     } finally { setLoading(false); }
   };
   useEffect(() => { loadAll(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handlePreview = async (tpl) => {
+    if (!tpl) return;
+    try {
+      // If we don't have files in the tpl object, fetch the full template record
+      let files = tpl.files;
+      if (!files) {
+        const fullTpl = await getTemplateById(tpl.id || tpl.template_id);
+        files = fullTpl?.files;
+      }
+      
+      if (!files || Object.keys(files).length === 0) {
+        // Fallback to static URL if no source files found
+        window.open(`/templates/${tpl.id || tpl.template_id}/dist/index.html`, "_blank");
+        return;
+      }
+
+      const basePath = `/templates/${tpl.id || tpl.template_id}/dist/`;
+      const html = buildPreviewHtml(files, { brand: tpl.name || "Preview" }, null, basePath);
+      setPreviewData({ html, id: tpl.id || tpl.template_id });
+      setIsPreviewOpen(true);
+    } catch (err) {
+      console.error("Preview failed:", err);
+      // Last resort fallback
+      window.open(`/templates/${tpl.id || tpl.template_id}/dist/index.html`, "_blank");
+    }
+  };
 
   const selected = useMemo(() => templates.find((t) => (t.dbId || t.id) === selectedId) || null, [templates, selectedId]);
 
@@ -292,9 +323,18 @@ export function TemplateManager({ sites = [], notify, onDefaultTemplateChange })
               onUpdateStatus={updateStatus} onCreateVersion={createVersion}
               onPublish={publish} onRollback={rollback}
               onDelete={selected.dbId ? softDelete : hideBuiltin}
+              onPreview={() => handlePreview(selected)}
             />
           </div>
         )}
+
+        <PreviewModal 
+          isOpen={isPreviewOpen} 
+          onClose={() => setIsPreviewOpen(false)}
+          templateId={previewData.id}
+          previewHtml={previewData.html}
+          config={{ brand: selected?.name || "Preview" }}
+        />
       </div>
     </div>
   );
@@ -332,7 +372,19 @@ function TemplateCard({ tpl, selected, defaultId, hiddenHint, quality, onClick }
       </div>
       {/* Info */}
       <div className="p-3 bg-[hsl(var(--card))]">
-        <div className="font-semibold text-xs text-[hsl(var(--foreground))] truncate">{tpl.name || tpl.id}</div>
+        <div className="flex items-center justify-between">
+          <div className="font-semibold text-xs text-[hsl(var(--foreground))] truncate">{tpl.name || tpl.id}</div>
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              handlePreview(tpl);
+            }}
+            className="shrink-0 ml-2 px-2 py-0.5 text-[9px] font-semibold rounded border border-blue-500/30 text-blue-500 hover:bg-blue-500/10 transition-colors"
+            title="Preview template"
+          >
+            Preview
+          </button>
+        </div>
         <div className="text-[10px] text-[hsl(var(--muted-foreground))] mt-0.5 truncate">{tpl._source} {cat.label !== "General" ? `· ${cat.label}` : ""}</div>
         <div className="flex items-center gap-2 mt-1.5 text-[10px]">
           <span className={`flex items-center gap-1 ${st.cls}`}>
@@ -361,6 +413,16 @@ function TemplateRow({ tpl, selected, defaultId, quality, onClick }) {
         <div className="font-semibold text-xs text-[hsl(var(--foreground))] truncate">{tpl.name || tpl.id}</div>
         <div className="text-[10px] text-[hsl(var(--muted-foreground))] truncate">{tpl._source} {cat.label !== "General" ? `· ${cat.label}` : ""} · {tpl._usage} sites</div>
       </div>
+      <button 
+        onClick={(e) => {
+          e.stopPropagation();
+          handlePreview(tpl);
+        }}
+        className="shrink-0 mx-2 px-2.5 py-1 text-[10px] font-semibold rounded border border-blue-500/30 text-blue-500 hover:bg-blue-500/10 transition-colors"
+        title="Preview template"
+      >
+        Preview
+      </button>
       <span className={`flex items-center gap-1 text-[10px] ${st.cls}`}><span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />{st.label}</span>
       <span className={`w-2 h-2 rounded-full shrink-0 ${quality.pass ? "bg-emerald-400" : "bg-red-400"}`} title={quality.pass ? "Pass" : "Fail"} />
       {isDefault && <span className="text-[9px] font-bold text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded">DEFAULT</span>}
@@ -369,7 +431,7 @@ function TemplateRow({ tpl, selected, defaultId, quality, onClick }) {
 }
 
 /* ── Side Panel ── */
-function SidePanel({ tpl, quality, usage, versions, defaultId, publishing, hiddenHint, onClose, onSetDefault, onUpdateStatus, onCreateVersion, onPublish, onRollback, onDelete }) {
+function SidePanel({ tpl, quality, usage, versions, defaultId, publishing, hiddenHint, onClose, onSetDefault, onUpdateStatus, onCreateVersion, onPublish, onRollback, onDelete, onPreview }) {
   const cat = catOf(tpl);
   const st = statOf(tpl._status);
   const isDefault = defaultId === (tpl.id || tpl.template_id);
@@ -428,7 +490,7 @@ function SidePanel({ tpl, quality, usage, versions, defaultId, publishing, hidde
         <div className="space-y-2">
           <div className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Actions</div>
           <div className="flex flex-wrap gap-1.5">
-            <Btn onClick={() => window.open(`/templates/${tpl.id || tpl.template_id}/dist/index.html`, '_blank')}>Preview</Btn>
+            <Btn onClick={onPreview}>Preview</Btn>
             {!isDefault && <Btn onClick={onSetDefault}>Set Default</Btn>}
             {isCustom && (
               <>
