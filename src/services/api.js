@@ -103,14 +103,35 @@ async function request(path, opts = {}) {
         };
     }
 
-    // Validate content-type before parsing JSON
-    const contentType = r.headers.get("content-type");
-    if (contentType && !contentType.includes("application/json")) {
-        console.warn("[API] Unexpected content-type:", contentType);
-        // Still try to parse, but log the warning
+    function buildTextError(status, text) {
+        const trimmed = String(text || "").trim();
+        return {
+            error: trimmed || `HTTP ${status}`,
+            detail: trimmed,
+            url,
+        };
     }
 
-    return r.json();
+    const text = await r.text().catch(() => "");
+    const contentType = r.headers.get("content-type") || "";
+    const trimmed = text.trim();
+    const looksLikeJson = trimmed.startsWith("{") || trimmed.startsWith("[");
+
+    if (!trimmed) {
+        return { ok: true };
+    }
+
+    if (!contentType.includes("application/json") && !looksLikeJson) {
+        console.warn("[API] Non-JSON response body:", contentType || "unknown content-type", trimmed.slice(0, 200));
+        return buildTextError(r.status, text);
+    }
+
+    try {
+        return JSON.parse(text);
+    } catch (e) {
+        console.warn("[API] Failed to parse JSON response:", e?.message || e, trimmed.slice(0, 200));
+        return buildTextError(r.status, text);
+    }
 }
 
 export const api = {

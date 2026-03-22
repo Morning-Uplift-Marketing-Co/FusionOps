@@ -1,90 +1,115 @@
-# Conventions
+# Coding Conventions
 
-## Language & Runtime
+**Analysis Date:** 2026-03-22
 
-- **Primary language:** JavaScript (ES Modules) with selective TypeScript
-- **Module system:** ESM (`"type": "module"` in package.json)
-- **React version:** 19.x (functional components, hooks only)
-- **Node runtime:** Used for scripts; Cloudflare Workers for backend
+## Naming Patterns
+
+**Files:**
+- React components: `PascalCase.jsx` (e.g. `AppRoot.jsx`, `ErrorBoundary.jsx`).
+- Astro pages and layouts: `*.astro` (e.g. `src/pages/index.astro`, `src/layouts/Layout.astro`).
+- Services and utilities: `kebab-case.js` or descriptive camelCase (e.g. `src/services/api.js`, `src/services/sentry.js`).
+- TypeScript used alongside JS for adapters and some tests (e.g. `src/adapters/template-feature-matrix.ts`).
+
+**Functions:**
+- `camelCase` for functions and methods (e.g. `resolveApiBase`, `buildApiUrl`, `captureError` in `src/services/api.js` and `src/services/sentry.js`).
+
+**Variables:**
+- `camelCase` for locals; `UPPER_SNAKE` for module-level constants (e.g. `CSRF_TOKEN_KEY` in `src/services/api.js`).
+
+**Types:**
+- TypeScript: `PascalCase` for types and interfaces where used (e.g. `AccountRow` in worker-related tests under `tests/unit/workers/`).
+
+**Tests:**
+- Unit/integration: `*.test.js` or `*.spec.ts` co-located under `__tests__/` or under `tests/unit/` (e.g. `src/utils/__tests__/capability-resolver.test.js`, `tests/unit/utils/index.spec.ts`).
 
 ## Code Style
 
-### Component Patterns
-- Functional components with hooks (`useState`, `useEffect`)
-- Named exports preferred: `export function Dashboard() {}`
-- Props destructured in function signature
-- JSX files use `.jsx` extension, TypeScript uses `.tsx`
+**Formatting:**
+- No Prettier configuration detected in the repository root. Rely on ESLint warnings and consistent team style.
 
-### State Management
-- Local state via `useState` in `App.jsx` (lifted state pattern)
-- No external state library (no Redux, Zustand, etc.)
-- Settings persisted to `localStorage` via `LS` utility wrapper
-- Global state passed as props through component tree
+**Linting:**
+- ESLint 9 flat config: `eslint.config.js`.
+- Lint command: `npm run lint` (`eslint .`).
+- **Scoped files:** `**/*.{js,jsx}` only — TypeScript/TSX files are not in the `files` glob (use `npm run check` via Astro for TS).
+- **Ignored paths:** `dist`, `node_modules`, `coverage`, Playwright output dirs, `apps/**`, `packages/**`, `templates/**`, `docs/**`, `scripts/**`, `*.config.*` (see `globalIgnores` in `eslint.config.js`).
+- **Key rules (mostly `warn`):** `no-unused-vars` with `varsIgnorePattern: '^[A-Z_]'` and `argsIgnorePattern: '^_'`, React Hooks recommended set, `react-refresh/only-export-components`.
 
-### Import Organization
-```javascript
-// 1. React imports
-import { useState, useEffect } from "react";
-// 2. Service imports
-import { api } from "./services/api";
-import * as db from "./services/neon";
-// 3. Constants
-import { THEME as T, WIZARD_DEFAULTS } from "./constants";
-// 4. Utilities
-import { uid, now, LS } from "./utils";
-// 5. Component imports
-import { Sidebar } from "./components/Sidebar";
+**Type checking:**
+- `npm run check` runs `astro check` (TypeScript + Astro validation per `package.json`).
+
+## Import Organization
+
+**Order (observed pattern):**
+1. Side-effect imports first when order matters (e.g. Sentry init before React in `src/AppRoot.jsx`: `import "./services/sentry"`).
+2. External packages (`react`, `@sentry/react`, UI libraries).
+3. Internal relative imports (`./App.jsx`, `../components/...`).
+
+**Path aliases:**
+- `tsconfig.json`: `"@/*": ["src/*"]` for editor/TS resolution.
+- Vite/Astro (`astro.config.mjs` `vite.resolve.alias`): `@` maps to `src/templates/astrodeck-main/src` — **not** the same as `src/*` at repo root; prefer relative imports for app shell code unless you intentionally target the template subtree.
+- Vitest (`vitest.config.ts`): `@` → `./src`, `@constants` → `./src/constants`, `#lp-template-generator` → `./packages/lp-template-generator/src` (tests only).
+
+**Example (relative imports in root app):**
+
+```jsx
+// src/AppRoot.jsx
+import "./services/sentry";
+import { StrictMode } from "react";
+import * as Sentry from "@sentry/react";
+import App from "./App.jsx";
 ```
-
-## Naming Conventions
-
-| Entity | Convention | Example |
-|--------|-----------|---------|
-| Components | PascalCase | `Dashboard.jsx`, `SpendDashboard.jsx` |
-| Services | camelCase/kebab-case | `api.js`, `cloudflare-dns.js` |
-| Utilities | kebab-case | `template-router.js`, `risk-engine.js` |
-| Constants | UPPER_SNAKE_CASE | `LOAN_TYPES`, `APP_VERSION`, `WIZARD_DEFAULTS` |
-| CSS classes | Tailwind utility classes | `className="flex items-center gap-2"` |
-| Env vars | VITE_ prefix (client) | `VITE_API_BASE`, `VITE_NEON_URL` |
-| Worker bindings | UPPER_SNAKE_CASE | `DB`, `NEON_URL`, `VOLUUM_ACCESS_ID` |
 
 ## Error Handling
 
-- Global error capture via `window.addEventListener("error")` and `unhandledrejection` in `App.jsx`
-- Errors logged to `ErrorLog` component via `logError()` function
-- API client (`services/api.js`) wraps all requests with try/catch, returns `{ ok, data, error }` envelope
-- Silent fallbacks common in non-critical paths (e.g., template loading)
-- Sentry integration available (`@sentry/react`) but usage is selective
+**API layer (`src/services/api.js`):**
+- Network failures: `try/catch` around `fetch`, return structured objects `{ error, detail, url }` with `error: "NETWORK_ERROR"` when appropriate — do not throw for expected HTTP/network failures.
+- Non-OK HTTP: parse body when possible; return `{ error, detail, url }`.
+- JSON parse failures: `console.warn` with `[API]` prefix, return `buildTextError(...)`.
 
-## API Response Pattern
+**React:**
+- Optional Sentry boundary in `src/AppRoot.jsx` when `VITE_SENTRY_DSN` is set; otherwise `src/components/ErrorBoundary.jsx`.
+
+**Sentry helpers (`src/services/sentry.js`):**
+- `captureError(error, context)` for manual reporting; `beforeSend` scrubs `token=` from breadcrumb URLs.
+
+## Logging
+
+**Framework:** `console` for dev/diagnostic messages; `@sentry/react` for production error reporting and breadcrumbs.
+
+**Patterns:**
+- Prefix logs by area: `[API]` in `src/services/api.js`, `[Sentry]` in `src/services/sentry.js`.
+- Initialization messages use emoji sparingly for scan-ability (e.g. `[Sentry] ✅ Initialized`).
 
 ```javascript
-// services/api.js request() returns:
-{ ok: true, data: responseJson }
-// or
-{ ok: false, error: "Error message", status: 404 }
+// src/services/api.js
+console.warn("[API] Network error or timeout:", e?.message || e);
 ```
 
-## Security Patterns
+**Breadcrumbs:** `addBreadcrumb(category, message, data)` in `src/services/sentry.js` for manual tracing when DSN is configured.
 
-- **CSRF:** Client-generated token stored in `sessionStorage`, sent with mutation requests
-- **Account Lock:** `services/account-lock.js` prevents accidental Cloudflare account switching
-- **Auth:** JWT tokens stored in localStorage, sent as `Authorization: Bearer` header
-- **CSP headers:** Configured in `astro.config.mjs` for dev server
-- **Input sanitization:** `sanitizeSettings()` on app initialization
+## Comments
 
-## UI Framework
+**When to comment:**
+- File-level blocks in tests describing scope (e.g. `src/utils/__tests__/capability-resolver.test.js` header).
+- Section separators in large test files (`// ─── Test Fixtures ───`).
 
-- **Tailwind CSS v4** via Vite plugin (`@tailwindcss/vite`)
-- **Radix UI** primitives for accessible components (`@radix-ui/react-tabs`, `@radix-ui/react-slot`)
-- **Lucide React** for icons
-- **Recharts** for data visualization (SpendDashboard)
-- **class-variance-authority (CVA)** for component variants
-- **tailwind-merge + clsx** via `cn()` utility in `lib/utils.ts`
+**JSDoc/TSDoc:**
+- Not consistently applied; module-level JSDoc appears in `src/services/sentry.js` for public helpers.
 
-## Configuration
+## Function Design
 
-- Environment variables loaded from `.env`, `.env.local`, `.env.lock`
-- `.env.lock` contains forced overrides (loaded in `astro.config.mjs`)
-- Vite path aliases: `@` → `src/templates/astrodeck-main/src`, `#lp-template-generator` → `packages/lp-template-generator/src`
-- Dev server runs on port 4323 with API proxy to Workers
+**Size:** Large modules exist (e.g. `src/services/api.js`); new code should prefer small, testable helpers.
+
+**Parameters:** Default empty objects for options (`request(path, opts = {})` in `src/services/api.js`).
+
+**Return values:** API client returns plain objects or parsed JSON; use explicit error fields instead of exceptions for control flow.
+
+## Module Design
+
+**Exports:** Named object for HTTP API (`export const api = { get, post, ... }` in `src/services/api.js`); named exports for Sentry helpers.
+
+**Barrel files:** `src/utils/index` pattern used where re-exports are helpful (see imports like `import { LS } from '../../../src/utils'` in `tests/unit/utils/index.spec.ts`).
+
+---
+
+*Convention analysis: 2026-03-22*

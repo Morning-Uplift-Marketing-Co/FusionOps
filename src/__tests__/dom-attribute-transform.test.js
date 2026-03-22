@@ -82,7 +82,7 @@ describe('DOM Attribute Transformation', () => {
     // while custom ones get randomized
   });
 
-  it('should randomize aria-label values', () => {
+  it('should randomize aria-label values', async () => {
     const html = '<button aria-label="Close dialog">X</button>';
     const $ = load(html);
     const siteId = 'test-site';
@@ -195,7 +195,7 @@ describe('DOM Attribute Transformation', () => {
     expect($('[data-custom]').attr('data-custom')).toBe(newValue);
   });
 
-  it('should handle aria-label with special characters', () => {
+  it('should handle aria-label with special characters', async () => {
     const html = '<button aria-label="Close &amp; confirm">OK</button>';
     const $ = load(html);
     const siteId = 'test-site';
