@@ -1,5 +1,0 @@
-name = "bearloannow"
-compatibility_date = "2024-03-07"
-
-[site]
-bucket = "./dist"

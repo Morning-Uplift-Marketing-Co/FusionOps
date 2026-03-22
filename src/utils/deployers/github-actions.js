@@ -6,6 +6,9 @@
  * which runs Astro build + CF Pages deploy via CI.
  *
  * Only needs PAT with "repo" scope — NO "workflow" scope required.
+ *
+ * Field mapping from Wizard → JSON keys is defined inline below (voluumCampaignId → voluumId, etc.).
+ * Persistable Wizard keys live in src/constants/site-fields.js (SITE_FIELD_KEYS).
  */
 
 const GITHUB_API = 'https://api.github.com';

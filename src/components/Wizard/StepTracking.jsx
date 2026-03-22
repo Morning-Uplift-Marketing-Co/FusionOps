@@ -16,6 +16,10 @@ import {
 import { LS } from "../../utils";
 import { getOrCreateZone, upsertDnsRecord } from "../../services/cloudflare-dns";
 
+// Tracking data flow: Wizard fields → sanitizeSite (SITE_FIELDS in src/constants/site-fields.js)
+// → deploy-configs JSON via github-actions.js → deploy-lp.yml writes PUBLIC_* / VITE_* → template build.
+// voluumLanderScript is stored in JSON for parity/editing; CI inject + layouts primarily use voluumDomain / click URL from env.
+
 // ─── Voluum API via worker proxy ───
 const VOLUUM_API = (() => {
   const fromWindow = typeof window !== "undefined" ? window.__LP_API__ : "";

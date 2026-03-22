@@ -282,6 +282,11 @@ function astroToHtmlPreview(files, site, options = {}) {
     aprMin: site.aprMin || 5.99,
     aprMax: site.aprMax || 35.99,
     loanLabel: site.loanLabel || site.loanType || 'Personal Finance',
+    // Theme tokens — required so PUBLIC_COLORID / PUBLIC_FONTID / PUBLIC_RADIUS in Astro
+    // frontmatter resolve to wizard values (see frontmatterVarMap + BaseLayout.astro).
+    colorId: site.colorId || 'ocean',
+    fontId: site.fontId || 'plus-jakarta',
+    radius: site.radius || 'rounded',
     address: site.address || generateBusinessAddress(site.domain || '', site.brand || ''),
     network: site.network || 'LeadsGate',
     redirectUrl: site.voluumClickUrl || site.redirectUrl || '#',
@@ -732,10 +737,14 @@ function astroToHtmlPreview(files, site, options = {}) {
     html = html.replace(/__LP_STYLE_BLOCK_(\d+)__/g, (_m, idx) => styleBlocks[Number(idx)] || '');
   }
 
-  // If template has substantial inline CSS (> 200 chars in <style> blocks), strip any Tailwind CDN
-  // that was baked into the source — it overrides/resets inline CSS and breaks layout.
+  // Detect Tailwind usage early — needed by inline CSS stripping decision below
+  const usesTailwindClassesEarly = /class="[^"]*\b(bg-(?:blue|red|green|gray|white|black|slate|zinc|orange|yellow|purple|pink|indigo|teal|cyan|lime|emerald|violet|fuchsia|rose|amber|sky|neutral|stone|warm|cool|dark|light)-\d|text-(?:xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl)|text-(?:blue|red|green|gray|white|black|slate)-\d|p-\d+\b|px-\d+\b|py-\d+\b|pt-\d+\b|pb-\d+\b|pl-\d+\b|pr-\d+\b|m-\d+\b|mx-\d+\b|my-\d+\b|mt-\d+\b|mb-\d+\b|ml-\d+\b|mr-\d+\b|gap-\d+\b|w-\d+\b|h-\d+\b|flex-col\b|flex-row\b|flex-wrap\b|grid-cols-|items-center\b|items-start\b|items-end\b|justify-center\b|justify-between\b|justify-start\b|rounded-(?:sm|md|lg|xl|full)\b|border-\d+\b|font-bold\b|font-semibold\b|font-medium\b|leading-\d|tracking-wide|space-x-|space-y-|overflow-hidden\b|overflow-auto\b|z-\d+\b|min-h-|max-w-)\b/.test(html);
+
+  // If template has substantial inline CSS (> 200 chars) AND does NOT use Tailwind utility
+  // classes, strip any Tailwind CDN — it overrides inline CSS and breaks layout.
+  // But if template USES Tailwind utilities, keep the CDN — inline CSS is supplementary.
   const inlineStyleContent = styleBlocks.concat(componentStyles).join('');
-  const hasSubstantialInlineCss = inlineStyleContent.length > 200;
+  const hasSubstantialInlineCss = inlineStyleContent.length > 200 && !usesTailwindClassesEarly;
   if (hasSubstantialInlineCss) {
     // Remove <script> tags that load Tailwind CDN from the source HTML
     html = html.replace(/<script\b[^>]*src=["'][^"']*cdn\.tailwindcss\.com[^"']*["'][^>]*><\/script>/gi, '');
@@ -772,7 +781,9 @@ function astroToHtmlPreview(files, site, options = {}) {
   const primaryHsl = colorObj.p ? `hsl(${colorObj.p[0]} ${colorObj.p[1]}% ${colorObj.p[2]}%)` : '#2563EB';
   const accentHsl = colorObj.a ? `hsl(${colorObj.a[0]} ${colorObj.a[1]}% ${colorObj.a[2]}%)` : '#F97316';
   const secondaryHsl = colorObj.s ? `hsl(${colorObj.s[0]} ${colorObj.s[1]}% ${colorObj.s[2]}%)` : '#10B981';
-  const tailwindConfigScript = `<script>window.tailwind = window.tailwind || {}; window.tailwind.config = {theme: {extend: {colors: {primary: '${primaryHsl}', accent: '${accentHsl}', secondary: '${secondaryHsl}'}, boxShadow: {cta: '0 4px 14px 0 hsl(40 90% 55% / 0.4)', card: '0 10px 15px -3px hsl(350 75% 38% / 0.08), 0 4px 6px -4px hsl(350 75% 38% / 0.06)'}} } } };</script>`;
+  const backgroundHsl = colorObj.bg ? `hsl(${colorObj.bg[0]} ${colorObj.bg[1]}% ${colorObj.bg[2]}%)` : '#F8FAFC';
+  const foregroundHsl = colorObj.fg ? `hsl(${colorObj.fg[0]} ${colorObj.fg[1]}% ${colorObj.fg[2]}%)` : '#0F172A';
+  const tailwindConfigScript = `<script>window.tailwind = window.tailwind || {}; window.tailwind.config = {theme: {extend: {colors: {primary: {DEFAULT: '${primaryHsl}', foreground: '#ffffff'}, accent: {DEFAULT: '${accentHsl}'}, secondary: {DEFAULT: '${secondaryHsl}'}, background: '${backgroundHsl}', foreground: '${foregroundHsl}'}, boxShadow: {cta: '0 4px 14px 0 hsl(40 90% 55% / 0.4)', card: '0 10px 15px -3px hsl(350 75% 38% / 0.08), 0 4px 6px -4px hsl(350 75% 38% / 0.06)'}} } } };</script>`;
   const tailwindCdnScript = `<script src="https://cdn.tailwindcss.com"></script>`;
   const tailwindFallbackCss = `<style>\n.shadow-cta{box-shadow:0 4px 14px 0 hsl(40 90% 55% / 0.4)}\n.shadow-card{box-shadow:0 10px 15px -3px hsl(350 75% 38% / 0.08),0 4px 6px -4px hsl(350 75% 38% / 0.06)}\n</style>`;
   const tailwindCdn = needsTailwind && !hasTailwindCdn ? `${tailwindConfigScript}\n${tailwindCdnScript}\n${tailwindFallbackCss}` : '';
@@ -1021,6 +1032,12 @@ export function generateHtmlByTemplate(site) {
   if (customTemplatesCache) {
     const customTemplate = customTemplatesCache.find(t => t.id === templateId || t.dbId === templateId);
     if (customTemplate && customTemplate.files) {
+      // Prefer pre-built HTML (dist/index.html) — 100% accurate, no conversion needed
+      const builtHtml = customTemplate.files['dist/index.html'];
+      if (builtHtml) {
+        return ensureTrackingBaselineHtml(builtHtml, site);
+      }
+
       // Use the smart analyzer to choose the right rendering path
       const framework = identifyFramework(customTemplate.files);
       const colorObj = getColorObj(site.colorId);

@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "fusion": {
-      "url": "https://fusion-mcp-server.fly.dev/mcp?token=9f6a3c1d4e8b7a2f5c0d9e1b3a6f4c7d2e8a1b5c9d3f7a4e6b0c2d8f1a3e5b7c",
-      "transport": "sse"
-    }
-  }
-}

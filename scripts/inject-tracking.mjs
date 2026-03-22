@@ -409,23 +409,27 @@ const aid = import.meta.env.PUBLIC_AID || '14881';
 ---
 <!DOCTYPE html>
 <html lang="en">
-<head>
+  <!-- Implied <head>: avoids Astro scoped CSS adding data-astro-cid to <html>/<body> (breaks some third-party form scripts). -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Apply</title>
   <link rel="dns-prefetch" href="//apikeep.com" />
-  <style>
+  <style is:inline>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; min-height: 100vh; background: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
     body { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 24px 16px 48px; }
     #_lg_form_ { width: 100%; max-width: 640px; }
   </style>
-</head>
-<body>
+  <body>
+  <!-- LeadsGate AID from SSR; inline script reads data-aid (no define:vars). -->
+  <div id="__fo_lg_aid" data-aid={aid} hidden aria-hidden="true"></div>
 
-<script is:inline define:vars={{ aid }}>
+<script is:inline>
 window.dataLayer = window.dataLayer || [];
+
+var __foAidEl = document.getElementById('__fo_lg_aid');
+var aid = (__foAidEl && __foAidEl.getAttribute('data-aid')) || '14881';
 
 function fpPixel(eventName, extra) {
   try {

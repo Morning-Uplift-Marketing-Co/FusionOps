@@ -282,9 +282,16 @@ async function main() {
 
 
 
-  // Collect files
+  // Collect files (dist/ is skipped by SKIP_DIRS, but we want dist/index.html for preview)
 
   const files = collectFiles(folderPath);
+
+  // Include dist/index.html if it exists (pre-built HTML for accurate preview)
+  const distIndex = path.join(folderPath, 'dist', 'index.html');
+  if (fs.existsSync(distIndex)) {
+    files['dist/index.html'] = fs.readFileSync(distIndex, 'utf-8');
+    console.log('   ✓ Found dist/index.html — will be used for preview');
+  }
 
   const fileCount = Object.keys(files).length;
 
