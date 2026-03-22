@@ -1,5 +1,5 @@
 {
-  "templateId": "mcp-loan-06",
+  "templateId": "bolt-loan-01",
   "cfPagesProject": "lp-jora-creditz-main",
   "cfApiToken": "",
   "cfAccountId": "",
@@ -36,5 +36,5 @@
   "radius": "subtle",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-22T04:05:38.532Z"
+  "deployedAt": "2026-03-22T04:13:52.244Z"
 }
