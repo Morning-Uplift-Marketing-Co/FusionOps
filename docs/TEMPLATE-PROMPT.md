@@ -65,17 +65,17 @@ Must include:
 @tailwind utilities;
 
 :root {
-  --primary: <LEAVE EMPTY — deploy system injects per-site>;
-  --color-primary: <SAME AS --primary>;
-  --secondary: <LEAVE EMPTY>;
-  --accent: <LEAVE EMPTY>;
-  --background: <LEAVE EMPTY>;
-  --foreground: <LEAVE EMPTY>;
+  --primary: 217 91% 35%;
+  --color-primary: 217 91% 35%;
+  --secondary: 158 64% 42%;
+  --accent: 15 92% 62%;
+  --background: 210 40% 98%;
+  --foreground: 222 47% 11%;
   --radius: 0.75rem;
 }
 ```
 
-DO NOT put real HSL values here. The deploy pipeline sets these via PUBLIC_COLORID.
+These are ocean palette defaults. The deploy pipeline overrides them per-site via PUBLIC_COLORID (CSS cascade — injected `<style>` in `<head>` wins over `:root` in global.css).
 
 === tailwind.config.mjs ===
 
@@ -239,18 +239,17 @@ Neutrals (slate, gray, white, black) are OK to hardcode.
 @tailwind utilities;
 
 :root {
-  --primary: <LEAVE EMPTY — deploy system injects per-site>;
-  --color-primary: <SAME AS --primary>;
-  --secondary: <LEAVE EMPTY>;
-  --accent: <LEAVE EMPTY>;
-  --background: <LEAVE EMPTY>;
-  --foreground: <LEAVE EMPTY>;
+  --primary: 217 91% 35%;
+  --color-primary: 217 91% 35%;
+  --secondary: 158 64% 42%;
+  --accent: 15 92% 62%;
+  --background: 210 40% 98%;
+  --foreground: 222 47% 11%;
   --radius: 0.75rem;
 }
 ```
 
-DO NOT put real HSL values here. The deploy pipeline sets these via PUBLIC_COLORID.
-Just declare the variable names so Tailwind can reference them.
+These are ocean palette defaults. The deploy pipeline overrides them per-site via PUBLIC_COLORID (CSS cascade — injected `<style>` in `<head>` wins over `:root` in global.css).
 
 === tailwind.config.ts (or use Tailwind v4 CSS config) ===
 
@@ -316,15 +315,17 @@ Use CSS custom properties for ALL brand colors:
 
 <style>
 :root {
-  --primary: <LEAVE EMPTY — deploy system injects per-site>;
-  --secondary: <LEAVE EMPTY>;
-  --accent: <LEAVE EMPTY>;
-  --background: <LEAVE EMPTY>;
-  --foreground: <LEAVE EMPTY>;
+  --primary: 217 91% 35%;
+  --color-primary: 217 91% 35%;
+  --secondary: 158 64% 42%;
+  --accent: 15 92% 62%;
+  --background: 210 40% 98%;
+  --foreground: 222 47% 11%;
+  --radius: 0.75rem;
 }
 </style>
 
-DO NOT put real HSL values. The deploy pipeline sets colors per-site.
+These are ocean palette defaults. The deploy pipeline overrides them per-site via PUBLIC_COLORID.
 
 Then use inline styles or Tailwind arbitrary values:
   style="background: hsl(var(--primary))"
