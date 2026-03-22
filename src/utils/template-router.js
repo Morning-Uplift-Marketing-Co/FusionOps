@@ -737,10 +737,13 @@ function astroToHtmlPreview(files, site, options = {}) {
     html = html.replace(/__LP_STYLE_BLOCK_(\d+)__/g, (_m, idx) => styleBlocks[Number(idx)] || '');
   }
 
-  // If template has substantial inline CSS (> 200 chars in <style> blocks), strip any Tailwind CDN
-  // that was baked into the source — it overrides/resets inline CSS and breaks layout.
+  // If template has substantial inline CSS (> 200 chars in <style> blocks) AND does NOT use
+  // Tailwind utility classes, strip any Tailwind CDN that was baked into the source —
+  // it overrides/resets inline CSS and breaks layout.
+  // But if template USES Tailwind utilities (bg-primary, text-xl, p-4 etc.), keep the CDN
+  // even with inline CSS — the inline CSS is supplementary (sliders, animations), not a replacement.
   const inlineStyleContent = styleBlocks.concat(componentStyles).join('');
-  const hasSubstantialInlineCss = inlineStyleContent.length > 200;
+  const hasSubstantialInlineCss = inlineStyleContent.length > 200 && !usesTailwindClasses;
   if (hasSubstantialInlineCss) {
     // Remove <script> tags that load Tailwind CDN from the source HTML
     html = html.replace(/<script\b[^>]*src=["'][^"']*cdn\.tailwindcss\.com[^"']*["'][^>]*><\/script>/gi, '');
