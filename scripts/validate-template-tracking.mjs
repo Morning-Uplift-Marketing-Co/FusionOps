@@ -122,27 +122,40 @@ if (issues.length) {
 
 console.log('✓ Tracking stack static validation passed for', templateDir);
 
-// Dynamic Network Verification with Puppeteer
-import { spawn } from 'node:child_process';
-import puppeteer from 'puppeteer';
-
-if (!fs.existsSync(path.join(templateDir, 'dist'))) {
-  console.log('⚠ No dist directory found. Skipping Puppeteer network validation. Build the template first to test network requests.');
+// Optional Puppeteer network check — must NOT use static `import` here: ESM hoists imports, so CI
+// would load puppeteer even when we exit early (e.g. no dist yet). deploy-lp runs this step before
+// `npm run build`, so dist is often absent; when dist exists, root node_modules may still be missing
+// in Actions because only the template folder gets `npm install`.
+const distDir = path.join(templateDir, 'dist');
+if (!fs.existsSync(distDir)) {
+  console.log(
+    '⚠ No dist directory found. Skipping Puppeteer network validation (normal for deploy-lp before build).'
+  );
   process.exit(0);
 }
 
-console.log('\\n[Puppeteer] Starting local server to verify tracking network requests...');
-const server = spawn('npx', ['serve', 'dist', '-p', '8080'], { cwd: templateDir, stdio: 'ignore' });
+(async () => {
+  const { spawn } = await import('node:child_process');
+  let puppeteer;
+  try {
+    puppeteer = (await import('puppeteer')).default;
+  } catch (e) {
+    console.warn('⚠ Puppeteer not available; skipping network validation:', e?.code || e?.message);
+    process.exit(0);
+  }
 
-setTimeout(async () => {
+  console.log('\n[Puppeteer] Starting local server to verify tracking network requests...');
+  const server = spawn('npx', ['serve', 'dist', '-p', '8080'], { cwd: templateDir, stdio: 'ignore' });
+
+  await new Promise((r) => setTimeout(r, 2000));
   try {
     const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox'] });
     const page = await browser.newPage();
-    
+
     let caughtPixel = false;
     let caughtVoluum = false;
 
-    page.on('request', request => {
+    page.on('request', (request) => {
       const url = request.url();
       if (url.includes('/e?') || url.includes('/e&')) {
         console.log('  ✓ [Network] Caught First-party Pixel request:', url);
@@ -156,22 +169,27 @@ setTimeout(async () => {
 
     console.log('[Puppeteer] Navigating to http://localhost:8080');
     await page.goto('http://localhost:8080', { waitUntil: 'networkidle0', timeout: 10000 });
-    
+
     await browser.close();
-    server.kill();
 
     if (caughtPixel && caughtVoluum) {
-      console.log('\\n✅ ALL TRACKING VERIFIED: Puppeteer successfully intercepted Pixel and Voluum network requests.');
+      console.log('\n✅ ALL TRACKING VERIFIED: Puppeteer successfully intercepted Pixel and Voluum network requests.');
       process.exit(0);
     } else {
-      console.error('\\n❌ TRACKING FAILURE: Missing network requests.');
+      console.error('\n❌ TRACKING FAILURE: Missing network requests.');
       if (!caughtPixel) console.error('  - First-party Pixel beacon (/e) did NOT fire.');
       if (!caughtVoluum) console.error('  - Voluum dtpCallback (/d/.js) did NOT fire.');
       process.exit(1);
     }
   } catch (err) {
     console.error('Puppeteer verification error:', err);
-    server.kill();
     process.exit(1);
+  } finally {
+    try {
+      server.kill('SIGTERM');
+    } catch (_) {}
   }
-}, 2000);
+})().catch((err) => {
+  console.error('Puppeteer async bootstrap error:', err);
+  process.exit(1);
+});
