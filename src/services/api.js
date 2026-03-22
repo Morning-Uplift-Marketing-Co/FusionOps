@@ -90,11 +90,12 @@ async function request(path, opts = {}) {
 
     if (!r.ok) {
         const text = await r.text().catch(() => '');
-        // Parse JSON error body to extract real error message
         let errorMsg = `HTTP ${r.status}`;
         try {
             const parsed = JSON.parse(text);
-            if (parsed?.error) errorMsg = parsed.error;
+            if (parsed?.error) errorMsg = String(parsed.error);
+            if (parsed?.code) errorMsg = `${errorMsg} [${parsed.code}]`;
+            if (parsed?.hint) errorMsg = `${errorMsg} — ${parsed.hint}`;
         } catch (_) {}
         return {
             error: errorMsg,

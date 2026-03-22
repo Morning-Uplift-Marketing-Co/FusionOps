@@ -620,6 +620,47 @@ async function createTemplateVersionSnapshot(db, templateRow, note = '') {
   return nextVersion;
 }
 
+/** Stable HTTP responses + Workers logs for POST /api/templates failures. */
+function jsonFromTemplatePostException(err, ctx = {}) {
+  const msg = String(err?.message || err || 'Unknown error');
+  console.error('[POST /api/templates]', { ...ctx, message: msg }, err?.stack || '');
+  if (/no such column/i.test(msg)) {
+    return json({
+      error: msg,
+      code: 'D1_SCHEMA_MISMATCH',
+      hint: 'D1 is missing a column on `templates` or `template_versions`. Apply migrations under apps/api-worker/migrations and redeploy the worker so ensureTemplateManagerSchema runs.',
+    }, 500);
+  }
+  if (/no such table/i.test(msg)) {
+    return json({
+      error: msg,
+      code: 'D1_MISSING_TABLE',
+      hint: 'Apply SQL migrations under apps/api-worker/migrations to this D1 database.',
+    }, 500);
+  }
+  if (/UNIQUE constraint failed/i.test(msg)) {
+    const isVersions = /template_versions/i.test(msg);
+    return json({
+      error: isVersions
+        ? 'Version snapshot failed due to a uniqueness conflict (retry the request).'
+        : msg,
+      code: 'UNIQUE_CONSTRAINT',
+      detail: msg,
+    }, 409);
+  }
+  if (/Payload too large|entity too large|too large|maximum.*size|exceeds.*limit/i.test(msg)) {
+    return json({
+      error: 'Template payload too large for storage or platform limits.',
+      code: 'PAYLOAD_TOO_LARGE',
+      detail: msg,
+    }, 413);
+  }
+  if (/database is locked|D1_ERROR|:\s*busy/i.test(msg)) {
+    return json({ error: msg, code: 'D1_TRANSIENT' }, 503);
+  }
+  return json({ error: msg, code: 'TEMPLATE_POST_FAILED' }, 500);
+}
+
 const BUILTIN_TEMPLATE_IDS = new Set([
   'classic',
   'astrodeck-loan',
@@ -2598,59 +2639,105 @@ export default {
       }
 
       if (path === '/api/templates' && method === 'POST') {
-        await ensureTemplateManagerSchema(db);
-        const body = await request.json();
-        const id = body.id || uid();
-        const now = new Date().toISOString();
-        const templateId = String(body.templateId || '').trim();
-        const status = String(body.status || 'draft').toLowerCase();
-        const normalizedStatus = ['draft', 'active', 'deprecated', 'archived'].includes(status) ? status : 'draft';
-        if (!isValidTemplateId(templateId)) {
-          return json({ error: 'Invalid templateId. Use letters, numbers, and hyphens (2-64 chars).' }, 400);
-        }
-
-        // Check if template_id already exists
-        const existing = await db.prepare('SELECT id FROM templates WHERE template_id = ? AND COALESCE(is_deleted, 0) = 0').bind(templateId).first();
-        if (existing) {
-          return json({ error: 'Template ID already exists' }, 400);
-        }
-
-        const filesJson = body.files ? JSON.stringify(body.files) : '{}';
-        const postCategory = resolveCategory(body.category, templateId, body.name, body.description, body.files);
+        // Default 40 MiB: template imports as JSON are large; stay under Cloudflare ~100 MiB request body cap.
+        const CF_BODY_CEILING = 99 * 1024 * 1024;
+        const defaultPostMax = 40 * 1024 * 1024;
+        const parsedMax = parseInt(String(env.TEMPLATE_POST_MAX_BYTES || ''), 10);
+        const POST_TEMPLATE_BODY_LIMIT = Number.isFinite(parsedMax) && parsedMax >= 256 * 1024
+          ? Math.min(parsedMax, CF_BODY_CEILING)
+          : defaultPostMax;
+        let templateIdForLog = '';
         try {
-          await db.prepare(`
+          await ensureTemplateManagerSchema(db);
+          const rawBody = await request.text();
+          templateIdForLog = '(parse pending)';
+          if (rawBody.length > POST_TEMPLATE_BODY_LIMIT) {
+            console.error('[POST /api/templates]', { bytes: rawBody.length, limit: POST_TEMPLATE_BODY_LIMIT, code: 'PAYLOAD_TOO_LARGE' });
+            return json({
+              error: `Template JSON exceeds ${POST_TEMPLATE_BODY_LIMIT} bytes (current: ${rawBody.length}). Trim files, omit node_modules from import, push large repos to GitHub only, or raise TEMPLATE_POST_MAX_BYTES in Worker env (max ~${CF_BODY_CEILING}).`,
+              code: 'PAYLOAD_TOO_LARGE',
+              bytes: rawBody.length,
+              limit: POST_TEMPLATE_BODY_LIMIT,
+            }, 413);
+          }
+
+          let body;
+          try {
+            body = JSON.parse(rawBody || '{}');
+          } catch (parseErr) {
+            console.error('[POST /api/templates]', { phase: 'json_parse', message: parseErr?.message });
+            return json({
+              error: 'Invalid JSON in request body',
+              code: 'INVALID_JSON',
+              detail: String(parseErr?.message || parseErr),
+            }, 400);
+          }
+
+          const id = body.id || uid();
+          const now = new Date().toISOString();
+          const templateId = String(body.templateId || '').trim();
+          templateIdForLog = templateId || '(empty)';
+
+          const status = String(body.status || 'draft').toLowerCase();
+          const normalizedStatus = ['draft', 'active', 'deprecated', 'archived'].includes(status) ? status : 'draft';
+          if (!isValidTemplateId(templateId)) {
+            return json({ error: 'Invalid templateId. Use letters, numbers, and hyphens (2-64 chars).' }, 400);
+          }
+
+          const existing = await db.prepare('SELECT id FROM templates WHERE template_id = ? AND COALESCE(is_deleted, 0) = 0').bind(templateId).first();
+          if (existing) {
+            return json({ error: 'Template ID already exists' }, 400);
+          }
+
+          const filesJson = body.files ? JSON.stringify(body.files) : '{}';
+          const postCategory = resolveCategory(body.category, templateId, body.name, body.description, body.files);
+          try {
+            await db.prepare(`
             INSERT INTO templates (
               id, template_id, name, description, category, badge,
               source_code, files, created_at, updated_at, is_deleted, status, current_version, archived_at
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, 1, ?)
           `).bind(
-            id,
-            templateId,
-            body.name || '',
-            body.description || '',
-            postCategory,
-            body.badge || 'New',
-            body.sourceCode || '',
-            filesJson,
-            now,
-            now,
-            normalizedStatus,
-            normalizedStatus === 'archived' ? now : null
-          ).run();
-        } catch (insertErr) {
-          if (String(insertErr?.message || '').includes('UNIQUE constraint failed')) {
-            return json({ error: `Template ID "${templateId}" already exists. Choose a different ID.` }, 400);
+              id,
+              templateId,
+              body.name || '',
+              body.description || '',
+              postCategory,
+              body.badge || 'New',
+              body.sourceCode || '',
+              filesJson,
+              now,
+              now,
+              normalizedStatus,
+              normalizedStatus === 'archived' ? now : null
+            ).run();
+          } catch (insertErr) {
+            const im = String(insertErr?.message || '');
+            if (im.includes('UNIQUE constraint failed') && /template_id/i.test(im)) {
+              return json({ error: `Template ID "${templateId}" already exists. Choose a different ID.` }, 400);
+            }
+            return jsonFromTemplatePostException(insertErr, { phase: 'insert', templateId });
           }
-          throw insertErr;
-        }
 
-        const templateRow = await db.prepare('SELECT * FROM templates WHERE id = ?').bind(id).first();
-        if (templateRow) {
-          await createTemplateVersionSnapshot(db, templateRow, body.note || 'Initial version');
-        }
+          const templateRow = await db.prepare('SELECT * FROM templates WHERE id = ?').bind(id).first();
+          if (templateRow) {
+            try {
+              await createTemplateVersionSnapshot(db, templateRow, body.note || 'Initial version');
+            } catch (snapErr) {
+              return jsonFromTemplatePostException(snapErr, {
+                phase: 'version_snapshot',
+                templateId,
+                rowId: id,
+                note: 'Template row was inserted; initial version snapshot failed.',
+              });
+            }
+          }
 
-        return json({ id, success: true }, 201);
+          return json({ id, success: true }, 201);
+        } catch (err) {
+          return jsonFromTemplatePostException(err, { phase: 'unknown', templateId: templateIdForLog });
+        }
       }
 
       if (path.match(/^\/api\/templates\/(?!default$)[\w-]+$/) && method === 'GET') {
