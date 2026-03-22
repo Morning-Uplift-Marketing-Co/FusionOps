@@ -282,6 +282,11 @@ function astroToHtmlPreview(files, site, options = {}) {
     aprMin: site.aprMin || 5.99,
     aprMax: site.aprMax || 35.99,
     loanLabel: site.loanLabel || site.loanType || 'Personal Finance',
+    // Theme tokens — required so PUBLIC_COLORID / PUBLIC_FONTID / PUBLIC_RADIUS in Astro
+    // frontmatter resolve to wizard values (see frontmatterVarMap + BaseLayout.astro).
+    colorId: site.colorId || 'ocean',
+    fontId: site.fontId || 'plus-jakarta',
+    radius: site.radius || 'rounded',
     address: site.address || generateBusinessAddress(site.domain || '', site.brand || ''),
     network: site.network || 'LeadsGate',
     redirectUrl: site.voluumClickUrl || site.redirectUrl || '#',
@@ -772,7 +777,9 @@ function astroToHtmlPreview(files, site, options = {}) {
   const primaryHsl = colorObj.p ? `hsl(${colorObj.p[0]} ${colorObj.p[1]}% ${colorObj.p[2]}%)` : '#2563EB';
   const accentHsl = colorObj.a ? `hsl(${colorObj.a[0]} ${colorObj.a[1]}% ${colorObj.a[2]}%)` : '#F97316';
   const secondaryHsl = colorObj.s ? `hsl(${colorObj.s[0]} ${colorObj.s[1]}% ${colorObj.s[2]}%)` : '#10B981';
-  const tailwindConfigScript = `<script>window.tailwind = window.tailwind || {}; window.tailwind.config = {theme: {extend: {colors: {primary: '${primaryHsl}', accent: '${accentHsl}', secondary: '${secondaryHsl}'}, boxShadow: {cta: '0 4px 14px 0 hsl(40 90% 55% / 0.4)', card: '0 10px 15px -3px hsl(350 75% 38% / 0.08), 0 4px 6px -4px hsl(350 75% 38% / 0.06)'}} } } };</script>`;
+  const backgroundHsl = colorObj.bg ? `hsl(${colorObj.bg[0]} ${colorObj.bg[1]}% ${colorObj.bg[2]}%)` : '#F8FAFC';
+  const foregroundHsl = colorObj.fg ? `hsl(${colorObj.fg[0]} ${colorObj.fg[1]}% ${colorObj.fg[2]}%)` : '#0F172A';
+  const tailwindConfigScript = `<script>window.tailwind = window.tailwind || {}; window.tailwind.config = {theme: {extend: {colors: {primary: {DEFAULT: '${primaryHsl}', foreground: '#ffffff'}, accent: {DEFAULT: '${accentHsl}'}, secondary: {DEFAULT: '${secondaryHsl}'}, background: '${backgroundHsl}', foreground: '${foregroundHsl}'}, boxShadow: {cta: '0 4px 14px 0 hsl(40 90% 55% / 0.4)', card: '0 10px 15px -3px hsl(350 75% 38% / 0.08), 0 4px 6px -4px hsl(350 75% 38% / 0.06)'}} } } };</script>`;
   const tailwindCdnScript = `<script src="https://cdn.tailwindcss.com"></script>`;
   const tailwindFallbackCss = `<style>\n.shadow-cta{box-shadow:0 4px 14px 0 hsl(40 90% 55% / 0.4)}\n.shadow-card{box-shadow:0 10px 15px -3px hsl(350 75% 38% / 0.08),0 4px 6px -4px hsl(350 75% 38% / 0.06)}\n</style>`;
   const tailwindCdn = needsTailwind && !hasTailwindCdn ? `${tailwindConfigScript}\n${tailwindCdnScript}\n${tailwindFallbackCss}` : '';
