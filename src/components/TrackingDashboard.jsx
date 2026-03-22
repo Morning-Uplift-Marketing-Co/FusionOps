@@ -430,146 +430,138 @@ function OverviewTab({ checks, score, checksApply, scoreApply }) {
   const pctColor = score.pct >= 80 ? T.success : score.pct >= 50 ? T.warning : T.danger;
   const pctColorApply = scoreApply ? (scoreApply.pct >= 80 ? T.success : scoreApply.pct >= 50 ? T.warning : T.danger) : T.muted;
 
-  return (
-    <>
-      {/* Score Summary - Index Page */}
-      <div style={{ ...S.card, marginBottom: 20, display: "flex", alignItems: "center", gap: 20 }}>
-        <div style={{
-          width: 64, height: 64, borderRadius: "50%",
-          border: `3px solid ${pctColor}`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 20, fontWeight: 800, color: pctColor,
-          background: `${pctColor}11`,
-        }}>
-          {score.pct}%
+  // Render a single score circle card
+  const ScoreCircle = ({ label, icon, pct, color, reqPassed, reqTotal, optPassed, optTotal }) => (
+    <div style={{ ...S.card, flex: 1, display: "flex", alignItems: "center", gap: 18, padding: "22px 24px" }}>
+      <div style={{
+        width: 72, height: 72, borderRadius: "50%", flexShrink: 0,
+        border: `4px solid ${color}`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 22, fontWeight: 900, color,
+        background: `${color}15`,
+      }}>
+        {pct}%
+      </div>
+      <div>
+        <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 4 }}>
+          {icon} {label}
         </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 16, fontWeight: 800 }}>
-            📄 INDEX Page — Tracking Verification <span style={S.badge(pctColor)}>{score.requiredPassed}/{score.requiredTotal} required</span>
-          </div>
-          <div style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>
-            {score.pct >= 80 ? "All critical tracking layers detected" :
-             score.pct >= 50 ? "Some tracking layers missing — check details below" :
-             "Major tracking gaps detected — review implementation"}
-          </div>
-          <div style={{ fontSize: 11, color: T.dim, marginTop: 4 }}>
-            Optional checks: {score.optionalPassed}/{score.optionalTotal}
-          </div>
+        <div style={S.badge(color)}>{reqPassed}/{reqTotal} required</div>
+        <div style={{ fontSize: 11, color: T.dim, marginTop: 6 }}>
+          Optional: {optPassed}/{optTotal}
+        </div>
+        <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
+          {pct >= 100 ? "✅ All critical tracking layers detected" :
+           pct >= 80 ? "Almost there — minor gaps" :
+           pct >= 50 ? "⚠️ Some tracking layers missing" :
+           "❌ Major tracking gaps detected"}
         </div>
       </div>
+    </div>
+  );
 
-      {/* Score Summary - Apply Page */}
-      {scoreApply && (
-        <div style={{ ...S.card, marginBottom: 20, display: "flex", alignItems: "center", gap: 20 }}>
-          <div style={{
-            width: 64, height: 64, borderRadius: "50%",
-            border: `3px solid ${pctColorApply}`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 20, fontWeight: 800, color: pctColorApply,
-            background: `${pctColorApply}11`,
-          }}>
-            {scoreApply.pct}%
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 16, fontWeight: 800 }}>
-              📝 APPLY Page — Tracking Verification <span style={S.badge(pctColorApply)}>{scoreApply.requiredPassed}/{scoreApply.requiredTotal} required</span>
-            </div>
-            <div style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>
-              {scoreApply.pct >= 80 ? "All critical tracking layers detected" :
-               scoreApply.pct >= 50 ? "Some tracking layers missing — check details below" :
-               "Major tracking gaps detected — review implementation"}
-            </div>
-            <div style={{ fontSize: 11, color: T.dim, marginTop: 4 }}>
-              Optional checks: {scoreApply.optionalPassed}/{scoreApply.optionalTotal}
-            </div>
-          </div>
+  // Render a group card for one page's checks
+  const GroupCard = ({ group, items, pageChecks }) => {
+    const passed = items.filter(i => {
+      const v = pageChecks[i.key];
+      return v === true || (typeof v === "string" && v);
+    }).length;
+    const requiredItems = items.filter(i => i.required);
+    const requiredPassed = requiredItems.filter(i => {
+      const v = pageChecks[i.key];
+      return v === true || (typeof v === "string" && v);
+    }).length;
+    const total = items.length;
+    const groupColor = requiredItems.length === 0 || requiredPassed === requiredItems.length
+      ? T.success
+      : requiredPassed > 0
+        ? T.warning
+        : T.danger;
+
+    return (
+      <div style={S.card}>
+        <div style={S.cardTitle}>
+          <span style={S.badge(groupColor)}>{requiredPassed}/{requiredItems.length || 0} req • {passed}/{total} all</span>
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: .5, color: T.muted }}>{group}</span>
         </div>
-      )}
-
-      {/* INDEX Page - Check Groups */}
-      <div style={{ ...S.sectionLabel, marginTop: 20 }}>📄 INDEX PAGE ANALYSIS</div>
-      <div style={S.grid}>
-        {Object.entries(score.groups).map(([group, items]) => {
-          const passed = items.filter(i => {
-            const v = checks[i.key];
-            return v === true || (typeof v === "string" && v);
-          }).length;
-          const requiredItems = items.filter(i => i.required);
-          const requiredPassed = requiredItems.filter(i => {
-            const v = checks[i.key];
-            return v === true || (typeof v === "string" && v);
-          }).length;
-          const total = items.length;
-          const groupColor = requiredItems.length === 0 || requiredPassed === requiredItems.length
-            ? T.success
-            : requiredPassed > 0
-              ? T.warning
-              : T.danger;
-
+        {items.map(item => {
+          const val = pageChecks[item.key];
+          const ok = val === true || (typeof val === "string" && val);
+          const style = ok ? S.rowPass : item.required ? S.rowFail : S.rowWarn;
           return (
-            <div key={group} style={S.card}>
-              <div style={S.cardTitle}>
-                <span style={S.badge(groupColor)}>{requiredPassed}/{requiredItems.length || 0} req • {passed}/{total} all</span>
-                <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: .5, color: T.muted }}>{group}</span>
-              </div>
-              {items.map(item => {
-                const val = checks[item.key];
-                const ok = val === true || (typeof val === "string" && val);
-                const style = ok ? S.rowPass : item.required ? S.rowFail : S.rowWarn;
-                return (
-                  <div key={item.key} style={{ ...S.row, ...style }}>
-                    <span>{item.label}</span>
-                    <StatusDot ok={ok} warn={!item.required} />
-                  </div>
-                );
-              })}
+            <div key={item.key} style={{ ...S.row, ...style }}>
+              <span>{item.label}</span>
+              <StatusDot ok={ok} warn={!item.required} />
             </div>
           );
         })}
       </div>
+    );
+  };
 
-      {/* APPLY Page - Check Groups */}
-      {scoreApply && checksApply && (
+  return (
+    <>
+      {/* ── Score Summary: Side-by-Side ── */}
+      <div style={{ display: "flex", gap: 16, marginBottom: 24 }}>
+        <ScoreCircle
+          label="INDEX Page"
+          icon="📄"
+          pct={score.pct}
+          color={pctColor}
+          reqPassed={score.requiredPassed}
+          reqTotal={score.requiredTotal}
+          optPassed={score.optionalPassed}
+          optTotal={score.optionalTotal}
+        />
+        {scoreApply ? (
+          <ScoreCircle
+            label="APPLY Page"
+            icon="📝"
+            pct={scoreApply.pct}
+            color={pctColorApply}
+            reqPassed={scoreApply.requiredPassed}
+            reqTotal={scoreApply.requiredTotal}
+            optPassed={scoreApply.optionalPassed}
+            optTotal={scoreApply.optionalTotal}
+          />
+        ) : (
+          <div style={{ ...S.card, flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: T.muted, fontSize: 13 }}>
+            📝 APPLY Page — Not found or not accessible
+          </div>
+        )}
+      </div>
+
+      {/* ── Side-by-Side Detail Grids ── */}
+      {scoreApply && checksApply ? (
+        // Two-column: INDEX left, APPLY right
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+          {/* INDEX column */}
+          <div>
+            <div style={{ ...S.sectionLabel, marginBottom: 12 }}>📄 INDEX PAGE</div>
+            {Object.entries(score.groups).map(([group, items]) => (
+              <div key={group} style={{ marginBottom: 12 }}>
+                <GroupCard group={group} items={items} pageChecks={checks} />
+              </div>
+            ))}
+          </div>
+          {/* APPLY column */}
+          <div>
+            <div style={{ ...S.sectionLabel, marginBottom: 12 }}>📝 APPLY PAGE</div>
+            {Object.entries(scoreApply.groups).map(([group, items]) => (
+              <div key={group} style={{ marginBottom: 12 }}>
+                <GroupCard group={group} items={items} pageChecks={checksApply} />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        // Single column: INDEX only
         <>
-          <div style={{ ...S.sectionLabel, marginTop: 32 }}>📝 APPLY PAGE ANALYSIS</div>
+          <div style={{ ...S.sectionLabel, marginTop: 8 }}>📄 INDEX PAGE ANALYSIS</div>
           <div style={S.grid}>
-            {Object.entries(scoreApply.groups).map(([group, items]) => {
-              const passed = items.filter(i => {
-                const v = checksApply[i.key];
-                return v === true || (typeof v === "string" && v);
-              }).length;
-              const requiredItems = items.filter(i => i.required);
-              const requiredPassed = requiredItems.filter(i => {
-                const v = checksApply[i.key];
-                return v === true || (typeof v === "string" && v);
-              }).length;
-              const total = items.length;
-              const groupColor = requiredItems.length === 0 || requiredPassed === requiredItems.length
-                ? T.success
-                : requiredPassed > 0
-                  ? T.warning
-                  : T.danger;
-
-              return (
-                <div key={group} style={S.card}>
-                  <div style={S.cardTitle}>
-                    <span style={S.badge(groupColor)}>{requiredPassed}/{requiredItems.length || 0} req • {passed}/{total} all</span>
-                    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: .5, color: T.muted }}>{group}</span>
-                  </div>
-                  {items.map(item => {
-                    const val = checksApply[item.key];
-                    const ok = val === true || (typeof val === "string" && val);
-                    const style = ok ? S.rowPass : item.required ? S.rowFail : S.rowWarn;
-                    return (
-                      <div key={item.key} style={{ ...S.row, ...style }}>
-                        <span>{item.label}</span>
-                        <StatusDot ok={ok} warn={!item.required} />
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })}
+            {Object.entries(score.groups).map(([group, items]) => (
+              <GroupCard key={group} group={group} items={items} pageChecks={checks} />
+            ))}
           </div>
         </>
       )}
