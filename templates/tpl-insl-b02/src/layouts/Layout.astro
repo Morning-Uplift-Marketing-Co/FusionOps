@@ -1,0 +1,51 @@
+---
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = "TPL-USA-B02 - Pet Care Financing Made Simple",
+  description = "Get approved for $200-$10,000 in minutes. Flexible financing for your pet's veterinary care, grooming, training, and more. 0%-35.99% APR."
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content={description} />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- Google Ads & Analytics Meta Tags -->
+    <meta name="google-site-verification" content="GOOGLE_SITE_VERIFICATION_CODE" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- SEO Meta Tags -->
+    <meta name="keywords" content="pet financing, veterinary loans, pet care financing, vet bills payment plans, dog care loans, cat care financing" />
+    <meta name="author" content="TPL-USA-B02" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+
+    <!-- Preconnect for Performance -->
+    <link rel="preconnect" href="https://www.googletagmanager.com">
+    <link rel="preconnect" href="https://www.google-analytics.com">
+    <link rel="dns-prefetch" href="https://apikeep.com">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <title>{title}</title>
+  </head>
+  <body class="antialiased bg-white text-gray-900">
+    <slot />
+  </body>
+</html>

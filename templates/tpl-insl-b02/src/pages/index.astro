@@ -1,0 +1,24 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header';
+import HeroWithModal from '../components/HeroWithModal';
+import HowItWorks from '../components/HowItWorks.astro';
+import Features from '../components/Features';
+import APRComparison from '../components/APRComparison.astro';
+import EligibleExpenses from '../components/EligibleExpenses.astro';
+import Testimonials from '../components/Testimonials';
+import FAQ from '../components/FAQ';
+import FooterWithModals from '../components/FooterWithModals';
+---
+
+<Layout>
+  <Header client:load />
+  <HeroWithModal client:load />
+  <HowItWorks />
+  <Features client:visible />
+  <APRComparison />
+  <EligibleExpenses />
+  <Testimonials client:visible />
+  <FAQ client:visible />
+  <FooterWithModals client:load />
+</Layout>

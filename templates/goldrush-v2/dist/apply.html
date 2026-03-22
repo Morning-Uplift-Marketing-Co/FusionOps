@@ -1,0 +1,69 @@
+<div id="_lg_form_"></div>
+
+<script>
+window._lg_form_init_ = {
+  aid: "14881",
+  template: "fresh",
+
+  get click_id() {
+    const p = new URLSearchParams(location.search);
+    return p.get('clickid') || '';
+  },
+
+  onSubmit(){ fireEvent('form_submit'); },
+  onSuccess(d){
+    fireEvent('conversion',{
+      lead_id:d?.lead_id,
+      payout:d?.price
+    });
+  }
+};
+</script>
+
+<script src="https://apikeep.com/form/applicationInit.js"></script>
+
+<script>
+function ccpaOptOut() {
+  localStorage.setItem('ccpa_optout', 'true');
+}
+
+function isTrackingSuppressed() {
+  return localStorage.getItem('ccpa_optout') === 'true';
+}
+
+function fireEvent(e,data){
+  try{
+    const payload = new URLSearchParams({
+      e,
+      cid:getClickId(),
+      ts:Date.now(),
+      ...(data||{})
+    }).toString();
+
+    const url='https://t.scratchpaypet.tech/e';
+
+    // conversion = always
+    if(e === 'conversion' || e === 'form_submit'){
+      navigator.sendBeacon?.(url,new Blob([payload],{
+        type:'application/x-www-form-urlencoded'
+      }));
+      new Image().src=url+'?'+payload;
+      return;
+    }
+
+    // respect CCPA
+    if(isTrackingSuppressed()) return;
+
+    navigator.sendBeacon?.(url,new Blob([payload],{
+      type:'application/x-www-form-urlencoded'
+    }));
+    new Image().src=url+'?'+payload;
+
+  }catch(e){}
+}
+
+function getClickId(){
+  const p = new URLSearchParams(location.search);
+  return p.get('clickid') || '';
+}
+</script>
