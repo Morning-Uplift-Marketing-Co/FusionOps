@@ -25,9 +25,10 @@ import { detectDependencies, extractCssVariables, identifyFramework, resolveEntr
  * @param {Record<string, string>} files — Template files
  * @param {object} site — Site/brand config from the wizard
  * @param {object} [colors] — Color object { p: [h,s,l], a: [h,s,l], s: [h,s,l] }
+ * @param {string} [basePath] — Optional base URL for relative assets
  * @returns {string} Complete HTML document
  */
-export function buildPreviewHtml(files, site = {}, colors = null) {
+export function buildPreviewHtml(files, site = {}, colors = null, basePath = '') {
   const framework = identifyFramework(files);
   const deps = detectDependencies(files);
   const entry = resolveEntryPoint(files);
@@ -52,6 +53,11 @@ export function buildPreviewHtml(files, site = {}, colors = null) {
 
   // Tracking stubs (prevent ReferenceError in preview)
   headInjections.push(buildTrackingStubs(site));
+  
+  // Base path for relative assets (images, fonts, linked CSS)
+  if (basePath) {
+    headInjections.push(`<base href="${basePath.endsWith('/') ? basePath : basePath + '/'}">`);
+  }
 
   // Tailwind CDN (only if template uses it AND doesn't already include it)
   const needsTailwind = deps.some(d => d.id === 'tailwindcss');
