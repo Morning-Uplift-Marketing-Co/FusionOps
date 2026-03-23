@@ -1,5 +1,5 @@
 {
-  "templateId": "bolt-loan-04",
+  "templateId": "goldrush-v2",
   "cfPagesProject": "lp-scratchpaypet-tech",
   "cfApiToken": "",
   "cfAccountId": "",
@@ -36,5 +36,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-23T22:00:31.256Z"
+  "deployedAt": "2026-03-23T22:02:10.565Z"
 }
