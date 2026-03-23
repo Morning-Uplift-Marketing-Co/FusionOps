@@ -36,13 +36,18 @@ function getCookie(name) {
 
 function getVoluumClickId() {
   var urlParams = new URLSearchParams(window.location.search);
-  // clickid = actual Voluum click ID passed on redirect from Voluum CTA
-  // vlcid = set by dtpCallback; cid/click_id = legacy; cpid = campaign ID fallback
+  // vlcid = dtpCallback; clickid = Voluum direct; cid/click_id = legacy; cpid = campaign fallback
   var fromUrl = urlParams.get('vlcid') || urlParams.get('clickid') || urlParams.get('cid') || urlParams.get('click_id') || '';
   var fromStorage = SafeStorage.get('vlcid') || SafeStorage.get('voluum_cid') || '';
   var fromCookie = getCookie('vlcid') || '';
   var cpid = urlParams.get('cpid') || '';
-  return fromUrl || fromStorage || fromCookie || cpid || '';
+  var cid = fromUrl || fromStorage || fromCookie || cpid || '';
+  // Persist to sessionStorage + cookie so cross-tab and subsequent calls always find it
+  if (fromUrl) {
+    SafeStorage.set('vlcid', fromUrl);
+    try { document.cookie = 'vlcid=' + fromUrl + ';path=/;max-age=1800;SameSite=Lax'; } catch(_) {}
+  }
+  return cid;
 }
 
 var _lg_form_init_ = {
@@ -111,7 +116,7 @@ var _lg_form_init_ = {
 // Fire pv on apply page load
 (function() {
   var p = new URLSearchParams(window.location.search);
-  var cid = p.get('clickid') || p.get('vlcid') || p.get('click_id') || p.get('cid') || p.get('cpid') || '';
+  var cid = p.get('vlcid') || p.get('clickid') || p.get('cid') || p.get('click_id') || p.get('cpid') || '';
   fpPixel('pv', cid ? { click_id: cid } : {});
 
   // Enhanced MutationObserver fallback: fire lg_form_load when LeadsGate mounts the form
