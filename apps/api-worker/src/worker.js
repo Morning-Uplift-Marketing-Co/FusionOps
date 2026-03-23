@@ -3756,9 +3756,26 @@ export default {
         const sites = await db.prepare('SELECT COUNT(*) as count, COALESCE(SUM(cost),0) as spend FROM sites').first();
         const deploys = await db.prepare('SELECT COUNT(*) as count FROM deploys').first();
         const domains = await db.prepare('SELECT COUNT(*) as count FROM ops_domains').first();
+        const postbacksTotal = await db.prepare('SELECT COALESCE(SUM(payout),0) as revenue FROM voluum_postbacks').first().catch(() => ({ revenue: 0 }));
+        const revenueSeriesRows = await db.prepare(
+          `SELECT strftime('%Y-%m-%d', datetime(ts, 'unixepoch')) as date, COALESCE(SUM(payout),0) as revenue
+           FROM voluum_postbacks
+           WHERE ts >= unixepoch('now', '-7 days')
+           GROUP BY date
+           ORDER BY date ASC`
+        ).all().catch(() => ({ results: [] }));
+
+        const revenueSeries = (revenueSeriesRows?.results || []).map((r) => ({
+          date: r.date,
+          revenue: Number(r.revenue || 0),
+          v: Number(r.revenue || 0),
+        }));
+
         return json({
           builds: sites.count,
           spend: sites.spend,
+          revenue: Number(postbacksTotal?.revenue || 0),
+          revenueSeries,
           deployed: deploys.count,
           domains: domains.count,
         });
@@ -3785,7 +3802,7 @@ export default {
           }
         };
 
-        const [sites, deploys, variants, domains, accounts, profiles, payments, logs, settingsRows, stats, cfAccountsResults, registrarAccountsResults, deploymentsResults] = await Promise.all([
+        const [sites, deploys, variants, domains, accounts, profiles, payments, logs, settingsRows, stats, revenueTotals, revenueSeriesRows, cfAccountsResults, registrarAccountsResults, deploymentsResults] = await Promise.all([
           safeAll('SELECT * FROM sites ORDER BY created_at DESC'),
           safeAll('SELECT * FROM deploys ORDER BY created_at DESC LIMIT 100'),
           safeAll('SELECT * FROM variants ORDER BY created_at DESC'),
@@ -3796,6 +3813,14 @@ export default {
           safeAll('SELECT * FROM ops_logs ORDER BY created_at DESC LIMIT 200'),
           safeAll('SELECT * FROM settings'),
           safeFirst('SELECT COUNT(*) as builds, COALESCE(SUM(cost),0) as spend FROM sites', { builds: 0, spend: 0 }),
+          safeFirst('SELECT COALESCE(SUM(payout),0) as revenue FROM voluum_postbacks', { revenue: 0 }),
+          safeAll(
+            `SELECT strftime('%Y-%m-%d', datetime(ts, 'unixepoch')) as date, COALESCE(SUM(payout),0) as revenue
+             FROM voluum_postbacks
+             WHERE ts >= unixepoch('now', '-7 days')
+             GROUP BY date
+             ORDER BY date ASC`
+          ),
           safeAll('SELECT * FROM cf_accounts ORDER BY label ASC'),
           safeAll('SELECT * FROM registrar_accounts ORDER BY provider ASC, label ASC'),
           safeAll('SELECT * FROM ops_deployments ORDER BY created_at DESC LIMIT 50'),
@@ -3803,6 +3828,12 @@ export default {
 
         const settingsObj = {};
         settingsRows.forEach(r => { settingsObj[r.key] = r.value; });
+
+        const revenueSeries = (revenueSeriesRows || []).map((r) => ({
+          date: r.date,
+          revenue: Number(r.revenue || 0),
+          v: Number(r.revenue || 0),
+        }));
 
         return json({
           sites: sites.map(snakeToCamel),
@@ -3819,7 +3850,12 @@ export default {
           cfAccounts: cfAccountsResults.map(snakeToCamel),
           registrarAccounts: registrarAccountsResults.map(snakeToCamel),
           settings: redactSettings(settingsObj),
-          stats: { builds: stats.builds || 0, spend: stats.spend || 0 },
+          stats: {
+            builds: stats.builds || 0,
+            spend: stats.spend || 0,
+            revenue: Number(revenueTotals?.revenue || 0),
+            revenueSeries,
+          },
           integrations: {
             lcConfigured: !!settingsObj.lcToken,
             mlConfigured: !!settingsObj.mlToken,

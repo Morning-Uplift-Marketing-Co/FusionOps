@@ -144,7 +144,6 @@ export function Sidebar({ page, setPage, siteCount, taskBadge, startCreate, star
         { id: "dashboard", icon: "📊", label: "Dashboard" },
         { id: "tasks", icon: "✅", label: "Tasks", badge: taskBadge },
         { id: "kpi", icon: "🏆", label: "KPI Dashboard" },
-        { id: "spend", icon: "💳", label: "Spend Dashboard" },
         { id: "voluum", icon: "🎯", label: "Voluum Explorer" },
         { id: "account-map", icon: "🗺️", label: "Account Map" },
         { id: "sites", icon: "🌐", label: "My Sites", badge: siteCount },
@@ -165,6 +164,7 @@ export function Sidebar({ page, setPage, siteCount, taskBadge, startCreate, star
 
     // Admin-only items
     const adminItems = [
+        { id: "spend", icon: "💳", label: "Spend Dashboard" },
         { id: "users", icon: "👥", label: "User Manager" },
     ];
 
