@@ -1,5 +1,5 @@
 {
-  "templateId": "bol-tmp-01",
+  "templateId": "goldrush-v2",
   "cfPagesProject": "lp-jora-creditz-main",
   "cfApiToken": "",
   "cfAccountId": "",
@@ -36,5 +36,5 @@
   "radius": "subtle",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-22T16:58:49.819Z"
+  "deployedAt": "2026-03-23T05:37:07.274Z"
 }
