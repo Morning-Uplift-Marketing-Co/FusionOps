@@ -1,5 +1,5 @@
 {
-  "templateId": "bearfunding_bolt_layout",
+  "templateId": "orangelending_bolt",
   "cfPagesProject": "lp-scratchpaypet-tech",
   "cfApiToken": "",
   "cfAccountId": "",
@@ -36,5 +36,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-23T23:03:47.757Z"
+  "deployedAt": "2026-03-23T23:10:27.983Z"
 }
