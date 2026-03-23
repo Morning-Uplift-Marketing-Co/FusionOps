@@ -13,12 +13,11 @@ import { test, expect } from '@playwright/test';
  * - Download options
  *
  * Deploy targets covered:
+ * - GitHub Actions (Astro Build) (github-actions) — listed first in UI
  * - Cloudflare Pages (cf-pages)
  * - Netlify (netlify)
  * - Vercel (vercel)
  * - Cloudflare Workers (cf-workers)
- * - S3 + CloudFront (s3-cloudfront)
- * - VPS via SSH (vps-ssh)
  * - Git Push Pipeline (git-push)
  */
 
@@ -90,7 +89,7 @@ test.describe('Deploy Flow - Deploy Dropdown Menu', () => {
       await page.waitForTimeout(300);
 
       // Look for deploy target options
-      const hasOptions = await page.getByText(/Cloudflare|Netlify|Vercel|AWS|VPS|Git/i)
+      const hasOptions = await page.getByText(/Cloudflare|Netlify|Vercel|GitHub|Git|Actions/i)
         .isVisible()
         .catch(() => false);
 
@@ -217,7 +216,7 @@ test.describe('Deploy Flow - Deploy Targets', () => {
     }
   });
 
-  test('should display AWS S3 + CloudFront option', async ({ page }) => {
+  test('should display GitHub Actions (Astro Build) option', async ({ page }) => {
     const deployBtns = page.getByRole('button').filter({ hasText: /Deploy|🚀/i });
     const count = await deployBtns.count();
 
@@ -225,30 +224,11 @@ test.describe('Deploy Flow - Deploy Targets', () => {
       await deployBtns.first().click();
       await page.waitForTimeout(300);
 
-      const awsOption = page.getByText(/S3.*CloudFront|🪣/i);
-      const isVisible = await awsOption.isVisible().catch(() => false);
+      const ghOption = page.getByText(/GitHub Actions|Astro Build|⚙️/i);
+      const isVisible = await ghOption.isVisible().catch(() => false);
 
       if (isVisible) {
-        await expect(awsOption).toBeVisible();
-      }
-
-      await page.mouse.click(10, 10);
-    }
-  });
-
-  test('should display VPS option', async ({ page }) => {
-    const deployBtns = page.getByRole('button').filter({ hasText: /Deploy|🚀/i });
-    const count = await deployBtns.count();
-
-    if (count > 0) {
-      await deployBtns.first().click();
-      await page.waitForTimeout(300);
-
-      const vpsOption = page.getByText(/VPS|SSH|🖥️/i);
-      const isVisible = await vpsOption.isVisible().catch(() => false);
-
-      if (isVisible) {
-        await expect(vpsOption).toBeVisible();
+        await expect(ghOption).toBeVisible();
       }
 
       await page.mouse.click(10, 10);
@@ -472,7 +452,7 @@ test.describe('Deploy Flow - Multiple Targets', () => {
       await page.waitForTimeout(300);
 
       // Count visible deploy targets
-      const targets = page.getByText(/Cloudflare|Netlify|Vercel|AWS|S3|VPS|Git|Workers/i);
+      const targets = page.getByText(/Cloudflare|Netlify|Vercel|GitHub|Actions|Git|Workers/i);
       const targetCount = await targets.count();
 
       if (targetCount > 0) {

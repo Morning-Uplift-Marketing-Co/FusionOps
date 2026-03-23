@@ -1,4 +1,4 @@
-export const APP_VERSION = "3.5.1";
+export const APP_VERSION = "3.6.0";
 
 export const LOAN_TYPES = [
     { id: "personal", label: "Personal Finance", icon: "💳" },
@@ -238,12 +238,11 @@ export const DNS_TEMPLATES = [
 ];
 
 export const DEPLOY_TARGETS = [
+    { id: "github-actions", label: "GitHub Actions (Astro Build)", icon: "⚙️", description: "Trigger CI — Astro builds correctly, no regex injection bugs" },
     { id: "cf-pages", label: "Cloudflare Pages", icon: "☁️", description: "Fast global CDN with Workers integration" },
     { id: "netlify", label: "Netlify", icon: "▲", description: "JAMstack deployment with CI/CD" },
     { id: "vercel", label: "Vercel", icon: "▲", description: "Next.js optimized deployment" },
     { id: "cf-workers", label: "Cloudflare Workers", icon: "⚡", description: "Edge computing platform" },
-    { id: "s3-cloudfront", label: "S3 + CloudFront", icon: "📦", description: "AWS static hosting" },
-    { id: "vps-ssh", label: "VPS via SSH", icon: "🖥️", description: "Direct server deployment" },
     { id: "git-push", label: "Git Push Pipeline", icon: "🧬", description: "Push artifacts to GitHub; CI deploys to targets" },
 ];
 
