@@ -1,0 +1,39 @@
+---
+const lenders = [
+  { name: 'SoFi', abbr: 'SoFi' },
+  { name: 'LightStream', abbr: 'LS' },
+  { name: 'Marcus by Goldman Sachs', abbr: 'GS' },
+  { name: 'Upgrade', abbr: 'UPG' },
+  { name: 'Best Egg', abbr: 'BE' },
+  { name: 'Prosper', abbr: 'PRO' },
+  { name: 'LendingClub', abbr: 'LC' },
+  { name: 'Avant', abbr: 'AVT' },
+];
+---
+
+<section class="py-14" style="background: var(--surface-2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);" aria-label="Lender partner network">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+    <p class="mb-8 text-center text-xs font-semibold uppercase tracking-widest text-slate-500">
+      Our Lender Network — 40+ Partners Nationwide
+    </p>
+    <div class="grid grid-cols-4 gap-4 sm:grid-cols-8">
+      {lenders.map((lender) => (
+        <div
+          class="flex flex-col items-center gap-2 text-center"
+          title={lender.name}
+        >
+          <div
+            class="flex h-12 w-12 items-center justify-center rounded-xl text-xs font-bold tracking-tight"
+            style="background: var(--surface-3); border: 1px solid var(--border); color: var(--primary-light);"
+          >
+            {lender.abbr}
+          </div>
+          <span class="text-xs text-slate-600 leading-tight hidden sm:block">{lender.name.split(' ')[0]}</span>
+        </div>
+      ))}
+    </div>
+    <p class="mt-6 text-center text-xs text-slate-600">
+      Logos shown are for illustrative purposes. Actual lender availability may vary by state and applicant profile.
+    </p>
+  </div>
+</section>
