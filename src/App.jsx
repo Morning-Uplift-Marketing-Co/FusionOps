@@ -122,7 +122,7 @@ export default function App() {
   });
   const [accountMismatch, setAccountMismatch] = useState(null);
   const [showAccountBanner, setShowAccountBanner] = useState(false);
-  const [stats, setStats] = useState({ builds: 0, spend: 0 });
+  const [stats, setStats] = useState({ builds: 0, spend: 0, revenue: null, revenueSeries: [] });
   const [toast, setToast] = useState(null);
   const [wizData, setWizData] = useState(null);
   const [sideCollapsed, setSideCollapsed] = useState(false);
@@ -517,10 +517,11 @@ useEffect(() => {
 
             // Stats
             const siteList = neonSites?.length ? neonSites : [];
-            setStats({
+            setStats((prev) => ({
+              ...prev,
               builds: siteList.length,
               spend: +(siteList.reduce((a, s) => a + (s.cost || 0), 0)).toFixed(3),
-            });
+            }));
           }
         }
       } catch (e) {
@@ -599,6 +600,18 @@ useEffect(() => {
           }
         }
 
+        if (data.stats) {
+          const s = data.stats || {};
+          setStats((prev) => ({
+            ...prev,
+            ...s,
+            builds: Number.isFinite(Number(s.builds)) ? Number(s.builds) : prev.builds,
+            spend: Number.isFinite(Number(s.spend)) ? Number(s.spend) : prev.spend,
+            revenue: Number.isFinite(Number(s.revenue)) ? Number(s.revenue) : (prev.revenue ?? null),
+            revenueSeries: Array.isArray(s.revenueSeries) ? s.revenueSeries : (prev.revenueSeries || []),
+          }));
+        }
+
         // Final fallback/merge if Neon still not ready
         if (!neonReady) {
           if (Array.isArray(data.sites)) setSites(data.sites);
@@ -607,7 +620,6 @@ useEffect(() => {
             setSettings(merged);
             LS.set("settings", merged);
           }
-          if (data.stats) setStats(data.stats);
           if (data.deploys) setDeploys(data.deploys);
           if (data.variants) setRegistry(data.variants);
         }
@@ -794,7 +806,7 @@ useEffect(() => {
       // New site — await Neon (primary), D1 is fire-and-forget
       const cleanSite = sanitizeSite(site);
       setSites(p => [cleanSite, ...p]);
-      setStats(p => ({ builds: p.builds + 1, spend: +(p.spend + (cleanSite.cost || 0)).toFixed(3) }));
+      setStats(p => ({ ...p, builds: p.builds + 1, spend: +(p.spend + (cleanSite.cost || 0)).toFixed(3) }));
 
       if (neonOk) await db.saveSite(cleanSite).catch(() => {});
       else if (apiOk) await api.post("/sites", cleanSite).catch(() => {});
@@ -1058,7 +1070,7 @@ useEffect(() => {
         <TopBar stats={stats} settings={settings} deploys={deploys} apiOk={apiOk} neonOk={neonOk} onReconnectNeon={recoverNeonConnection} />
         <div style={{ padding: "24px 28px" }}>
           {page === "dashboard" && <Dashboard sites={sites} stats={stats} ops={ops} setPage={setPage} startCreate={startCreate} settings={settings} apiOk={apiOk} neonOk={neonOk} tasks={tasks} />}
-          {page === "spend" && <SpendDashboard apiOk={apiOk} neonOk={neonOk} settings={settings} />}
+          {page === "spend" && isAdmin(user) && <SpendDashboard apiOk={apiOk} neonOk={neonOk} settings={settings} />}
           {page === "voluum" && <VoluumExplorer settings={settings} />}
           {page === "account-map" && <AccountMap apiOk={apiOk} neonOk={neonOk} ops={ops} settings={settings} />}
           {page === "sites" && <Sites sites={sites} del={delSite} notify={notify} startCreate={startCreate} startDuplicate={startDuplicate} settings={settings} addDeploy={addDeploy} ops={ops} updateSite={updateSite} />}
