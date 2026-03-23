@@ -11,6 +11,7 @@ import { PerCardTab } from "./spend/PerCardTab";
 import { PerDomainTab } from "./spend/PerDomainTab";
 import { MonthlyPnLTab } from "./spend/MonthlyPnLTab";
 import { ReconcileTab } from "./spend/ReconcileTab";
+import { TrackingReconcileTab } from "./spend/TrackingReconcileTab";
 import { OpexTab } from "./spend/OpexTab";
 
 
@@ -22,6 +23,7 @@ const TAB_ITEMS = [
     { value: "domain", icon: "🌐", label: "Per Domain" },
     { value: "pnl", icon: "📈", label: "P&L" },
     { value: "reconcile", icon: "🔄", label: "Reconcile" },
+    { value: "tracking_cv", icon: "🎯", label: "Tracking CV" },
     { value: "opex", icon: "🏢", label: "Opex" },
 ];
 
@@ -222,6 +224,12 @@ export function SpendDashboard({ apiOk, neonOk, settings = {} }) {
                 <TabsContent value="domain"><PerDomainTab hideRevenue={hideRevenue} /></TabsContent>
                 <TabsContent value="pnl"><MonthlyPnLTab hideRevenue={hideRevenue} /></TabsContent>
                 <TabsContent value="reconcile"><ReconcileTab /></TabsContent>
+                <TabsContent value="tracking_cv">
+                    <TrackingReconcileTab
+                        apiBase={settings.apiBase || import.meta.env?.VITE_API_BASE || ''}
+                        apiHeaders={settings.apiSecret ? { Authorization: `Bearer ${settings.apiSecret}` } : {}}
+                    />
+                </TabsContent>
                 <TabsContent value="opex"><OpexTab /></TabsContent>
             </Tabs>
         </div>
