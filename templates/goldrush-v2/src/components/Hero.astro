@@ -72,18 +72,92 @@ const trustItems = [
         {sub}
       </p>
 
-      <!-- CTA row -->
-      <div class="flex flex-col sm:flex-row gap-3 mb-10">
-        <a href={ctaHref} class="btn-primary text-base py-4 px-8">
-          {cta}
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-            <path d="M5 12h14M12 5l7 7-7 7"/>
-          </svg>
-        </a>
-        <a href="#calculator" class="btn-ghost text-base py-4 px-8">
-          Calculate Payment
-        </a>
-      </div>
+      <!-- ZIP + CTA form -->
+      <form id="zip-form" data-href={ctaHref} novalidate class="mb-10">
+        <div class="flex flex-col sm:flex-row gap-3 mb-3">
+          <div class="relative flex-1 max-w-[200px]">
+            <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-foreground/30"
+              width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
+            </svg>
+            <input
+              id="zip-input"
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]{5}"
+              maxlength="5"
+              placeholder="ZIP Code"
+              autocomplete="postal-code"
+              class="w-full pl-9 pr-3 py-4 rounded-xl text-base font-medium outline-none transition-all"
+              style="background: hsl(var(--background)); border: 1.5px solid hsl(var(--border)); color: hsl(var(--foreground));"
+            />
+          </div>
+          <button type="submit" class="btn-primary text-base py-4 px-8">
+            {cta}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </button>
+          <a href="#calculator" class="btn-ghost text-base py-4 px-8">
+            Calculate Payment
+          </a>
+        </div>
+        <p id="zip-error" class="text-red-400 text-xs hidden">Please enter a valid 5-digit ZIP code.</p>
+      </form>
+
+      <script is:inline>
+      (function() {
+        var form     = document.getElementById('zip-form');
+        var input    = document.getElementById('zip-input');
+        var errMsg   = document.getElementById('zip-error');
+        var startFired = false;
+
+        if (!form || !input) return;
+
+        // form_start fires once on first interaction
+        input.addEventListener('focus', function() {
+          if (startFired) return;
+          startFired = true;
+          try {
+            var cid = (window.__TRK && window.__TRK.getClickId) ? window.__TRK.getClickId() : '';
+            if (window.pixel) window.pixel('form_start', { source: 'zip', click_id: cid });
+          } catch (_) {}
+        }, { once: false });
+
+        // style reset on input
+        input.addEventListener('input', function() {
+          input.style.borderColor = '';
+          errMsg.classList.add('hidden');
+        });
+
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          var zip = input.value.replace(/\D/g, '').slice(0, 5);
+          if (zip.length !== 5) {
+            input.style.borderColor = 'hsl(0 84% 60%)';
+            errMsg.classList.remove('hidden');
+            input.focus();
+            return;
+          }
+
+          try {
+            var cid = (window.__TRK && window.__TRK.getClickId) ? window.__TRK.getClickId() : '';
+            if (window.pixel) window.pixel('ze', { zip: zip, click_id: cid });
+          } catch (_) {}
+
+          var href = form.dataset.href || '';
+          var dest;
+          if (href && href !== '#apply' && href !== '#') {
+            // Voluum click URL — append zip
+            dest = href + (href.indexOf('?') >= 0 ? '&' : '?') + 'zip=' + encodeURIComponent(zip);
+          } else {
+            var cid2 = (window.__TRK && window.__TRK.getClickId) ? window.__TRK.getClickId() : '';
+            dest = '/apply?zip=' + encodeURIComponent(zip) + (cid2 ? '&vlcid=' + encodeURIComponent(cid2) : '');
+          }
+          window.location.href = dest;
+        });
+      })();
+      </script>
 
       <!-- Trust bar -->
       <div class="flex flex-wrap gap-x-5 gap-y-2.5">
