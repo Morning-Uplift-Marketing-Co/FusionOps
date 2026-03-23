@@ -1687,6 +1687,41 @@ export default {
       }
     }
 
+    // ═══ VOLUUM POSTBACKS API — query stored postbacks ═══
+    if (path === '/api/postbacks' && method === 'GET') {
+      try {
+        const domain = url.searchParams.get('domain') || '';
+        const limit  = Math.min(parseInt(url.searchParams.get('limit') || '200'), 1000);
+        const since  = parseInt(url.searchParams.get('since') || '0', 10);
+
+        const tableExists = await db
+          .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='voluum_postbacks' LIMIT 1")
+          .first();
+        if (!tableExists) return json({ success: true, postbacks: [], count: 0 });
+
+        let stmt;
+        if (domain) {
+          stmt = db.prepare(
+            `SELECT id, domain, click_id, lead_id, payout, type, ts
+             FROM voluum_postbacks WHERE domain LIKE ? AND ts > ?
+             ORDER BY ts DESC LIMIT ?`
+          ).bind(`%${domain}%`, since, limit);
+        } else {
+          stmt = db.prepare(
+            `SELECT id, domain, click_id, lead_id, payout, type, ts
+             FROM voluum_postbacks WHERE ts > ?
+             ORDER BY ts DESC LIMIT ?`
+          ).bind(since, limit);
+        }
+
+        const { results } = await stmt.all();
+        const postbacks = (results || []).map(r => ({ ...r, ts: Number(r.ts || 0), payout: Number(r.payout || 0) }));
+        return json({ success: true, postbacks, count: postbacks.length });
+      } catch (e) {
+        return json({ success: false, error: e.message }, 500);
+      }
+    }
+
     // ═══ PROXY ROUTES (no auth required — proxy forwards auth headers) ═══
     if (path.startsWith('/api/proxy/')) {
       const proxyRes = await handleProxy(request, url);
