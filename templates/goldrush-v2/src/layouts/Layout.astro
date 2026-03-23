@@ -4,6 +4,14 @@ const {
   title = 'GoldRush Lending — Premium Installment Loans',
   description = 'Fast, flexible installment loans up to $35,000 with fixed monthly payments. Apply in minutes, funds in 24 hours.',
 } = Astro.props;
+
+// Voluum tracking variables
+const voluumDomain      = import.meta.env.PUBLIC_VOLUUMDOMAIN      || '';
+const conversionId      = import.meta.env.PUBLIC_CONVERSIONID      || '';
+const formStartLabel    = import.meta.env.PUBLIC_FORMSTARTLABEL    || '';
+const formSubmitLabel   = import.meta.env.PUBLIC_FORMSUBMITLABEL   || '';
+const voluumClickUrl    = import.meta.env.PUBLIC_VOLUUM_CLICK_URL  || '';
+const ctaHref           = voluumClickUrl || '#apply';
 ---
 <!doctype html>
 <html lang="en">
@@ -15,8 +23,106 @@ const {
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
   <meta property="og:type" content="website" />
+
+  {/* Google Ads Tracking */}
+  {conversionId && (
+    <script data-cfasync="false" async src={`https://www.googletagmanager.com/gtag/js?id=${conversionId}`} is:inline></script>
+  )}
+  {conversionId && (
+    <script data-cfasync="false" is:inline define:vars={{ conversionId, formStartLabel, formSubmitLabel }}>
+      (function(){
+        function gtag(){window.dataLayer=window.dataLayer||[];window.dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', conversionId);
+        window.__gtagConversionId = conversionId;
+        window.__formStartLabel   = formStartLabel;
+        window.__formSubmitLabel  = formSubmitLabel;
+      })();
+    </script>
+  )}
+
+  {/* Voluum Tracking */}
+  {voluumDomain && <meta http-equiv="delegate-ch" content={`sec-ch-ua https://${voluumDomain}; sec-ch-ua-mobile https://${voluumDomain}; sec-ch-ua-arch https://${voluumDomain}; sec-ch-ua-model https://${voluumDomain}; sec-ch-ua-platform https://${voluumDomain}; sec-ch-ua-platform-version https://${voluumDomain}; sec-ch-ua-full-version-list https://${voluumDomain}; sec-ch-ua-full-version https://${voluumDomain}`} />}
+  {voluumDomain && <style is:inline>{`.dtpcnt{opacity:0;}`}</style>}
+  {voluumDomain && (
+    <script data-cfasync="false" is:inline define:vars={{ voluumDomain }}>
+    (function(e,d,k,n,u,v,g,w,C,f,p,x,D,c,q,r,h,t,y,G,z){function A(){for(var a=d.querySelectorAll(".dtpcnt"),b=0,l=a.length;b<l;b++)a[b][w]=a[b][w].replace(/(^|\s+)dtpcnt($|\s+)/g,"")}function E(a,b,l,F){var m=new Date;m.setTime(m.getTime()+(F||864E5));d.cookie=a+"="+b+"; "+l+"samesite=Strict; expires="+m.toGMTString()+"; path=/";k.setItem(a,b);k.setItem(a+"-expires",m.getTime())}function B(a){var b=d.cookie.match(new RegExp("(^| )"+a+"=([^;]+)"));return b?b.pop():k.getItem(a+"-expires")&&+k.getItem(a+"-expires")>(new Date).getTime()?k.getItem(a):null}z="https:"===e.location.protocol?"secure; ":";e[f]||(e[f]=function(){(e[f].q=e[f].q||[]).push(arguments)},r=d[u],d[u]=function(){r&&r.apply(this,arguments);if(e[f]&&!e[f].hasOwnProperty("params")&&/loaded|interactive|complete/.test(d.readyState))for(;c=d[v][p++];)/\/?click\/?($|(\/[0-9]+)?$)/.test(c.pathname)&&(c[g]="javascrip"+e.postMessage.toString().slice(4,5)+":"+f+'.l="'+c[g]+'",void 0')},setTimeout(function(){(t=RegExp("[?&]cpid(=([^&#]*)|&|#|$)").exec(e.location.href))&&t[2]&&(h=t[2],y=B("vl-"+h));var a=B("vl-cep"),b=location[g];if("savedCep"===D&&a&&(!h||"undefined"===typeof h)&&0>b.indexOf("cep=")){var l=-1<b.indexOf("?")?"&":"?";b+=l+a}c=d.createElement("script");q=d.scripts[0];c.defer=1;c.src="https://"+voluumDomain+"/d/.js?lpref="+n(d.referrer)+"&lpurl="+n(b)+"&lpt="+n(d.title)+"&vtm="+(new Date).getTime()+(y?"&uw=no":"");c[C]=function(){for(p=0;c=d[v][p++];)/dtpCallback\.l/.test(c[g])&&(c[g]=decodeURIComponent(c[g]).match(/dtpCallback\.l="([^"]+)/)[1]);A()};q.parentNode.insertBefore(c,q);h&&E("vl-"+h,"1",z)},0),setTimeout(A,7E3))})(window,document,localStorage,encodeURIComponent,"onreadystatechange","links","href","className","onerror","dtpCallback",0,0,"savedCep");
+    </script>
+  )}
+  {voluumDomain && (
+    <noscript><link href={`https://${voluumDomain}/d/.js?noscript=true&lpurl=`} rel="stylesheet"/></noscript>
+  )}
 </head>
 <body class="bg-background text-foreground antialiased">
   <slot />
+
+  {/* First-Party Pixel Tracking */}
+  <script data-cfasync="false" is:inline>
+  (function(){
+    var PX_ENDPOINT = 'https://t.' + window.location.hostname + '/e';
+
+    // ── Pixel beacon (GET via Image — works cross-origin on static hosts) ──
+    function fpPixel(eventName, extra) {
+      try {
+        var payload = Object.assign({ e: eventName, d: window.location.hostname, ts: Date.now() }, extra || {});
+        var q = new URLSearchParams();
+        Object.keys(payload).forEach(function(k){ if (payload[k] != null) q.set(k, String(payload[k])); });
+        var img = new Image(1,1);
+        img.src = PX_ENDPOINT + '?' + q.toString();
+      } catch(_) {}
+    }
+    window.__fpPixel = fpPixel;
+    // Also expose as __pixel for legacy compatibility (TrackingDashboard checks sendBeacon|__pixel|pixel\()
+    window.__pixel = fpPixel;
+
+    // ── GCLID + UTM + Voluum click_id capture → sessionStorage ──
+    (function(){
+      try {
+        var p = new URLSearchParams(window.location.search);
+        var gclid = p.get('gclid');
+        var clickid = p.get('clickid') || p.get('vlcid') || p.get('click_id') || p.get('cid');
+        var utm_source = p.get('utm_source');
+        var utm_medium = p.get('utm_medium');
+        var utm_campaign = p.get('utm_campaign');
+        if (gclid)        { sessionStorage.setItem('gclid', gclid); }
+        if (clickid)      { sessionStorage.setItem('clickid', clickid); sessionStorage.setItem('vlcid', clickid); }
+        if (utm_source)   { sessionStorage.setItem('utm_source', utm_source); }
+        if (utm_medium)   { sessionStorage.setItem('utm_medium', utm_medium); }
+        if (utm_campaign) { sessionStorage.setItem('utm_campaign', utm_campaign); }
+      } catch(_) {}
+    })();
+
+    // ── Page View ──
+    if (!window.__fpPageTracked) {
+      window.__fpPageTracked = true;
+      var clickid = sessionStorage.getItem('clickid') || sessionStorage.getItem('vlcid') || '';
+      fpPixel('pv', clickid ? { click_id: clickid } : {});
+    }
+
+    // ── Scroll depth tracking (25 / 50 / 75 / 100) ──
+    (function(){
+      var fired = {};
+      var thresholds = [25, 50, 75, 100];
+      function onScroll() {
+        var scrolled = window.scrollY + window.innerHeight;
+        var total = document.documentElement.scrollHeight;
+        var pct = Math.round((scrolled / total) * 100);
+        thresholds.forEach(function(t) {
+          if (!fired['scroll_' + t + '%'] && pct >= t) {
+            fired['scroll_' + t + '%'] = true;
+            fpPixel('scroll_' + t + '%', { depth: t });
+          }
+        });
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+    })();
+
+    // ── Time on page (30s / 60s) ──
+    (function(){
+      setTimeout(function(){ fpPixel('top_30s'); }, 30000);
+      setTimeout(function(){ fpPixel('top_60s'); }, 60000);
+    })();
+  })();
+  </script>
 </body>
 </html>

@@ -405,11 +405,12 @@ if (injected) {
 if (type === 'astro') {
   const scaffoldFiles = {
     'src/pages/apply.astro': `---
+// PUBLIC_AID from deploy .env (inject-tracking / CI)
 const aid = import.meta.env.PUBLIC_AID || '14881';
 ---
 <!DOCTYPE html>
 <html lang="en">
-  <!-- Implied <head>: avoids Astro scoped CSS adding data-astro-cid to <html>/<body> (breaks some third-party form scripts). -->
+<head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
@@ -421,15 +422,11 @@ const aid = import.meta.env.PUBLIC_AID || '14881';
     body { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 24px 16px 48px; }
     #_lg_form_ { width: 100%; max-width: 640px; }
   </style>
-  <body>
-  <!-- LeadsGate AID from SSR; inline script reads data-aid (no define:vars). -->
-  <div id="__fo_lg_aid" data-aid={aid} hidden aria-hidden="true"></div>
+</head>
+<body>
 
-<script is:inline>
+<script is:inline define:vars={{ aid }}>
 window.dataLayer = window.dataLayer || [];
-
-var __foAidEl = document.getElementById('__fo_lg_aid');
-var aid = (__foAidEl && __foAidEl.getAttribute('data-aid')) || '14881';
 
 function fpPixel(eventName, extra) {
   try {
