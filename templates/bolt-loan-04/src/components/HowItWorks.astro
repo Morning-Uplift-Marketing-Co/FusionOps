@@ -1,0 +1,60 @@
+---
+const steps = [
+  {
+    number: '01',
+    title: 'Fill Out One Short Form',
+    description: 'Tell us about yourself, your loan needs, and your financial situation. Takes about 2 minutes — no hard credit pull.',
+  },
+  {
+    number: '02',
+    title: 'See Pre-Qualified Offers',
+    description: 'We instantly match you with lenders from our network who are ready to work with your profile. Compare rates side-by-side.',
+  },
+  {
+    number: '03',
+    title: 'Choose Your Best Offer',
+    description: 'Pick the loan that fits your needs and complete the process directly with your chosen lender. No obligation to accept.',
+  },
+];
+---
+
+<section id="how-it-works" class="py-20 md:py-28" aria-labelledby="how-it-works-heading">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+    <div class="mb-14 text-center">
+      <p class="section-label mb-3">Simple Process</p>
+      <h2 id="how-it-works-heading" class="text-3xl font-extrabold sm:text-4xl" style="color: #f1f5f9; letter-spacing: -0.02em;">
+        How It Works
+      </h2>
+      <p class="mt-4 text-slate-400 max-w-xl mx-auto">
+        Getting loan offers is fast, free, and completely commitment-free.
+      </p>
+    </div>
+
+    <div class="relative">
+      <!-- Connector line (desktop) -->
+      <div class="pointer-events-none absolute top-10 left-0 right-0 hidden h-px md:block" style="background: linear-gradient(90deg, transparent 0%, var(--border) 10%, var(--border) 90%, transparent 100%); top: 2.5rem;" aria-hidden="true"></div>
+
+      <div class="grid gap-8 md:grid-cols-3">
+        {steps.map((step) => (
+          <div class="relative flex flex-col items-center text-center">
+            <div
+              class="relative z-10 mb-5 flex h-20 w-20 items-center justify-center rounded-2xl text-2xl font-extrabold"
+              style="background: var(--surface-2); border: 1px solid rgba(0,87,255,0.25); color: var(--primary-light);"
+            >
+              {step.number}
+            </div>
+            <h3 class="mb-2 text-base font-semibold text-white">{step.title}</h3>
+            <p class="text-sm leading-relaxed text-slate-400 max-w-xs">{step.description}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div class="mt-12 text-center">
+      <a href="#apply" class="btn-primary px-8 py-3.5 text-base">
+        Get Started — It's Free
+      </a>
+      <p class="mt-3 text-xs text-slate-500">No hard credit pull &nbsp;·&nbsp; No obligation &nbsp;·&nbsp; Takes 2 minutes</p>
+    </div>
+  </div>
+</section>
