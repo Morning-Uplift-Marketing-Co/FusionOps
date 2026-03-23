@@ -209,9 +209,9 @@ export function SpendDashboard({ apiOk, neonOk, settings = {} }) {
 
             {/* Shadcn Tabs */}
             <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="grid w-full grid-cols-8">
+                <TabsList className="grid w-full h-auto grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9 gap-1">
                     {TAB_ITEMS.map(t => (
-                        <TabsTrigger key={t.value} value={t.value} className="text-xs gap-1">
+                        <TabsTrigger key={t.value} value={t.value} className="text-xs gap-1 min-w-0 whitespace-normal leading-tight h-auto px-2 py-1.5">
                             <span>{t.icon}</span> {t.label}
                         </TabsTrigger>
                     ))}
