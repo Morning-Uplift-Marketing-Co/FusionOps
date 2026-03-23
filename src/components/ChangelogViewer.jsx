@@ -4,6 +4,8 @@ import changelogRaw from '../../CHANGELOG.md?raw';
 
 export function ChangelogViewer() {
     const [isOpen, setIsOpen] = useState(false);
+    const versionMatch = changelogRaw.match(/## (?:\[(\d+\.\d+\.\d+)\]|(\d+\.\d+\.\d+) \()/);
+    const latestChangelogVersion = versionMatch?.[1] || versionMatch?.[2] || "2.2.0";
 
     // Simple markdown to HTML (enough for our basic CHANGELOG.md)
     const renderMarkdown = (text) => {
@@ -31,7 +33,7 @@ export function ChangelogViewer() {
                 className="text-[11px] px-2 py-1 bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] border border-[hsl(var(--border))] rounded transition-colors"
                 title="View Changelog"
             >
-                Changelog {changelogRaw.match(/## \[(\d+\.\d+\.\d+)\]/)?.[1] || 'v2.2.0'}
+                Changelog v{latestChangelogVersion}
             </button>
 
             {isOpen && (

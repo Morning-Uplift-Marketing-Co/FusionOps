@@ -21,7 +21,8 @@ export function StepBrand({ c, u, settings, cfAccounts = [], registrarAccounts =
     const hasDomain = !!String(c.domain || "").trim();
     const hasProviderSelection = !!selectedProvider;
     const showProviderAccountSelect = hasProviderSelection;
-    const showCloudflareAccountSelect = hasProviderSelection;
+    // Show CF account when domain is set and either: legacy mode (no profiles) or registrar path selected
+    const showCloudflareAccountSelect = hasDomain && (cfProfiles.length === 0 || hasProviderSelection);
     const selectedProviderAccountId = c.domainProviderAccountId || c.internetbsAccountId || "";
     const hasProviderAccountSelection = !!selectedProviderAccountId;
     const autoSelectedProviderAccount = providerAccounts.length === 1 ? providerAccounts[0] : null;
@@ -151,7 +152,10 @@ export function StepBrand({ c, u, settings, cfAccounts = [], registrarAccounts =
 
             {hasDomain && (
                 <div style={{ marginTop: 16 }}>
-                    <Field label="Domain Provider" req help="Select provider used to register this domain">
+                    <Field
+                        label="Domain Provider"
+                        help="Optional — use to push Cloudflare nameservers to your registrar via API. Skip if the domain is already on Cloudflare or you set nameservers yourself."
+                    >
                         <select
                             value={selectedProvider}
                             onChange={e => {

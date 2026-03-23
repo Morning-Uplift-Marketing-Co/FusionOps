@@ -1,0 +1,248 @@
+/**
+ * GitHub Actions LP Deployer
+ *
+ * Pushes deploy-configs/{domain}.json to the repo via GitHub Contents API.
+ * This triggers .github/workflows/deploy-lp.yml (on: push: paths: deploy-configs/**.json)
+ * which runs Astro build + CF Pages deploy via CI.
+ *
+ * Only needs PAT with "repo" scope — NO "workflow" scope required.
+ *
+ * Field mapping from Wizard → JSON keys is defined inline below (voluumCampaignId → voluumId, etc.).
+ * Persistable Wizard keys live in src/constants/site-fields.js (SITE_FIELD_KEYS).
+ */
+
+const GITHUB_API = 'https://api.github.com';
+
+function isMaskedSecret(v) {
+  return typeof v === 'string' && /^\*+$/.test(v.trim());
+}
+
+function normalizeHost(v) {
+  const raw = String(v || '').trim().toLowerCase();
+  if (!raw) return '';
+  return raw
+    .replace(/^https?:\/\//, '')
+    .replace(/^\/\//, '')
+    .replace(/[/?#].*$/, '')
+    .replace(/\/+$/, '');
+}
+
+function normalizeUrl(v) {
+  const raw = String(v || '').trim();
+  if (!raw) return '';
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (/^[a-z0-9.-]+\//i.test(raw) || /^[a-z0-9.-]+$/i.test(raw)) {
+    return `https://${raw.replace(/^\/+/, '')}`;
+  }
+  return raw;
+}
+
+/**
+ * Push or update a file in the repo via GitHub Contents API
+ * Returns commit URL
+ */
+async function getFileSha(url, branch, headers) {
+  const res = await fetch(`${url}?ref=${branch}`, { headers });
+  if (!res.ok) return undefined;
+  const data = await res.json();
+  return data.sha;
+}
+
+async function pushFile({ githubToken, repo, branch, path, content, message }) {
+  const url = `${GITHUB_API}/repos/${repo}/contents/${path}`;
+  const headers = {
+    Authorization: `Bearer ${githubToken}`,
+    Accept: 'application/vnd.github+json',
+    'Content-Type': 'application/json',
+    'X-GitHub-Api-Version': '2022-11-28',
+  };
+
+  // Encode content as base64 (works in both browser and Node)
+  const encoded = typeof Buffer !== 'undefined'
+    ? Buffer.from(content, 'utf8').toString('base64')
+    : btoa(unescape(encodeURIComponent(content)));
+
+  const tryPush = async (sha) => {
+    const body = { message, content: encoded, branch, ...(sha ? { sha } : {}) };
+    return fetch(url, { method: 'PUT', headers, body: JSON.stringify(body) });
+  };
+
+  // Fetch SHA fresh immediately before each push to minimize race window
+  // On 409: parse correct SHA from error body (GitHub always includes it),
+  // then push immediately without delay to beat other concurrent writes.
+  const pushWithFreshSha = async () => {
+    const freshSha = await getFileSha(url, branch, headers);
+    return { res: await tryPush(freshSha), sha: freshSha };
+  };
+
+  let { res } = await pushWithFreshSha();
+
+  for (let attempt = 0; attempt < 5 && res.status === 409; attempt++) {
+    // Read body once — extract SHA GitHub says is current
+    let nextSha;
+    try {
+      const errText = await res.text();
+      // GitHub 409 body: {"message":"...does not match <sha>","status":"409"}
+      // SHA appears unquoted inside the message string — match any 40-char hex
+      const match = errText.match(/\b([0-9a-f]{40})\b/);
+      nextSha = match ? match[1] : null;
+    } catch (_) { nextSha = null; }
+
+    if (nextSha) {
+      // Use SHA from error body — closest to real-time, no extra round trip
+      res = await tryPush(nextSha);
+    } else {
+      // Fallback: re-fetch (adds latency but still correct)
+      await new Promise(r => setTimeout(r, 400));
+      ({ res } = await pushWithFreshSha());
+    }
+  }
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => '');
+    throw new Error(`GitHub push failed (${res.status}): ${err.slice(0, 300)}`);
+  }
+
+  const data = await res.json();
+  const commitSha = data.commit?.sha || null;
+  const commitUrl = data.commit?.html_url || `https://github.com/${repo}/commits/${branch}`;
+  return { url: commitUrl, sha: commitSha };
+}
+
+/**
+ * Main deploy function — called by Wizard UI
+ * Pushes site config JSON → triggers deploy-lp.yml via on:push
+ * Only needs PAT "repo" scope (same as Git Push Pipeline)
+ */
+export async function deploy(assets, site, settings) {
+  const rawToken  = (settings.githubToken || '').trim();
+  const githubToken = isMaskedSecret(rawToken) ? '' : rawToken;
+  const repoOwner = (settings.githubRepoOwner || '').trim();
+  const repoName  = (settings.githubRepoName  || '').trim();
+  const githubRepo = repoOwner && repoName ? `${repoOwner}/${repoName}` : '';
+  // Always push deploy config to 'main' — that's where deploy-lp.yml workflow lives
+  // (githubRepoBranch is used by git-push for LP source, not for CI config trigger)
+  const branch    = 'main';
+
+  if (!githubToken) return { success: false, error: 'Missing GitHub Token. Add it in Settings → Git Push Pipeline.' };
+  if (!githubRepo)  return { success: false, error: 'Missing GitHub Repo. Add Repo Owner + Repo Name in Settings.' };
+
+  // Fetch existing deploy config to preserve Voluum fields that were previously set
+  // This prevents redeploying from wiping out voluumId/voluumDomain/voluumClickUrl
+  const domain = (site.domain || site.brand || 'site').replace(/[^a-z0-9.-]/gi, '-').toLowerCase();
+  const filePath = `deploy-configs/${domain}.json`;
+  let existing = {};
+  try {
+    const headers = {
+      Authorization: `Bearer ${githubToken}`,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+    };
+    const res = await fetch(`https://api.github.com/repos/${githubRepo}/contents/${filePath}?ref=${branch}`, { headers });
+    if (res.ok) {
+      const data = await res.json();
+      const decoded = typeof atob !== 'undefined'
+        ? atob(data.content.replace(/\n/g, ''))
+        : Buffer.from(data.content.replace(/\n/g, ''), 'base64').toString('utf8');
+      existing = JSON.parse(decoded);
+    }
+  } catch (_) { /* new site — no existing config */ }
+
+  const defaultCfPagesProject = `lp-${(site.domain || site.brand || 'site').toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 40)}`;
+  const cfPagesProject = (site.cfPagesProject || existing.cfPagesProject || defaultCfPagesProject || '').trim();
+
+  // Voluum fields: Wizard saves voluumCampaignId/voluumTrackingDomain — map to deploy config keys
+  // Preserve existing values if current deploy doesn't provide them
+  const voluumId          = site.voluumCampaignId      || site.voluumId            || existing.voluumId            || '';
+  const voluumDomainRaw   = site.voluumTrackingDomain  || site.voluumDomain        || existing.voluumDomain        || '';
+  const voluumDomain      = normalizeHost(voluumDomainRaw);
+  const voluumClickUrlRaw = site.voluumClickUrl        || existing.voluumClickUrl  || '';
+  const voluumClickUrl    = normalizeUrl(voluumClickUrlRaw);
+  const voluumCfCname     = site.voluumCfCname        || existing.voluumCfCname     || '';
+  const voluumAcmName     = site.voluumAcmName        || existing.voluumAcmName     || '';
+  const voluumAcmValue    = site.voluumAcmValue       || existing.voluumAcmValue    || '';
+  const voluumLanderScript= site.voluumLanderScript   || existing.voluumLanderScript|| '';
+  const conversionId      = site.gtagId || site.conversionId || existing.conversionId || '';
+  const formStartLabel    = site.gtagFormStartLabel || site.formStartLabel || existing.gtagFormStartLabel || existing.formStartLabel || '';
+  const formSubmitLabel   = site.gtagFormSubmitLabel || site.formSubmitLabel || existing.gtagFormSubmitLabel || existing.formSubmitLabel || '';
+
+  const isVoluumMode = (site.trackingMode || '').toLowerCase() === 'voluum'
+    || Boolean(site.voluumCampaignId || site.voluumId || existing.voluumId);
+  if (isVoluumMode && (!voluumId || !voluumDomain)) {
+    return {
+      success: false,
+      error: 'Voluum mode requires both Campaign ID and Tracking Domain (vls.yourdomain.com).',
+    };
+  }
+
+  // Build deploy config — written as JSON file, read by workflow
+  const config = {
+    templateId:      site.templateId    || 'installment-bear',
+    cfPagesProject,
+    // Security: do not persist CF credentials in deploy-config JSON.
+    // Workflow should read CLOUDFLARE_* from GitHub repository secrets.
+    cfApiToken:      '',
+    cfAccountId:     '',
+    brand:           site.brand        || '',
+    domain:          site.domain       || '',
+    h1:              site.h1           || '',
+    sub:             site.sub          || '',
+    cta:             site.cta          || 'Apply Now',
+    phone:           site.phone        || '',
+    email:           site.email        || '',
+    address:         site.address      || '',
+    aid:             site.aid          || '',
+    amountMin:       site.amountMin    || 100,
+    amountMax:       site.amountMax    || 5000,
+    aprMin:          site.aprMin       || 5.99,
+    aprMax:          site.aprMax       || 35.99,
+    primaryColor:    site.primaryColor || '',
+    accentColor:     site.accentColor  || '',
+    conversionId,
+    gtagFormStartLabel: formStartLabel,
+    gtagFormSubmitLabel: formSubmitLabel,
+    formStartLabel,
+    formSubmitLabel,
+    voluumId,
+    voluumDomain,
+    voluumClickUrl,
+    voluumCfCname,
+    voluumAcmName,
+    voluumAcmValue,
+    voluumLanderScript,
+    colorId:         site.colorId      || '',
+    fontId:          site.fontId       || '',
+    layout:          site.layout       || '',
+    radius:          site.radius       || '',
+    trustBadges:     site.trustBadges  || '',
+    reviews:         site.reviews      || [],
+    deployedAt:      new Date().toISOString(),
+  };
+
+  const commitMsg = `deploy: ${domain} via GitHub Actions (Astro Build)`;
+
+  try {
+    const { url: commitUrl, sha: commitSha } = await pushFile({
+      githubToken,
+      repo: githubRepo,
+      branch,
+      path: filePath,
+      content: JSON.stringify(config, null, 2),
+      message: commitMsg,
+    });
+
+    return {
+      success: true,
+      queued: true,
+      url: commitUrl,
+      commitSha,
+      repo: githubRepo,
+      deployId: `gh-actions-${Date.now()}`,
+      target: 'github-actions',
+      message: `Pushed config → GitHub Actions building Astro. Track: https://github.com/${githubRepo}/actions`,
+      actionsUrl: `https://github.com/${githubRepo}/actions`,
+    };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+}

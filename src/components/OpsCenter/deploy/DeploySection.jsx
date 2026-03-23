@@ -4,7 +4,7 @@
  * With better visual cues for target selection
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { THEME as T, DEPLOY_TARGETS, DEPLOY_ENVIRONMENTS } from "../../../constants";
 import { Card } from "../../ui/card";
 import { Button } from "../../ui/button";
@@ -59,6 +59,7 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
     const [availableTargets, setAvailableTargets] = useState([]);
     const [updateDns, setUpdateDns] = useState(true);
     const [deployLog, setDeployLog] = useState([]);
+    const lastSelectedDomainIdRef = useRef("");
 
     // DEBUG: Log domains prop
     useEffect(() => {
@@ -71,6 +72,27 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
     useEffect(() => {
         setAvailableTargets(getAvailableTargets(settings));
     }, [settings]);
+
+    // Default target: GitHub Actions when configured; on domain change, re-apply default
+    useEffect(() => {
+        if (!selectedDomainId) {
+            setSelectedTarget("");
+            lastSelectedDomainIdRef.current = "";
+            return;
+        }
+        const domainChanged = lastSelectedDomainIdRef.current !== selectedDomainId;
+        lastSelectedDomainIdRef.current = selectedDomainId;
+
+        const gh = availableTargets.find((t) => t.id === "github-actions" && t.configured);
+        const firstConfigured = availableTargets.find((t) => t.configured);
+        const preferred = gh?.id || firstConfigured?.id || "";
+
+        if (domainChanged) {
+            setSelectedTarget(preferred);
+            return;
+        }
+        setSelectedTarget((prev) => (prev && availableTargets.some((t) => t.id === prev && t.configured) ? prev : preferred));
+    }, [selectedDomainId, availableTargets]);
 
     // Load deploy config when domain+target selected
     useEffect(() => {
@@ -428,34 +450,6 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
                                 />
                             </div>
                         </div>
-                    )}
-
-                    {/* VPS Settings */}
-                    {selectedTarget === "vps-ssh" && (
-                        <>
-                            <div style={S.row}>
-                                <div style={{ flex: 1 }}>
-                                    <label style={S.label}>Host</label>
-                                    <input
-                                        type="text"
-                                        style={S.select}
-                                        value={settings.vpsHost || ""}
-                                        disabled
-                                        placeholder="Configure in Settings"
-                                    />
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                    <label style={S.label}>Path</label>
-                                    <input
-                                        type="text"
-                                        style={S.select}
-                                        value={settings.vpsPath || ""}
-                                        disabled
-                                        placeholder="Configure in Settings"
-                                    />
-                                </div>
-                            </div>
-                        </>
                     )}
 
                     {/* DNS Update Toggle */}
