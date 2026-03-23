@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.1] - 2026-03-23
+### Enhanced
+- **LeadsGate Form Tracking**: Enhanced MutationObserver fallback for form load detection with extended 15s timeout
+- **Form Load Detection**: Added `lg_form_ready` event for better form validation tracking
+- **Error Handling**: Improved debugging with console warnings for form loading failures
+- **Click ID Handling**: Enhanced parameter format support across multiple tracking systems
+- **Workflow Documentation**: Updated `convert-astro-template.md` with enhanced LeadsGate integration patterns
+
+### Fixed
+- **Form Load Timeout**: Extended timeout from 10s to 15s for better reliability
+- **Debugging Information**: Added comprehensive error logging for form loading issues
+- **Documentation**: Updated workflow rules and examples for improved developer experience
+
 ## [3.5.0] - 2026-03-16
 ### Added
 - **Task Manager**: Full Kanban + List view task management system for PPC/LP campaigns
