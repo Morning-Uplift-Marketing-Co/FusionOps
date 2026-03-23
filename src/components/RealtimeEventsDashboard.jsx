@@ -9,10 +9,28 @@ const EVENT_COLORS = {
   default: "bg-slate-500/15 text-slate-300",
 };
 
+function normalizeTs(value) {
+  if (value === null || value === undefined || value === "") return 0;
+
+  const n = Number(value);
+  if (Number.isFinite(n) && n > 0) {
+    if (n > 1e15) return Math.floor(n / 1e6);
+    if (n > 1e12) return Math.floor(n / 1e3);
+    return Math.floor(n);
+  }
+
+  const parsed = Date.parse(String(value));
+  if (!Number.isNaN(parsed) && parsed > 0) {
+    return Math.floor(parsed / 1000);
+  }
+
+  return 0;
+}
+
 function normalizeRows(rows = []) {
   return rows
     .map((r) => {
-      const tsValue = Number(r.ts || r.timestamp || 0);
+      const tsValue = normalizeTs(r.ts ?? r.timestamp ?? r.created_at ?? 0);
       return {
         id: r.id || `${r.domain || "unknown"}-${r.event || "unknown"}-${tsValue}`,
         domain: String(r.domain || ""),

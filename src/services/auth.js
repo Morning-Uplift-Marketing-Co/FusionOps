@@ -295,7 +295,15 @@ export function sanitizeForEmployee(input) {
 }
 
 export function isAdmin(user) {
-  return user?.role === "admin";
+  const role = String(
+    user?.role
+    ?? user?.user_role
+    ?? user?.type
+    ?? ""
+  ).trim().toLowerCase();
+
+  if (user?.is_admin === true || user?.isAdmin === true) return true;
+  return role === "admin" || role === "superadmin" || role === "owner";
 }
 
 export function isEmployee(user) {
