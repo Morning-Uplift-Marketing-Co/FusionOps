@@ -1,5 +1,5 @@
 {
-  "templateId": "lion_funds_lov",
+  "templateId": "bear-funding-local",
   "cfPagesProject": "lp-jora-creditz-main",
   "cfApiToken": "",
   "cfAccountId": "",
@@ -36,5 +36,5 @@
   "radius": "subtle",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-23T22:09:04.229Z"
+  "deployedAt": "2026-03-23T23:25:45.252Z"
 }
