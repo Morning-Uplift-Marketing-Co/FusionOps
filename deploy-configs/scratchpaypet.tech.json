@@ -1,5 +1,5 @@
 {
-  "templateId": "goldrush-v2",
+  "templateId": "bolt-loan-04",
   "cfPagesProject": "lp-scratchpaypet-tech",
   "cfApiToken": "",
   "cfAccountId": "",
@@ -18,7 +18,7 @@
   "aprMax": 35.99,
   "primaryColor": "#3b5bdb",
   "accentColor": "#f97316",
-  "conversionId": "AW-12345",
+  "conversionId": "AW-8888",
   "gtagFormStartLabel": "form_start",
   "gtagFormSubmitLabel": "form_submit",
   "formStartLabel": "form_start",
@@ -36,5 +36,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-23T22:04:18.108Z"
+  "deployedAt": "2026-03-23T22:19:56.622Z"
 }
