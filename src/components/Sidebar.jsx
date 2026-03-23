@@ -6,6 +6,17 @@ import { isAdmin } from "../services/auth";
 
 const CHANGELOG = [
     {
+        version: "3.5.1",
+        date: "2026-03-23",
+        changes: [
+            "🔧 LeadsGate Form Tracking — Enhanced MutationObserver fallback with 15s timeout",
+            "📊 Form Load Detection — Added lg_form_ready event for better validation tracking",
+            "🐛 Error Handling — Improved debugging with console warnings for form loading failures",
+            "🔗 Click ID Handling — Enhanced parameter format support across tracking systems",
+            "📝 Workflow Documentation — Updated convert-astro-template.md with enhanced patterns",
+        ],
+    },
+    {
         version: "3.5.0",
         date: "2026-03-16",
         changes: [

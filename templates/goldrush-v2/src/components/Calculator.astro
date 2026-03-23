@@ -3,6 +3,8 @@ const amountMin = Number(import.meta.env.PUBLIC_AMOUNTMIN || 1000);
 const amountMax = Number(import.meta.env.PUBLIC_AMOUNTMAX || 35000);
 const aprMin    = Number(import.meta.env.PUBLIC_APRMIN    || 5.99);
 const aprMax    = Number(import.meta.env.PUBLIC_APRMAX    || 35.99);
+const voluumClickUrl = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '';
+const ctaHref = voluumClickUrl || '#apply';
 ---
 
 <section id="calculator" class="py-20 md:py-28 px-6">
@@ -118,7 +120,7 @@ const aprMax    = Number(import.meta.env.PUBLIC_APRMAX    || 35.99);
         </div>
 
         <!-- CTA -->
-        <a href="/apply" class="btn-primary w-full text-base py-4">
+        <a href={ctaHref} class="btn-primary w-full text-base py-4">
           Apply for This Loan
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
             <path d="M5 12h14M12 5l7 7-7 7"/>
@@ -129,33 +131,50 @@ const aprMax    = Number(import.meta.env.PUBLIC_APRMAX    || 35.99);
   </div>
 </section>
 
-<script>
-  const amountSlider  = document.getElementById('amount-slider') as HTMLInputElement;
-  const aprSlider     = document.getElementById('apr-slider') as HTMLInputElement;
-  const amountDisplay = document.getElementById('amount-display')!;
-  const aprDisplay    = document.getElementById('apr-display')!;
-  const monthlyEl     = document.getElementById('monthly-payment')!;
-  const interestEl    = document.getElementById('total-interest')!;
-  const totalEl       = document.getElementById('total-paid')!;
-  const termEl        = document.getElementById('term-months')!;
-  const principalBar  = document.getElementById('amort-principal')!;
-  const interestBar   = document.getElementById('amort-interest')!;
-  const termBtns      = document.querySelectorAll<HTMLButtonElement>('.term-btn');
+<script data-cfasync="false">
+  const amountSlider  = document.getElementById('amount-slider');
+  const aprSlider     = document.getElementById('apr-slider');
+  const amountDisplay = document.getElementById('amount-display');
+  const aprDisplay    = document.getElementById('apr-display');
+  const monthlyEl     = document.getElementById('monthly-payment');
+  const interestEl    = document.getElementById('total-interest');
+  const totalEl       = document.getElementById('total-paid');
+  const termEl        = document.getElementById('term-months');
+  const principalBar  = document.getElementById('amort-principal');
+  const interestBar   = document.getElementById('amort-interest');
+  const termBtns      = document.querySelectorAll('.term-btn');
 
   let selectedTerm = 36;
 
-  function calcMonthly(p: number, r: number, n: number): number {
+  function calcMonthly(p, r, n) {
     if (r === 0) return p / n;
     const m = r / 100 / 12;
     return p * (m * Math.pow(1 + m, n)) / (Math.pow(1 + m, n) - 1);
   }
 
-  function setProgress(slider: HTMLInputElement) {
+  // Fire form_start event when user interacts with calculator
+  function fireFormStart() {
+    if (!window.firedFormStart) {
+      window.firedFormStart = true;
+      try {
+        var cid = sessionStorage.getItem('clickid') || sessionStorage.getItem('vlcid') || '';
+        var amount = amountSlider ? amountSlider.value : 10000;
+        var conversionId = window.__gtagConversionId;
+        var formStartLabel = window.__formStartLabel;
+        if (conversionId && formStartLabel && typeof gtag === 'function') {
+          gtag('event', 'conversion', { send_to: conversionId + '/' + formStartLabel, value: amount, currency: 'USD' });
+        }
+      } catch(_) {}
+      if (typeof window.__pixel === 'function') { window.__pixel('form_start', { amount: amount }); }
+    }
+  }
+
+  function setProgress(slider) {
     const pct = ((+slider.value - +slider.min) / (+slider.max - +slider.min)) * 100;
     slider.style.setProperty('--progress', pct + '%');
   }
 
-  function fmt(n: number, prefix = '$') {
+  function fmt(n, prefix = '$') {
     return prefix + Math.round(n).toLocaleString();
   }
 
@@ -183,11 +202,17 @@ const aprMax    = Number(import.meta.env.PUBLIC_APRMAX    || 35.99);
     setProgress(aprSlider);
   }
 
-  amountSlider?.addEventListener('input', update);
-  aprSlider?.addEventListener('input', update);
+  amountSlider?.addEventListener('input', function() {
+    fireFormStart();
+    update();
+  });
+  aprSlider?.addEventListener('input', function() {
+    fireFormStart();
+    update();
+  });
 
   termBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', function() {
       selectedTerm = Number(btn.dataset.term);
       termBtns.forEach(b => {
         b.className = b.className
@@ -197,6 +222,7 @@ const aprMax    = Number(import.meta.env.PUBLIC_APRMAX    || 35.99);
       });
       btn.classList.add('border-primary/40', 'text-primary', 'bg-primary/10');
       btn.classList.remove('border-border', 'text-foreground/40');
+      fireFormStart();
       update();
     });
   });
