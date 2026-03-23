@@ -1,5 +1,5 @@
 {
-  "templateId": "astro-test002",
+  "templateId": "bolt-loan-04",
   "cfPagesProject": "lp-jora-creditz-main",
   "cfApiToken": "",
   "cfAccountId": "",
@@ -36,5 +36,5 @@
   "radius": "subtle",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-23T19:06:49.622Z"
+  "deployedAt": "2026-03-23T20:48:49.635Z"
 }
