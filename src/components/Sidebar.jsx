@@ -6,6 +6,17 @@ import { isAdmin } from "../services/auth";
 
 const CHANGELOG = [
     {
+        version: "3.6.0",
+        date: "2026-03-23",
+        changes: [
+            "📜 Release — standard-version v3.6.0; full conventional changelog in repo CHANGELOG.md",
+            "🚀 Deploy — prioritize GitHub Actions; drop S3 and VPS deploy targets",
+            "🖥️ Dashboard — revenue sourcing and admin UX improvements",
+            "🧙 Wizard — optional Domain Provider on Step 1; Cloudflare account visible without registrar",
+            "📡 Tracking — Cross-Validation dashboard tab (postbacks vs pixel events)",
+        ],
+    },
+    {
         version: "3.5.1",
         date: "2026-03-23",
         changes: [
