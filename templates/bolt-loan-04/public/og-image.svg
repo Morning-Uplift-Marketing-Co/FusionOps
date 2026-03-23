@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none">
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#0A0E1A"/>
+  <!-- Radial glow top-center -->
+  <radialGradient id="glow1" cx="50%" cy="0%" r="60%">
+    <stop offset="0%" stop-color="#0057FF" stop-opacity="0.3"/>
+    <stop offset="100%" stop-color="#0057FF" stop-opacity="0"/>
+  </radialGradient>
+  <rect width="1200" height="630" fill="url(#glow1)"/>
+  <!-- Radial glow bottom-right -->
+  <radialGradient id="glow2" cx="85%" cy="90%" r="40%">
+    <stop offset="0%" stop-color="#0057FF" stop-opacity="0.15"/>
+    <stop offset="100%" stop-color="#0057FF" stop-opacity="0"/>
+  </radialGradient>
+  <rect width="1200" height="630" fill="url(#glow2)"/>
+
+  <!-- Grid lines subtle -->
+  <pattern id="grid" width="64" height="64" patternUnits="userSpaceOnUse">
+    <path d="M 64 0 L 0 0 0 64" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+  </pattern>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+
+  <!-- Logo mark -->
+  <rect x="80" y="80" width="72" height="72" rx="16" fill="#0057FF"/>
+  <path d="M100 100 L100 132 L124 132" stroke="white" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M118 124 L126 132 L118 140" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Brand name -->
+  <text x="170" y="131" font-family="system-ui, -apple-system, sans-serif" font-size="48" font-weight="700" fill="white">LendPath</text>
+
+  <!-- Divider -->
+  <line x1="80" y1="210" x2="1120" y2="210" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+
+  <!-- Main headline -->
+  <text x="80" y="310" font-family="system-ui, -apple-system, sans-serif" font-size="72" font-weight="800" fill="white">Find Loans Up to $5,000</text>
+
+  <!-- Sub headline -->
+  <text x="80" y="380" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="400" fill="rgba(148,163,184,1)">Compare offers from 40+ lenders in minutes.</text>
+  <text x="80" y="424" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="400" fill="rgba(148,163,184,1)">No hard credit pull required.</text>
+
+  <!-- Trust badges row -->
+  <!-- Badge 1 -->
+  <rect x="80" y="490" width="240" height="60" rx="12" fill="rgba(0,87,255,0.15)" stroke="rgba(0,87,255,0.4)" stroke-width="1"/>
+  <text x="200" y="527" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="600" fill="white" text-anchor="middle">APR from 5.90%</text>
+
+  <!-- Badge 2 -->
+  <rect x="340" y="490" width="240" height="60" rx="12" fill="rgba(0,87,255,0.15)" stroke="rgba(0,87,255,0.4)" stroke-width="1"/>
+  <text x="460" y="527" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="600" fill="white" text-anchor="middle">Results in 2 Minutes</text>
+
+  <!-- Badge 3 -->
+  <rect x="600" y="490" width="240" height="60" rx="12" fill="rgba(0,87,255,0.15)" stroke="rgba(0,87,255,0.4)" stroke-width="1"/>
+  <text x="720" y="527" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="600" fill="white" text-anchor="middle">256-bit Encrypted</text>
+
+  <!-- CTA pill right side -->
+  <rect x="920" y="460" width="200" height="68" rx="34" fill="#0057FF"/>
+  <text x="1020" y="502" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="700" fill="white" text-anchor="middle">Check My Rate</text>
+
+  <!-- URL bottom -->
+  <text x="80" y="600" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="400" fill="rgba(148,163,184,0.6)">lendpath.com</text>
+</svg>
