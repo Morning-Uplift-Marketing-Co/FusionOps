@@ -21,25 +21,27 @@ describe('Deployers Module', () => {
 
   describe('DEPLOY_TARGETS', () => {
     it('should have all expected deploy targets', () => {
-      expect(DEPLOY_TARGETS).toHaveLength(8);
+      expect(DEPLOY_TARGETS).toHaveLength(6);
+    });
+
+    it('should list GitHub Actions first', () => {
+      expect(DEPLOY_TARGETS[0]?.id).toBe('github-actions');
     });
 
     it('should have required target IDs', () => {
       const targetIds = DEPLOY_TARGETS.map(t => t.id);
+      expect(targetIds).toContain('github-actions');
       expect(targetIds).toContain('cf-pages');
       expect(targetIds).toContain('netlify');
       expect(targetIds).toContain('vercel');
       expect(targetIds).toContain('cf-workers');
-      expect(targetIds).toContain('s3-cloudfront');
-      expect(targetIds).toContain('vps-ssh');
       expect(targetIds).toContain('git-push');
-      expect(targetIds).toContain('github-actions');
     });
 
     it('should have unique priorities', () => {
       const priorities = DEPLOY_TARGETS.map(t => t.priority);
       const uniquePriorities = new Set(priorities);
-      expect(uniquePriorities.size).toBe(8);
+      expect(uniquePriorities.size).toBe(6);
     });
   });
 
@@ -47,7 +49,7 @@ describe('Deployers Module', () => {
     it('should return all targets with configured flag', () => {
       const settings = {};
       const available = getAvailableTargets(settings);
-      expect(available).toHaveLength(8);
+      expect(available).toHaveLength(6);
       available.forEach(target => {
         expect(target).toHaveProperty('configured');
         expect(typeof target.configured).toBe('boolean');
@@ -78,27 +80,15 @@ describe('Deployers Module', () => {
       expect(vercel?.configured).toBe(true);
     });
 
-    it('should detect S3 + CloudFront config', () => {
+    it('should detect GitHub Actions config', () => {
       const settings = {
-        awsAccessKey: 'test-key',
-        awsSecretKey: 'test-secret',
-        s3Bucket: 'test-bucket',
+        githubToken: 'ghp_test',
+        githubRepoOwner: 'owner',
+        githubRepoName: 'repo',
       };
       const available = getAvailableTargets(settings);
-      const s3 = available.find(t => t.id === 's3-cloudfront');
-      expect(s3?.configured).toBe(true);
-    });
-
-    it('should detect VPS SSH config', () => {
-      const settings = {
-        vpsHost: 'test.com',
-        vpsUser: 'user',
-        vpsPath: '/var/www',
-        workerBaseUrl: 'https://worker.com',
-      };
-      const available = getAvailableTargets(settings);
-      const vps = available.find(t => t.id === 'vps-ssh');
-      expect(vps?.configured).toBe(true);
+      const ga = available.find(t => t.id === 'github-actions');
+      expect(ga?.configured).toBe(true);
     });
 
     it('should detect Git Push config', () => {

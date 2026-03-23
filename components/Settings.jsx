@@ -27,18 +27,6 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
     // Deploy credentials
     const [cfApiToken, setCfApiToken] = useState(settings.cfApiToken || import.meta.env.VITE_CF_API_TOKEN || "");
     const [cfAccountId, setCfAccountId] = useState(settings.cfAccountId || import.meta.env.VITE_CF_ACCOUNT_ID || "");
-    const [awsAccessKey, setAwsAccessKey] = useState(settings.awsAccessKey || "");
-    const [awsSecretKey, setAwsSecretKey] = useState(settings.awsSecretKey || "");
-    const [awsRegion, setAwsRegion] = useState(settings.awsRegion || "us-east-1");
-    const [s3Bucket, setS3Bucket] = useState(settings.s3Bucket || "");
-    const [cloudfrontDistId, setCloudfrontDistId] = useState(settings.cloudfrontDistId || "");
-    const [vpsHost, setVpsHost] = useState(settings.vpsHost || "");
-    const [vpsPort, setVpsPort] = useState(settings.vpsPort || "22");
-    const [vpsUser, setVpsUser] = useState(settings.vpsUser || "");
-    const [vpsPath, setVpsPath] = useState(settings.vpsPath || "");
-    const [vpsAuthMethod, setVpsAuthMethod] = useState(settings.vpsAuthMethod || "key");
-    const [vpsKey, setVpsKey] = useState(settings.vpsKey || "");
-    const [vpsWorkerUrl, setVpsWorkerUrl] = useState(settings.vpsWorkerUrl || "");
     // Vercel deploy token
     const [vercelToken, setVercelToken] = useState(settings.vercelToken || "");
     // Git push pipeline settings
@@ -159,21 +147,6 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                 setTestResult(p => ({ ...p, cf: "ok", cfDetail: sub ? `*.${sub}.workers.dev` : "All permissions OK" }));
             }
         } catch (e) { setTestResult(p => ({ ...p, cf: "fail", cfDetail: e.message })); }
-        setTesting(null);
-    };
-
-    const testAws = async () => {
-        setTesting("aws");
-        try {
-            // Simple S3 ListObjects to verify credentials
-            const r = await fetch(`https://${s3Bucket}.s3.${awsRegion}.amazonaws.com/?list-type=2&max-keys=1`);
-            // This will likely fail due to CORS, so we just check if the bucket exists
-            setTestResult(p => ({ ...p, aws: r.status !== 0 ? "ok" : "fail" }));
-        } catch (e) {
-            // CORS error usually means the bucket exists
-            console.warn("[Settings] AWS test failed (likely CORS):", e?.message || e);
-            setTestResult(p => ({ ...p, aws: "cors" }));
-        }
         setTesting(null);
     };
 
@@ -463,45 +436,6 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                                 </CardContent>
                             </Card>
                         </div>
-
-                        <Card className="mb-4">
-                            <CardHeader><CardTitle>🪣 AWS S3 + CloudFront</CardTitle></CardHeader>
-                            <CardContent className="flex flex-col gap-2">
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div><Lbl>Access Key ID</Lbl><Inp type="password" value={awsAccessKey} onChange={setAwsAccessKey} placeholder="AKIA..." /></div>
-                                    <div><Lbl>Secret Key</Lbl><Inp type="password" value={awsSecretKey} onChange={setAwsSecretKey} placeholder="wJalr..." /></div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div><Lbl>Region</Lbl><Inp value={awsRegion} onChange={setAwsRegion} placeholder="us-east-1" /></div>
-                                    <div><Lbl>S3 Bucket</Lbl><Inp value={s3Bucket} onChange={setS3Bucket} placeholder="my-lp-bucket" /></div>
-                                </div>
-                                <div><Lbl>CloudFront Dist ID (Optional)</Lbl><Inp value={cloudfrontDistId} onChange={setCloudfrontDistId} placeholder="E1ABC... (for cache invalidation)" /></div>
-                                <div className="flex gap-1.5">
-                                    <Button variant="ghost" onClick={testAws} disabled={!s3Bucket || testing === "aws"} className="text-xs">🔑 Test</Button>
-                                    <Button onClick={() => save({ awsAccessKey, awsSecretKey, awsRegion, s3Bucket, cloudfrontDistId })} disabled={saving} className="text-xs">💾 Save</Button>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="mb-4">
-                            <CardHeader><CardTitle>🖥️ VPS (SSH)</CardTitle></CardHeader>
-                            <CardContent className="flex flex-col gap-2">
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div><Lbl>Host</Lbl><Inp value={vpsHost} onChange={setVpsHost} placeholder="IP Address" /></div>
-                                    <div><Lbl>Port</Lbl><Inp value={vpsPort} onChange={setVpsPort} placeholder="22" /></div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div><Lbl>User</Lbl><Inp value={vpsUser} onChange={setVpsUser} placeholder="deploy" /></div>
-                                    <div><Lbl>Path</Lbl><Inp value={vpsPath} onChange={setVpsPath} placeholder="/var/www/site" /></div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <Sel label="Auth Method" value={vpsAuthMethod} onChange={setVpsAuthMethod} options={[{ value: "key", label: "SSH Key" }, { value: "password", label: "Password" }]} />
-                                    <div><Lbl>{vpsAuthMethod === "key" ? "SSH Private Key" : "SSH Password"}</Lbl><Inp type="password" value={vpsKey} onChange={setVpsKey} placeholder="..." /></div>
-                                </div>
-                                <div><Lbl>D1 Mirror Worker URL (Optional)</Lbl><Inp value={vpsWorkerUrl} onChange={setVpsWorkerUrl} placeholder="https://d1-mirror.abc.workers.dev" /></div>
-                                <Button onClick={() => save({ vpsHost, vpsPort, vpsUser, vpsPath, vpsAuthMethod, vpsKey, vpsWorkerUrl })} disabled={saving} className="text-xs self-start">💾 Save</Button>
-                            </CardContent>
-                        </Card>
 
                         <Card className="mb-4">
                             <CardHeader><CardTitle>🧬 Git Push Pipeline</CardTitle></CardHeader>

@@ -158,10 +158,12 @@ export function DeployDashboard() {
                     {Object.entries(stats.byTarget || {}).map(([target, count]) => {
                         const pct = stats.total > 0 ? (count / stats.total) * 100 : 0;
                         const targetInfo = {
+                            "github-actions": { label: "GitHub Actions", color: "#2088FF" },
                             "cf-pages": { label: "CF Pages", color: "#F48120" },
                             "netlify": { label: "Netlify", color: "#00C7B7" },
                             "vercel": { label: "Vercel", color: "#000000" },
                             "cf-workers": { label: "Workers", color: "#F48120" },
+                            "git-push": { label: "Git Push", color: "#6366F1" },
                             "s3-cloudfront": { label: "S3+CF", color: "#FF9900" },
                             "vps-ssh": { label: "VPS", color: "#6366F1" },
                         }[target] || { label: target, color: T.muted };
