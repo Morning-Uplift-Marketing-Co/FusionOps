@@ -1,0 +1,82 @@
+---
+const columns = [
+  { label: 'Loan Amount', values: ['$1,000', '$2,000', '$5,000', '$10,000'] },
+  { label: 'Interest Rate (APR)', values: ['34.99%', '34.99%', '34.99%', '34.99%'] },
+  { label: 'Loan Term', values: ['6 Months', '24 Months', '48 Months', '72 Months'] },
+  { label: 'Other Fees/Costs (%)', values: ['5%', '5%', '5%', '5%'] },
+  { label: 'Other Fees/Costs ($)', values: ['$50', '$100', '$250', '$500'] },
+  { label: 'Monthly Payment', values: ['$184.28', '$105.86', '$140.84', '$212.90'] },
+  { label: 'Total Payment', values: ['$1,105.68', '$2,540.64', '$6,760.32', '$15,328.80'] },
+];
+
+const highlightRows = ['Monthly Payment', 'Total Payment'];
+---
+
+<section class="py-20 md:py-28" aria-labelledby="apr-table-heading">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+    <div class="mb-14 text-center">
+      <p class="section-label mb-3">Representative Example</p>
+      <h2 id="apr-table-heading" class="text-3xl font-extrabold sm:text-4xl" style="color: #f1f5f9; letter-spacing: -0.02em;">
+        Smart Borrowing Starts With the Right Comparison
+      </h2>
+      <p class="mt-4 text-slate-400 max-w-2xl mx-auto text-sm">
+        Here's a representative example of interest rates, terms, fees, and total repayment costs.
+      </p>
+    </div>
+
+    <div class="overflow-x-auto rounded-xl" style="border: 1px solid var(--border);">
+      <table class="w-full min-w-[640px] text-sm" aria-label="Representative APR example table">
+        <caption class="sr-only">Representative loan cost examples across different loan amounts</caption>
+        <thead>
+          <tr style="background: var(--surface-3); border-bottom: 2px solid var(--border);">
+            <th scope="col" class="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-400 w-56">
+              Loan Details
+            </th>
+            <th scope="col" class="px-5 py-4 text-center text-xs font-semibold uppercase tracking-wider" style="color: var(--primary);">$1,000</th>
+            <th scope="col" class="px-5 py-4 text-center text-xs font-semibold uppercase tracking-wider" style="color: var(--primary);">$2,000</th>
+            <th scope="col" class="px-5 py-4 text-center text-xs font-semibold uppercase tracking-wider" style="color: var(--primary);">$5,000</th>
+            <th scope="col" class="px-5 py-4 text-center text-xs font-semibold uppercase tracking-wider" style="color: var(--primary);">$10,000</th>
+          </tr>
+        </thead>
+        <tbody>
+          {columns.map((row, i) => {
+            const isHighlighted = highlightRows.includes(row.label);
+            const isLast = i === columns.length - 1;
+            return (
+              <tr
+                style={`
+                  background: ${isHighlighted ? 'rgba(0,87,255,0.06)' : i % 2 === 0 ? 'var(--surface-2)' : 'var(--surface-3)'};
+                  border-bottom: ${isLast ? 'none' : '1px solid var(--border)'};
+                `}
+              >
+                <td class={`px-5 py-4 font-medium whitespace-nowrap ${isHighlighted ? 'text-white' : 'text-slate-300'}`}>
+                  {row.label}
+                </td>
+                {row.values.map((val) => (
+                  <td
+                    class={`px-5 py-4 text-center whitespace-nowrap tabular-nums ${
+                      isHighlighted ? 'font-bold text-white text-base' : 'text-slate-300'
+                    }`}
+                    style={isHighlighted ? 'color: var(--primary);' : ''}
+                  >
+                    {val}
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-6 rounded-xl p-5" style="background: var(--surface-3); border: 1px solid var(--border);">
+      <p class="disclaimer-text">
+        <strong class="text-slate-300">Representative Example Disclosure:</strong> The figures above are
+        representative examples for illustrative purposes only and do not constitute an offer or guarantee of
+        credit. Actual rates, fees, monthly payments, and total repayment amounts will vary based on your
+        creditworthiness, loan amount, term selected, and the specific lender. Other fees may apply.
+        LendPath is not a lender. Not all applicants will qualify.
+      </p>
+    </div>
+  </div>
+</section>
