@@ -1443,6 +1443,52 @@ export default {
       }
     }
 
+    // ═══ VOLUUM/LEADSGATE POSTBACK — handles t.{domain}/v ═══
+    // Publicly accessible — no auth required (S2S from LeadsGate servers)
+    if (path === '/v' && (method === 'GET' || method === 'POST' || method === 'OPTIONS')) {
+      if (method === 'OPTIONS') {
+        return new Response(null, { status: 204, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS' } });
+      }
+      try {
+        const db = env.DB;
+        await db.prepare(`CREATE TABLE IF NOT EXISTS voluum_postbacks (
+          id TEXT PRIMARY KEY,
+          domain TEXT,
+          click_id TEXT,
+          lead_id TEXT,
+          payout REAL,
+          type TEXT,
+          ip TEXT,
+          ua TEXT,
+          raw TEXT,
+          ts INTEGER DEFAULT (unixepoch())
+        )`).run();
+
+        const p = url.searchParams;
+        const clickId = p.get('click_id') || p.get('cid') || p.get('clickid') || '';
+        const leadId  = p.get('lead_id') || p.get('txid') || '';
+        const payout  = parseFloat(p.get('payout') || p.get('price') || '0');
+        const type    = p.get('type') || 'soldLead';
+        const domain  = hostname.replace(/^t\./, '');
+        const ip      = request.headers.get('CF-Connecting-IP') || '';
+        const ua      = request.headers.get('User-Agent') || '';
+        const raw     = request.url;
+        const id      = uid();
+
+        await db.prepare(
+          `INSERT INTO voluum_postbacks (id, domain, click_id, lead_id, payout, type, ip, ua, raw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ).bind(id, domain, clickId, leadId, payout, type, ip, ua, raw).run();
+
+        console.log('[postback]', { id, clickId, leadId, payout, type, domain });
+        return new Response('ok', {
+          status: 200,
+          headers: { 'Content-Type': 'text/plain', 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' },
+        });
+      } catch (e) {
+        return new Response('error: ' + e.message, { status: 500 });
+      }
+    }
+
     // ═══ TEMPLATE THUMBNAIL — serve from R2 ═══
     // GET /api/templates/:id/thumb → returns stored PNG from R2
     const thumbServeMatch = path.match(/^\/api\/templates\/([^/]+)\/thumb$/);
