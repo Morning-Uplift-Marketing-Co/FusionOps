@@ -462,7 +462,7 @@ function getVoluumClickId() {
   fpPixel('pv', cid ? { click_id: cid } : {});
 })();
 
-var _lg_form_init_ = {
+window._lg_form_init_ = {
   aid: aid,
   template: "fresh",
   ref: window.location.hostname,
