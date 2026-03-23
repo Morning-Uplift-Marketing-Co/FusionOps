@@ -5,9 +5,9 @@
   "cfAccountId": "",
   "brand": "Scratchpay",
   "domain": "scratchpaypet.tech",
-  "h1": "Get $100-$5000 Fast for Pet Care",
-  "sub": "Unexpected vet bill? Get quick funding for your beloved pet, simply.",
-  "cta": "Get Pet Funding Now",
+  "h1": "Get $100-$5000 Fast Funding Today!",
+  "sub": "Simple online application. Get the quick funding you need stress-free.",
+  "cta": "Apply For Cash",
   "phone": "1-800-SCRATCH-PAYPE",
   "email": "support@scratchpaypet.tech",
   "address": "108 West 13th St, Wilmington, DE 19801",
@@ -36,5 +36,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-23T22:02:10.565Z"
+  "deployedAt": "2026-03-23T22:04:18.108Z"
 }
