@@ -4,7 +4,6 @@ const {
   title = 'GoldRush Lending — Premium Installment Loans',
   description = 'Fast, flexible installment loans up to $35,000 with fixed monthly payments. Apply in minutes, funds in 24 hours.',
 } = Astro.props;
-const voluumDomain = import.meta.env.PUBLIC_VOLUUMDOMAIN || '';
 const conversionId = import.meta.env.PUBLIC_CONVERSIONID || '';
 const voluumClickUrl = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '';
 const formStartLabel = import.meta.env.PUBLIC_FORMSTARTLABEL || 'Start Application';
@@ -42,11 +41,11 @@ const __font = FONT_MAP[fontId] || FONT_MAP['dm-sans'];
 const __cssVars = __pal
   ? '--primary:'+__hsl(...__pal.p)+';--secondary:'+__hsl(...__pal.s)+';--accent:'+__hsl(...__pal.a)+';--background:'+__hsl(...__pal.bg)+';--foreground:'+__hsl(...__pal.fg)+';--radius:'+__rad+';'
   : '--primary:'+primaryColor+';--accent:'+accentColor+';--radius:'+__rad+';';
-/** Built in frontmatter so Astro SSG never hoists voluumDomain into index.astro.mjs */
+/* Runtime Voluum globals: stringify env here only — no separate identifiers for Astro to hoist into page chunks */
 const runtimeVoluumInit =
   '(function(){' +
   'window.__VOLUUM_DOMAIN__=' +
-  JSON.stringify(voluumDomain) +
+  JSON.stringify(import.meta.env.PUBLIC_VOLUUMDOMAIN || '') +
   ';window.__CONVERSION_ID__=' +
   JSON.stringify(conversionId) +
   ';window.__VOLUUM_CLICK_URL__=' +
@@ -59,7 +58,7 @@ const runtimeVoluumInit =
 <html lang="en">
 <head>
 
-<!-- Runtime config: string built in frontmatter (avoids Astro hoisting voluumDomain into page bundle) -->
+<!-- Runtime config: full script string from frontmatter -->
 <script is:inline set:html={runtimeVoluumInit} />
 
 
@@ -82,7 +81,7 @@ const runtimeVoluumInit =
 
 <!-- fusionops-voluum-cta: (runtime: window.__VOLUUM_CLICK_URL__) -->
 
-<script data-cfasync="false" data-fusionops="voluum-cta-rewriter">
+<script is:inline data-cfasync="false" data-fusionops="voluum-cta-rewriter">
 (function(){
   function destBase() {
     try {
