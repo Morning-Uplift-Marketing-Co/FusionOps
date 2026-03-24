@@ -1,5 +1,5 @@
 {
-  "templateId": "orange-local-import",
+  "templateId": "orange-zip-local",
   "cfPagesProject": "lp-jora-creditz-main",
   "cfApiToken": "",
   "cfAccountId": "",
@@ -16,8 +16,8 @@
   "amountMax": 10000,
   "aprMin": 5.99,
   "aprMax": 35.99,
-  "primaryColor": "",
-  "accentColor": "",
+  "primaryColor": "#3b5bdb",
+  "accentColor": "#f97316",
   "conversionId": "AW-13254",
   "gtagFormStartLabel": "form_start ",
   "gtagFormSubmitLabel": "form_submit ",
@@ -36,5 +36,5 @@
   "radius": "subtle",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-24T00:00:54.344Z"
+  "deployedAt": "2026-03-24T00:16:44.914Z"
 }
