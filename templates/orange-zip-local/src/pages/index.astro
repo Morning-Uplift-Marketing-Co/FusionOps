@@ -10,6 +10,18 @@ import FAQ from '../components/FAQ.astro';
 import Footer from '../components/Footer.astro';
 
 const brand = import.meta.env.PUBLIC_BRAND || 'GoldRush Lending';
+const ctaHref = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '/apply';
+const domain    = import.meta.env.PUBLIC_DOMAIN    || 'example.com';
+const h1        = import.meta.env.PUBLIC_H1        || '';
+const sub       = import.meta.env.PUBLIC_SUB       || '';
+const cta       = import.meta.env.PUBLIC_CTA       || 'Apply Now';
+const phone     = import.meta.env.PUBLIC_PHONE     || '';
+const emailAddr = import.meta.env.PUBLIC_EMAIL     || '';
+const email     = import.meta.env.PUBLIC_EMAIL     || '';
+const aprMin    = import.meta.env.PUBLIC_APRMIN    || '5.99';
+const aprMax    = import.meta.env.PUBLIC_APRMAX    || '35.99';
+const amountMin = import.meta.env.PUBLIC_AMOUNTMIN || '500';
+const amountMax = import.meta.env.PUBLIC_AMOUNTMAX || '10000';
 ---
 
 <Layout

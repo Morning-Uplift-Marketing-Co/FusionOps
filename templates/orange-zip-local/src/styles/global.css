@@ -4,31 +4,31 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Deep Teal & Coral Palette ───────────────────────────────────────────── */
+/* ─── Premium Fintech Palette ─────────────────────────────────────────────── */
 :root {
-  /* Coral — warm, energetic, approachable */
-  --primary: 14 85% 62%;
+  /* Champagne gold — restrained, prestigious */
+  --primary: 38 62% 58%;
 
-  /* Gunmetal surface — neutral dark */
-  --secondary: 218 16% 16%;
+  /* Deep gunmetal surface */
+  --secondary: 220 18% 14%;
 
-  /* Deep teal — fresh, modern highlight */
-  --accent: 174 72% 40%;
+  /* Electric azure — modern fintech highlight */
+  --accent: 204 100% 60%;
 
-  /* Dark charcoal background — warm tone */
-  --background: 220 18% 7%;
+  /* Near-black navy background */
+  --background: 222 28% 5%;
 
-  /* Warm off-white text */
-  --foreground: 30 10% 95%;
+  /* Crisp off-white text */
+  --foreground: 210 18% 94%;
 
   /* Card surface — slightly lighter than bg */
-  --surface: 220 14% 11%;
+  --surface: 222 22% 9%;
 
   /* Muted text */
-  --muted: 216 12% 44%;
+  --muted: 215 14% 42%;
 
   /* Subtle border */
-  --border: 218 14% 16%;
+  --border: 220 16% 13%;
 
   --radius: 0.875rem;
 }
@@ -49,8 +49,8 @@
     font-family: 'Inter', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     background-image:
-      radial-gradient(ellipse 80% 50% at 50% -20%, hsl(14 85% 62% / 0.07), transparent),
-      radial-gradient(ellipse 60% 40% at 80% 100%, hsl(174 72% 40% / 0.05), transparent);
+      radial-gradient(ellipse 80% 50% at 50% -20%, hsl(38 62% 58% / 0.06), transparent),
+      radial-gradient(ellipse 60% 40% at 80% 100%, hsl(204 100% 60% / 0.04), transparent);
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -74,15 +74,15 @@
       0 4px 24px rgba(0,0,0,0.4);
   }
 
-  /* Elevated card with coral top accent */
+  /* Elevated card with gold top accent */
   .premium-card {
     background: linear-gradient(
       160deg,
-      hsl(220 16% 12%) 0%,
-      hsl(220 14% 10%) 100%
+      hsl(222 24% 10%) 0%,
+      hsl(222 22% 8%) 100%
     );
     border: 1px solid hsl(var(--border) / 1);
-    border-top: 1px solid hsl(14 85% 62% / 0.2);
+    border-top: 1px solid hsl(38 62% 58% / 0.2);
     border-radius: var(--radius);
     box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
   }
@@ -99,15 +99,15 @@
     justify-content: center;
     gap: 0.5rem;
     padding: 0.875rem 2rem;
-    background: linear-gradient(135deg, hsl(14 85% 65%), hsl(14 80% 54%));
-    color: hsl(220 18% 7%);
+    background: linear-gradient(135deg, hsl(38 68% 60%), hsl(38 55% 50%));
+    color: hsl(222 28% 8%);
     font-family: 'Plus Jakarta Sans', sans-serif;
     font-weight: 700;
     font-size: 0.9375rem;
     border-radius: var(--radius);
     letter-spacing: 0.01em;
     transition: all 0.2s ease;
-    box-shadow: 0 4px 20px hsl(14 85% 62% / 0.3), inset 0 1px 0 rgba(255,255,255,0.2);
+    box-shadow: 0 4px 20px hsl(38 62% 58% / 0.3), inset 0 1px 0 rgba(255,255,255,0.2);
     white-space: nowrap;
     cursor: pointer;
     text-decoration: none;
@@ -116,8 +116,8 @@
 
   .btn-primary:hover {
     transform: translateY(-1px);
-    box-shadow: 0 8px 28px hsl(14 85% 62% / 0.4), inset 0 1px 0 rgba(255,255,255,0.25);
-    background: linear-gradient(135deg, hsl(14 88% 68%), hsl(14 83% 58%));
+    box-shadow: 0 8px 28px hsl(38 62% 58% / 0.4), inset 0 1px 0 rgba(255,255,255,0.25);
+    background: linear-gradient(135deg, hsl(38 72% 64%), hsl(38 58% 54%));
   }
 
   .btn-primary:active {
@@ -144,7 +144,7 @@
 
   .btn-ghost:hover {
     background: hsl(var(--surface));
-    border-color: hsl(14 85% 62% / 0.35);
+    border-color: hsl(38 62% 58% / 0.35);
     color: hsl(var(--foreground));
   }
 
@@ -218,7 +218,7 @@
 
   /* Gradient text */
   .gradient-text {
-    background: linear-gradient(135deg, hsl(14 85% 68%), hsl(14 70% 78%), hsl(174 72% 55%));
+    background: linear-gradient(135deg, hsl(38 75% 65%), hsl(38 50% 80%), hsl(204 100% 70%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
