@@ -4,6 +4,7 @@ const {
   title = 'GoldRush Lending — Premium Installment Loans',
   description = 'Fast, flexible installment loans up to $35,000 with fixed monthly payments. Apply in minutes, funds in 24 hours.',
 } = Astro.props;
+const voluumDomain = import.meta.env.PUBLIC_VOLUUMDOMAIN || '';
 const conversionId = import.meta.env.PUBLIC_CONVERSIONID || '';
 const voluumClickUrl = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '';
 const formStartLabel = import.meta.env.PUBLIC_FORMSTARTLABEL || 'Start Application';
