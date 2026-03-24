@@ -102,6 +102,10 @@ jobs:
         working-directory: ${{ steps.template.outputs.dir }}
         run: npm install
 
+      - name: Ensure template-local tsconfig (avoid monorepo root)
+        working-directory: ${{ steps.template.outputs.dir }}
+        run: node "$GITHUB_WORKSPACE/scripts/ci-ensure-template-tsconfig.mjs"
+
       - name: Inject site config as env vars (Astro PUBLIC_* + Vite VITE_*)
         working-directory: ${{ steps.template.outputs.dir }}
         run: |
@@ -217,6 +221,20 @@ jobs:
         working-directory: ${{ steps.template.outputs.dir }}
         run: npm run build
 
+      - name: Verify tracking markers in dist HTML
+        working-directory: ${{ steps.template.outputs.dir }}
+        run: |
+          set -euo pipefail
+          if [ -f dist/index.html ]; then
+            if ! grep -qE 'dtpCallback|Voluum Direct Tracking|__VOLUUM_DOMAIN__|voluum-cta-rewriter|fusionops-voluum-cta|__foPatchCta' dist/index.html; then
+              echo "::error::dist/index.html missing Voluum/tracking markers after build (inject may have targeted wrong shell or build cleared them)"
+              exit 1
+            fi
+            echo "✓ dist/index.html contains Voluum/tracking markers"
+          else
+            echo "⚠ No dist/index.html — skipping dist tracking check (custom outDir or non-HTML entry)"
+          fi
+
       - name: Generate canonical apply.html (if missing from build)
         working-directory: ${{ steps.template.outputs.dir }}
         run: |
@@ -260,8 +278,8 @@ jobs:
           CF_ACCOUNT_FROM_SECRET: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
-          export CLOUDFLARE_API_TOKEN="${CF_TOKEN_FROM_SECRET:-$CF_TOKEN_FROM_CONFIG}"
-          export CLOUDFLARE_ACCOUNT_ID="${CF_ACCOUNT_FROM_SECRET:-$CF_ACCOUNT_FROM_CONFIG}"
+          export CLOUDFLARE_API_TOKEN="${CF_TOKEN_FROM_CONFIG:-$CF_TOKEN_FROM_SECRET}"
+          export CLOUDFLARE_ACCOUNT_ID="${CF_ACCOUNT_FROM_CONFIG:-$CF_ACCOUNT_FROM_SECRET}"
 
           echo "CF Account: ${CLOUDFLARE_ACCOUNT_ID:0:8}..."
           echo "Token set: $([ -n "$CLOUDFLARE_API_TOKEN" ] && echo YES || echo NO)"
@@ -289,8 +307,8 @@ jobs:
           CF_ACCOUNT_FROM_SECRET: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
-          export CF_TOKEN="${CF_TOKEN_FROM_SECRET:-$CF_TOKEN_FROM_CONFIG}"
-          export CF_ACCOUNT="${CF_ACCOUNT_FROM_SECRET:-$CF_ACCOUNT_FROM_CONFIG}"
+          export CF_TOKEN="${CF_TOKEN_FROM_CONFIG:-$CF_TOKEN_FROM_SECRET}"
+          export CF_ACCOUNT="${CF_ACCOUNT_FROM_CONFIG:-$CF_ACCOUNT_FROM_SECRET}"
           CONFIG_FILE="${{ steps.config.outputs.file }}"
           DOMAIN=$(node -e "const c=require('./$CONFIG_FILE');const d=String(c.domain||'').trim().toLowerCase().replace(/^https?:\/\//,'').replace(/^\/\//,'').replace(/[/?#].*$/,'').replace(/\.+$/,'').replace(/^www\./,'');console.log(d)")
 
@@ -343,8 +361,8 @@ jobs:
           CF_ACCOUNT_FROM_SECRET: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
-          export CF_TOKEN="${CF_TOKEN_FROM_SECRET:-$CF_TOKEN_FROM_CONFIG}"
-          export CF_ACCOUNT="${CF_ACCOUNT_FROM_SECRET:-$CF_ACCOUNT_FROM_CONFIG}"
+          export CF_TOKEN="${CF_TOKEN_FROM_CONFIG:-$CF_TOKEN_FROM_SECRET}"
+          export CF_ACCOUNT="${CF_ACCOUNT_FROM_CONFIG:-$CF_ACCOUNT_FROM_SECRET}"
           CONFIG_FILE="${{ steps.config.outputs.file }}"
           DOMAIN=$(node -e "const c=require('./$CONFIG_FILE');const d=String(c.domain||'').trim().toLowerCase().replace(/^https?:\/\//,'').replace(/^\/\//,'').replace(/[/?#].*$/,'').replace(/\.+$/,'').replace(/^www\./,'');console.log(d)")
           PROJECT="${{ steps.template.outputs.cf_pages_project }}"
@@ -384,8 +402,8 @@ jobs:
           CF_ACCOUNT_FROM_SECRET: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
-          export CF_TOKEN="${CF_TOKEN_FROM_SECRET:-$CF_TOKEN_FROM_CONFIG}"
-          export CF_ACCOUNT="${CF_ACCOUNT_FROM_SECRET:-$CF_ACCOUNT_FROM_CONFIG}"
+          export CF_TOKEN="${CF_TOKEN_FROM_CONFIG:-$CF_TOKEN_FROM_SECRET}"
+          export CF_ACCOUNT="${CF_ACCOUNT_FROM_CONFIG:-$CF_ACCOUNT_FROM_SECRET}"
           CONFIG_FILE="${{ steps.config.outputs.file }}"
           DOMAIN=$(node -e "const c=require('./$CONFIG_FILE');const d=String(c.domain||'').trim().toLowerCase().replace(/^https?:\/\//,'').replace(/^\/\//,'').replace(/[/?#].*$/,'').replace(/\.+$/,'').replace(/^www\./,'');console.log(d)")
           DEPLOY_URL="${{ steps.deploy.outputs.url }}"
@@ -460,8 +478,8 @@ jobs:
           CF_ACCOUNT_FROM_SECRET: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
-          export CF_TOKEN="${CF_TOKEN_FROM_SECRET:-$CF_TOKEN_FROM_CONFIG}"
-          export CF_ACCOUNT="${CF_ACCOUNT_FROM_SECRET:-$CF_ACCOUNT_FROM_CONFIG}"
+          export CF_TOKEN="${CF_TOKEN_FROM_CONFIG:-$CF_TOKEN_FROM_SECRET}"
+          export CF_ACCOUNT="${CF_ACCOUNT_FROM_CONFIG:-$CF_ACCOUNT_FROM_SECRET}"
           CONFIG_FILE="${{ steps.config.outputs.file }}"
           DOMAIN=$(node -e "const c=require('./$CONFIG_FILE');const d=String(c.domain||'').trim().toLowerCase().replace(/^https?:\/\//,'').replace(/^\/\//,'').replace(/[/?#].*$/,'').replace(/\.+$/,'').replace(/^www\./,'');console.log(d)")
 

@@ -11,6 +11,7 @@
     "check": "astro check",
     "lint": "eslint .",
     "test": "vitest",
+    "test:db-template": "vitest run tests/unit/scripts/db-template-validate.spec.ts",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "test:e2e": "playwright test",

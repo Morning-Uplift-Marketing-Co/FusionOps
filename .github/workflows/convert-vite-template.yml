@@ -49,6 +49,9 @@ jobs:
           --template-id "${{ inputs.template_id }}"
           --name "${{ inputs.template_name || inputs.template_id }}"
 
+      - name: Inject tracking stack (Voluum + pixel + CTA rewriter)
+        run: node scripts/inject-tracking.mjs "templates/${{ inputs.template_id }}"
+
       - name: Validate Tracking
         run: node scripts/validate-template-tracking.mjs "templates/${{ inputs.template_id }}"
 

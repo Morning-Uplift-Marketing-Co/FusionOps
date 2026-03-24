@@ -366,25 +366,16 @@ export class WizardHelpers {
   }
 
   /**
-   * Complete wizard Step 2: Product Configuration
+   * Complete wizard Step 2: Product (loan type only)
    */
-  async completeStep2(data: {
-    loanType?: string;
-    amountMin: number;
-    amountMax: number;
-    aprMin: number;
-    aprMax: number;
-  }): Promise<void> {
+  async completeStep2(data: { loanType?: string } = {}): Promise<void> {
     if (data.loanType) {
       const loanTypeBtn = this.page.locator('button').filter({ hasText: new RegExp(data.loanType, 'i') }).first();
       await loanTypeBtn.click();
+    } else {
+      const firstLoan = this.page.locator('button').filter({ hasText: /Personal|Installment|Pet|Medical|Auto/i }).first();
+      if (await firstLoan.isVisible()) await firstLoan.click();
     }
-
-    const inputs = this.page.locator('input[type="number"], input');
-    await inputs.nth(0).fill(String(data.amountMin));
-    await inputs.nth(1).fill(String(data.amountMax));
-    await inputs.nth(2).fill(String(data.aprMin));
-    await inputs.nth(3).fill(String(data.aprMax));
 
     await this.page.getByRole('button').filter({ hasText: /Next/i }).click();
     await this.page.waitForTimeout(300);
@@ -453,8 +444,6 @@ export class WizardHelpers {
   async completeWizard(data: {
     brand: string;
     domain: string;
-    amountMin?: number;
-    amountMax?: number;
     redirectUrl: string;
   }): Promise<void> {
     await this.completeStep1({
@@ -462,12 +451,7 @@ export class WizardHelpers {
       domain: data.domain
     });
 
-    await this.completeStep2({
-      amountMin: data.amountMin || 500,
-      amountMax: data.amountMax || 10000,
-      aprMin: 5.99,
-      aprMax: 35.99
-    });
+    await this.completeStep2({});
 
     await this.completeStep3({ colorId: 'Ocean' });
     await this.completeStep4({ template: 'LoanBridge' });

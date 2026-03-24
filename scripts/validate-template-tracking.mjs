@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
+import { resolveAstroShellAstroPath } from './lib/astro-shell-resolve.mjs';
 
 function readText(file) {
   return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
@@ -60,32 +61,44 @@ if (isHtml) {
   process.exit(0);
 }
 
-// Astro template validation (original logic)
-const layoutPath = path.join(templateDir, 'src', 'layouts', 'Layout.astro');
+// Astro template validation — document shell path matches inject-tracking (index imports, layouts, components)
+const shellPath = resolveAstroShellAstroPath(templateDir);
 const endpointPath = path.join(templateDir, 'src', 'pages', 'e.ts');
 const robotsPath = path.join(templateDir, 'src', 'pages', 'robots.txt.ts');
 const headersPath = path.join(templateDir, 'public', '_headers');
 
-const layout = readText(layoutPath);
+const layout = shellPath ? readText(shellPath) : '';
 const index = readText(indexAstroPath);
 
 const issues = [];
 
-ensure(fs.existsSync(layoutPath), `Missing file: ${layoutPath}`, issues);
+ensure(
+  Boolean(shellPath && fs.existsSync(shellPath)),
+  'Missing or unresolvable Astro document shell (need <html>/<head> in a layout or component imported from index.astro, or under src/layouts|components)',
+  issues,
+);
 ensure(fs.existsSync(indexAstroPath), `Missing file: ${indexAstroPath}`, issues);
 ensure(fs.existsSync(endpointPath), `Missing endpoint: ${endpointPath}`, issues);
 ensure(fs.existsSync(robotsPath), `Missing robots route: ${robotsPath}`, issues);
 ensure(fs.existsSync(headersPath), `Missing security headers file: ${headersPath}`, issues);
 
+const shellLabel = shellPath ? path.relative(templateDir, shellPath) : 'document shell';
+
 if (layout) {
-  ensure(layout.includes('PUBLIC_VOLUUMDOMAIN'), 'Layout.astro missing PUBLIC_VOLUUMDOMAIN env usage', issues);
-  ensure(layout.includes('PUBLIC_FORMSTARTLABEL'), 'Layout.astro missing PUBLIC_FORMSTARTLABEL env usage', issues);
-  ensure(layout.includes('PUBLIC_FORMSUBMITLABEL'), 'Layout.astro missing PUBLIC_FORMSUBMITLABEL env usage', issues);
+  ensure(
+    layout.includes('PUBLIC_VOLUUMDOMAIN')
+      || layout.includes('__voluumDomain')
+      || layout.includes('__VOLUUM_DOMAIN__'),
+    `${shellLabel} missing Voluum domain wiring (PUBLIC_VOLUUMDOMAIN or injected __voluumDomain)`,
+    issues,
+  );
+  ensure(layout.includes('PUBLIC_FORMSTARTLABEL'), `${shellLabel} missing PUBLIC_FORMSTARTLABEL env usage`, issues);
+  ensure(layout.includes('PUBLIC_FORMSUBMITLABEL'), `${shellLabel} missing PUBLIC_FORMSUBMITLABEL env usage`, issues);
   ensure(
     layout.includes("'https://t.' + window.location.hostname + '/e'") ||
       layout.includes('"https://t." + window.location.hostname + "/e"') ||
       layout.includes('PX_ENDPOINT'),
-    "Layout.astro pixel must use t.{domain}/e (pixel worker), not /e on apex host",
+    `${shellLabel} pixel must use t.{domain}/e (pixel worker), not /e on apex host`,
     issues
   );
   ensure(
@@ -94,12 +107,19 @@ if (layout) {
       !layout.includes("fetch('/e'") &&
       !layout.includes('fetch("/e"') &&
       !layout.includes("sendBeacon('/e'"),
-    "Layout.astro must NOT use apex /e transport — use t.{domain}/e instead",
+    `${shellLabel} must NOT use apex /e transport — use t.{domain}/e instead`,
     issues
   );
   ensure(
     layout.includes('dtpCallback') || layout.includes('PUBLIC_VOLUUMDOMAIN'),
-    'Layout.astro missing Voluum dtpCallback injection (use dtpCallback.js, not vp.js)',
+    `${shellLabel} missing Voluum dtpCallback injection (use dtpCallback.js, not vp.js)`,
+    issues
+  );
+  ensure(
+    layout.includes('voluum-cta-rewriter')
+      || layout.includes('fusionops-voluum-cta')
+      || layout.includes('__foPatchCta'),
+    `${shellLabel} missing Voluum CTA rewriter / inline __foPatchCta (run scripts/inject-tracking.mjs on template dir)`,
     issues
   );
 }

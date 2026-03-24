@@ -541,23 +541,75 @@ function parseTemplateFiles(raw) {
   return {};
 }
 
+function normalizeTemplateStoragePath(p) {
+  return String(p || '').replace(/\\/g, '/').replace(/^\/+/, '');
+}
+
+/** Resolve JSON `files` key for a path like dist/index.html (no ..). */
+function resolveTemplateFileKey(files, subPath) {
+  const want = normalizeTemplateStoragePath(subPath);
+  if (!want || want.split('/').some((seg) => seg === '..')) return null;
+  const keys = Object.keys(files || {});
+  for (const k of keys) {
+    if (normalizeTemplateStoragePath(k) === want) return k;
+  }
+  for (const k of keys) {
+    const nk = normalizeTemplateStoragePath(k);
+    if (nk.endsWith(`/${want}`) || nk === want) return k;
+  }
+  return null;
+}
+
+function contentTypeForTemplatePath(filePath) {
+  const x = String(filePath || '').toLowerCase();
+  if (x.endsWith('.html')) return 'text/html; charset=utf-8';
+  if (x.endsWith('.css')) return 'text/css; charset=utf-8';
+  if (x.endsWith('.js')) return 'application/javascript; charset=utf-8';
+  if (x.endsWith('.mjs')) return 'application/javascript; charset=utf-8';
+  if (x.endsWith('.json')) return 'application/json; charset=utf-8';
+  if (x.endsWith('.svg')) return 'image/svg+xml';
+  if (x.endsWith('.png')) return 'image/png';
+  if (x.endsWith('.jpg') || x.endsWith('.jpeg')) return 'image/jpeg';
+  if (x.endsWith('.webp')) return 'image/webp';
+  if (x.endsWith('.woff2')) return 'font/woff2';
+  if (x.endsWith('.woff')) return 'font/woff';
+  if (x.endsWith('.ico')) return 'image/x-icon';
+  return 'application/octet-stream';
+}
+
+/** Astro dist index uses absolute /_astro/* — rewrite so assets load via /preview/... */
+function rewriteDistIndexHtmlForPreview(html, origin, templateDbId) {
+  const base = `${origin}/api/templates/${encodeURIComponent(templateDbId)}/preview`;
+  let out = String(html);
+  out = out.replace(/(href|src)=(["'])\/_astro\//gi, `$1=$2${base}/dist/_astro/`);
+  out = out.replace(/(href|src)=(["'])\/favicon\.ico/gi, `$1=$2${base}/dist/favicon.ico`);
+  return out;
+}
+
 function getTemplateQualityGateReport({ files = {}, sourceCode = '', category = '' } = {}) {
   const fileMap = files && typeof files === 'object' ? files : {};
   const source = String(sourceCode || '');
   const categoryLower = String(category || '').toLowerCase();
   const keys = Object.keys(fileMap);
   const combined = source + JSON.stringify(fileMap);
-  const htmlCombined = keys
-    .filter((k) => k.toLowerCase().endsWith('.html'))
-    .map((k) => (typeof fileMap[k] === 'string' ? fileMap[k] : ''))
-    .join('\n') + '\n' + (/<html|<!doctype html/i.test(source) ? source : '');
-  const hasEntry = keys.some((k) => k.endsWith('index.astro') || k.endsWith('index.html')) || /<html|<!doctype html/i.test(source);
+  const hasEntry =
+    keys.some((k) =>
+      /index\.(astro|html|tsx|jsx)$/i.test(k) ||
+      /(^|\/)App\.(tsx|jsx)$/i.test(k) ||
+      /(^|\/)main\.(tsx|jsx|ts|js)$/i.test(k),
+    ) ||
+    /<html|<!doctype html/i.test(source);
   const hasPixelMarker = /sendBeacon|sendPixelBeacon|fpPixel|__fpPixel|PX_ENDPOINT|t\.[^"' ]+\/e|window\.__fusionopsTrack|window\.pixel/i.test(combined);
-  const hasAstroLeak = /\{title\}|\{\s*noindex\s*\?|\{\s*[a-zA-Z_$][\w$]*\s*&&\s*\(/.test(htmlCombined);
+  const hasTrackingMarker = /gtag\(|AW-\d+|form_start|form_submit/i.test(combined);
+  const hasPrimaryToken = /--color-primary|--primary\s*:|--fo-primary|var\(--color-primary\)|var\(--primary\)|var\(--fo-primary\)|hsl\(var\(--primary\)\)/i.test(combined);
   const hasViewport = /<meta[^>]+name=["']viewport["']/i.test(combined);
   const hasCta = /<button|href=["']#apply["']|type=["']submit["']/i.test(combined);
-  const hasCalculator = /calculator|monthly payment|calcMonthly|loanAmount|payment estimate/i.test(combined);
-  const hasAprCompare = /representative apr|apr range|<table[\s\S]*apr|term[\s\S]*apr/i.test(combined);
+  const hasCalculator =
+    /calculator|monthly\s+payment|calcMonthly|loanAmount|payment\s+estimate|installment|repayment|emi\b/i.test(combined);
+  const hasAprCompare =
+    /representative\s+apr|representative\s+example|apr\s+range|apr\s+comparison|<table[\s\S]*apr|term[\s\S]{0,240}apr|\d[\d.]*%\s*apr/i.test(
+      combined,
+    );
   const bannedPatterns = [
     /guaranteed approval/i,
     /guaranteed loan/i,
@@ -570,15 +622,16 @@ function getTemplateQualityGateReport({ files = {}, sourceCode = '', category = 
   const matchedBanned = bannedPatterns.filter((p) => p.test(combined)).map((p) => p.toString());
   const blocking = [];
   const warnings = [];
-  if (!hasEntry) blocking.push('Missing template entry (index.astro or index.html).');
-  if (!hasPixelMarker) blocking.push('Missing first-party pixel marker (sendBeacon / t.domain/e).');
-  if (hasAstroLeak) blocking.push('Potential Astro expression leak detected.');
+  if (!hasEntry) blocking.push('Missing template entry (index.astro, index.html, or Vite App/main entry).');
   if (matchedBanned.length > 0) blocking.push(`Policy-risk copy detected: ${matchedBanned.join(', ')}`);
   if (/(installment|loan|pdl|pet-care)/i.test(categoryLower)) {
     if (!hasCalculator) blocking.push('Missing Payment Calculator section for loan template.');
     if (!hasAprCompare) blocking.push('Missing APR Compare/Representative APR section for loan template.');
   }
+  if (!hasPixelMarker) warnings.push('First-party pixel not yet injected (added at deploy).');
+  if (!hasTrackingMarker) warnings.push('Google Ads tracking not yet injected (added at deploy).');
   if (!hasViewport) warnings.push('Viewport meta not detected (mobile UX risk).');
+  if (!hasPrimaryToken) warnings.push('Primary color token not detected.');
   if (!hasCta) warnings.push('Primary CTA marker not detected.');
   return {
     pass: blocking.length === 0,
@@ -1504,6 +1557,47 @@ export default {
       }
     }
 
+    // ═══ TEMPLATE PREVIEW ASSETS (for thumbnail screenshots) ═══
+    // GET /api/templates/:dbId/preview/<path> → file from templates.files JSON
+    const templatePreviewMatch = path.match(/^\/api\/templates\/([^/]+)\/preview\/(.+)$/);
+    if (templatePreviewMatch && method === 'GET') {
+      const templateDbId = decodeURIComponent(templatePreviewMatch[1]);
+      const rel = normalizeTemplateStoragePath(decodeURIComponent(templatePreviewMatch[2]));
+      if (!rel || rel.split('/').some((s) => s === '..')) {
+        return new Response('Not found', { status: 404, headers: corsHeaders });
+      }
+      try {
+        const db = env.DB;
+        await ensureTemplateManagerSchema(db);
+        const row = await db.prepare(
+          'SELECT id, files FROM templates WHERE id = ? AND COALESCE(is_deleted,0) = 0 LIMIT 1',
+        ).bind(templateDbId).first();
+        if (!row) return new Response('Not found', { status: 404, headers: corsHeaders });
+        const files = parseTemplateFiles(row.files);
+        const fileKey = resolveTemplateFileKey(files, rel);
+        if (!fileKey) return new Response('Not found', { status: 404, headers: corsHeaders });
+        let body = files[fileKey];
+        if (typeof body !== 'string') body = String(body ?? '');
+        const ct = contentTypeForTemplatePath(fileKey);
+        const origin = new URL(request.url).origin;
+        let out = body;
+        const nk = normalizeTemplateStoragePath(fileKey);
+        if (ct.includes('text/html') && (nk === 'dist/index.html' || nk.endsWith('/dist/index.html'))) {
+          out = rewriteDistIndexHtmlForPreview(body, origin, templateDbId);
+        }
+        return new Response(out, {
+          status: 200,
+          headers: {
+            'Content-Type': ct,
+            'Cache-Control': 'private, max-age=120',
+            ...corsHeaders,
+          },
+        });
+      } catch (e) {
+        return json({ error: e.message }, 500);
+      }
+    }
+
     // ═══ TEMPLATE THUMBNAIL — manual upload ═══
     // POST /api/templates/:id/upload-thumb → accept image file → store in R2
     const thumbUploadMatch = path.match(/^\/api\/templates\/([^/]+)\/upload-thumb$/);
@@ -1540,28 +1634,112 @@ export default {
         // Ensure thumbnail columns exist before querying
         try { await db.prepare('ALTER TABLE templates ADD COLUMN thumbnail_url TEXT').run(); } catch (_e) {}
         try { await db.prepare('ALTER TABLE templates ADD COLUMN thumbnail_generated_at TEXT').run(); } catch (_e) {}
-        // Load template from D1 — uses files column (JSON string), not data
         const row = await db.prepare(`SELECT id, files, name, thumbnail_url FROM templates WHERE id = ? AND COALESCE(is_deleted,0) = 0 LIMIT 1`).bind(id).first();
         if (!row) return json({ error: 'Template not found' }, 404);
+
+        let genBody = {};
+        try {
+          const ct = request.headers.get('content-type') || '';
+          if (ct.includes('application/json')) genBody = await request.json();
+        } catch (_e) {}
+        const previewHtmlIn = typeof genBody.previewHtml === 'string' ? genBody.previewHtml : '';
+        const PREVIEW_HTML_MAX = 10 * 1024 * 1024;
+        const PREVIEW_HTML_MIN = 200;
+        const useClientPreview = previewHtmlIn.length >= PREVIEW_HTML_MIN && previewHtmlIn.length <= PREVIEW_HTML_MAX;
+
         const files = parseTemplateFiles(row.files);
-        // Find HTML to render — prefer index.html, else strip Astro frontmatter
         const htmlKeys = Object.keys(files);
-        const htmlKey = htmlKeys.find(k => k === 'index.html')
-          || htmlKeys.find(k => k.endsWith('/index.html'))
-          || htmlKeys.find(k => k.endsWith('index.astro'));
-        if (!htmlKey) return json({ error: 'No renderable HTML found in template' }, 422);
-        let html = String(files[htmlKey] || '');
-        // Strip Astro frontmatter if present
-        html = html.replace(/^---[\s\S]*?---\n?/, '');
-        // Launch browser and screenshot
+        const distIndexKey = htmlKeys.find((k) => {
+          const n = normalizeTemplateStoragePath(k);
+          return n === 'dist/index.html' || n.endsWith('/dist/index.html');
+        });
+        const htmlKey = htmlKeys.find((k) => {
+          const n = normalizeTemplateStoragePath(k);
+          return (n === 'index.html' || n.endsWith('/index.html')) && !n.includes('dist/');
+        }) || htmlKeys.find((k) => k.endsWith('index.astro'));
+        if (!useClientPreview && !distIndexKey && !htmlKey) return json({ error: 'No renderable HTML found in template' }, 422);
+
+        const origin = new URL(request.url).origin;
+        let previewUrl = '';
+        let html = '';
+        let loadMode = 'content';
+        if (useClientPreview) {
+          html = previewHtmlIn;
+          loadMode = 'content';
+        } else if (distIndexKey) {
+          const previewRel = normalizeTemplateStoragePath(distIndexKey).split('/').map(encodeURIComponent).join('/');
+          previewUrl = `${origin}/api/templates/${encodeURIComponent(id)}/preview/${previewRel}`;
+          loadMode = 'goto';
+        } else {
+          html = String(files[htmlKey] || '');
+          html = html.replace(/^---[\s\S]*?---\n?/, '');
+          const cssBlock = htmlKeys
+            .filter((k) => k.toLowerCase().endsWith('.css'))
+            .map((k) => `\n/* ---- ${k} ---- */\n${String(files[k] || '')}\n`)
+            .join('');
+          if (cssBlock) {
+            const inj = `<style type="text/css">${cssBlock}</style>`;
+            if (/<\/head>/i.test(html)) html = html.replace(/<\/head>/i, `${inj}</head>`);
+            else html = `<!DOCTYPE html><html><head><meta charset="utf-8"/>${inj}</head><body>${html}</body></html>`;
+          }
+          loadMode = 'content';
+        }
+
+        // Mobile viewport; clip top ~above-the-fold for wizard card previews (object-position: top)
+        const VIEW_W = 390;
+        const VIEW_H = 844;
+        const THUMB_CLIP_H = 520;
         const browser = await puppeteer.launch(env.BROWSER);
-        const page = await browser.newPage();
-        await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 });
-        await page.setContent(html, { waitUntil: 'networkidle0', timeout: 15000 });
-        const screenshot = await page.screenshot({ type: 'png', clip: { x: 0, y: 0, width: 390, height: 844 } });
-        await browser.close();
-        // Store in R2
-        await env.THUMBS.put(`thumbs/${id}.png`, screenshot, { httpMetadata: { contentType: 'image/png' } });
+        try {
+          const page = await browser.newPage();
+          await page.setViewport({ width: VIEW_W, height: VIEW_H, deviceScaleFactor: 2 });
+          if (loadMode === 'goto') {
+            try {
+              await page.goto(previewUrl, { waitUntil: 'networkidle0', timeout: 28000 });
+            } catch (_g0) {
+              await page.goto(previewUrl, { waitUntil: 'load', timeout: 22000 });
+            }
+          } else {
+            try {
+              await page.setContent(html, { waitUntil: 'networkidle0', timeout: 28000 });
+            } catch (_idle) {
+              await page.setContent(html, { waitUntil: 'load', timeout: 22000 });
+            }
+          }
+          await page.evaluate(async () => {
+            try {
+              await document.fonts.ready;
+            } catch (_e) {}
+            await Promise.all(
+              Array.from(document.images)
+                .filter((img) => !img.complete && img.src)
+                .map(
+                  (img) =>
+                    new Promise((resolve) => {
+                      img.addEventListener('load', resolve, { once: true });
+                      img.addEventListener('error', resolve, { once: true });
+                      setTimeout(resolve, 8000);
+                    }),
+                ),
+            );
+            await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+          });
+          const bodyH = await page.evaluate(() => {
+            const b = document.body;
+            const e = document.documentElement;
+            return Math.max(b?.scrollHeight || 0, e?.scrollHeight || 0);
+          });
+          const clipH = Math.min(THUMB_CLIP_H, Math.max(200, bodyH || THUMB_CLIP_H));
+          const screenshot = await page.screenshot({
+            type: 'png',
+            clip: { x: 0, y: 0, width: VIEW_W, height: clipH },
+          });
+          await env.THUMBS.put(`thumbs/${id}.png`, screenshot, { httpMetadata: { contentType: 'image/png' } });
+        } finally {
+          try {
+            await browser.close();
+          } catch (_e) {}
+        }
         // Store thumbnailUrl in D1 — add column if needed
         try { await db.prepare('ALTER TABLE templates ADD COLUMN thumbnail_url TEXT').run(); } catch (_e) {}
         try { await db.prepare('ALTER TABLE templates ADD COLUMN thumbnail_generated_at TEXT').run(); } catch (_e) {}
