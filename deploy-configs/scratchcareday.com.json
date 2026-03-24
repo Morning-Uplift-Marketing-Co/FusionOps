@@ -5,9 +5,9 @@
   "cfAccountId": "",
   "brand": "Scratchpay",
   "domain": "scratchcareday.com",
-  "h1": "Quick Pet Funding: Get $100-$5000 Today",
-  "sub": "Unexpected pet expenses? Get fast cash easily. We're here for your furry friend.",
-  "cta": "Get My Pet's Funding",
+  "h1": "Fast Pet Funding: $100 - $5000 Today",
+  "sub": "Unexpected vet bills? Get quick, compassionate financial support for your beloved pet.",
+  "cta": "Get Pet Funding",
   "phone": "1-800-SCRATCH-CARED",
   "email": "support@scratchcareday.com",
   "address": "30 N Gould St, Ste R, Sheridan, WY 82801",
@@ -16,8 +16,8 @@
   "amountMax": 5000,
   "aprMin": 5.99,
   "aprMax": 35.99,
-  "primaryColor": "",
-  "accentColor": "",
+  "primaryColor": "#3b5bdb",
+  "accentColor": "#f97316",
   "conversionId": "AW-16551193759/WSyRCKeqq7YZEJ_ZnNQ9",
   "gtagFormStartLabel": "form_start",
   "gtagFormSubmitLabel": "fotm_submit",
@@ -36,5 +36,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-24T04:58:45.615Z"
+  "deployedAt": "2026-03-24T05:06:06.869Z"
 }
