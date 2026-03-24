@@ -4,9 +4,9 @@ const {
   title = 'GoldRush Lending — Premium Installment Loans',
   description = 'Fast, flexible installment loans up to $35,000 with fixed monthly payments. Apply in minutes, funds in 24 hours.',
 } = Astro.props;
-const __voluumDomain = import.meta.env.PUBLIC_VOLUUMDOMAIN || '';
-const __conversionId = import.meta.env.PUBLIC_CONVERSIONID || '';
-const __voluumClickUrl = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '';
+const voluumDomain = import.meta.env.PUBLIC_VOLUUMDOMAIN || '';
+const conversionId = import.meta.env.PUBLIC_CONVERSIONID || '';
+const voluumClickUrl = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '';
 const formStartLabel = import.meta.env.PUBLIC_FORMSTARTLABEL || 'Start Application';
 const formSubmitLabel = import.meta.env.PUBLIC_FORMSUBMITLABEL || 'Submit Application';
 const colorId = import.meta.env.PUBLIC_COLORID || 'ocean';
@@ -48,7 +48,7 @@ const __cssVars = __pal
 <head>
 
 <!-- Runtime config (auto-injected) -->
-<script is:inline define:vars={{ voluumDomain: __voluumDomain, conversionId: __conversionId, voluumClickUrl: __voluumClickUrl }}>
+<script is:inline define:vars={{ voluumDomain, conversionId, voluumClickUrl }}>
   window.__VOLUUM_DOMAIN__ = voluumDomain;
   window.__CONVERSION_ID__ = conversionId || "";
   window.__VOLUUM_CLICK_URL__ = voluumClickUrl || "";
