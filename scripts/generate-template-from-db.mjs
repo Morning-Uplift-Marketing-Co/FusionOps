@@ -4,11 +4,14 @@
  *
  * Safety guard:
  * - Only deploy published (`active`) templates from D1
- * - Reject non-Astro templates early with a clear error in Actions logs
+ * - Reject templates that are neither valid Astro nor valid Vite (Loveable) with clear logs
  */
 import { writeFileSync, mkdirSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { resolveDeployStack } from './lib/db-template-validate.mjs';
+import { ensureTemplateTsconfig } from './lib/template-tsconfig-fallback.mjs';
+import { resolveAstroShellAstroPath } from './lib/astro-shell-resolve.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, '..');
@@ -26,51 +29,6 @@ function parseTemplateFiles(raw) {
     }
   }
   return {};
-}
-
-function parsePackageJson(files) {
-  try {
-    return JSON.parse(String(files['package.json'] || '{}'));
-  } catch (_error) {
-    return {};
-  }
-}
-
-function getAstroValidationIssues(template) {
-  const files = template?.files || {};
-  const keys = Object.keys(files);
-  const pkg = parsePackageJson(files);
-  const buildScript = String(pkg?.scripts?.build || '');
-  const deps = {
-    ...(pkg?.dependencies || {}),
-    ...(pkg?.devDependencies || {}),
-  };
-  // Only check template-authored files — e.ts, robots.txt.ts, _headers are injected by pipeline
-  const requiredFiles = [
-    'package.json',
-    'src/pages/index.astro',
-    'src/layouts/Layout.astro',
-  ];
-  const issues = [];
-
-  for (const requiredFile of requiredFiles) {
-    if (!keys.includes(requiredFile)) {
-      issues.push(`Missing required Astro deploy file: ${requiredFile}`);
-    }
-  }
-
-  const hasAstroBuild =
-    buildScript.includes('astro build') ||
-    buildScript.includes('astro check') ||
-    Boolean(deps.astro) ||
-    keys.includes('astro.config.mjs') ||
-    keys.includes('astro.config.ts');
-
-  if (!hasAstroBuild) {
-    issues.push('Template is not Astro-based (missing astro build signal in package.json/config).');
-  }
-
-  return issues;
 }
 
 async function fetchTemplates(status = '') {
@@ -209,15 +167,36 @@ if (!template || !template.files) {
 console.log(`[db-template] Template found: ${template.name} (status: ${template.status}, source: ${template.source})`);
 console.log(`[db-template] Files count: ${Object.keys(template.files).length}`);
 
-const astroIssues = getAstroValidationIssues(template);
-if (astroIssues.length > 0) {
-  console.error(`[db-template] Template ${template.templateId} is not valid for Astro deploy:`);
-  for (const issue of astroIssues) {
-    console.error(`  - ${issue}`);
-  }
+const { stack, astroIssues, viteIssues, files: normalizedFiles } = resolveDeployStack(template);
+
+if (stack === 'astro') {
+  console.log('[db-template] Stack: Astro (validation OK)');
+} else if (stack === 'vite') {
+  console.log('[db-template] Stack: Vite / Loveable (validation OK)');
+} else {
+  console.error(`[db-template] Template ${template.templateId} is not valid for Astro or Vite deploy.`);
+  console.error('[db-template] Astro issues:');
+  for (const issue of astroIssues) console.error(`  - ${issue}`);
+  console.error('[db-template] Vite issues:');
+  for (const issue of viteIssues) console.error(`  - ${issue}`);
+  console.error(`[db-template] Normalized file keys (${Object.keys(normalizedFiles).length}): ${Object.keys(normalizedFiles).sort().join(', ') || '(none)'}`);
+  console.error('[db-template] Hint: D1 snapshot must include full project (package.json, astro or vite config, src/). Re-import via MCP save_template or ZIP with all files.');
   process.exit(1);
 }
 
-const tempDir = generateTempDirectory(templateId, template.files);
+const tempDir = generateTempDirectory(templateId, normalizedFiles);
+if (ensureTemplateTsconfig(tempDir, stack)) {
+  console.log(`[db-template] Wrote tsconfig.json (${stack}) — avoids monorepo root tsconfig in CI`);
+}
+
+if (stack === 'astro') {
+  const shell = resolveAstroShellAstroPath(tempDir);
+  console.log(
+    `[db-template] Astro document shell (for inject): ${shell ? path.relative(tempDir, shell).replace(/\\/g, '/') : '(none — inject-tracking will fall back to src/pages/index.astro)'}`,
+  );
+  console.log(
+    '[db-template] CI uses this folder as the template root; compare file keys above with GitHub templates/<id> if tracking mismatches.',
+  );
+}
 
 console.log(`[db-template] ✅ Template directory generated successfully: ${tempDir}`);

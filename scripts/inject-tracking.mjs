@@ -13,27 +13,92 @@
  * Usage: node scripts/inject-tracking.mjs <template-dir>
  *
  * Supports:
- *   - Astro templates  (src/layouts/Layout.astro)
- *   - Vite/React/Loveable templates (index.html)
- *   - HTML-first templates (index.html or dist/index.html)
+ *   - Astro templates  (astro.config + src/pages/index.astro; src/layouts/Layout.astro when present)
+ *   - Vite/React/Loveable (root index.html + vite.config.*) — chosen over stray src/layouts/*.astro
+ *   - HTML-first templates (index.html only)
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { resolveAstroShellAstroPath } from './lib/astro-shell-resolve.mjs';
 
 const templateDir = path.resolve(process.argv[2] || '.');
 
 // ─── Detect template type ───
-const layoutAstro = findLayoutAstro(templateDir);
+// Loveable/Vite exports sometimes include orphan src/layouts/*.astro; if we prefer that over
+// index.html, the real app shell never gets Voluum/pixel/gtag (scratchpaypet-style bug).
 const indexHtml = path.join(templateDir, 'index.html');
-const hasViteConfig = fs.existsSync(path.join(templateDir, 'vite.config.ts'))
-  || fs.existsSync(path.join(templateDir, 'vite.config.js'));
-const hasAstroConfig = fs.existsSync(path.join(templateDir, 'astro.config.mjs'))
-  || fs.existsSync(path.join(templateDir, 'astro.config.ts'));
+const indexAstroPath = path.join(templateDir, 'src', 'pages', 'index.astro');
 
+function findViteConfigInRoot(dir) {
+  const names = ['vite.config.ts', 'vite.config.mts', 'vite.config.cts', 'vite.config.js', 'vite.config.mjs', 'vite.config.cjs'];
+  return names.some((n) => fs.existsSync(path.join(dir, n)));
+}
+
+function hasViteDependency(dir) {
+  try {
+    const p = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8'));
+    const d = { ...p.dependencies, ...p.devDependencies };
+    return Boolean(d.vite);
+  } catch {
+    return false;
+  }
+}
+
+const hasViteConfig = findViteConfigInRoot(templateDir);
+const hasAstroConfig = fs.existsSync(path.join(templateDir, 'astro.config.mjs'))
+  || fs.existsSync(path.join(templateDir, 'astro.config.ts'))
+  || fs.existsSync(path.join(templateDir, 'astro.config.js'));
+
+function hasSrcMainEntry(dir) {
+  return ['src/main.tsx', 'src/main.jsx', 'src/main.ts', 'src/main.js'].some(
+    (f) => fs.existsSync(path.join(dir, f)),
+  );
+}
+
+/** True when npm build is Vite, not Astro (Loveable often leaves stray astro.config / index.astro). */
+function buildIsViteNotAstro(dir) {
+  try {
+    const p = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8'));
+    const b = String(p.scripts?.build || '');
+    if (!b.trim()) return false;
+    if (/\bastro\s+build\b/i.test(b)) return false;
+    return /\bvite\s+build\b/i.test(b) || /\bnpx\s+vite\s+build\b/i.test(b);
+  } catch {
+    return false;
+  }
+}
+
+// MUST run before "hasAstroConfig && index.astro" — hybrid junk files should not steal inject target.
+const isViteReactLp = Boolean(
+  fs.existsSync(indexHtml)
+    && hasViteConfig
+    && (hasSrcMainEntry(templateDir) || buildIsViteNotAstro(templateDir)),
+);
+
+const hasViteShell = Boolean(
+  fs.existsSync(indexHtml)
+    && (hasViteConfig || (hasViteDependency(templateDir) && !hasAstroConfig)),
+);
+
+let layoutAstro = resolveAstroShellAstroPath(templateDir);
 let type = 'unknown';
-if (layoutAstro) type = 'astro';
-else if (hasViteConfig && fs.existsSync(indexHtml)) type = 'vite';
-else if (fs.existsSync(indexHtml)) type = 'html';
+
+if (isViteReactLp) {
+  type = 'vite';
+  console.log('(detect) Vite/React LP — index.html + vite.config + (src/main* or vite build in package.json)');
+} else if (hasAstroConfig && fs.existsSync(indexAstroPath)) {
+  type = 'astro';
+  if (!layoutAstro) {
+    layoutAstro = indexAstroPath;
+    console.log('⚠ No src/layouts/*.astro — injecting tracking into src/pages/index.astro');
+  }
+} else if (hasViteShell) {
+  type = 'vite';
+} else if (layoutAstro) {
+  type = 'astro';
+} else if (fs.existsSync(indexHtml)) {
+  type = 'html';
+}
 
 console.log(`Template type: ${type}`);
 console.log(`Template dir: ${templateDir}`);
@@ -65,25 +130,46 @@ const VOLUUM_HEAD_SNIPPET = `
 <noscript><link id="vlnoscript" rel="stylesheet"/></noscript>
 `;
 
-// GCLID capture + URL parameter handling (auto-injected)
-// Captures gclid, vlcid, clickid, click_id, cid, cpid from URL and stores in window.__fpClickId
+// Landing query capture (auto-injected): full URL params + primary click id for pixels / downstream
 const GCLID_CAPTURE_SNIPPET = `
-<!-- GCLID/Click ID capture (v2) -->
+<!-- Landing URL params + click id capture (FusionOps) -->
 <script data-cfasync="false">
 (function(){
+  function fpIsAdsPlaceholderVal(v) {
+    if (v === undefined || v === null || v === '') return true;
+    var s = String(v);
+    try { s = decodeURIComponent(s).trim(); } catch (_) { s = s.trim(); }
+    return /^\\{[A-Za-z0-9_]+\\}$/.test(s);
+  }
   var SafeStorage = {
     set: function(k, v) {
-      if(!v) return;
+      if(v === undefined || v === null || v === '' || fpIsAdsPlaceholderVal(v)) return;
       var d = new Date(); d.setTime(d.getTime() + (30*24*60*60*1000));
-      document.cookie = k + "=" + v + "; expires=" + d.toUTCString() + "; path=/; domain=." + window.location.hostname.replace(/^www\\./, '');
+      document.cookie = k + "=" + encodeURIComponent(String(v)) + "; expires=" + d.toUTCString() + "; path=/; domain=." + window.location.hostname.replace(/^www\\./, '');
     }
   };
   var p = new URLSearchParams(window.location.search);
-  var cid = p.get('gclid') || p.get('vlcid') || p.get('clickid') || p.get('click_id') || p.get('cid') || p.get('cpid') || '';
-  window.__fpClickId = cid || '';
-  if (cid) {
-    SafeStorage.set('clickid', cid);
+  var flat = {};
+  p.forEach(function(v, k) { flat[k] = v; });
+  window.__fusionopsLandingParams = flat;
+  window.__fusionopsLandingSearch = window.location.search || '';
+  try { sessionStorage.setItem('__fusionops_lp_search', window.location.search || ''); } catch (_) {}
+  try { sessionStorage.setItem('__fusionops_lp_params', JSON.stringify(flat)); } catch (_) {}
+  var clickKeys = ['gclid','gbraid','wbraid','msclkid','fbclid','ttclid','vlcid','clickid','click_id','cid','cpid'];
+  var cid = '';
+  for (var i = 0; i < clickKeys.length; i++) {
+    var cv = p.get(clickKeys[i]);
+    if (cv && !fpIsAdsPlaceholderVal(cv)) { cid = cv; break; }
   }
+  window.__fpClickId = cid || '';
+  if (cid) SafeStorage.set('clickid', cid);
+  p.forEach(function(v, k) {
+    if (/^utm_/i.test(k) || /^(gclid|gbraid|wbraid|gclsrc|dclid|msclkid|fbclid|ttclid|epik|yclid)$/i.test(k)
+      || /^(campaignid|adgroupid|creative|keyword|matchtype|network|placement|targetid|device|loc_physical_ms|loc_interest_ms|loc_physicall_ms|adposition|adtype)$/i.test(k)
+      || /^(clickid|click_id|cid|cpid|vlcid|icid)$/i.test(k)) {
+      SafeStorage.set(k, v);
+    }
+  });
 })();
 </script>
 `;
@@ -92,20 +178,50 @@ const PIXEL_BODY_SNIPPET = `
 <!-- First-party pixel + Google Ads gtag (auto-injected) -->
 <script data-cfasync="false">
 (function(){
+  function fpIsAdsPlaceholderVal(v) {
+    if (v === undefined || v === null || v === '') return true;
+    var s = String(v);
+    try { s = decodeURIComponent(s).trim(); } catch (_) { s = s.trim(); }
+    return /^\\{[A-Za-z0-9_]+\\}$/.test(s);
+  }
+  function resolveClickId() {
+    try {
+      if (window.__fpClickId && !fpIsAdsPlaceholderVal(window.__fpClickId)) return String(window.__fpClickId);
+      var p = new URLSearchParams(window.location.search);
+      var keys = ['cpid','gclid','gbraid','wbraid','msclkid','fbclid','ttclid','clickid','vlcid','click_id','cid'];
+      for (var i = 0; i < keys.length; i++) {
+        var v = p.get(keys[i]);
+        if (v && !fpIsAdsPlaceholderVal(v)) return v;
+      }
+      return '';
+    } catch (_) { return ''; }
+  }
+  function resolveGclid() {
+    try {
+      var p = new URLSearchParams(window.location.search);
+      var g = p.get('gclid') || p.get('gbraid') || p.get('wbraid') || '';
+      return fpIsAdsPlaceholderVal(g) ? '' : g;
+    } catch (_) { return ''; }
+  }
   var PX_ENDPOINT = 'https://t.' + window.location.hostname + '/e';
   function sendPixelBeacon(payload) {
     try {
       var q = new URLSearchParams();
       Object.keys(payload || {}).forEach(function(k){
         var v = payload[k];
-        if (v !== undefined && v !== null) q.set(k, String(v));
+        if (v !== undefined && v !== null && v !== '') q.set(k, String(v));
       });
       var i = new Image(1, 1);
       i.src = PX_ENDPOINT + '?' + q.toString();
     } catch(_) {}
   }
   function fpPixel(eventName, extra) {
-    var payload = Object.assign({ e: eventName, d: window.location.hostname, ts: Date.now() }, extra || {});
+    var cid = resolveClickId();
+    var gid = resolveGclid();
+    var base = { e: eventName, d: window.location.hostname, ts: Date.now() };
+    if (cid) { base.cid = cid; base.cpid = cid; base.click_id = cid; }
+    if (gid) base.gclid = gid;
+    var payload = Object.assign(base, extra || {});
     sendPixelBeacon(payload);
   }
   if (!window.__fpPageTracked) {
@@ -168,20 +284,36 @@ const PIXEL_BODY_SNIPPET = `
 </script>
 <script data-cfasync="false">
 (function(){
+  function fpIsAdsPlaceholderVal(v) {
+    if (v === undefined || v === null || v === '') return true;
+    var s = String(v);
+    try { s = decodeURIComponent(s).trim(); } catch (_) { s = s.trim(); }
+    return /^\\{[A-Za-z0-9_]+\\}$/.test(s);
+  }
   var SafeStorage = {
     set: function(k, v) {
-      if(!v) return;
+      if(v === undefined || v === null || v === '' || fpIsAdsPlaceholderVal(v)) return;
       var d = new Date(); d.setTime(d.getTime() + (30*24*60*60*1000));
-      document.cookie = k + "=" + v + "; expires=" + d.toUTCString() + "; path=/; domain=." + window.location.hostname.replace(/^www\\./, '');
+      document.cookie = k + "=" + encodeURIComponent(String(v)) + "; expires=" + d.toUTCString() + "; path=/; domain=." + window.location.hostname.replace(/^www\\./, '');
     }
   };
   try {
-    var p = new URLSearchParams(window.location.search);
-    var gclid = p.get('gclid');
-    var clickid = p.get('clickid') || p.get('vlcid') || p.get('click_id') || p.get('cid');
-    if (gclid) SafeStorage.set('google_gclid', gclid);
-    if (clickid) { SafeStorage.set('clickid', clickid); SafeStorage.set('vlcid', clickid); }
-    ['utm_source','utm_medium','utm_campaign'].forEach(function(k){ var v=p.get(k); if(v) SafeStorage.set(k,v); });
+    var o = window.__fusionopsLandingParams;
+    if (o && typeof o === 'object') {
+      var gclid = o.gclid || o.gbraid || o.wbraid;
+      if (gclid && !fpIsAdsPlaceholderVal(gclid)) SafeStorage.set('google_gclid', gclid);
+      var clickid = o.clickid || o.vlcid || o.click_id || o.cid || o.cpid;
+      if (clickid && !fpIsAdsPlaceholderVal(clickid)) { SafeStorage.set('clickid', clickid); SafeStorage.set('vlcid', clickid); }
+      for (var k in o) {
+        if (!Object.prototype.hasOwnProperty.call(o, k) || k.length > 96) continue;
+        var v = o[k];
+        if (v == null || String(v).length > 1024) continue;
+        if (/^utm_/i.test(k) || /^(gclid|gbraid|wbraid|gclsrc|dclid|msclkid|fbclid|ttclid)$/i.test(k)
+          || /^(campaignid|adgroupid|creative|keyword|matchtype|network|placement|targetid|device|loc_physical_ms|loc_interest_ms|loc_physicall_ms|cpid|cid)$/i.test(k)) {
+          SafeStorage.set(k, v);
+        }
+      }
+    }
   } catch(_){}
   window.firedFormStart = false;
 })();
@@ -203,6 +335,158 @@ const RUNTIME_CONFIG_VITE = `
 </script>
 `;
 
+/** Plain HTML (no Vite build): read deploy .env so gtag/Voluum IDs exist (CI writes .env before this script). */
+function loadDotEnv(dir) {
+  const envPath = path.join(dir, '.env');
+  const out = {};
+  if (!fs.existsSync(envPath)) return out;
+  const raw = fs.readFileSync(envPath, 'utf8').replace(/^\uFEFF/, '');
+  for (const line of raw.split('\n')) {
+    const t = line.trim();
+    if (!t || t.startsWith('#')) continue;
+    const eq = t.indexOf('=');
+    if (eq <= 0) continue;
+    const key = t.slice(0, eq).trim();
+    let val = t.slice(eq + 1);
+    try {
+      out[key] = JSON.parse(val);
+    } catch {
+      out[key] = val;
+    }
+  }
+  return out;
+}
+
+function voluumClickUrlFromEnv(env) {
+  return String(env?.PUBLIC_VOLUUM_CLICK_URL || env?.VITE_VOLUUM_CLICK_URL || '').trim();
+}
+
+function hasVoluumCtaRewriterMarkup(html) {
+  return html.includes('voluum-cta-rewriter')
+    || html.includes('fusionops-voluum-cta')
+    || html.includes('__foPatchCta');
+}
+
+/** Fail CI when deploy .env promises a Voluum click URL but the injected shell is missing rewriter (regression guard). */
+function enforceRewriterWhenClickUrlInEnv(templateDir, filePath, postContent, label) {
+  const env = loadDotEnv(templateDir);
+  const click = voluumClickUrlFromEnv(env);
+  if (!click || !/^https?:\/\//i.test(click)) return;
+  if (hasVoluumCtaRewriterMarkup(postContent)) return;
+  const rel = path.relative(templateDir, filePath);
+  console.error(
+    `::error::inject-tracking: ${label} (${rel}) missing Voluum CTA rewriter but .env has PUBLIC_VOLUUM_CLICK_URL — inject did not write rewriter markup (check disk write, shell path, or script regression).`,
+  );
+  process.exit(1);
+}
+
+/** Append deploy-driven copy bindings to first Astro frontmatter (only lines that are missing). */
+function mergeMissingContentEnvIntoFrontmatter(frontmatter) {
+  let fm = frontmatter;
+  const lines = [
+    { detect: /\bconst\s+brand\s*=/, line: "const brand     = import.meta.env.PUBLIC_BRAND     || 'Your Brand';" },
+    { detect: /\bconst\s+domain\s*=/, line: "const domain    = import.meta.env.PUBLIC_DOMAIN    || 'example.com';" },
+    { detect: /\bconst\s+h1\s*=/, line: "const h1        = import.meta.env.PUBLIC_H1        || '';" },
+    { detect: /\bconst\s+sub\s*=/, line: "const sub       = import.meta.env.PUBLIC_SUB       || '';" },
+    { detect: /\bconst\s+cta\s*=/, line: "const cta       = import.meta.env.PUBLIC_CTA       || 'Apply Now';" },
+    { detect: /\bconst\s+phone\s*=/, line: "const phone     = import.meta.env.PUBLIC_PHONE     || '';" },
+    { detect: /\bconst\s+emailAddr\s*=/, line: "const emailAddr = import.meta.env.PUBLIC_EMAIL     || '';" },
+    { detect: /\bconst\s+email\s*=/, line: "const email     = import.meta.env.PUBLIC_EMAIL     || '';" },
+    { detect: /\bconst\s+aprMin\s*=/, line: "const aprMin    = import.meta.env.PUBLIC_APRMIN    || '5.99';" },
+    { detect: /\bconst\s+aprMax\s*=/, line: "const aprMax    = import.meta.env.PUBLIC_APRMAX    || '35.99';" },
+    { detect: /\bconst\s+amountMin\s*=/, line: "const amountMin = import.meta.env.PUBLIC_AMOUNTMIN || '500';" },
+    { detect: /\bconst\s+amountMax\s*=/, line: "const amountMax = import.meta.env.PUBLIC_AMOUNTMAX || '10000';" },
+    { detect: /\bconst\s+ctaHref\s*=/, line: "const ctaHref   = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '/apply';" },
+  ];
+  let added = 0;
+  for (const { detect, line } of lines) {
+    if (!detect.test(fm)) {
+      fm = `${fm.trimEnd()}\n${line}`;
+      added += 1;
+    }
+  }
+  return { frontmatter: fm, added };
+}
+
+/**
+ * Deploy .env can define PUBLIC_H1 etc., but Astro only renders values that appear in the template
+ * as {h1}, {brand}, … Hardcoded "LendPath" will never change — warn in CI logs.
+ */
+function warnIfCopyEnvNotReferencedInTemplate(indexRaw, env) {
+  const m = indexRaw.match(/^---\r?\n[\s\S]*?\r?\n---([\s\S]*)$/);
+  if (!m) return;
+  const body = m[1];
+  const checks = [
+    ['PUBLIC_H1', /\{h1\}|\{\s*h1\s*\}/],
+    ['PUBLIC_BRAND', /\{brand\}|\{\s*brand\s*\}/],
+    ['PUBLIC_SUB', /\{sub\}|\{\s*sub\s*\}/],
+    ['PUBLIC_CTA', /\{cta\}|\{\s*cta\s*\}/],
+    ['PUBLIC_AMOUNTMIN', /\{amountMin\}|\bamountMin\b/],
+    ['PUBLIC_AMOUNTMAX', /\{amountMax\}|\bamountMax\b/],
+    ['PUBLIC_APRMIN', /\{aprMin\}|\baprMin\b/],
+    ['PUBLIC_APRMAX', /\{aprMax\}|\baprMax\b/],
+  ];
+  for (const [key, re] of checks) {
+    const v = env[key];
+    if (v === undefined || v === null || String(v).trim() === '') continue;
+    if (!re.test(body)) {
+      console.warn(
+        `⚠ index.astro template does not reference copy bound to ${key} — deploy value will not appear until markup uses {h1}/{brand}/… (not hardcoded text).`,
+      );
+    }
+  }
+}
+
+/**
+ * CTA rewrite lives inside the same <script> as window.__VOLUUM_* so Astro/build cannot drop a
+ * separate rewriter tag (scratchpaypet.tech had runtime globals but no /apply rewrite).
+ */
+const VOLUUM_CTA_PATCH_INLINE_JS = `
+  function __foDestBase(){try{var w=window.__VOLUUM_CLICK_URL__||'';return(w&&/^https:\\/\\//i.test(String(w)))?String(w).trim():'';}catch(_){return'';}}
+  function __foIsVT(v){try{v=decodeURIComponent(String(v==null?"":v)).trim();return/^\\{[A-Za-z0-9_]+\\}$/.test(v);}catch(_){return/^\\{[A-Za-z0-9_]+\\}$/.test(String(v==null?"":v).trim());}}
+  function __foMergeCTA(b){try{var u=new URL(b,window.location.href);var l=new URLSearchParams(window.location.search);l.forEach(function(v,k){if(__foIsVT(v))return;u.searchParams.set(k,v);});return u.toString();}catch(_){return b;}}
+  function __foPatchCta(){var bs=__foDestBase();if(!bs)return;var d=__foMergeCTA(bs);document.querySelectorAll('a[href="/apply"],a[href="#apply"],a[href="/apply/"],a[data-fusionops-cta="1"]').forEach(function(a){var h=a.getAttribute("href")||"";if(h==="/apply"||h==="/apply/"||h==="#apply")a.setAttribute("href",d);});document.querySelectorAll('a[href^="/apply?"]').forEach(function(a){a.setAttribute("href",d);});}
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",__foPatchCta);else __foPatchCta();
+  try{new MutationObserver(__foPatchCta).observe(document.documentElement,{childList:true,subtree:true});}catch(_){}
+  setTimeout(__foPatchCta,0);setTimeout(__foPatchCta,400);setTimeout(__foPatchCta,1500);
+`.trim();
+
+/**
+ * HTML comment for TrackingDashboard static analyzeHtml(); CTA rewrite is inlined in runtime script.
+ */
+function voluumCtaMarkerAndRewriterSnippet(clickUrlForComment) {
+  const clickUrl = String(clickUrlForComment || '').trim();
+  const hasCommentUrl = clickUrl && /^https?:\/\//i.test(clickUrl);
+  const safeComment = clickUrl.replace(/-->/g, '--\\>');
+  const comment = hasCommentUrl
+    ? `<!-- fusionops-voluum-cta: ${safeComment} -->`
+    : '<!-- fusionops-voluum-cta: (runtime: window.__VOLUUM_CLICK_URL__) -->';
+  return `\n${comment}\n`;
+}
+
+function runtimeConfigFromEnvHtml(env) {
+  const vol = env.PUBLIC_VOLUUMDOMAIN || env.VITE_VOLUUM_DOMAIN || '';
+  const cid = env.PUBLIC_CONVERSIONID || env.VITE_CONVERSION_ID || '';
+  const vclick = env.PUBLIC_VOLUUM_CLICK_URL || env.VITE_VOLUUM_CLICK_URL || '';
+  const fsl = env.PUBLIC_FORMSTARTLABEL || env.VITE_FORM_START_LABEL || '';
+  const fsub = env.PUBLIC_FORMSUBMITLABEL || env.VITE_FORM_SUBMIT_LABEL || '';
+  return `
+<!-- Runtime config from .env (auto-injected, static HTML) -->
+<script data-cfasync="false">
+(function(){
+  window.__VOLUUM_DOMAIN__ = ${JSON.stringify(vol)};
+  window.__CONVERSION_ID__ = ${JSON.stringify(cid)};
+  window.__VOLUUM_CLICK_URL__ = ${JSON.stringify(vclick)};
+  window.__FORM_START_LABEL__ = ${JSON.stringify(fsl)};
+  window.__FORM_SUBMIT_LABEL__ = ${JSON.stringify(fsub)};
+  var ns = document.getElementById('vlnoscript');
+  if (ns && window.__VOLUUM_DOMAIN__) ns.href = 'https://' + window.__VOLUUM_DOMAIN__ + '/d/.js?noscript=true&lpurl=';
+  ${VOLUUM_CTA_PATCH_INLINE_JS}
+})();
+</script>
+`;
+}
+
 const RUNTIME_CONFIG_ASTRO = `
 <!-- Runtime config (auto-injected) -->
 <script is:inline>
@@ -211,28 +495,11 @@ const RUNTIME_CONFIG_ASTRO = `
   window.__VOLUUM_CLICK_URL__ = '%%PUBLIC_VOLUUM_CLICK_URL%%';
   var ns = document.getElementById('vlnoscript');
   if (ns && window.__VOLUUM_DOMAIN__) ns.href = 'https://' + window.__VOLUUM_DOMAIN__ + '/d/.js?noscript=true&lpurl=';
+  ${VOLUUM_CTA_PATCH_INLINE_JS}
 </script>
 `;
 
 // ─── Injection logic ───
-
-function findLayoutAstro(dir) {
-  const candidates = [
-    path.join(dir, 'src', 'layouts', 'Layout.astro'),
-    path.join(dir, 'src', 'layouts', 'BaseLayout.astro'),
-    path.join(dir, 'src', 'layouts', 'MainLayout.astro'),
-  ];
-  for (const c of candidates) {
-    if (fs.existsSync(c)) return c;
-  }
-  // Search for any .astro layout file
-  const layoutsDir = path.join(dir, 'src', 'layouts');
-  if (fs.existsSync(layoutsDir)) {
-    const files = fs.readdirSync(layoutsDir).filter(f => f.endsWith('.astro'));
-    if (files.length > 0) return path.join(layoutsDir, files[0]);
-  }
-  return null;
-}
 
 function hasTracking(content) {
   // Never falsely skip for the missing pixel. 
@@ -247,14 +514,16 @@ function cleanExistingTracking(html) {
     .replace(/<!-- GCLID.*?<\/script>/gs, '')
     .replace(/<!-- First-party pixel.*?<\/script>/gs, '')
     .replace(/<script data-cfasync="false">[\s\S]*?__gtagConversionId[\s\S]*?<\/script>/g, '')
-    .replace(/<!-- Runtime config.*?<\/script>/gs, '');
+    .replace(/<!-- Runtime config.*?<\/script>/gs, '')
+    .replace(/<!-- fusionops-voluum-cta:[\s\S]*?-->/g, '')
+    .replace(/<script[^>]*data-fusionops="voluum-cta-rewriter"[\s\S]*?<\/script>/gi, '');
 }
 
 function hasGclIdCapture(content) {
-  return /window\.__fpClickId|gclid.*sessionStorage|sessionStorage.*gclid|__fpClickId/.test(content);
+  return /window\.__fpClickId|__fusionopsLandingParams|__fusionopsLandingSearch|gclid.*sessionStorage|sessionStorage.*gclid|__fpClickId/.test(content);
 }
 
-function injectIntoHtmlOrVite(filePath, isVite) {
+function injectIntoHtmlOrVite(filePath, isVite, templateRoot) {
   let html = fs.readFileSync(filePath, 'utf8');
 
   if (hasTracking(html)) {
@@ -266,17 +535,33 @@ function injectIntoHtmlOrVite(filePath, isVite) {
   html = cleanExistingTracking(html);
 
   // Inject runtime config + voluum before </head>
-  const runtimeConfig = isVite ? RUNTIME_CONFIG_VITE : '';
-  const headInject = runtimeConfig + VOLUUM_HEAD_SNIPPET;
+  // Vite: avoid <script type="module"> for globals — it runs deferred, so sync Voluum may read empty __VOLUUM_DOMAIN__.
+  const root = templateRoot || path.dirname(filePath);
+  const env = loadDotEnv(root);
+  const hasEnvGlobals = Boolean(
+    env.PUBLIC_VOLUUMDOMAIN || env.VITE_VOLUUM_DOMAIN
+      || env.PUBLIC_CONVERSIONID || env.VITE_CONVERSION_ID
+      || env.PUBLIC_VOLUUM_CLICK_URL || env.VITE_VOLUUM_CLICK_URL,
+  );
+  let runtimeConfig = '';
+  if (!isVite || hasEnvGlobals) {
+    runtimeConfig = runtimeConfigFromEnvHtml(env);
+  }
+  if (isVite && !hasEnvGlobals) {
+    runtimeConfig = RUNTIME_CONFIG_VITE;
+  }
+  const vClickEnv = voluumClickUrlFromEnv(env);
+  const headInject = runtimeConfig + VOLUUM_HEAD_SNIPPET + voluumCtaMarkerAndRewriterSnippet(vClickEnv);
 
   // We enforce that Voluum snippet fires absolute first in <head>
   if (html.includes('<head>')) {
     html = html.replace('<head>', '<head>\n' + headInject);
   } else if (html.includes('</head>')) {
     html = html.replace('</head>', headInject + '\n</head>');
+  } else if (/<body\b/i.test(html)) {
+    html = html.replace(/<body(\s[^>]*)?>/i, (_, g1) => `<head>\n${headInject}\n</head>\n<body${g1 || ''}>`);
   } else {
-    // No </head> tag — prepend
-    html = headInject + '\n' + html;
+    html = `${headInject}\n${html}`;
   }
 
   // Inject GCLID capture before </body> if missing
@@ -296,7 +581,7 @@ function injectIntoHtmlOrVite(filePath, isVite) {
   return true;
 }
 
-function injectIntoAstro(filePath) {
+function injectIntoAstro(filePath, projectRoot) {
   let content = fs.readFileSync(filePath, 'utf8');
 
   if (hasTracking(content)) {
@@ -312,13 +597,13 @@ function injectIntoAstro(filePath) {
 
   // Add frontmatter variables if not present
   if (!hasVoluumVar) {
-    const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+    const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
     if (fmMatch) {
-      const additions = `
-const __voluumDomain = import.meta.env.PUBLIC_VOLUUMDOMAIN || '';
-const __conversionId = import.meta.env.PUBLIC_CONVERSIONID || '';
-const __voluumClickUrl = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '';`;
-      content = content.replace(fmMatch[0], fmMatch[0].replace('\n---', additions + '\n---'));
+      const additions = '\nconst __voluumDomain = import.meta.env.PUBLIC_VOLUUMDOMAIN || \'\';\n'
+        + 'const __conversionId = import.meta.env.PUBLIC_CONVERSIONID || \'\';\n'
+        + 'const __voluumClickUrl = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || \'\';';
+      const newFm = fmMatch[0].replace(/\r?\n---\s*$/, `${additions}\n---`);
+      content = content.replace(fmMatch[0], newFm);
     }
   }
 
@@ -351,25 +636,34 @@ const __voluumClickUrl = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '';`;
   content = cleanExistingTracking(content);
 
   // Inject into <head> at the top for priority
-  const headInject = astroRuntime + '\n' + VOLUUM_HEAD_SNIPPET;
-  if (content.includes('<head>')) {
-    content = content.replace('<head>', '<head>\n' + headInject);
-  } else if (content.includes('</head>')) {
-    content = content.replace('</head>', headInject + '\n</head>');
+  const root = projectRoot || path.resolve(path.dirname(filePath), '..', '..');
+  const envAstro = loadDotEnv(root);
+  const headInject = astroRuntime + '\n' + VOLUUM_HEAD_SNIPPET + voluumCtaMarkerAndRewriterSnippet(voluumClickUrlFromEnv(envAstro));
+  if (/<\s*head(\s[^>]*)?>/i.test(content)) {
+    content = content.replace(/<\s*head(\s[^>]*)?>/i, (m) => `${m}\n${headInject}`);
+  } else if (/<\s*\/\s*head\s*>/i.test(content)) {
+    content = content.replace(/<\s*\/\s*head\s*>/i, `${headInject}\n$&`);
+  } else if (/<\s*body(\s[^>]*)?>/i.test(content)) {
+    content = content.replace(/<\s*body(\s[^>]*)?>/i, (m) => `<head>\n${headInject}\n</head>\n${m}`);
   }
 
-  // Inject GCLID capture before </body> if missing
-  if (!hasGclIdCapture(content) && content.includes('</body>')) {
-    content = content.replace('</body>', GCLID_CAPTURE_SNIPPET + '\n</body>');
-  }
-
-  // Inject pixel + gtag before </body>
-  if (content.includes('</body>')) {
-    content = content.replace('</body>', PIXEL_BODY_SNIPPET + '\n</body>');
+  const bodyClose = /<\s*\/\s*body\s*>/i;
+  if (bodyClose.test(content)) {
+    if (!hasGclIdCapture(content)) {
+      content = content.replace(bodyClose, `${GCLID_CAPTURE_SNIPPET}\n$&`);
+    }
+    content = content.replace(bodyClose, `${PIXEL_BODY_SNIPPET}\n$&`);
+  } else {
+    const tail = (hasGclIdCapture(content) ? '' : `${GCLID_CAPTURE_SNIPPET}\n`) + PIXEL_BODY_SNIPPET;
+    content = `${content}\n${tail}`;
   }
 
   // Astro requires is:inline for scripts to render as-is (not bundled)
   content = content.replace(/<script data-cfasync="false">/g, '<script is:inline data-cfasync="false">');
+  content = content.replace(
+    /<script data-cfasync="false" data-fusionops="voluum-cta-rewriter">/gi,
+    '<script is:inline data-cfasync="false" data-fusionops="voluum-cta-rewriter">',
+  );
   content = content.replace(/<script is:inline data-cfasync="false" is:inline>/g, '<script is:inline data-cfasync="false">');
 
   fs.writeFileSync(filePath, content, 'utf8');
@@ -383,13 +677,49 @@ let injected = false;
 
 if (type === 'astro' && layoutAstro) {
   console.log(`Injecting tracking into Astro layout: ${layoutAstro}`);
-  injected = injectIntoAstro(layoutAstro);
+  injected = injectIntoAstro(layoutAstro, templateDir);
 } else if (type === 'vite') {
   console.log(`Injecting tracking into Vite index.html`);
-  injected = injectIntoHtmlOrVite(indexHtml, true);
+  injected = injectIntoHtmlOrVite(indexHtml, true, templateDir);
 } else if (type === 'html') {
   console.log(`Injecting tracking into HTML index.html`);
-  injected = injectIntoHtmlOrVite(indexHtml, false);
+  injected = injectIntoHtmlOrVite(indexHtml, false, templateDir);
+}
+
+if (type === 'vite' && fs.existsSync(indexHtml)) {
+  const post = fs.readFileSync(indexHtml, 'utf8');
+  if (!post.includes('dtpCallback')) {
+    console.warn('⚠ Vite index.html still has no Voluum dtpCallback after inject — check index path or permissions.');
+  }
+  if (!post.includes('__fusionopsLandingParams') && !post.includes('__fpClickId')) {
+    console.warn('⚠ Vite index.html missing landing-param capture block — body inject may have failed.');
+  }
+  if (!post.includes('voluum-cta-rewriter') && !post.includes('fusionops-voluum-cta') && !post.includes('__foPatchCta')) {
+    console.warn('⚠ Vite index.html missing Voluum CTA rewriter — inject voluumCtaMarker may have failed.');
+  }
+  enforceRewriterWhenClickUrlInEnv(templateDir, indexHtml, post, 'Vite index.html');
+}
+
+if (type === 'astro' && layoutAstro && fs.existsSync(layoutAstro)) {
+  const post = fs.readFileSync(layoutAstro, 'utf8');
+  if (!post.includes('dtpCallback')) {
+    console.warn(`⚠ Astro shell ${path.relative(templateDir, layoutAstro)} still has no Voluum dtpCallback after inject.`);
+  }
+  if (!post.includes('__fusionopsLandingParams') && !post.includes('__fpClickId')) {
+    console.warn(`⚠ Astro shell ${path.relative(templateDir, layoutAstro)} missing landing-param capture — body inject may have failed.`);
+  }
+  if (!post.includes('voluum-cta-rewriter') && !post.includes('fusionops-voluum-cta') && !post.includes('__foPatchCta')) {
+    console.warn(`⚠ Astro shell ${path.relative(templateDir, layoutAstro)} missing Voluum CTA rewriter — inject voluumCtaMarker may have failed.`);
+  }
+  enforceRewriterWhenClickUrlInEnv(templateDir, layoutAstro, post, 'Astro shell');
+}
+
+if (type === 'html' && fs.existsSync(indexHtml)) {
+  const post = fs.readFileSync(indexHtml, 'utf8');
+  if (!hasVoluumCtaRewriterMarkup(post)) {
+    console.warn(`⚠ HTML index.html missing Voluum CTA rewriter — inject voluumCtaMarker may have failed.`);
+  }
+  enforceRewriterWhenClickUrlInEnv(templateDir, indexHtml, post, 'HTML index.html');
 }
 
 if (injected) {
@@ -573,50 +903,27 @@ export const GET: APIRoute = () => {
     }
   }
 
-  // Inject env var declarations into index.astro if missing
+  // Inject env var declarations into index.astro if missing (per-variable — Bolt templates often
+  // already declare some PUBLIC_* bindings; hardcoded body copy still needs {h1}/{brand}/… in markup.)
   const indexAstro = path.join(templateDir, 'src', 'pages', 'index.astro');
   if (fs.existsSync(indexAstro)) {
     let indexContent = fs.readFileSync(indexAstro, 'utf8');
     let changed = false;
 
-    // Add content env vars if not present
-    if (!indexContent.includes('PUBLIC_BRAND') && indexContent.includes('---')) {
-      const parts = indexContent.split('---');
-      if (parts.length >= 3) {
-        parts[1] = parts[1].trimEnd() + `
-const brand     = import.meta.env.PUBLIC_BRAND     || 'Your Brand';
-const domain    = import.meta.env.PUBLIC_DOMAIN    || 'example.com';
-const h1        = import.meta.env.PUBLIC_H1        || '';
-const sub       = import.meta.env.PUBLIC_SUB       || '';
-const cta       = import.meta.env.PUBLIC_CTA       || 'Apply Now';
-const phone     = import.meta.env.PUBLIC_PHONE     || '';
-const email     = import.meta.env.PUBLIC_EMAIL     || '';
-const aprMin    = import.meta.env.PUBLIC_APRMIN    || '5.99';
-const aprMax    = import.meta.env.PUBLIC_APRMAX    || '35.99';
-const amountMin = import.meta.env.PUBLIC_AMOUNTMIN || '500';
-const amountMax = import.meta.env.PUBLIC_AMOUNTMAX || '10000';
-const ctaHref   = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '/apply';
-`;
-        indexContent = parts.join('---');
+    const fmMatch = indexContent.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+    if (fmMatch) {
+      const { frontmatter: newFm, added } = mergeMissingContentEnvIntoFrontmatter(fmMatch[1]);
+      if (added > 0) {
+        const newBlock = `---\n${newFm}\n---`;
+        indexContent = newBlock + indexContent.slice(fmMatch[0].length);
         changed = true;
-        console.log('📄 Injected content env vars into index.astro');
+        console.log(`📄 Merged ${added} content env binding(s) into index.astro frontmatter`);
       }
     }
 
-    // Add ctaHref if not present (for templates that already have other env vars)
-    if (!indexContent.includes('const ctaHref') && !indexContent.includes('ctaHref')) {
-      if (indexContent.includes('---')) {
-        const parts = indexContent.split('---');
-        if (parts.length >= 3) {
-          parts[1] = parts[1].trimEnd() + `\nconst ctaHref = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '/apply';\n`;
-          indexContent = parts.join('---');
-          changed = true;
-        }
-      }
-    }
-
-    // Replace common CTA href patterns with ctaHref
-    if (indexContent.includes('href="/apply"') || indexContent.includes("href='/apply'") || indexContent.includes('href="#apply"')) {
+    // Replace common CTA href patterns with ctaHref (requires const ctaHref from merge above or template)
+    if (/\bconst\s+ctaHref\s*=/.test(indexContent)
+      && (indexContent.includes('href="/apply"') || indexContent.includes("href='/apply'") || indexContent.includes('href="#apply"'))) {
       indexContent = indexContent
         .replace(/href=["']\/apply["']/g, 'href={ctaHref}')
         .replace(/href=["']#apply["']/g, 'href={ctaHref}');
@@ -627,6 +934,9 @@ const ctaHref   = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '/apply';
     if (changed) {
       fs.writeFileSync(indexAstro, indexContent);
     }
+
+    const envCopy = loadDotEnv(templateDir);
+    warnIfCopyEnvNotReferencedInTemplate(fs.readFileSync(indexAstro, 'utf8'), envCopy);
   }
 
   // Inject FORMSTARTLABEL / FORMSUBMITLABEL into Layout.astro if missing
