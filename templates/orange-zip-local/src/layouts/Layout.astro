@@ -42,19 +42,25 @@ const __font = FONT_MAP[fontId] || FONT_MAP['dm-sans'];
 const __cssVars = __pal
   ? '--primary:'+__hsl(...__pal.p)+';--secondary:'+__hsl(...__pal.s)+';--accent:'+__hsl(...__pal.a)+';--background:'+__hsl(...__pal.bg)+';--foreground:'+__hsl(...__pal.fg)+';--radius:'+__rad+';'
   : '--primary:'+primaryColor+';--accent:'+accentColor+';--radius:'+__rad+';';
+/** Built in frontmatter so Astro SSG never hoists voluumDomain into index.astro.mjs */
+const runtimeVoluumInit =
+  '(function(){' +
+  'window.__VOLUUM_DOMAIN__=' +
+  JSON.stringify(voluumDomain) +
+  ';window.__CONVERSION_ID__=' +
+  JSON.stringify(conversionId) +
+  ';window.__VOLUUM_CLICK_URL__=' +
+  JSON.stringify(voluumClickUrl) +
+  ';var ns=document.getElementById("vlnoscript");' +
+  'if(ns&&window.__VOLUUM_DOMAIN__)ns.href="https://"+window.__VOLUUM_DOMAIN__+"/d/.js?noscript=true&lpurl=";' +
+  '})();';
 ---
 <!doctype html>
 <html lang="en">
 <head>
 
-<!-- Runtime config: JSON.stringify avoids Astro define:vars SSR "voluumDomain is not defined" on some versions -->
-<script is:inline set:html={`(function(){
-  window.__VOLUUM_DOMAIN__ = ${JSON.stringify(voluumDomain)};
-  window.__CONVERSION_ID__ = ${JSON.stringify(conversionId)};
-  window.__VOLUUM_CLICK_URL__ = ${JSON.stringify(voluumClickUrl)};
-  var ns = document.getElementById('vlnoscript');
-  if (ns && window.__VOLUUM_DOMAIN__) ns.href = 'https://' + window.__VOLUUM_DOMAIN__ + '/d/.js?noscript=true&lpurl=';
-})();`} />
+<!-- Runtime config: string built in frontmatter (avoids Astro hoisting voluumDomain into page bundle) -->
+<script is:inline set:html={runtimeVoluumInit} />
 
 
 <!-- Voluum Direct Tracking Pixel (v2) -->
