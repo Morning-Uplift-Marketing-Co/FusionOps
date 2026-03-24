@@ -78,10 +78,13 @@ function analyzeHtml(html) {
     pixelAmt: /[fp]*[Pp]ixel\s*\(\s*['"](?:amt|amount)['"]/.test(html) || /amount_selected/.test(html),
     pixelZip: /[fp]*[Pp]ixel\s*\(\s*['"](?:ze|zip)['"]/.test(html) || /zip_entered/.test(html),
 
-    // Layer 3: Voluum
+    // Layer 3: Voluum (Voluum default: link/trk/vls.*; custom lander DNS often cdn.{domain}/click)
     voluumScript: /dtpCallback|delegate-ch|voluum/i.test(html),
-    voluumDomain: (html.match(/(?:trk|link|vls)\.([a-z0-9.-]+)/) || [])[1] || null,
-    voluumClickUrl: /(?:trk|link|vls)\.[^'"]+\/[a-f0-9-]{36}/.test(html) || /(?:trk|link|vls)\.[^'"]+\/click/.test(html),
+    voluumDomain: (html.match(/(?:trk|link|vls|cdn)\.([a-z0-9.-]+)/i) || [])[1] || null,
+    voluumClickUrl:
+      /(?:trk|link|vls)\.[^'"]+\/[a-f0-9-]{36}/.test(html)
+      || /(?:trk|link|vls|cdn)\.[^'"]+\/click/i.test(html)
+      || /fusionops-voluum-cta:\s*https?:\/\/[^\s>]+/i.test(html),
 
     // Layer 4: GCLID capture
     gclidCapture: /gclid|sessionStorage.*gclid/i.test(html),
