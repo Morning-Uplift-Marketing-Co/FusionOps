@@ -136,7 +136,7 @@ jobs:
             FORMSUBMITLABEL: c.gtagFormSubmitLabel||c.formSubmitLabel||'',
             VOLUUMID:        c.voluumId||'',
             VOLUUMDOMAIN:    c.voluumDomain||'',
-            VOLUUM_CLICK_URL:c.voluumClickUrl||'',
+            VOLUUM_CLICK_URL:c.voluumClickUrl || (c.voluumDomain ? 'https://' + c.voluumDomain + '/click' : ''),
             COLORID:         c.colorId||'',
             FONTID:          c.fontId||'',
             LAYOUT:          c.layout||'',
