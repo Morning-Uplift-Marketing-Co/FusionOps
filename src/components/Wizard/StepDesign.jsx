@@ -2,27 +2,72 @@ import React, { useState, useEffect } from "react";
 import { THEME as T, COLORS, FONTS, LAYOUTS, RADIUS } from "../../constants";
 import { hsl } from "../../utils";
 import { generateFavicon, generateOgImage } from "../../utils/image-gen";
+import { getAllTemplates, getAllTemplatesAsync, clearCustomTemplatesCache, fetchCustomTemplates } from "../../utils/template-registry";
+import { refreshCustomTemplates } from "../../utils/template-router";
+import { api } from "../../services/api";
 import { Field } from "../ui/field";
 
-const DEFAULT_CAPS = {
-    supportsWizardTheme: true,
-    supportsCalculator: true,
-    supportsSectionReorder: true,
-};
+// Custom event for template refresh
+const TEMPLATE_REFRESH_EVENT = 'lp-template-refresh';
 
-export function StepDesign({ c, u, designCapabilities }) {
-    const caps = { ...DEFAULT_CAPS, ...(designCapabilities || {}) };
+export function StepDesign({ c, u, notify, fields = {} }) {
     const [genLoading, setGenLoading] = useState(false);
+    const [templates, setTemplates] = useState([]);
+    const [loadingTemplates, setLoadingTemplates] = useState(true);
+    const [deleting, setDeleting] = useState(null);
+    const [generatingThumb, setGeneratingThumb] = useState(null);
+    const [uploadingThumb, setUploadingThumb] = useState(null);
+    const [hoveredTemplate, setHoveredTemplate] = useState(null);
+    const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
 
-    const hasThemePanel = caps.supportsWizardTheme;
-    const hasCalculatorPanel = caps.supportsCalculator;
-    const hasSectionPanel = caps.supportsSectionReorder;
-    const hasAnyTunablePanel = hasThemePanel || hasCalculatorPanel || hasSectionPanel;
+    // Load templates on mount
+    const loadTemplates = (forceRefresh = false) => {
+        getAllTemplatesAsync().then(allTemplates => {
+            setTemplates(allTemplates);
+            setLoadingTemplates(false);
+        });
+    };
+
+    // Force reload templates from API
+    const forceReloadTemplates = async () => {
+        clearCustomTemplatesCache();
+        refreshCustomTemplates();
+        setLoadingTemplates(true);
+        const custom = await fetchCustomTemplates(true); // Force refetch
+        const builtin = getAllTemplates();
+        setTemplates([...builtin, ...custom]);
+        setLoadingTemplates(false);
+    };
+
+    useEffect(() => {
+        loadTemplates();
+    }, []);
+
+    // Refresh templates when component regains focus (user returns to this step)
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                loadTemplates();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }, []);
+
+    // Listen for template refresh events (when new template is saved)
+    useEffect(() => {
+        const handleTemplateRefresh = async () => {
+            console.log('Template refresh event received, reloading templates...');
+            await forceReloadTemplates();
+        };
+        window.addEventListener(TEMPLATE_REFRESH_EVENT, handleTemplateRefresh);
+        return () => window.removeEventListener(TEMPLATE_REFRESH_EVENT, handleTemplateRefresh);
+    }, []);
 
     const handleGenImages = async () => {
         setGenLoading(true);
         try {
-            const siteWithFallback = { ...c, brand: c.brand?.trim() || "Brand" };
+            const siteWithFallback = { ...c, brand: c.brand?.trim() || 'Brand' };
             const favicon = generateFavicon(siteWithFallback);
             u("faviconDataUrl", favicon);
             const ogImage = await generateOgImage(siteWithFallback);
@@ -33,6 +78,7 @@ export function StepDesign({ c, u, designCapabilities }) {
         setGenLoading(false);
     };
 
+    // Auto-regenerate assets when color scheme changes
     useEffect(() => {
         if (!c.brand?.trim()) return;
         let cancelled = false;
@@ -52,187 +98,411 @@ export function StepDesign({ c, u, designCapabilities }) {
             cancelled = true;
             clearTimeout(timer);
         };
-    }, [c.colorId, c.fontId, c.brand]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [c.colorId, c.fontId, c.brand]);
 
     return (
         <>
             <div style={{ textAlign: "center", marginBottom: 20 }}>
                 <div style={{ fontSize: 24 }}>🎨</div>
                 <h2 style={{ fontSize: 17, fontWeight: 700 }}>Design</h2>
-                <p style={{ fontSize: 12, color: T.muted, marginTop: 6, maxWidth: 440, margin: "6px auto 0" }}>
-                    Template is chosen in the previous step. Adjust only the options that apply to this template.
-                </p>
             </div>
 
-            {!hasAnyTunablePanel && (
-                <div style={{ marginBottom: 16, padding: 12, background: T.input, borderRadius: 8, border: `1px solid ${T.border}` }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: T.text, marginBottom: 4 }}>Template-controlled look</div>
-                    <div style={{ fontSize: 11, color: T.muted, lineHeight: 1.45 }}>
-                        This template does not expose wizard theme or layout options. Defaults from the template and your brand step are used. You can still generate favicon and OG images below.
+            {/* Template Selector */}
+            <Field label="Template" req>
+                {loadingTemplates ? (
+                    <div style={{ padding: 12, textAlign: "center", color: T.muted, fontSize: 12 }}>
+                        Loading templates...
                     </div>
-                </div>
-            )}
-
-            {hasThemePanel && (
-                <>
-                    <Field label="Color Scheme" req>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6 }}>
-                            {COLORS.map(cp => (
-                                <button key={cp.id} onClick={() => u("colorId", cp.id)} style={{
-                                    padding: "10px", background: c.colorId === cp.id ? T.primaryGlow : T.input,
-                                    border: `2px solid ${c.colorId === cp.id ? T.primary : T.border}`, borderRadius: 8, cursor: "pointer",
-                                }}>
-                                    <div style={{ display: "flex", justifyContent: "center", gap: 3, marginBottom: 4 }}>
-                                        <div style={{ width: 16, height: 16, borderRadius: 4, background: hsl(...cp.p) }} />
-                                        <div style={{ width: 16, height: 16, borderRadius: 4, background: hsl(...cp.s) }} />
-                                        <div style={{ width: 16, height: 16, borderRadius: 4, background: hsl(...cp.a) }} />
+                ) : (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
+                        {templates.map(t => {
+                            const isSelected = c.templateId === t.id;
+                            const isCustom = t.source === 'api';
+                            return (
+                                <div key={t.id} style={{ position: "relative" }}
+                                    onMouseEnter={(e) => {
+                                        const rect = e.currentTarget.getBoundingClientRect();
+                                        setHoverPos({ x: rect.right + 8, y: rect.top });
+                                        setHoveredTemplate(t);
+                                    }}
+                                    onMouseLeave={() => setHoveredTemplate(null)}
+                                >
+                                    <button
+                                        onClick={() => u("templateId", t.id)}
+                                        style={{
+                                            width: "100%",
+                                            padding: 0,
+                                            background: isSelected ? T.primaryGlow : T.input,
+                                            border: `2px solid ${isSelected ? T.primary : T.border}`,
+                                            borderRadius: 10,
+                                            cursor: "pointer",
+                                            textAlign: "left",
+                                            transition: "all 0.2s",
+                                            overflow: "hidden",
+                                        }}
+                                    >
+                                        {/* Thumbnail area */}
+                                        <div style={{ width: "100%", height: 90, background: T.surface || "#1a1a2e", overflow: "hidden", position: "relative", borderRadius: "8px 8px 0 0" }}>
+                                            {t.thumbnailUrl ? (
+                                                <img
+                                                    src={`https://lp-factory-api.misty-feather-556e.workers.dev${t.thumbnailUrl}?t=${t.thumbnailGeneratedAt ? new Date(t.thumbnailGeneratedAt).getTime() : 0}`}
+                                                    alt={t.name}
+                                                    style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }}
+                                                    onError={e => { e.target.style.display = 'none'; }}
+                                                />
+                                            ) : (
+                                                <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                                    <span style={{ fontSize: 28, opacity: 0.4 }}>⚡</span>
+                                                </div>
+                                            )}
+                                            {/* Badges overlay */}
+                                            <div style={{ position: "absolute", top: 4, right: 4, display: "flex", gap: 3 }}>
+                                                {isCustom && (
+                                                    <span style={{ fontSize: 8, padding: "2px 5px", borderRadius: 4, background: "#f59e0bcc", color: "#fff", fontWeight: 700 }}>API</span>
+                                                )}
+                                                {t.badge && (
+                                                    <span style={{ fontSize: 8, padding: "2px 5px", borderRadius: 4, background: `${T.primary}cc`, color: "#fff", fontWeight: 700 }}>{t.badge}</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {/* Name + description */}
+                                        <div style={{ padding: "8px 10px" }}>
+                                            <div style={{ fontSize: 12, fontWeight: 700, color: isSelected ? "#fff" : T.text, marginBottom: 2 }}>
+                                                {t.name}
+                                            </div>
+                                            {t.description && (
+                                                <div style={{ fontSize: 10, color: isSelected ? "rgba(255,255,255,0.6)" : T.muted, lineHeight: 1.3, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                                                    {t.description}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </button>
+                                    {isCustom && t.dbId && (
+                                        <div style={{ position: "absolute", bottom: 6, right: 6, display: "flex", gap: 4, zIndex: 2 }}>
+                                            {/* 📸 Generate thumbnail */}
+                                            <button
+                                                title="Generate thumbnail screenshot"
+                                                disabled={generatingThumb === t.dbId}
+                                                onClick={async (e) => {
+                                                    e.stopPropagation();
+                                                    setGeneratingThumb(t.dbId);
+                                                    try {
+                                                        await api.post(`/templates/${t.dbId}/generate-thumb`, {});
+                                                        await forceReloadTemplates();
+                                                        notify?.('Thumbnail generated!', 'success');
+                                                    } catch (err) {
+                                                        notify?.(`Thumbnail failed: ${err.message}`, 'error');
+                                                    } finally {
+                                                        setGeneratingThumb(null);
+                                                    }
+                                                }}
+                                                style={{
+                                                    width: 24, height: 24, borderRadius: 6,
+                                                    background: generatingThumb === t.dbId ? T.input : "#6366f120",
+                                                    border: "1px solid #6366f140",
+                                                    color: "#6366f1", fontSize: 12,
+                                                    cursor: generatingThumb === t.dbId ? "wait" : "pointer",
+                                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                                }}
+                                            >
+                                                {generatingThumb === t.dbId ? "⏳" : "📸"}
+                                            </button>
+                                            {/* 🖼 Upload thumbnail */}
+                                            <label
+                                                title="Upload preview image"
+                                                style={{
+                                                    width: 24, height: 24, borderRadius: 6,
+                                                    background: uploadingThumb === t.dbId ? T.input : "#10b98120",
+                                                    border: "1px solid #10b98140",
+                                                    color: "#10b981", fontSize: 12,
+                                                    cursor: uploadingThumb === t.dbId ? "wait" : "pointer",
+                                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                                }}
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                {uploadingThumb === t.dbId ? "⏳" : "🖼"}
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    style={{ display: "none" }}
+                                                    onChange={async (e) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (!file) return;
+                                                        e.target.value = '';
+                                                        setUploadingThumb(t.dbId);
+                                                        try {
+                                                            const fd = new FormData();
+                                                            fd.append('image', file);
+                                                            await api.postForm(`/templates/${t.dbId}/upload-thumb`, fd);
+                                                            await forceReloadTemplates();
+                                                            notify?.('Preview uploaded!', 'success');
+                                                        } catch (err) {
+                                                            notify?.(`Upload failed: ${err.message}`, 'error');
+                                                        } finally {
+                                                            setUploadingThumb(null);
+                                                        }
+                                                    }}
+                                                />
+                                            </label>
+                                            {/* 🗑 Delete */}
+                                            <button
+                                                title="Delete this custom template"
+                                                disabled={deleting === t.dbId}
+                                                onClick={async (e) => {
+                                                    e.stopPropagation();
+                                                    if (!confirm(`Delete template "${t.name}"? This cannot be undone.`)) return;
+                                                    setDeleting(t.dbId);
+                                                    try {
+                                                        await api.del(`/templates/${t.dbId}`);
+                                                        if (c.templateId === t.id) u("templateId", "");
+                                                        await forceReloadTemplates();
+                                                        notify?.(`Template "${t.name}" deleted`, 'success');
+                                                    } catch (err) {
+                                                        notify?.(`Failed to delete: ${err.message}`, 'error');
+                                                    } finally {
+                                                        setDeleting(null);
+                                                    }
+                                                }}
+                                                style={{
+                                                    width: 24, height: 24, borderRadius: 6,
+                                                    background: deleting === t.dbId ? T.input : "#ef444420",
+                                                    border: "1px solid #ef444440",
+                                                    color: "#ef4444", fontSize: 12,
+                                                    cursor: deleting === t.dbId ? "wait" : "pointer",
+                                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                                }}
+                                            >
+                                                {deleting === t.dbId ? "..." : "🗑"}
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+                {/* ── Hover Preview Popup ── */}
+                {hoveredTemplate && (() => {
+                    const thumbUrl = hoveredTemplate.thumbnailUrl
+                        ? `https://lp-factory-api.misty-feather-556e.workers.dev${hoveredTemplate.thumbnailUrl}`
+                        : null;
+                    const popupH = 420;
+                    const popupW = 300;
+                    const top = Math.min(hoverPos.y, window.innerHeight - popupH - 12);
+                    // hoverPos.x = rect.right + 8, show popup to the right of the card
+                    // clamp so popup doesn't overflow right edge of viewport
+                    const left = Math.min(hoverPos.x, window.innerWidth - popupW - 8);
+                    return (
+                        <div style={{
+                            position: "fixed",
+                            left,
+                            top,
+                            width: popupW,
+                            height: popupH,
+                            background: T.card || "#1e1e2e",
+                            border: `1px solid ${T.border}`,
+                            borderRadius: 12,
+                            overflow: "hidden",
+                            zIndex: 9999,
+                            boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
+                            pointerEvents: "none",
+                        }}>
+                            {/* Header */}
+                            <div style={{ padding: "8px 12px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", gap: 6 }}>
+                                <span style={{ fontSize: 11, fontWeight: 700, color: T.text }}>{hoveredTemplate.name}</span>
+                                {hoveredTemplate.badge && (
+                                    <span style={{ fontSize: 8, padding: "1px 5px", borderRadius: 4, background: `${T.primary}cc`, color: "#fff", fontWeight: 700 }}>{hoveredTemplate.badge}</span>
+                                )}
+                            </div>
+                            {/* Preview area */}
+                            <div style={{ width: "100%", height: popupH - 36, overflow: "hidden", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                {thumbUrl ? (
+                                    <img src={thumbUrl} alt={hoveredTemplate.name}
+                                        style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} />
+                                ) : (
+                                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, padding: "0 20px", textAlign: "center" }}>
+                                        <span style={{ fontSize: 36 }}>📷</span>
+                                        <span style={{ fontSize: 12, fontWeight: 600, color: T.text }}>No preview yet</span>
+                                        <span style={{ fontSize: 10, color: T.muted, lineHeight: 1.5 }}>
+                                            Click <strong style={{ color: T.text }}>�</strong> on the card to upload a screenshot, or <strong style={{ color: T.text }}>📸</strong> to auto-generate one.
+                                        </span>
                                     </div>
-                                    <div style={{ fontSize: 10, color: T.text, fontWeight: 600 }}>{cp.name}</div>
-                                </button>
-                            ))}
-                            <button onClick={() => u("colorId", "custom")} style={{
-                                padding: "10px", background: c.colorId === "custom" ? T.primaryGlow : T.input,
-                                border: `2px solid ${c.colorId === "custom" ? T.primary : T.border}`, borderRadius: 8, cursor: "pointer",
-                            }}>
-                                <div style={{ display: "flex", justifyContent: "center", gap: 3, marginBottom: 4 }}>
-                                    <div style={{ width: 16, height: 16, borderRadius: 4, background: c.primaryColor || "#3b5bdb", border: `1px solid ${T.border}` }} />
-                                    <div style={{ width: 16, height: 16, borderRadius: 4, background: "linear-gradient(135deg,#f97316,#a855f7)", border: `1px solid ${T.border}` }} />
-                                    <div style={{ width: 16, height: 16, borderRadius: 4, background: c.accentColor || "#f97316", border: `1px solid ${T.border}` }} />
-                                </div>
-                                <div style={{ fontSize: 10, color: T.text, fontWeight: 600 }}>Custom</div>
-                            </button>
-                        </div>
-                        {c.colorId === "custom" && (
-                            <div style={{ marginTop: 10, padding: 12, background: T.input, borderRadius: 8, border: `1px solid ${T.border}` }}>
-                                <div style={{ fontSize: 11, fontWeight: 700, color: T.text, marginBottom: 8 }}>Custom Colors</div>
-                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                                    <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                                        <span style={{ fontSize: 10, color: T.muted, fontWeight: 600 }}>Primary</span>
-                                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                            <input
-                                                type="color"
-                                                value={c.primaryColor || "#3b5bdb"}
-                                                onChange={e => u("primaryColor", e.target.value)}
-                                                style={{ width: 36, height: 28, border: "none", borderRadius: 4, cursor: "pointer", padding: 1 }}
-                                            />
-                                            <input
-                                                type="text"
-                                                value={c.primaryColor || "#3b5bdb"}
-                                                onChange={e => { if (/^#[0-9a-fA-F]{0,6}$/.test(e.target.value)) u("primaryColor", e.target.value); }}
-                                                maxLength={7}
-                                                style={{ flex: 1, padding: "4px 6px", background: T.surface || "#111", border: `1px solid ${T.border}`, borderRadius: 4, color: T.text, fontSize: 11, fontFamily: "monospace" }}
-                                            />
-                                        </div>
-                                    </label>
-                                    <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                                        <span style={{ fontSize: 10, color: T.muted, fontWeight: 600 }}>Accent</span>
-                                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                            <input
-                                                type="color"
-                                                value={c.accentColor || "#f97316"}
-                                                onChange={e => u("accentColor", e.target.value)}
-                                                style={{ width: 36, height: 28, border: "none", borderRadius: 4, cursor: "pointer", padding: 1 }}
-                                            />
-                                            <input
-                                                type="text"
-                                                value={c.accentColor || "#f97316"}
-                                                onChange={e => { if (/^#[0-9a-fA-F]{0,6}$/.test(e.target.value)) u("accentColor", e.target.value); }}
-                                                maxLength={7}
-                                                style={{ flex: 1, padding: "4px 6px", background: T.surface || "#111", border: `1px solid ${T.border}`, borderRadius: 4, color: T.text, fontSize: 11, fontFamily: "monospace" }}
-                                            />
-                                        </div>
-                                    </label>
-                                </div>
-                                <div style={{ marginTop: 8, fontSize: 10, color: T.muted }}>
-                                    Sent as <code style={{ color: T.primary }}>PUBLIC_PRIMARYCOLOR</code> / <code style={{ color: T.primary }}>PUBLIC_ACCENTCOLOR</code> at deploy.
-                                </div>
+                                )}
                             </div>
-                        )}
-                    </Field>
-                    <Field label="Font">
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6 }}>
-                            {FONTS.map(f => (
-                                <button key={f.id} onClick={() => u("fontId", f.id)} style={{
-                                    padding: "8px", background: c.fontId === f.id ? T.primaryGlow : T.input,
-                                    border: `2px solid ${c.fontId === f.id ? T.primary : T.border}`,
-                                    borderRadius: 6, cursor: "pointer", color: T.text, fontSize: 11, fontWeight: 600,
-                                }}>{f.name}</button>
-                            ))}
                         </div>
-                    </Field>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                        <Field label="Layout">
-                            {LAYOUTS.map(l => (
-                                <button key={l.id} onClick={() => u("layout", l.id)} style={{
-                                    width: "100%", padding: "8px 10px", marginBottom: 4, background: c.layout === l.id ? T.primaryGlow : T.input,
-                                    border: `2px solid ${c.layout === l.id ? T.primary : T.border}`, borderRadius: 6, cursor: "pointer", textAlign: "left",
-                                }}><div style={{ fontSize: 12, color: T.text, fontWeight: 600 }}>{l.label}</div><div style={{ fontSize: 10, color: T.dim }}>{l.desc}</div></button>
-                            ))}
-                        </Field>
-                        <Field label="Radius">
-                            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                                {RADIUS.map(r => (
-                                    <button key={r.id} onClick={() => u("radius", r.id)} style={{
-                                        flex: 1, padding: "8px", background: c.radius === r.id ? T.primaryGlow : T.input,
-                                        border: `2px solid ${c.radius === r.id ? T.primary : T.border}`,
-                                        borderRadius: 6, cursor: "pointer", color: T.text, fontSize: 11, fontWeight: 600, minWidth: 60,
-                                    }}>{r.label}</button>
-                                ))}
-                            </div>
-                        </Field>
-                    </div>
-                </>
-            )}
+                    );
+                })()}
+            </Field>
 
-            {hasCalculatorPanel && (
+            <Field label="Color Scheme" req>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6 }}>
+                    {COLORS.map(cp => (
+                        <button key={cp.id} onClick={() => u("colorId", cp.id)} style={{
+                            padding: "10px", background: c.colorId === cp.id ? T.primaryGlow : T.input,
+                            border: `2px solid ${c.colorId === cp.id ? T.primary : T.border}`, borderRadius: 8, cursor: "pointer",
+                        }}>
+                            <div style={{ display: "flex", justifyContent: "center", gap: 3, marginBottom: 4 }}>
+                                <div style={{ width: 16, height: 16, borderRadius: 4, background: hsl(...cp.p) }} />
+                                <div style={{ width: 16, height: 16, borderRadius: 4, background: hsl(...cp.s) }} />
+                                <div style={{ width: 16, height: 16, borderRadius: 4, background: hsl(...cp.a) }} />
+                            </div>
+                            <div style={{ fontSize: 10, color: T.text, fontWeight: 600 }}>{cp.name}</div>
+                        </button>
+                    ))}
+                    {/* Custom color option */}
+                    <button onClick={() => u("colorId", "custom")} style={{
+                        padding: "10px", background: c.colorId === "custom" ? T.primaryGlow : T.input,
+                        border: `2px solid ${c.colorId === "custom" ? T.primary : T.border}`, borderRadius: 8, cursor: "pointer",
+                    }}>
+                        <div style={{ display: "flex", justifyContent: "center", gap: 3, marginBottom: 4 }}>
+                            <div style={{ width: 16, height: 16, borderRadius: 4, background: c.primaryColor || "#3b5bdb", border: `1px solid ${T.border}` }} />
+                            <div style={{ width: 16, height: 16, borderRadius: 4, background: "linear-gradient(135deg,#f97316,#a855f7)", border: `1px solid ${T.border}` }} />
+                            <div style={{ width: 16, height: 16, borderRadius: 4, background: c.accentColor || "#f97316", border: `1px solid ${T.border}` }} />
+                        </div>
+                        <div style={{ fontSize: 10, color: T.text, fontWeight: 600 }}>Custom</div>
+                    </button>
+                </div>
+                {/* Custom color pickers — shown when colorId === "custom" */}
+                {c.colorId === "custom" && (
+                    <div style={{ marginTop: 10, padding: 12, background: T.input, borderRadius: 8, border: `1px solid ${T.border}` }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: T.text, marginBottom: 8 }}>Custom Colors</div>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                            <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                                <span style={{ fontSize: 10, color: T.muted, fontWeight: 600 }}>Primary</span>
+                                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                    <input
+                                        type="color"
+                                        value={c.primaryColor || "#3b5bdb"}
+                                        onChange={e => u("primaryColor", e.target.value)}
+                                        style={{ width: 36, height: 28, border: "none", borderRadius: 4, cursor: "pointer", padding: 1 }}
+                                    />
+                                    <input
+                                        type="text"
+                                        value={c.primaryColor || "#3b5bdb"}
+                                        onChange={e => { if (/^#[0-9a-fA-F]{0,6}$/.test(e.target.value)) u("primaryColor", e.target.value); }}
+                                        maxLength={7}
+                                        style={{ flex: 1, padding: "4px 6px", background: T.surface || "#111", border: `1px solid ${T.border}`, borderRadius: 4, color: T.text, fontSize: 11, fontFamily: "monospace" }}
+                                    />
+                                </div>
+                            </label>
+                            <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                                <span style={{ fontSize: 10, color: T.muted, fontWeight: 600 }}>Accent</span>
+                                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                    <input
+                                        type="color"
+                                        value={c.accentColor || "#f97316"}
+                                        onChange={e => u("accentColor", e.target.value)}
+                                        style={{ width: 36, height: 28, border: "none", borderRadius: 4, cursor: "pointer", padding: 1 }}
+                                    />
+                                    <input
+                                        type="text"
+                                        value={c.accentColor || "#f97316"}
+                                        onChange={e => { if (/^#[0-9a-fA-F]{0,6}$/.test(e.target.value)) u("accentColor", e.target.value); }}
+                                        maxLength={7}
+                                        style={{ flex: 1, padding: "4px 6px", background: T.surface || "#111", border: `1px solid ${T.border}`, borderRadius: 4, color: T.text, fontSize: 11, fontFamily: "monospace" }}
+                                    />
+                                </div>
+                            </label>
+                        </div>
+                        <div style={{ marginTop: 8, fontSize: 10, color: T.muted }}>
+                            ค่าเหล่านี้จะถูกส่งเป็น <code style={{ color: T.primary }}>PUBLIC_PRIMARYCOLOR</code> / <code style={{ color: T.primary }}>PUBLIC_ACCENTCOLOR</code> ใน deploy config
+                        </div>
+                    </div>
+                )}
+            </Field>
+            <Field label="Font">
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6 }}>
+                    {FONTS.map(f => (
+                        <button key={f.id} onClick={() => u("fontId", f.id)} style={{
+                            padding: "8px", background: c.fontId === f.id ? T.primaryGlow : T.input,
+                            border: `2px solid ${c.fontId === f.id ? T.primary : T.border}`,
+                            borderRadius: 6, cursor: "pointer", color: T.text, fontSize: 11, fontWeight: 600,
+                        }}>{f.name}</button>
+                    ))}
+                </div>
+            </Field>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                <Field label="Layout">
+                    {LAYOUTS.map(l => (
+                        <button key={l.id} onClick={() => u("layout", l.id)} style={{
+                            width: "100%", padding: "8px 10px", marginBottom: 4, background: c.layout === l.id ? T.primaryGlow : T.input,
+                            border: `2px solid ${c.layout === l.id ? T.primary : T.border}`, borderRadius: 6, cursor: "pointer", textAlign: "left",
+                        }}><div style={{ fontSize: 12, color: T.text, fontWeight: 600 }}>{l.label}</div><div style={{ fontSize: 10, color: T.dim }}>{l.desc}</div></button>
+                    ))}
+                </Field>
+                <Field label="Radius">
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        {RADIUS.map(r => (
+                            <button key={r.id} onClick={() => u("radius", r.id)} style={{
+                                flex: 1, padding: "8px", background: c.radius === r.id ? T.primaryGlow : T.input,
+                                border: `2px solid ${c.radius === r.id ? T.primary : T.border}`,
+                                borderRadius: 6, cursor: "pointer", color: T.text, fontSize: 11, fontWeight: 600, minWidth: 60,
+                            }}>{r.label}</button>
+                        ))}
+                    </div>
+                </Field>
+            </div>
+
+            {/* Conditional: Calculator Settings (if template supports calculator) */}
+            {fields?.calculator && (
                 <div style={{ marginTop: 16, padding: 12, background: T.input, borderRadius: 8, border: `1px solid ${T.border}` }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: T.text, marginBottom: 8 }}>Calculator loan range</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: T.text, marginBottom: 8 }}>📊 Calculator Settings</div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                         <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                            <span style={{ fontSize: 10, color: T.muted, fontWeight: 600 }}>Min ($)</span>
+                            <span style={{ fontSize: 10, color: T.muted, fontWeight: 600 }}>Min Amount ($)</span>
                             <input
                                 type="number"
-                                value={c.amountMin ?? ""}
-                                onChange={e => u("amountMin", Math.max(0, parseInt(e.target.value, 10) || 0))}
+                                value={c.amountMin || 1000}
+                                onChange={e => u("amountMin", parseInt(e.target.value) || 1000)}
                                 style={{ padding: "6px 8px", background: T.surface || "#111", border: `1px solid ${T.border}`, borderRadius: 4, color: T.text, fontSize: 11 }}
                             />
                         </label>
                         <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                            <span style={{ fontSize: 10, color: T.muted, fontWeight: 600 }}>Max ($)</span>
+                            <span style={{ fontSize: 10, color: T.muted, fontWeight: 600 }}>Max Amount ($)</span>
                             <input
                                 type="number"
-                                value={c.amountMax ?? ""}
-                                onChange={e => u("amountMax", Math.max(0, parseInt(e.target.value, 10) || 0))}
+                                value={c.amountMax || 50000}
+                                onChange={e => u("amountMax", parseInt(e.target.value) || 50000)}
                                 style={{ padding: "6px 8px", background: T.surface || "#111", border: `1px solid ${T.border}`, borderRadius: 4, color: T.text, fontSize: 11 }}
                             />
                         </label>
                     </div>
                     <div style={{ marginTop: 10, fontSize: 10, color: T.muted }}>
-                        APR defaults stay in site config unless you edit template copy. Range here drives calculator sliders where supported.
+                        ℹ️ Configure calculator range for loan amounts
                     </div>
                 </div>
             )}
 
-            {hasSectionPanel && (
+            {/* Conditional: Section Reorder (if template supports section reorder) */}
+            {fields?.sectionReorder && (
                 <div style={{ marginTop: 16, padding: 12, background: T.input, borderRadius: 8, border: `1px solid ${T.border}` }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: T.text, marginBottom: 8 }}>Section order</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: T.text, marginBottom: 8 }}>🔀 Section Reorder</div>
                     <div style={{ fontSize: 11, color: T.muted, marginBottom: 10 }}>
-                        This template supports custom section ordering. Reorder in preview when available.
+                        This template supports custom section ordering. Drag sections in the preview to reorder them.
                     </div>
                     <div style={{ padding: 10, background: T.surface || "#111", borderRadius: 6, border: `1px dashed ${T.border}`, fontSize: 10, color: T.muted, textAlign: "center" }}>
-                        Section reordering available in preview
+                        🎯 Section reordering available in preview
                     </div>
                 </div>
             )}
 
-            <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${T.border}` }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 10 }}>Brand assets</div>
-                <div style={{ fontSize: 11, color: T.muted, marginBottom: 10 }}>
-                    {hasThemePanel
-                        ? "Auto-updates when colors change. Regenerate manually anytime."
-                        : "Generated from your brand name and default colors."}
+            {/* Show warning if no design features are supported */}
+            {!fields?.calculator && !fields?.sectionReorder && !fields?.colorOverride && (
+                <div style={{ marginTop: 16, padding: 12, background: "rgba(245,158,11,0.08)", border: `1px solid rgba(245,158,11,0.35)`, borderRadius: 8 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "hsl(var(--warning))", marginBottom: 4 }}>
+                        ⚠️ Limited Design Customization
+                    </div>
+                    <div style={{ fontSize: 10, color: "hsl(var(--foreground))" }}>
+                        This template doesn't support design customization. Proceeding with default settings.
+                    </div>
                 </div>
-                <button type="button" onClick={handleGenImages} disabled={genLoading} style={{
+            )}
+
+            {/* AI Image Generation */}
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${T.border}` }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 10 }}>🎨 Brand Assets (Use Current Design Colors)</div>
+                <div style={{ fontSize: 11, color: T.muted, marginBottom: 10 }}>Auto-updates when Color Scheme changes. You can also regenerate manually.</div>
+                <button onClick={handleGenImages} disabled={genLoading} style={{
                     width: "100%", padding: 12, marginBottom: 14, background: genLoading ? T.input : `linear-gradient(135deg, ${T.primary}15, ${T.accent}15)`,
                     border: `1px dashed ${T.primary}`, borderRadius: 8, cursor: genLoading ? "not-allowed" : "pointer",
                     color: T.primary, fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
@@ -260,3 +530,4 @@ export function StepDesign({ c, u, designCapabilities }) {
         </>
     );
 }
+

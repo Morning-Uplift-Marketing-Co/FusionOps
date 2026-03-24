@@ -2,8 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from "react";
 import { THEME as T } from "../constants";
 import { uid, now } from "../utils";
 import { generateHtmlByTemplate, generateApplyPageByTemplate, generateDeployAssetsByTemplate } from "../utils/template-router";
-import { fetchCustomTemplates, getCustomTemplatesCache } from "../utils/template-registry";
-import { resolveWizardTemplateCapabilities } from "../utils/wizard-template-capabilities.js";
+import { fetchCustomTemplates, getCustomTemplatesCache, registry } from "../utils/template-registry";
 import { api } from "../services/api";
 import { getIbsApiBase } from "../utils/api-proxy";
 import { getOrCreateZone, upsertDnsRecord, ensurePixelSubdomain } from "../services/cloudflare-dns";
@@ -27,7 +26,7 @@ const isValidUrl = (url) => {
 };
 
 // Validation function for each step
-function validateStep(stepNum, config, wizardCaps = null) {
+function validateStep(stepNum, config) {
     const errors = [];
 
     if (stepNum === 1) {
@@ -51,6 +50,12 @@ function validateStep(stepNum, config, wizardCaps = null) {
 
     if (stepNum === 2) {
         if (!config.loanType) errors.push("Loan Type is required");
+        if (config.amountMin < 0) errors.push("Min Amount cannot be negative");
+        if (config.amountMax < 0) errors.push("Max Amount cannot be negative");
+        if (config.amountMin >= config.amountMax) errors.push("Min Amount must be less than Max Amount");
+        if (config.aprMin < 0) errors.push("Min APR cannot be negative");
+        if (config.aprMax < 0) errors.push("Max APR cannot be negative");
+        if (config.aprMin >= config.aprMax) errors.push("Min APR must be less than Max APR");
     }
 
     if (stepNum === 3) {
@@ -58,8 +63,7 @@ function validateStep(stepNum, config, wizardCaps = null) {
     }
 
     if (stepNum === 4) {
-        const themeOn = wizardCaps?.supportsWizardTheme !== false;
-        if (themeOn && !config.colorId) errors.push("Color Scheme is required");
+        if (!config.colorId) errors.push("Color Scheme is required");
     }
 
     if (stepNum === 6) {
@@ -98,21 +102,10 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
     const cardRef = useRef(null);
     const deployTargets = useMemo(() => getAvailableTargets(settings), [settings]);
 
-    const wizardCaps = useMemo(
-        () => resolveWizardTemplateCapabilities(config.templateId),
-        [config.templateId]
-    );
-    const supportsCalculator = wizardCaps.supportsCalculator;
-    const supportsSectionReorder = wizardCaps.supportsSectionReorder;
-    // Adapter-shaped object for steps that still receive `capabilities={capabilities}`
-    const capabilities = useMemo(
-        () => ({
-            supportsCalculator: wizardCaps.supportsCalculator,
-            supportsSectionReorder: wizardCaps.supportsSectionReorder,
-            supportsWizardTheme: wizardCaps.supportsWizardTheme,
-        }),
-        [wizardCaps]
-    );
+    const templateEntry = registry[config.templateId];
+    const capabilities = templateEntry?.adapter?.capabilities || {};
+    const supportsCalculator = capabilities?.supportsCalculator ?? true;
+    const supportsSectionReorder = capabilities?.supportsSectionReorder ?? true;
 
     const isUnsupportedCapabilityChange = (k, v) => {
         const calculatorUnsupported =
@@ -188,7 +181,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
     };
 
     const handleNext = async () => {
-        const { valid, errors } = validateStep(step, config, wizardCaps);
+        const { valid, errors } = validateStep(step, config);
         if (!valid) {
             setValidationErrors(errors);
             cardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -631,8 +624,8 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                         <div style={{ zoom: '115%' }}>
                         {step === 1 && <StepBrand c={config} u={upd} settings={settings} cfAccounts={cfAccounts} registrarAccounts={registrarAccounts} capabilities={capabilities} />}
                         {step === 2 && <StepProduct c={config} u={upd} capabilities={capabilities} />}
-                        {step === 3 && <StepTemplate c={config} u={upd} capabilities={capabilities} notify={notify} />}
-                        {step === 4 && <StepDesign c={config} u={upd} notify={notify} designCapabilities={wizardCaps} />}
+                        {step === 3 && <StepTemplate c={config} u={upd} capabilities={capabilities} />}
+                        {step === 4 && <StepDesign c={config} u={upd} notify={notify} capabilities={capabilities} />}
                         {step === 5 && <StepCopy c={config} u={upd} onAiGenerate={handleAiGenerate} aiLoading={aiLoading} onAiMeta={handleAiMeta} aiMetaLoading={aiMetaLoading} onAiReviews={handleAiReviews} aiReviewsLoading={aiReviewsLoading} capabilities={capabilities} />}
                         {step === 6 && <StepTracking c={config} u={upd} capabilities={capabilities} />}
                         {step === 7 && <StepReview c={config} building={building} capabilities={capabilities} />}
@@ -693,8 +686,8 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                     <div style={{ zoom: '115%' }}>
                     {step === 1 && <StepBrand c={config} u={upd} settings={settings} cfAccounts={cfAccounts} registrarAccounts={registrarAccounts} capabilities={capabilities} />}
                     {step === 2 && <StepProduct c={config} u={upd} capabilities={capabilities} />}
-                    {step === 3 && <StepTemplate c={config} u={upd} capabilities={capabilities} notify={notify} />}
-                    {step === 4 && <StepDesign c={config} u={upd} notify={notify} designCapabilities={wizardCaps} />}
+                    {step === 3 && <StepTemplate c={config} u={upd} capabilities={capabilities} />}
+                    {step === 4 && <StepDesign c={config} u={upd} notify={notify} capabilities={capabilities} />}
                     {step === 5 && <StepCopy c={config} u={upd} onAiGenerate={handleAiGenerate} aiLoading={aiLoading} onAiMeta={handleAiMeta} aiMetaLoading={aiMetaLoading} onAiReviews={handleAiReviews} aiReviewsLoading={aiReviewsLoading} capabilities={capabilities} />}
                     {step === 6 && <StepTracking c={config} u={upd} capabilities={capabilities} />}
                     {step === 7 && <StepReview c={config} building={building} capabilities={capabilities} />}

@@ -3,7 +3,6 @@ import { api } from "../services/api";
 import { getAllTemplatesAsync, getTemplateDiagnostics, hideBuiltinTemplate, getTemplateById } from "../utils/template-registry";
 import { PreviewModal } from "./Wizard/PreviewModal";
 import { buildPreviewHtml } from "../utils/template-preview-runtime";
-import { buildThumbnailPreviewDocument } from "../utils/template-thumbnail-preview.js";
 
 /* ── Extract og:image URL from template files ── */
 function extractOgImage(template) {
@@ -23,16 +22,10 @@ function validateTemplateQuality(template) {
   const keys = Object.keys(files);
   // Exclude docs/config files from quality checks — only check actual source code
   const codeKeys = keys.filter((k) => !/\.(md|txt|log|lock)$|\.windsurf|\.github|node_modules|README/i.test(k));
-  const pathHints = codeKeys.join("\n");
   const fileContents = codeKeys.map((k) => files[k]).filter((v) => typeof v === "string").join("\n");
-  const combined = sourceCode + "\n" + pathHints + "\n" + fileContents;
+  const combined = sourceCode + "\n" + fileContents;
   // htmlCombined removed — expression leak check uses astroHtmlCombined below
-  const entryOk =
-    keys.some((k) =>
-      /index\.(astro|html|tsx|jsx)$/i.test(k) ||
-      /(^|\/)App\.(tsx|jsx)$/i.test(k) ||
-      /(^|\/)main\.(tsx|jsx|ts|js)$/i.test(k),
-    ) || /<html|<!doctype html/i.test(sourceCode);
+  const entryOk = keys.some((k) => /index\.(astro|html|tsx|jsx)$|App\.(tsx|jsx)$|main\.(tsx|jsx)$/i.test(k)) || /<html|<!doctype html/i.test(sourceCode);
   const pixelMarker = /sendBeacon|sendPixelBeacon|fpPixel|__fpPixel|PX_ENDPOINT|t\.[^"' ]+\/e|window\.pixel/i.test(combined);
   const trackingMarker = /gtag\(|AW-\d+|form_start|form_submit/i.test(combined);
   const hasViewport = /<meta[^>]+name=["']viewport["']/i.test(combined);
@@ -44,18 +37,14 @@ function validateTemplateQuality(template) {
     .join("\n") + "\n" + (/<html|<!doctype html/i.test(sourceCode) ? sourceCode : "");
   // Expression leak check removed — {title}, {var && (<>)} are normal Astro/JSX patterns, not leaks
   const hasExpressionLeak = false;
-  const hasCalculator =
-    /calculator|monthly\s+payment|calcMonthly|loanAmount|payment\s+estimate|installment|repayment|emi\b/i.test(combined);
-  const hasAprCompare =
-    /representative\s+apr|representative\s+example|apr\s+range|apr\s+comparison|<table[\s\S]*apr|term[\s\S]{0,240}apr|\d[\d.]*%\s*apr/i.test(
-      combined,
-    );
+  const hasCalculator = /calculator|monthly payment|calcMonthly|loanAmount|payment estimate/i.test(combined);
+  const hasAprCompare = /representative apr|apr range|<table[\s\S]*apr|term[\s\S]*apr/i.test(combined);
   const bannedPatterns = [/guaranteed approval/i, /guaranteed loan/i, /100%\s*approval/i, /everyone approved/i, /instant cash now/i, /free money/i, /zero risk/i];
   const matchedBanned = bannedPatterns.filter((p) => p.test(combined)).map((p) => p.toString());
   const blocking = [];
   const warnings = [];
   // Import-time checks (template must have these)
-  if (!entryOk) blocking.push("Missing template entry (index.astro, index.html, or Vite App/main entry).");
+  if (!entryOk) blocking.push("Missing template entry (index.astro or index.html).");
   if (hasExpressionLeak) blocking.push("Potential Astro expression leak detected.");
   if (matchedBanned.length > 0) blocking.push(`Policy-risk copy: ${matchedBanned.join(", ")}`);
   if (/(installment|loan|pdl|pet-care)/i.test(category)) {
@@ -124,7 +113,6 @@ export function TemplateManager({ sites = [], notify, onDefaultTemplateChange })
   const [publishing, setPublishing] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewData, setPreviewData] = useState({ html: "", id: "" });
-  const [thumbGenerating, setThumbGenerating] = useState(false);
 
   /* ── Data loading ── */
   const loadAll = async () => {
@@ -162,42 +150,6 @@ export function TemplateManager({ sites = [], notify, onDefaultTemplateChange })
       console.error("Preview failed:", err);
       // Last resort fallback
       window.open(`/templates/${tpl.id || tpl.template_id}/dist/index.html`, "_blank");
-    }
-  };
-
-  const handleGenerateCardThumb = async (tpl) => {
-    if (!tpl?.dbId) {
-      notify?.("Built-in templates: use Wizard or export for thumbnails.", "warning");
-      return;
-    }
-    setThumbGenerating(true);
-    notify?.("Loading template + building preview document for thumbnail…", "info");
-    try {
-      const detail = await api.get(`/templates/${tpl.dbId}`);
-      if (detail?.error) {
-        notify?.(String(detail.error), "danger");
-        return;
-      }
-      const files = detail?.files && typeof detail.files === "object" ? detail.files : {};
-      if (!Object.keys(files).length) {
-        notify?.("No files on template record.", "danger");
-        return;
-      }
-      const previewHtml = buildThumbnailPreviewDocument(files, {
-        dbId: tpl.dbId,
-        brand: detail?.name || tpl.name,
-      });
-      const res = await api.post(`/templates/${tpl.dbId}/generate-thumb`, { previewHtml });
-      if (res?.error) {
-        notify?.(String(res.error), "danger");
-        return;
-      }
-      notify?.("Wizard card thumbnail updated.", "success");
-      await loadAll();
-    } catch (e) {
-      notify?.(e?.message || String(e), "danger");
-    } finally {
-      setThumbGenerating(false);
     }
   };
 
@@ -349,12 +301,12 @@ export function TemplateManager({ sites = [], notify, onDefaultTemplateChange })
           {!loading && filtered.length === 0 && <div className="text-[hsl(var(--muted-foreground))] text-sm py-10 text-center">No templates match your filters.</div>}
           {!loading && viewMode === "grid" && (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
-              {filtered.map((tpl) => <TemplateCard key={tpl._id} tpl={tpl} selected={selectedId === tpl._id} defaultId={defaultTemplateId} hiddenHint={hiddenReasonsById.get(tpl.id)} quality={validateTemplateQuality(tpl)} onPreview={() => handlePreview(tpl)} onClick={() => setSelectedId(selectedId === tpl._id ? "" : tpl._id)} />)}
+              {filtered.map((tpl) => <TemplateCard key={tpl._id} tpl={tpl} selected={selectedId === tpl._id} defaultId={defaultTemplateId} hiddenHint={hiddenReasonsById.get(tpl.id)} quality={validateTemplateQuality(tpl)} onClick={() => setSelectedId(selectedId === tpl._id ? "" : tpl._id)} />)}
             </div>
           )}
           {!loading && viewMode === "list" && (
             <div className="flex flex-col gap-1.5">
-              {filtered.map((tpl) => <TemplateRow key={tpl._id} tpl={tpl} selected={selectedId === tpl._id} defaultId={defaultTemplateId} quality={validateTemplateQuality(tpl)} onPreview={() => handlePreview(tpl)} onClick={() => setSelectedId(selectedId === tpl._id ? "" : tpl._id)} />)}
+              {filtered.map((tpl) => <TemplateRow key={tpl._id} tpl={tpl} selected={selectedId === tpl._id} defaultId={defaultTemplateId} quality={validateTemplateQuality(tpl)} onClick={() => setSelectedId(selectedId === tpl._id ? "" : tpl._id)} />)}
             </div>
           )}
         </div>
@@ -372,8 +324,6 @@ export function TemplateManager({ sites = [], notify, onDefaultTemplateChange })
               onPublish={publish} onRollback={rollback}
               onDelete={selected.dbId ? softDelete : hideBuiltin}
               onPreview={() => handlePreview(selected)}
-              onGenerateThumb={() => handleGenerateCardThumb(selected)}
-              thumbGenerating={thumbGenerating}
             />
           </div>
         )}
@@ -400,7 +350,7 @@ function Select({ value, onChange, options }) {
 }
 
 /* ── Template Card (Grid) ── */
-function TemplateCard({ tpl, selected, defaultId, hiddenHint, quality, onClick, onPreview }) {
+function TemplateCard({ tpl, selected, defaultId, hiddenHint, quality, onClick }) {
   const cat = catOf(tpl);
   const st = statOf(tpl._status);
   const isDefault = defaultId === (tpl.id || tpl.template_id);
@@ -427,7 +377,7 @@ function TemplateCard({ tpl, selected, defaultId, hiddenHint, quality, onClick, 
           <button 
             onClick={(e) => {
               e.stopPropagation();
-              onPreview?.();
+              handlePreview(tpl);
             }}
             className="shrink-0 ml-2 px-2 py-0.5 text-[9px] font-semibold rounded border border-blue-500/30 text-blue-500 hover:bg-blue-500/10 transition-colors"
             title="Preview template"
@@ -450,7 +400,7 @@ function TemplateCard({ tpl, selected, defaultId, hiddenHint, quality, onClick, 
 }
 
 /* ── Template Row (List) ── */
-function TemplateRow({ tpl, selected, defaultId, quality, onClick, onPreview }) {
+function TemplateRow({ tpl, selected, defaultId, quality, onClick }) {
   const cat = catOf(tpl);
   const st = statOf(tpl._status);
   const isDefault = defaultId === (tpl.id || tpl.template_id);
@@ -466,7 +416,7 @@ function TemplateRow({ tpl, selected, defaultId, quality, onClick, onPreview }) 
       <button 
         onClick={(e) => {
           e.stopPropagation();
-          onPreview?.();
+          handlePreview(tpl);
         }}
         className="shrink-0 mx-2 px-2.5 py-1 text-[10px] font-semibold rounded border border-blue-500/30 text-blue-500 hover:bg-blue-500/10 transition-colors"
         title="Preview template"
@@ -481,7 +431,7 @@ function TemplateRow({ tpl, selected, defaultId, quality, onClick, onPreview }) 
 }
 
 /* ── Side Panel ── */
-function SidePanel({ tpl, quality, usage, versions, defaultId, publishing, hiddenHint, onClose, onSetDefault, onUpdateStatus, onCreateVersion, onPublish, onRollback, onDelete, onPreview, onGenerateThumb, thumbGenerating }) {
+function SidePanel({ tpl, quality, usage, versions, defaultId, publishing, hiddenHint, onClose, onSetDefault, onUpdateStatus, onCreateVersion, onPublish, onRollback, onDelete, onPreview }) {
   const cat = catOf(tpl);
   const st = statOf(tpl._status);
   const isDefault = defaultId === (tpl.id || tpl.template_id);
@@ -541,11 +491,6 @@ function SidePanel({ tpl, quality, usage, versions, defaultId, publishing, hidde
           <div className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Actions</div>
           <div className="flex flex-wrap gap-1.5">
             <Btn onClick={onPreview}>Preview</Btn>
-            {isCustom && (
-              <Btn onClick={onGenerateThumb} disabled={thumbGenerating}>
-                {thumbGenerating ? "Thumbnail…" : "Gen thumbnail"}
-              </Btn>
-            )}
             {!isDefault && <Btn onClick={onSetDefault}>Set Default</Btn>}
             {isCustom && (
               <>
