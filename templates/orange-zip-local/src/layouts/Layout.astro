@@ -47,14 +47,14 @@ const __cssVars = __pal
 <html lang="en">
 <head>
 
-<!-- Runtime config (auto-injected) -->
-<script is:inline define:vars={{ voluumDomain, conversionId, voluumClickUrl }}>
-  window.__VOLUUM_DOMAIN__ = voluumDomain;
-  window.__CONVERSION_ID__ = conversionId || "";
-  window.__VOLUUM_CLICK_URL__ = voluumClickUrl || "";
+<!-- Runtime config: JSON.stringify avoids Astro define:vars SSR "voluumDomain is not defined" on some versions -->
+<script is:inline set:html={`(function(){
+  window.__VOLUUM_DOMAIN__ = ${JSON.stringify(voluumDomain)};
+  window.__CONVERSION_ID__ = ${JSON.stringify(conversionId)};
+  window.__VOLUUM_CLICK_URL__ = ${JSON.stringify(voluumClickUrl)};
   var ns = document.getElementById('vlnoscript');
   if (ns && window.__VOLUUM_DOMAIN__) ns.href = 'https://' + window.__VOLUUM_DOMAIN__ + '/d/.js?noscript=true&lpurl=';
-</script>
+})();`} />
 
 
 <!-- Voluum Direct Tracking Pixel (v2) -->
