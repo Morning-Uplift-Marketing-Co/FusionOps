@@ -1,0 +1,125 @@
+---
+const brand    = import.meta.env.PUBLIC_BRAND   || 'GoldRush Lending';
+const aprMin   = import.meta.env.PUBLIC_APRMIN  || '5.99';
+const aprMax   = import.meta.env.PUBLIC_APRMAX  || '35.99';
+const amtMin   = import.meta.env.PUBLIC_AMOUNTMIN || '1,000';
+const amtMax   = import.meta.env.PUBLIC_AMOUNTMAX || '35,000';
+---
+
+<!-- Pre-footer CTA -->
+<section class="py-16 px-6">
+  <div class="max-w-6xl mx-auto">
+    <div class="premium-card p-10 md:p-14 text-center relative overflow-hidden">
+      <div class="absolute inset-0 pointer-events-none"
+        style="background: radial-gradient(ellipse 60% 60% at 50% 120%, hsl(38 62% 58% / 0.08), transparent);"></div>
+      <span class="section-label relative">Limited-Time Offer</span>
+      <h2 class="font-display font-bold text-3xl md:text-4xl text-foreground relative mb-4">
+        Your Best Rate Is Waiting
+      </h2>
+      <p class="text-foreground/50 text-base max-w-xl mx-auto mb-8 relative">
+        Check your rate in 3 minutes with no impact to your credit. Join 50,000+ borrowers who chose GoldRush.
+      </p>
+      <a href="/apply" class="btn-primary text-base py-4 px-10 relative">
+        Get My Rate Now — It's Free
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </a>
+
+      <!-- Trust row -->
+      <div class="flex flex-wrap justify-center gap-6 mt-8 text-foreground/35 text-xs">
+        {[
+          'No hard credit pull to check rate',
+          'Funds as fast as same day',
+          'Fixed monthly payments',
+          'No prepayment penalties',
+        ].map(item => (
+          <div class="flex items-center gap-1.5">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="hsl(14 85% 62%)" stroke-width="2.5" stroke-linecap="round">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+            {item}
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Regulatory Disclosure -->
+<section id="disclosure" class="px-6 pb-10">
+  <div class="max-w-6xl mx-auto">
+    <div class="glass-card p-6 border-l-2 mb-8" style="border-left-color: hsl(38 62% 58% / 0.4);">
+      <h3 class="font-display font-semibold text-foreground/70 text-sm mb-3 flex items-center gap-2">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="hsl(14 85% 62%)" stroke-width="2" stroke-linecap="round">
+          <circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>
+        </svg>
+        Important Regulatory Disclosures
+      </h3>
+      <div class="space-y-2 text-foreground/30 text-xs leading-relaxed">
+        <p><strong class="text-foreground/45">Representative APR:</strong> Loans carry an APR ranging from {aprMin}% to {aprMax}%. Loan amounts from ${amtMin} to ${amtMax}. Loan terms from 12 to 60 months. Representative example: $10,000 borrowed over 36 months at a representative APR of 14.99% (fixed) results in 36 monthly payments of $346.34, total repayable $12,468.24 (including $2,468.24 interest). Representative APR 14.99%.</p>
+        <p><strong class="text-foreground/45">No Guarantee:</strong> Submitting an application does not guarantee approval. All applications subject to credit review, income verification, and underwriting. Not all applicants will qualify.</p>
+        <p><strong class="text-foreground/45">Credit Check:</strong> Rate inquiries use a soft pull and do not affect your credit score. Full applications may result in a hard inquiry. State availability and loan terms vary.</p>
+        <p><strong class="text-foreground/45">Not a Direct Lender:</strong> {brand} may operate as a loan marketplace connecting consumers with a network of lenders. Compensation may be received from lenders for referrals.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="border-t border-border px-6 py-10">
+  <div class="max-w-6xl mx-auto">
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-8 mb-10">
+      <div class="col-span-2">
+        <div class="flex items-center gap-2.5 mb-4">
+          <div class="w-7 h-7 rounded-lg flex items-center justify-center"
+            style="background: linear-gradient(135deg, hsl(14 85% 65%), hsl(14 80% 54%));">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="hsl(220 18% 7%)" stroke-width="2.5" stroke-linecap="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <span class="font-display font-bold text-foreground text-sm">{brand}</span>
+        </div>
+        <p class="text-foreground/35 text-xs leading-relaxed max-w-xs mb-4">
+          Premium installment loans with fixed payments and transparent terms. NMLS #123456.
+        </p>
+        <div class="flex items-center gap-1.5 text-foreground/30 text-xs">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="hsl(14 85% 62%)" stroke-width="2" stroke-linecap="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          256-bit SSL Encrypted
+        </div>
+      </div>
+
+      {[
+        { heading: 'Loans', links: ['Personal Loans', 'Debt Consolidation', 'Home Improvement', 'Medical Loans'] },
+        { heading: 'Learn', links: ['How It Works', 'Payment Calculator', 'APR & Rates', 'FAQ'] },
+        { heading: 'Company', links: ['About Us', 'Privacy Policy', 'Terms of Service', 'Accessibility'] },
+      ].map(col => (
+        <div>
+          <h4 class="font-semibold text-foreground/50 text-xs uppercase tracking-widest mb-4">{col.heading}</h4>
+          <ul class="space-y-2.5">
+            {col.links.map(link => (
+              <li><a href="#" class="text-foreground/35 text-xs hover:text-foreground/70 transition-colors">{link}</a></li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+
+    <div class="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
+      <p class="text-foreground/25 text-xs">&copy; {new Date().getFullYear()} {brand}. All rights reserved.</p>
+      <p class="text-foreground/20 text-xs">Loans subject to state laws. Not available in all states.</p>
+    </div>
+  </div>
+</footer>
+
+<!-- Sticky mobile CTA -->
+<div class="md:hidden fixed bottom-0 left-0 right-0 z-50 p-3" style="background: linear-gradient(to top, hsl(220 18% 7%), transparent);">
+  <a href="/apply" class="btn-primary w-full text-base py-4 flex items-center justify-center gap-2">
+    Apply Now — Check My Rate Free
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+      <path d="M5 12h14M12 5l7 7-7 7"/>
+    </svg>
+  </a>
+</div>
