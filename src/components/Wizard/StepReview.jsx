@@ -1,8 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { THEME as T, COLORS, LOAN_TYPES } from "../../constants";
 import { hsl } from "../../utils";
-import { generateAstroProjectByTemplate } from "../../utils/template-router";
-import { buildPreviewHtml } from "../../utils/template-preview-runtime";
+import { generateAstroProjectByTemplate, generateHtmlByTemplate } from "../../utils/template-router";
 import { getTemplateById } from "./template-utils";
 import { PreviewModal } from "./PreviewModal";
 
@@ -22,14 +21,31 @@ export function StepReview({ c, building }) {
     // Generate preview HTML
     const previewHtml = useMemo(() => {
         try {
-            if (!selectedTemplate?.files) return "";
-            const colors = { p: co.p, s: co.s, a: co.a };
-            return buildPreviewHtml(selectedTemplate.files, c, colors);
+            return generateHtmlByTemplate(c) || "";
         } catch (e) {
             console.warn("[Wizard] Failed to build preview HTML:", e?.message || e);
             return `<div style="padding: 20px; color: #c00;">Error generating preview: ${e?.message || "unknown error"}</div>`;
         }
-    }, [c.templateId, c.brand, c.domain, c.colorId, selectedTemplate?.files, co.p, co.s, co.a]);
+    }, [
+        c.templateId,
+        c.brand,
+        c.domain,
+        c.colorId,
+        c.fontId,
+        c.conversionId,
+        c.aid,
+        c.amountMin,
+        c.amountMax,
+        c.aprMin,
+        c.aprMax,
+        c.loanType,
+        c.formStartLabel,
+        c.formSubmitLabel,
+        c.voluumDomain,
+        c.leadsGateFormId,
+        c.primaryColor,
+        c.accentColor,
+    ]);
 
     const rows = [
         ["Brand", c.brand], ["Domain", c.domain || "—"], ["Type", LOAN_TYPES.find(l => l.id === c.loanType)?.label],

@@ -18,10 +18,19 @@ function getClickId() {
     let cid =
       p.get('gclid') ||
       p.get('clickid') ||
+      p.get('vlcid') ||
+      p.get('click_id') ||
       p.get('cid') ||
+      p.get('cpid') ||
       localStorage.getItem('_cid') ||
       sessionStorage.getItem('_cid') ||
+      sessionStorage.getItem('clickid') ||
       '';
+
+    // Also try cookie fallback (index page stores clickid as cookie)
+    if (!cid) {
+      try { var m = document.cookie.match(/(?:^|; )clickid=([^;]*)/); if (m) cid = decodeURIComponent(m[1]); } catch(_) {}
+    }
 
     if (cid) {
       localStorage.setItem('_cid', cid);
@@ -55,7 +64,7 @@ export function getPixelHeadScript() {
         ...(data || {})
       };
 
-      const endpoint = 'https://t.joracreditz.com/e';
+      const endpoint = 'https://t.' + location.hostname + '/e';
 
       navigator.sendBeacon?.(
         endpoint,
@@ -130,7 +139,10 @@ export function getApplyPageScript(aid) {
 
   function getClickId(){
     try {
-      return localStorage.getItem('_cid') || sessionStorage.getItem('_cid') || '';
+      var p = new URLSearchParams(location.search);
+      var u = p.get('clickid')||p.get('vlcid')||p.get('click_id')||p.get('cid')||p.get('cpid')||p.get('gclid')||'';
+      if (u) return u;
+      return localStorage.getItem('_cid') || sessionStorage.getItem('_cid') || sessionStorage.getItem('clickid') || '';
     } catch {
       return '';
     }
@@ -139,7 +151,7 @@ export function getApplyPageScript(aid) {
   function pixel(e,data){
     try {
       navigator.sendBeacon(
-        'https://t.joracreditz.com/e',
+        'https://t.' + location.hostname + '/e',
         new Blob([JSON.stringify({
           e,
           cid:getClickId(),
@@ -161,10 +173,32 @@ export function getApplyPageScript(aid) {
     hooks: {
       onFormLoad(){
         pixel('form_start');
+        if (window.__gtagConversionId && window.__formStartLabel && !window.__gtagFormStartFired) {
+          window.__gtagFormStartFired = true;
+          if (typeof gtag === 'function') gtag('event','conversion',{send_to: window.__gtagConversionId + '/' + window.__formStartLabel});
+        }
+      },
+
+      onStepChange(step){
+        var s = (step && typeof step === 'object') ? step.step || step : step;
+        pixel('step_change', {step: s});
+        if (Number(s) >= 8 && !window.__formSubmitFired) {
+          window.__formSubmitFired = true;
+          pixel('form_submit', {source: 'step_fallback'});
+          if (window.__gtagConversionId && window.__formSubmitLabel && typeof gtag === 'function') {
+            gtag('event','conversion',{send_to: window.__gtagConversionId + '/' + window.__formSubmitLabel});
+          }
+        }
       },
 
       onSubmit(){
-        pixel('form_submit');
+        if (!window.__formSubmitFired) {
+          window.__formSubmitFired = true;
+          pixel('form_submit');
+          if (window.__gtagConversionId && window.__formSubmitLabel && typeof gtag === 'function') {
+            gtag('event','conversion',{send_to: window.__gtagConversionId + '/' + window.__formSubmitLabel});
+          }
+        }
       },
 
       onSuccess(data){
@@ -200,15 +234,19 @@ export function getApplyPageScript(aid) {
 // FULL APPLY PAGE
 // ─────────────────────────────────────────────
 
-export function generateApplyHtml(aid, brand) {
+export function generateApplyHtml(aid, brand, { conversionId, formStartLabel, formSubmitLabel } = {}) {
   return `<!DOCTYPE html>
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Apply | ${brand || ''}</title>
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" href="/vite.svg" type="image/svg+xml" />
+${getGtagHeadScript(conversionId)}
 </head>
 
 <body>
+${conversionId ? `<script>window.__gtagConversionId='${conversionId}';window.__formStartLabel='${formStartLabel || ''}';window.__formSubmitLabel='${formSubmitLabel || ''}';</script>` : ''}
 
 ${getPixelHeadScript()}
 ${getApplyPageScript(aid)}
