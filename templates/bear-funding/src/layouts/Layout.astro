@@ -1,0 +1,670 @@
+---
+import '../styles/global.css';
+const brand          = import.meta.env.PUBLIC_BRAND          || 'BearFunding';
+const domain         = import.meta.env.PUBLIC_DOMAIN         || 'example.com';
+const sub            = import.meta.env.PUBLIC_SUB            || "Checking your rate won't affect your credit score.";
+const cta            = import.meta.env.PUBLIC_CTA            || 'See My Offers — Free';
+const phone          = import.meta.env.PUBLIC_PHONE          || '(800) 555-0100';
+const email          = import.meta.env.PUBLIC_EMAIL          || `support@${import.meta.env.PUBLIC_DOMAIN || 'example.com'}`;
+const address        = import.meta.env.PUBLIC_ADDRESS        || '2055 Limestone Rd STE 200-C, Wilmington, DE 19808';
+const aid            = import.meta.env.PUBLIC_AID            || '';
+const amountMin      = import.meta.env.PUBLIC_AMOUNTMIN      || '$500';
+const amountMax      = import.meta.env.PUBLIC_AMOUNTMAX      || '$10,000';
+const primaryColor   = import.meta.env.PUBLIC_PRIMARYCOLOR   || '#D4931F';
+const accentColor    = import.meta.env.PUBLIC_ACCENTCOLOR    || '#F0B040';
+const aprMin         = import.meta.env.PUBLIC_APRMIN         || '5.99';
+const aprMax         = import.meta.env.PUBLIC_APRMAX         || '35.99';
+const conversionId      = import.meta.env.PUBLIC_CONVERSIONID      || '';
+const formStartLabel    = import.meta.env.PUBLIC_FORMSTARTLABEL    || 'form_start';
+const formSubmitLabel   = import.meta.env.PUBLIC_FORMSUBMITLABEL   || 'form_submit';
+const voluumId          = import.meta.env.PUBLIC_VOLUUMID          || '';
+const voluumDomain      = import.meta.env.PUBLIC_VOLUUMDOMAIN      || '';
+const voluumClickUrl    = import.meta.env.PUBLIC_VOLUUM_CLICK_URL  || '';
+const ctaHref           = voluumClickUrl || '#apply';
+
+const brandPrefix = brand.includes('Funding') ? brand.replace('Funding', '') : brand;
+const brandSuffix = brand.includes('Funding') ? 'Funding' : '';
+
+interface Props { title?: string; }
+const { title = brand } = Astro.props;
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="color-scheme" content="dark light">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{title} — Check Your Rate | {brand}</title>
+  <meta name="description" content={sub}>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"></noscript>
+
+  <style define:vars={{ primaryColor, accentColor }}>
+    :root {
+      --gold: var(--primaryColor);
+      --gold-2: var(--accentColor);
+    }
+  </style>
+  <script>
+    (function(){
+      function setNavH(){
+        var nav = document.querySelector('nav');
+        var apr = document.getElementById('apr-bar');
+        var navH = nav ? nav.offsetHeight : 62;
+        var aprH = apr ? apr.offsetHeight : 33;
+        document.documentElement.style.setProperty('--nav-h', navH + 'px');
+        document.documentElement.style.setProperty('--header-h', (navH + aprH) + 'px');
+      }
+      if(document.readyState === 'loading'){
+        document.addEventListener('DOMContentLoaded', setNavH);
+      } else {
+        setNavH();
+      }
+      window.addEventListener('resize', setNavH);
+    })();
+  </script>
+
+  <script data-cfasync="false" define:vars={{ conversionId, formStartLabel, formSubmitLabel, voluumId, voluumDomain, voluumClickUrl, ctaHref, aid }}>
+    window.__conversionId    = conversionId;
+    window.__formStartLabel  = formStartLabel;
+    window.__formSubmitLabel = formSubmitLabel;
+    window.__voluumId        = voluumId;
+    window.__voluumDomain    = voluumDomain;
+    window.__ctaHref         = ctaHref;
+    window.__aid             = aid;
+  </script>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="wrap nav-inner">
+    <a href="/" class="logo" aria-label={`${brand} Home`}>
+      <div class="logo-icon">
+        <svg viewBox="0 0 18 18"><path d="M9 1C5.13 1 2 4.13 2 8c0 2.3 1.1 4.3 2.8 5.6V15h8.4v-1.4C14.9 12.3 16 10.3 16 8c0-3.87-3.13-7-7-7z"/><circle cx="7" cy="8" r=".9" fill="#D4931F"/><circle cx="11" cy="8" r=".9" fill="#D4931F"/></svg>
+      </div>
+      <span class="logo-name">{brandPrefix}{brandSuffix && <span>{brandSuffix}</span>}</span>
+    </a>
+    <div class="nav-r">
+      <div class="nav-badge">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1L1.5 4v4.5C1.5 11.5 4 13.5 7 14c3-.5 5.5-2.5 5.5-5.5V4L7 1z" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M4.5 7.5l2 2 3.5-3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        SSL Secure
+      </div>
+      <button class="btn-ghost" onclick="document.getElementById('hero-form').scrollIntoView({behavior:'smooth'})">{cta}</button>
+    </div>
+  </div>
+</nav>
+
+<!-- STICKY APR BAR -->
+<div id="apr-bar" role="note" aria-label="Rate and lender disclosure">
+  APR range: <span class="apr-hl">{aprMin}% – {aprMax}%</span> &nbsp;·&nbsp; {amountMin}–{amountMax} &nbsp;·&nbsp; 6–60 month terms
+  <span class="not-lender-tag">
+    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M5 1L1 3v2.5C1 7.8 3 9.2 5 9.5c2-.3 4-1.7 4-4V3L5 1z" stroke="currentColor" stroke-width="1" fill="none"/><path d="M3 5l1.5 1.5 3-2.5" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Not a Lender
+  </span>
+</div>
+
+<slot />
+
+<!-- FOOTER -->
+<footer role="contentinfo">
+  <div class="wrap">
+    <div class="foot-cols">
+      <div class="foot-brand-col">
+        <a href="/" class="logo" aria-label={brand} style="opacity:.65">
+          <div class="logo-icon" style="width:28px;height:28px">
+            <svg viewBox="0 0 18 18" fill="#fff" width="14" height="14"><path d="M9 1C5.13 1 2 4.13 2 8c0 2.3 1.1 4.3 2.8 5.6V15h8.4v-1.4C14.9 12.3 16 10.3 16 8c0-3.87-3.13-7-7-7z"/></svg>
+          </div>
+          <span class="logo-name" style="font-size:15px;opacity:.55">{brandPrefix}{brandSuffix && <span>{brandSuffix}</span>}</span>
+        </a>
+        <p style="font-size:12px;color:rgba(255,255,255,.3);line-height:1.65;max-width:220px">
+          Free loan-matching service. Not a lender. Connecting consumers with licensed lenders since 2021.
+        </p>
+        <div class="foot-contact-block">
+          <div class="foot-contact-row">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1C4.24 1 2 3.24 2 6c0 3.5 5 8 5 8s5-4.5 5-8c0-2.76-2.24-5-5-5zm0 6.5c-.83 0-1.5-.67-1.5-1.5S6.17 4.5 7 4.5s1.5.67 1.5 1.5S7.83 7.5 7 7.5z" stroke="currentColor" stroke-width="1" fill="none"/></svg>
+            <span>{address}</span>
+          </div>
+          <div class="foot-contact-row">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M12 9.33l-2.08-.25a1 1 0 00-.82.28L7.63 10.8c-1.93-1-3.44-2.5-4.44-4.44l1.45-1.47c.22-.22.32-.53.27-.83L4.67 2A1 1 0 003.68 1h-1.6C1.48 1 1 1.48 1 2.08 1 7.98 6.02 13 11.92 13c.6 0 1.08-.48 1.08-1.08V10.3a1 1 0 00-.99-.97z" stroke="currentColor" stroke-width="1" fill="none"/></svg>
+            <a href={`tel:${phone.replace(/\D/g,'')}`}>{phone}</a>
+          </div>
+          <div class="foot-contact-row">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><rect x="1" y="3" width="12" height="8" rx="1.5" stroke="currentColor" stroke-width="1"/><path d="M1 4l6 4.5L13 4" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
+            <a href={`mailto:${email}`}>{email}</a>
+          </div>
+          <div class="foot-contact-row">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1"/><path d="M7 4v4l2 1.5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
+            <span>Mon–Fri 9am–6pm ET</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="foot-col-title">Company</div>
+        <div class="foot-col-links">
+          <span onclick="openSheet('about')">About Us</span>
+          <span onclick="openSheet('privacy')">Privacy Policy</span>
+          <span onclick="openSheet('terms')">Terms of Use</span>
+          <a href="/sitemap.xml">Sitemap</a>
+          <span onclick="openSheet('accessibility')">Accessibility</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="foot-col-title">Consumer Rights</div>
+        <div class="foot-col-links">
+          <span onclick="openSheet('ccpa')">Do Not Sell My Info</span>
+          <span onclick="openSheet('unsub')">Unsubscribe</span>
+          <span onclick="openStateModal()">State Availability</span>
+          <span onclick="openSheet('rates')">Rates &amp; Fees</span>
+          <span onclick="openSheet('cfpb')">CFPB Resources</span>
+          <a href="https://www.nfcc.org" target="_blank" rel="noopener">Credit Counseling</a>
+        </div>
+      </div>
+
+      <div>
+        <div class="foot-col-title">Support</div>
+        <div class="foot-col-links">
+          <span onclick="openSheet('contact')">Contact Us</span>
+          <span onclick="openSheet('rates')">How It Works</span>
+          <span onclick="openSheet('faq')">FAQ</span>
+          <span onclick="openSheet('privacy')">Data Request</span>
+          <a href={`mailto:legal@${domain}`}>Legal Notices</a>
+          <a href={`mailto:compliance@${domain}`}>Compliance</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="comply">
+      <div class="comply-block">
+        <b>NOT A LENDER:</b> {brand} is not a lender, broker, or agent for any lender or broker. We are a free loan-matching service that connects consumers with licensed third-party lenders. We are not involved in any lending decision, loan agreement, or fee determination. All credit decisions are made solely by lenders in our network.
+      </div>
+      <div class="comply-block">
+        <b>APR &amp; REPRESENTATIVE LOAN DISCLOSURE:</b> Annual Percentage Rates (APR) offered by lenders in our network range from <b>{aprMin}% to {aprMax}%</b>. Loan amounts range from <b>{amountMin} to {amountMax}</b> with repayment terms of <b>6 to 60 months</b>. Actual APR, loan amount, and term are determined solely by the lender based on your creditworthiness, income, state of residence, and other factors. <b>Representative Example:</b> A $2,500 installment loan with a 36-month term at an APR of 24.00% results in 36 monthly payments of $98.62, for a total repayment of $3,550.32 (including $1,050.32 in interest). Not all applicants will qualify. Late or missed payments may result in additional fees and collection activity.
+      </div>
+      <div class="comply-block">
+        <b>NO HIDDEN FEES:</b> {brand} does not charge consumers any fee. Any origination fees, late fees, or other charges are set and disclosed by individual lenders before you accept any offer.
+      </div>
+      <div class="comply-block">
+        <b>STATE NOTICE:</b> This is an advertisement. Service may not be available in all states. Unavailable in: NY, WV, VT, SD, CT, MA. Limited availability in: CO, MT, NH, AR. By using this site you agree to our <a href="#" onclick="event.preventDefault();openSheet('terms')">Terms of Use</a> and <a href="#" onclick="event.preventDefault();openSheet('privacy')">Privacy Policy</a>. Consent to contact is not a condition of service.
+      </div>
+      <div class="comply-block">
+        <b>CREDIT REPORTING:</b> Checking your rate does not constitute a hard credit inquiry and will not affect your credit score. Lenders may perform a hard pull when you formally accept a loan offer.
+      </div>
+      <div class="comply-block">
+        <b>FINANCIAL HARDSHIP RESOURCES:</b> If you are experiencing financial difficulty, free resources are available. Visit <a href="https://www.consumerfinance.gov" target="_blank" rel="noopener">consumerfinance.gov</a> (CFPB) or contact the National Foundation for Credit Counseling at <a href="https://www.nfcc.org" target="_blank" rel="noopener">nfcc.org</a> or call <a href="tel:18002514440">1-800-251-4440</a>.
+      </div>
+    </div>
+
+    <div class="foot-bottom-bar">
+      <p style="font-size:11.5px;color:rgba(255,255,255,.2)">
+        &copy; 2026 {brand} &nbsp;·&nbsp; Operated by Morning Uplift Marketing Co. &nbsp;·&nbsp; {address} &nbsp;·&nbsp; All rights reserved.
+      </p>
+      <div class="foot-bottom-links">
+        <span onclick="openSheet('privacy')">Privacy</span>
+        <span onclick="openSheet('terms')">Terms</span>
+        <span onclick="openSheet('ccpa')">Do Not Sell</span>
+        <span onclick="openSheet('rates')">Rates</span>
+        <a href="/sitemap.xml">Sitemap</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- MAIN LP SCRIPT -->
+<script data-cfasync="false">
+(function(){
+"use strict";
+
+!function(){
+  var p = new URLSearchParams(location.search);
+  var g = p.get('gclid') || p.get('wbraid') || p.get('gbraid') || '';
+  var v = p.get('voluum_cid') || '';
+  if(g) document.cookie = 'gclid=' + encodeURIComponent(g) + ';path=/;max-age=2592000;SameSite=Lax';
+  if(v) document.cookie = 'voluum_cid=' + encodeURIComponent(v) + ';path=/;max-age=86400;SameSite=Lax';
+}();
+
+function getCookie(n){
+  var m = document.cookie.match('(?:^|; )' + n + '=([^;]*)');
+  return m ? decodeURIComponent(m[1]) : '';
+}
+
+var amountInput = document.getElementById('loan-amount');
+var amountGrid  = document.getElementById('amount-grid');
+if(amountGrid && amountInput){
+  amountGrid.addEventListener('click', function(e){
+    var btn = e.target.closest('.amt-btn');
+    if(!btn) return;
+    this.querySelectorAll('.amt-btn').forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+    amountInput.value = btn.dataset.v;
+  });
+}
+
+function validZip(v){ return /^\d{5}$/.test(v); }
+function showErr(id, msg){
+  var el = document.getElementById(id);
+  if(!el) return;
+  el.textContent = msg; el.classList.add('show');
+}
+function clearErr(id){
+  var el = document.getElementById(id);
+  if(!el) return;
+  el.textContent = ''; el.classList.remove('show');
+}
+
+var zipEl = document.getElementById('zip');
+if(zipEl){
+  zipEl.addEventListener('input', function(){
+    this.value = this.value.replace(/\D/g, '').slice(0, 5);
+    if(this.value.length === 5){ clearErr('err-zip'); this.classList.remove('err'); }
+  });
+}
+
+var heroForm = document.getElementById('hero-form');
+if(heroForm){
+  heroForm.addEventListener('submit', function(e){
+    e.preventDefault();
+    var a = amountInput ? amountInput.value : '';
+    var z = zipEl ? zipEl.value.trim() : '';
+    var ok = true;
+    if(!a){ showErr('err-amount', 'Please select a loan amount.'); ok = false; }
+    else clearErr('err-amount');
+    if(!validZip(z)){
+      showErr('err-zip', 'Please enter a valid 5-digit ZIP code.');
+      if(zipEl) zipEl.classList.add('err'); ok = false;
+    } else { clearErr('err-zip'); if(zipEl) zipEl.classList.remove('err'); }
+    if(!ok) return;
+    var btn = document.getElementById('hero-cta');
+    if(btn) btn.classList.add('loading');
+    var dest = '/apply?' + new URLSearchParams({
+      amount:     a,
+      zip:        z,
+      gclid:      getCookie('gclid') || '',
+      voluum_cid: getCookie('voluum_cid') || '',
+      tcpa_ts:    getCookie('bf_tcpa_consent') || ''
+    });
+    setTimeout(function(){ location.href = dest; }, 750);
+  });
+}
+
+document.querySelectorAll('a[href^="#"]').forEach(function(a){
+  a.addEventListener('click', function(e){
+    var t = document.querySelector(this.getAttribute('href'));
+    if(t){ e.preventDefault(); t.scrollIntoView({behavior:'smooth', block:'start'}); }
+  });
+});
+
+})();
+</script>
+
+<!-- COOKIE BANNER -->
+<div id="cookie-banner" role="dialog" aria-label="Cookie consent">
+  <div class="cookie-inner">
+    <p class="cookie-text"><b>We use cookies</b> to operate our matching service and — with your consent — share attribution data with advertising partners (Google Ads). See our <a href="/privacy-policy">Privacy Policy</a> and <a href="#" onclick="openCookieModal();return false;">manage preferences</a>.</p>
+    <div class="cookie-actions">
+      <button class="btn-ck-accept" onclick="acceptAll()">Accept All</button>
+      <button class="btn-ck-manage" onclick="openCookieModal()">Manage</button>
+      <button class="btn-ck-decline" onclick="declineOptional()">Decline optional</button>
+    </div>
+  </div>
+</div>
+
+<!-- COOKIE MANAGE MODAL -->
+<div class="ck-modal-bg" id="ck-modal-bg" role="dialog" aria-modal="true" aria-label="Cookie preferences" onclick="if(event.target===this)closeCookieModal()">
+  <div class="ck-modal">
+    <div class="ck-modal-title">Cookie Preferences</div>
+    <p class="ck-modal-sub">Control which cookies we set. Required cookies cannot be disabled.</p>
+    <div class="ck-row">
+      <div><div class="ck-name">Required</div><div class="ck-desc">Session management, fraud prevention, and TCPA consent logging. Always active.</div></div>
+      <label class="ck-toggle"><input type="checkbox" checked disabled><div class="ck-track"></div><div class="ck-thumb"></div></label>
+    </div>
+    <div class="ck-row">
+      <div><div class="ck-name">Analytics</div><div class="ck-desc">Google Analytics — helps us understand site usage. No personally identifiable data.</div></div>
+      <label class="ck-toggle"><input type="checkbox" id="pref-analytics" checked><div class="ck-track"></div><div class="ck-thumb"></div></label>
+    </div>
+    <div class="ck-row">
+      <div><div class="ck-name">Advertising</div><div class="ck-desc">Google Ads conversion tracking and GCLID attribution for lender matching.</div></div>
+      <label class="ck-toggle"><input type="checkbox" id="pref-ads" checked><div class="ck-track"></div><div class="ck-thumb"></div></label>
+    </div>
+    <div class="ck-row">
+      <div><div class="ck-name">Functional</div><div class="ck-desc">Remembers your selected loan amount and ZIP during this session.</div></div>
+      <label class="ck-toggle"><input type="checkbox" id="pref-functional" checked><div class="ck-track"></div><div class="ck-thumb"></div></label>
+    </div>
+    <button class="btn-save-prefs" onclick="savePrefs()">Save My Preferences</button>
+  </div>
+</div>
+
+<!-- STATE AVAILABILITY MODAL -->
+<div id="state-modal-bg" role="dialog" aria-modal="true" aria-label="State availability" onclick="if(event.target===this)closeStateModal()">
+  <div class="state-card">
+    <div class="state-card-hd">
+      <div class="state-card-title">State Availability</div>
+      <button class="state-close-btn" onclick="closeStateModal()" aria-label="Close">
+        <svg viewBox="0 0 12 12" fill="none" width="11" height="11"><path d="M2 2l8 8M10 2l-8 8" stroke="#374151" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <p class="state-sub">Check if our lender network operates in your state, or enter your ZIP for a quick check.</p>
+    <div class="zip-row-check">
+      <input type="text" id="state-zip" maxlength="5" inputmode="numeric" placeholder="Enter ZIP code" oninput="this.value=this.value.replace(/\D/g,'')">
+      <button class="btn-zip-go" onclick="checkZip()">Check ZIP</button>
+    </div>
+    <div id="zip-avail" aria-live="polite"></div>
+    <div class="sg-label">Not Available</div>
+    <div class="sc-grid">
+      <div class="sc red">New York</div><div class="sc red">West Virginia</div><div class="sc red">Vermont</div>
+      <div class="sc red">South Dakota</div><div class="sc red">Connecticut</div><div class="sc red">Massachusetts</div>
+    </div>
+    <div class="sg-label" style="margin-top:8px">Limited Availability</div>
+    <div class="sc-grid">
+      <div class="sc amber">Colorado</div><div class="sc amber">Montana</div>
+      <div class="sc amber">New Hampshire</div><div class="sc amber">Arkansas</div>
+    </div>
+    <div class="state-note">Limited availability means fewer lenders may participate due to local rate caps or licensing requirements. Maximum amounts and APRs may differ. This list is updated periodically.</div>
+    <button class="btn-state-done" onclick="closeStateModal()">Got It</button>
+  </div>
+</div>
+
+<!-- P0 COMPLIANCE JS -->
+<script data-cfasync="false">
+(function(){
+"use strict";
+function setCk(n,v,d){var x=new Date();x.setTime(x.getTime()+(d*864e5));document.cookie=n+'='+encodeURIComponent(v)+';expires='+x.toUTCString()+';path=/;SameSite=Lax';}
+function getCk(n){var m=document.cookie.match('(?:^|; )'+n+'=([^;]*)');return m?decodeURIComponent(m[1]):'';}
+function hideBanner(){var b=document.getElementById('cookie-banner');if(b)b.classList.add('hide');}
+function updateGtag(ads,anal){if(typeof gtag==='function'){gtag('consent','update',{ad_storage:ads?'granted':'denied',analytics_storage:anal?'granted':'denied'});}}
+function initConsent(){
+  window.dataLayer=window.dataLayer||[];
+  if(!window.gtag){window.gtag=function(){dataLayer.push(arguments);};}
+  if(!getCk('bf_consent')){
+    gtag('consent','default',{ad_storage:'denied',analytics_storage:'denied',wait_for_update:500});
+  } else {
+    var ads=getCk('bf_ads')==='1', anal=getCk('bf_anal')==='1';
+    updateGtag(ads,anal);
+    hideBanner();
+  }
+}
+window.acceptAll=function(){setCk('bf_consent','all',365);setCk('bf_ads','1',365);setCk('bf_anal','1',365);updateGtag(true,true);hideBanner();closeCookieModal();};
+window.declineOptional=function(){setCk('bf_consent','req',365);setCk('bf_ads','0',365);setCk('bf_anal','0',365);updateGtag(false,false);hideBanner();closeCookieModal();};
+window.savePrefs=function(){var ads=document.getElementById('pref-ads').checked,anal=document.getElementById('pref-analytics').checked;setCk('bf_consent','custom',365);setCk('bf_ads',ads?'1':'0',365);setCk('bf_anal',anal?'1':'0',365);updateGtag(ads,anal);hideBanner();closeCookieModal();};
+window.openCookieModal=function(){document.getElementById('ck-modal-bg').classList.add('open');};
+window.closeCookieModal=function(){document.getElementById('ck-modal-bg').classList.remove('open');};
+window.openStateModal=function(){document.getElementById('state-modal-bg').classList.add('open');};
+window.closeStateModal=function(){document.getElementById('state-modal-bg').classList.remove('open');document.getElementById('zip-avail').innerHTML='';document.getElementById('state-zip').value='';};
+
+var form=document.getElementById('hero-form');
+var tcpa=document.getElementById('tcpa-check');
+if(form&&tcpa){
+  form.addEventListener('submit',function(e){
+    if(!tcpa.checked){
+      e.preventDefault();e.stopImmediatePropagation();
+      document.getElementById('tcpa-err').classList.add('show');
+      tcpa.closest('.tcpa-wrap').scrollIntoView({behavior:'smooth',block:'center'});
+      return;
+    }
+    document.getElementById('tcpa-err').classList.remove('show');
+    var ts=new Date().toISOString();
+    setCk('bf_tcpa',ts,365);
+    var h=document.createElement('input');h.type='hidden';h.name='tcpa_consent_ts';h.value=ts;form.appendChild(h);
+  },true);
+  tcpa.addEventListener('change',function(){if(this.checked)document.getElementById('tcpa-err').classList.remove('show');});
+}
+
+var unavail={NY:[[100,149]],WV:[[247,268]],VT:[[50,59]],SD:[[570,577]],CT:[[60,69]],MA:[[10,27]]};
+var limited={CO:[[800,816]],MT:[[590,599]],NH:[[30,38]],AR:[[716,729]]};
+window.checkZip=function(){
+  var zip=document.getElementById('state-zip').value.trim();
+  var el=document.getElementById('zip-avail');
+  if(!/^\d{5}$/.test(zip)){el.innerHTML='<span style="color:#EF4444;font-size:12px">Enter a valid 5-digit ZIP.</span>';return;}
+  var p=parseInt(zip.slice(0,3),10),found=null,st=null;
+  for(var s in unavail){unavail[s].forEach(function(r){if(p>=r[0]&&p<=r[1]){found='no';st=s;}});}
+  if(!found){for(var s in limited){limited[s].forEach(function(r){if(p>=r[0]&&p<=r[1]){found='ltd';st=s;}});}}
+  if(found==='no')el.innerHTML='<span class="zip-no">Not available in '+st+'. We cannot match you with lenders in this state.</span>';
+  else if(found==='ltd')el.innerHTML='<span class="zip-warn">Limited availability in '+st+'. Fewer lenders, lower maximums may apply.</span>';
+  else el.innerHTML='<span class="zip-ok">Great — our service is available in your area.</span>';
+};
+
+initConsent();
+
+var _host = (typeof window !== 'undefined' ? window.location.hostname : 'example.com');
+var sheetContents = {
+  privacy: {
+    title: 'Privacy Policy',
+    body: '<p><strong>Effective Date:</strong> January 1, 2025</p>' +
+      '<p style="margin-top:12px"><strong>Information We Collect:</strong> When you submit a loan inquiry, we collect your name, address, email address, phone number, Social Security Number (for lender matching only), employment and income information, and requested loan amount. We also collect device identifiers, IP address, and browsing data via cookies.</p>' +
+      '<p style="margin-top:12px"><strong>How We Use Your Information:</strong> Your information is shared with licensed lenders in our network solely to match you with loan offers. We do not sell your personal information to third-party marketers. Your data may also be used to communicate with you about your inquiry, comply with legal obligations, and improve our service.</p>' +
+      '<p style="margin-top:12px"><strong>Data Sharing:</strong> We share your information only with (1) lenders in our licensed network for the purpose of fulfilling your loan request, (2) service providers who assist our operations under strict confidentiality agreements, and (3) as required by law or legal process.</p>' +
+      '<p style="margin-top:12px"><strong>Your Rights:</strong> Under the CCPA, VCDPA, and similar state privacy laws, you have the right to: access the personal data we hold about you, request deletion of your data, opt out of data sharing, and receive equal service regardless of exercising your rights.</p>' +
+      '<p style="margin-top:12px"><strong>Data Security:</strong> We use 256-bit SSL encryption, firewalls, and access controls to protect your information.</p>' +
+      '<p style="margin-top:12px"><strong>Contact:</strong> To exercise any privacy rights, email <a href="mailto:privacy@' + _host + '">privacy@' + _host + '</a> or write to our physical address listed below.</p>'
+  },
+  terms: {
+    title: 'Terms of Use',
+    body: '<p><strong>Effective Date:</strong> January 1, 2025</p>' +
+      '<p style="margin-top:12px"><strong>Service Description:</strong> This website is operated as a free loan-matching service. We are not a lender, broker, or financial advisor. We connect consumers with licensed third-party lenders. We have no involvement in any lending decision, loan agreement, credit determination, or fee structure. All credit decisions and loan terms are determined solely by lenders in our network.</p>' +
+      '<p style="margin-top:12px"><strong>Advertising Disclosure:</strong> This site is a paid advertisement and lead-generation service. We may receive compensation from lenders for connecting them with consumers. This compensation does not affect the loan offers you receive.</p>' +
+      '<p style="margin-top:12px"><strong>No Guarantee of Offers:</strong> Submitting an inquiry does not guarantee you will receive a loan offer. Approval, terms, and rates are determined by individual lenders based on your creditworthiness, income, and other factors.</p>' +
+      '<p style="margin-top:12px"><strong>Credit Inquiries:</strong> Checking your offers through our service involves a soft credit inquiry that does not affect your credit score. If you accept an offer from a lender, that lender may perform a hard credit inquiry.</p>' +
+      '<p style="margin-top:12px"><strong>User Responsibilities:</strong> You agree to provide accurate and truthful information. Misrepresentation of financial information may result in denial and potential legal liability. You must be at least 18 years of age and a U.S. resident to use this service.</p>' +
+      '<p style="margin-top:12px"><strong>Limitation of Liability:</strong> We are not responsible for the products, services, or actions of any lender in our network. Any disputes regarding a loan must be resolved directly with the lender.</p>' +
+      '<p style="margin-top:12px"><strong>Governing Law:</strong> These terms are governed by the laws of the State of Delaware. By using this site, you agree to these Terms of Use and our Privacy Policy.</p>'
+  },
+  ccpa: {
+    title: 'Do Not Sell My Personal Information',
+    body: '<p>Under the California Consumer Privacy Act (CCPA) and similar state laws, you have the right to opt out of the sale or sharing of your personal information.</p>' +
+      '<p style="margin-top:12px">We share inquiry data with lenders in our network to fulfill your loan matching request. While this may not constitute a "sale" under all state statutes, we respect your preferences and provide this opt-out mechanism.</p>' +
+      '<p style="margin-top:12px"><strong>To submit a data opt-out or deletion request:</strong></p>' +
+      '<ul style="margin-top:8px;display:flex;flex-direction:column;gap:6px;list-style:disc;padding-left:20px">' +
+      '<li>Email <a href="mailto:privacy@' + _host + '">privacy@' + _host + '</a> with subject "CCPA Opt-Out Request"</li>' +
+      '<li>Include your full name, email address, and phone number used during your inquiry</li>' +
+      '<li>We will process your request within 45 days as required by law</li></ul>' +
+      '<p style="margin-top:12px">We will not discriminate against you for exercising your privacy rights.</p>'
+  },
+  rates: {
+    title: 'Rates, Fees & Loan Disclosure',
+    body: '<p><strong>Advertiser Disclosure:</strong> This website is a paid lead-generation and loan-matching service, not a lender or financial advisor. We may receive compensation from lenders when you are matched with loan offers.</p>' +
+      '<p style="margin-top:12px"><strong>How It Works:</strong> Complete our short form. We match you with lenders in our licensed network. Review your offers with no obligation. Accept only if satisfied.</p>' +
+      '<p style="margin-top:14px;padding:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px"><strong style="font-size:14px">Maximum APR: 35.99%</strong><br>Lenders in our network offer Annual Percentage Rates (APR) ranging from <strong>5.99% to 35.99%</strong>. Your actual APR will be determined by the lender based on your credit profile, income, loan amount, and term length.</p>' +
+      '<p style="margin-top:14px;padding:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px"><strong style="font-size:14px">Repayment Terms</strong><br>Loan terms range from a <strong>minimum of 6 months</strong> to a <strong>maximum of 60 months</strong>. Loan amounts range from <strong>$500 to $10,000</strong>.</p>' +
+      '<p style="margin-top:14px;padding:14px;background:rgba(212,147,31,.1);border:1px solid rgba(212,147,31,.25);border-radius:10px"><strong style="font-size:14px">Representative Example</strong><br>A <strong>$2,500</strong> personal loan with a <strong>36-month</strong> repayment term at an APR of <strong>24.00%</strong> would result in <strong>36 monthly payments of $98.62</strong>, for a <strong>total repayment of $3,550.32</strong> (including $1,050.32 in interest and fees). This example is for illustration purposes only. Not all applicants will qualify for the lowest rate or any offer.</p>' +
+      '<p style="margin-top:12px"><strong>Fees:</strong> This service is free to consumers. Lenders may charge origination fees (typically 0%–8% of the loan amount) and late payment fees. All fees are disclosed by the lender before you accept any offer. There are no prepayment penalties with most lenders in our network.</p>' +
+      '<p style="margin-top:12px"><strong>State Restrictions:</strong> Service is not available in all states. Unavailable in: NY, WV, VT, SD, CT, MA. Limited availability in: CO, MT, NH, AR. Rates, terms, and maximum loan amounts may vary by state.</p>' +
+      '<p style="margin-top:12px"><strong>Physical Address:</strong> 2055 Limestone Rd STE 200-C, Wilmington, DE 19808</p>'
+  },
+  unsub: {
+    title: 'Unsubscribe / Opt Out',
+    body: '<p>To stop receiving emails or SMS messages from lenders in our network, you must contact each lender directly using the opt-out instructions provided in their communications.</p>' +
+      '<p style="margin-top:12px">To remove your email from our marketing list, send a request to <a href="mailto:unsubscribe@' + _host + '">unsubscribe@' + _host + '</a>. Please allow up to 10 business days for processing.</p>' +
+      '<p style="margin-top:12px">To stop SMS messages from our service, reply STOP to any message. Standard messaging and data rates may apply.</p>'
+  },
+  contact: {
+    title: 'Contact Us',
+    body: '<p>Our support team is available to assist you with any questions about our loan-matching service.</p>' +
+      '<ul style="margin-top:12px;display:flex;flex-direction:column;gap:8px;list-style:none;padding:0">' +
+      '<li><strong>Phone:</strong> <a href="tel:8005550100">(800) 555-0100</a> — Mon–Fri 9am–6pm ET</li>' +
+      '<li><strong>Email:</strong> <a href="mailto:support@' + _host + '">support@' + _host + '</a></li>' +
+      '<li><strong>Privacy Requests:</strong> <a href="mailto:privacy@' + _host + '">privacy@' + _host + '</a></li>' +
+      '<li><strong>Compliance:</strong> <a href="mailto:compliance@' + _host + '">compliance@' + _host + '</a></li>' +
+      '<li><strong>Mailing Address:</strong> 2055 Limestone Rd STE 200-C, Wilmington, DE 19808</li></ul>'
+  },
+  about: {
+    title: 'About Us',
+    body: '<p><strong>Advertiser Disclosure:</strong> This website is a paid advertisement and lead-generation service operated by Morning Uplift Marketing Co.</p>' +
+      '<p style="margin-top:12px">We are a free loan-matching service that connects consumers with licensed third-party lenders. We are <strong>not a lender, broker, or financial advisor</strong>. We have no involvement in any credit decision, loan agreement, interest rate, or fee determination.</p>' +
+      '<p style="margin-top:12px">Our network includes 100+ state-licensed lenders who are independently regulated and comply with applicable federal and state lending laws, including CFPB guidelines.</p>' +
+      '<p style="margin-top:12px">We may receive compensation from lenders when consumers are matched with loan offers. This compensation does not affect the terms or rates offered to you by lenders.</p>' +
+      '<p style="margin-top:12px"><strong>Physical Address:</strong> 2055 Limestone Rd STE 200-C, Wilmington, DE 19808</p>' +
+      '<p style="margin-top:8px"><strong>Phone:</strong> <a href="tel:8005550100">(800) 555-0100</a></p>' +
+      '<p style="margin-top:8px"><strong>Email:</strong> <a href="mailto:support@' + _host + '">support@' + _host + '</a></p>'
+  },
+  faq: {
+    title: 'Frequently Asked Questions',
+    body: '<p><strong>Is this a lender?</strong><br>No. This is a free loan-matching service. We connect you with licensed lenders in our network. We make no lending decisions and have no control over loan terms, rates, or fees.</p>' +
+      '<p style="margin-top:14px"><strong>Will checking my offers affect my credit score?</strong><br>No. Using our service to check offers involves a soft credit inquiry only, which does not affect your credit score. If you formally accept an offer from a lender, that lender may perform a hard credit pull.</p>' +
+      '<p style="margin-top:14px"><strong>What are the loan amounts and terms?</strong><br>Lenders in our network offer personal loans from $500 to $10,000 with repayment terms ranging from 6 to 60 months. APRs range from 5.99% to 35.99%. Your eligibility depends on your state, income, and credit profile.</p>' +
+      '<p style="margin-top:14px"><strong>How quickly can I receive funds?</strong><br>Timing depends entirely on the lender. Many lenders can fund approved loans as soon as the next business day. We do not control funding timelines, and approval is never guaranteed.</p>' +
+      '<p style="margin-top:14px"><strong>What states are eligible?</strong><br>We serve most U.S. states. Service is not available in NY, WV, VT, SD, CT, or MA. Limited availability applies in CO, MT, NH, and AR.</p>' +
+      '<p style="margin-top:14px"><strong>What fees are involved?</strong><br>Our service is free to consumers. Lenders may charge origination fees (0%–8%) and late payment fees. All fees are disclosed before you accept any offer.</p>'
+  },
+  accessibility: {
+    title: 'Accessibility Statement',
+    body: '<p>We are committed to ensuring that our website is accessible to all users, including those with disabilities. We strive to conform to the Web Content Accessibility Guidelines (WCAG) 2.1 at the AA level.</p>' +
+      '<p style="margin-top:12px"><strong>Measures we take include:</strong></p>' +
+      '<ul style="margin-top:8px;display:flex;flex-direction:column;gap:6px;list-style:disc;padding-left:20px">' +
+      '<li>Semantic HTML structure for screen readers</li>' +
+      '<li>ARIA labels on interactive elements and modals</li>' +
+      '<li>Keyboard-navigable forms and controls</li>' +
+      '<li>Sufficient color contrast ratios</li>' +
+      '<li>Descriptive labels for all form inputs</li></ul>' +
+      '<p style="margin-top:12px">If you experience any accessibility barriers on our site, please contact us at <a href="mailto:support@' + _host + '">support@' + _host + '</a> or call <a href="tel:8005550100">(800) 555-0100</a>. We welcome your feedback and will work to resolve any issues promptly.</p>'
+  },
+  cfpb: {
+    title: 'CFPB Financial Resources',
+    body: '<p>The Consumer Financial Protection Bureau (CFPB) is a U.S. government agency that provides free resources to help consumers make informed financial decisions.</p>' +
+      '<p style="margin-top:12px"><strong>Helpful Resources:</strong></p>' +
+      '<ul style="margin-top:8px;display:flex;flex-direction:column;gap:8px;list-style:none;padding:0">' +
+      '<li><a href="https://www.consumerfinance.gov" target="_blank" rel="noopener">consumerfinance.gov</a> — Official CFPB website</li>' +
+      '<li><a href="https://www.consumerfinance.gov/ask-cfpb/" target="_blank" rel="noopener">Ask CFPB</a> — Answers to common financial questions</li>' +
+      '<li><a href="https://www.consumerfinance.gov/complaint/" target="_blank" rel="noopener">Submit a Complaint</a> — File a complaint against a financial company</li>' +
+      '<li><a href="https://www.nfcc.org" target="_blank" rel="noopener">nfcc.org</a> — National Foundation for Credit Counseling</li>' +
+      '<li>Call <a href="tel:18002514440">1-800-251-4440</a> for free credit counseling</li></ul>' +
+      '<p style="margin-top:12px">If you are experiencing financial difficulty, these resources are available at no cost. You are never required to use a paid service for debt management or credit counseling.</p>'
+  }
+};
+
+window.openSheet = function(type) {
+  var content = sheetContents[type];
+  if (!content) return;
+  document.getElementById('sheet-title').textContent = content.title;
+  document.getElementById('sheet-body').innerHTML = content.body;
+  var bg = document.getElementById('bottom-sheet-bg');
+  bg.classList.add('open');
+  document.body.classList.add('sheet-open');
+};
+window.closeSheet = function() {
+  var bg = document.getElementById('bottom-sheet-bg');
+  bg.classList.remove('open');
+  document.body.classList.remove('sheet-open');
+};
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeSheet();
+});
+
+})();
+</script>
+
+<!-- STICKY BOTTOM BAR -->
+<div id="sticky-bar" role="complementary" aria-label="Quick access to loan offers">
+  <div class="sticky-inner">
+    <div class="sticky-left">
+      <div class="sticky-logo">
+        <div class="sticky-logo-icon">
+          <svg viewBox="0 0 18 18"><path d="M9 1C5.13 1 2 4.13 2 8c0 2.3 1.1 4.3 2.8 5.6V15h8.4v-1.4C14.9 12.3 16 10.3 16 8c0-3.87-3.13-7-7-7z"/></svg>
+        </div>
+        <span class="sticky-logo-name">{brandPrefix}{brandSuffix && <span>{brandSuffix}</span>}</span>
+      </div>
+      <div class="sticky-sep" aria-hidden="true"></div>
+      <div class="sticky-copy">
+        <div class="sticky-title">Ready to check your offers?</div>
+        <div class="sticky-sub">Free · No hard pull · Takes 2 minutes</div>
+      </div>
+    </div>
+    <div class="sticky-pills" aria-hidden="true">
+      <div class="sticky-pill">
+        <svg viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2 2 5-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        No obligation
+      </div>
+      <div class="sticky-pill">
+        <svg viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2 2 5-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        256-bit SSL
+      </div>
+      <div class="sticky-pill">
+        <svg viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2 2 5-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        No credit impact
+      </div>
+    </div>
+    <div class="sticky-right">
+      <div class="sticky-apr">APR <b>{aprMin}–{aprMax}%</b></div>
+      <button class="btn-sticky" onclick="scrollToForm()" aria-label="Check loan offers">
+        <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Check My Offers
+      </button>
+      <button class="sticky-close" id="sticky-close-btn" aria-label="Dismiss">
+        <svg viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM SHEET -->
+<div id="bottom-sheet-bg" role="dialog" aria-modal="true" aria-label="Information" onclick="if(event.target===this)closeSheet()">
+  <div id="bottom-sheet" role="document">
+    <div class="sheet-drag-bar" onclick="closeSheet()" aria-label="Dismiss"></div>
+    <div class="sheet-header">
+      <div id="sheet-title" class="sheet-title"></div>
+      <button class="sheet-close-btn" onclick="closeSheet()" aria-label="Close">
+        <svg viewBox="0 0 12 12" fill="none" width="12" height="12"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div id="sheet-body" class="sheet-body"></div>
+  </div>
+</div>
+
+<!-- STICKY BAR JS -->
+<script data-cfasync="false">
+(function(){
+  var bar = document.getElementById('sticky-bar');
+  var closeBtn = document.getElementById('sticky-close-btn');
+  var dismissed = false;
+
+  function getScrollPct(){
+    var scrolled = window.scrollY || document.documentElement.scrollTop;
+    var total = document.documentElement.scrollHeight - window.innerHeight;
+    return total > 0 ? (scrolled / total) * 100 : 0;
+  }
+
+  function isFormVisible(){
+    var form = document.getElementById('get-matched');
+    if(!form) return false;
+    var rect = form.getBoundingClientRect();
+    return rect.top < window.innerHeight && rect.bottom > 0;
+  }
+
+  function updateBar(){
+    if(dismissed) return;
+    var pct = getScrollPct();
+    var formVisible = isFormVisible();
+    if(pct >= 30 && !formVisible){
+      bar.classList.add('visible');
+    } else {
+      bar.classList.remove('visible');
+    }
+  }
+
+  window.addEventListener('scroll', updateBar, {passive:true});
+  window.addEventListener('resize', updateBar, {passive:true});
+
+  closeBtn.addEventListener('click', function(){
+    dismissed = true;
+    bar.classList.remove('visible');
+  });
+
+  window.scrollToForm = function(){
+    var target = document.getElementById('get-matched');
+    if(target){
+      target.scrollIntoView({behavior:'smooth', block:'start'});
+      setTimeout(function(){
+        var zip = document.getElementById('zip');
+        if(zip) zip.focus();
+      }, 600);
+    }
+  };
+})();
+</script>
+
+</body>
+</html>
