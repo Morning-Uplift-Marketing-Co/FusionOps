@@ -5,8 +5,8 @@
   "cfAccountId": "",
   "brand": "Scratchpay",
   "domain": "scratchcareday.com",
-  "h1": "Fast Pet Funding: $100 - $5000 Today",
-  "sub": "Unexpected vet bills? Get quick, compassionate financial support for your beloved pet.",
+  "h1": "Quick Pet Funding: Get Up To $5000",
+  "sub": "Easily cover unexpected vet bills or pet expenses with confidence.",
   "cta": "Get Pet Funding",
   "phone": "1-800-SCRATCH-CARED",
   "email": "support@scratchcareday.com",
@@ -16,8 +16,8 @@
   "amountMax": 5000,
   "aprMin": 5.99,
   "aprMax": 35.99,
-  "primaryColor": "",
-  "accentColor": "",
+  "primaryColor": "#3b5bdb",
+  "accentColor": "#f97316",
   "conversionId": "AW-16551193759/WSyRCKeqq7YZEJ_ZnNQ9",
   "gtagFormStartLabel": "form_start",
   "gtagFormSubmitLabel": "fotm_submit",
@@ -36,5 +36,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-25T00:22:27.828Z"
+  "deployedAt": "2026-03-25T00:25:42.367Z"
 }
