@@ -782,7 +782,7 @@ const formSubmitLabel = import.meta.env.PUBLIC_FORMSUBMITLABEL || '';
     body { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 24px 16px 48px; }
     #_lg_form_ { width: 100%; max-width: 640px; }
   </style>
-${ conversionId ? `<script async src="https://www.googletagmanager.com/gtag/js?id=${conversionId}"></script>` : '' }
+{conversionId && <script async src={\`https://www.googletagmanager.com/gtag/js?id=\${conversionId}\`}></script>}
 </head>
 <body>
 <!-- Container MUST exist before inline script: LeadsGate reads #_lg_form_ when applicationInit.js runs. -->
