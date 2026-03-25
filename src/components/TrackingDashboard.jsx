@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { THEME as T } from "../constants";
+import { RealtimeEventsDashboard } from "./RealtimeEventsDashboard";
 
 // ─── Status indicators ───
 const Pass = () => <span style={{ color: T.success, fontWeight: 700 }}>✓</span>;
@@ -343,7 +344,7 @@ export function TrackingDashboard({ settings, sites }) {
   // Tabs
   const TABS = [
     { id: "overview", label: "Overview", icon: "📋" },
-    { id: "events", label: "Events", icon: "📡" },
+    { id: "events", label: "Live events", icon: "📡" },
     { id: "monitor", label: "Live Monitor", icon: "🔴" },
     { id: "help", label: "Spec Reference", icon: "📖" },
   ];
@@ -408,7 +409,12 @@ export function TrackingDashboard({ settings, sites }) {
 
       {/* Tab Content */}
       {tab === "overview" && <OverviewTab checks={checks} score={score} checksApply={checksApply} scoreApply={scoreApply} />}
-      {tab === "events" && <EventsTab events={events} />}
+      {tab === "events" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <RealtimeEventsDashboard sites={sites} embedded />
+          <EventsTab events={events} title="Analysis session log" />
+        </div>
+      )}
       {tab === "monitor" && <MonitorTab url={liveUrl} iframeRef={iframeRef} addEvent={addEvent} />}
       {tab === "help" && <HelpTab />}
     </div>
@@ -570,7 +576,7 @@ function OverviewTab({ checks, score, checksApply, scoreApply }) {
 }
 
 // ─── Events Tab ───
-function EventsTab({ events }) {
+function EventsTab({ events, title = "📡 Event Log" }) {
   const typeColors = {
     info: { bg: "rgba(99,102,241,.15)", fg: T.primary },
     error: { bg: "rgba(239,68,68,.15)", fg: T.danger },
@@ -581,10 +587,13 @@ function EventsTab({ events }) {
 
   return (
     <div style={S.card}>
-      <div style={S.cardTitle}>📡 Event Log</div>
+      <div style={S.cardTitle}>{title}</div>
+      <div style={{ fontSize: 11, color: T.muted, marginBottom: 10 }}>
+        Local messages from this tab (analyze URL, live monitor). For production pixel hits, use the live panel above.
+      </div>
       {events.length === 0 ? (
         <div style={{ textAlign: "center", padding: 32, color: T.muted, fontSize: 13 }}>
-          No events yet. Analyze a URL or open the Live Monitor to capture events.
+          No session messages yet. Analyze a URL or open the Live Monitor to capture events.
         </div>
       ) : (
         <div style={S.eventLog}>

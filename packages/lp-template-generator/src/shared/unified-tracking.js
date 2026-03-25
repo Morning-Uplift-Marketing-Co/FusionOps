@@ -158,30 +158,32 @@ export function getApplyPageScript(aid) {
       return getClickId();
     },
 
-    onFormLoad(){
-      pixel('form_start');
-    },
+    hooks: {
+      onFormLoad(){
+        pixel('form_start');
+      },
 
-    onSubmit(){
-      pixel('form_submit');
-    },
+      onSubmit(){
+        pixel('form_submit');
+      },
 
-    onSuccess(data){
-      try{
-        if(!data) return;
+      onSuccess(data){
+        try{
+          if(!data) return;
 
-        const id = data.lead_id;
-        if(!id || seen.has(id)) return;
+          const id = data.lead_id;
+          if(!id || seen.has(id)) return;
 
-        seen.add(id);
+          seen.add(id);
 
-        pixel('conversion',{
-          lead_id:id,
-          payout:data.price || 0,
-          status:data.type || 'unknown'
-        });
+          pixel('conversion',{
+            lead_id:id,
+            payout:data.price || 0,
+            status:data.type || 'unknown'
+          });
 
-      }catch(e){}
+        }catch(e){}
+      }
     }
   };
 
