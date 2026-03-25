@@ -5,9 +5,9 @@
   "cfAccountId": "",
   "brand": "Scratchpay",
   "domain": "scratchcareday.com",
-  "h1": "Get $100-$5000 for Pet Care Fast",
-  "sub": "Unexpected vet bills are stressful. We make pet funding simple.",
-  "cta": "See Your Options",
+  "h1": "Quick Funding for Pet Care: Up to $5000",
+  "sub": "We make pet care affordable and stress-free. Apply in minutes.",
+  "cta": "Check Your Eligibility",
   "phone": "1-800-SCRATCH-CARED",
   "email": "support@scratchcareday.com",
   "address": "30 N Gould St, Ste R, Sheridan, WY 82801",
@@ -36,5 +36,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-25T04:51:57.696Z"
+  "deployedAt": "2026-03-25T04:53:44.923Z"
 }
