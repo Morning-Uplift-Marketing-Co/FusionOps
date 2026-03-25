@@ -1,0 +1,65 @@
+---
+const features = [
+  {
+    icon: `<path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9l-7-7z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 2v7h7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`,
+    title: 'One Form, Multiple Offers',
+    description: 'Fill out a single application and instantly receive pre-qualified loan offers from our network of lenders — no repeated paperwork.',
+  },
+  {
+    icon: `<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`,
+    title: 'Decisions in Minutes',
+    description: 'Our streamlined process delivers pre-qualification decisions quickly so you can move forward with confidence and clarity.',
+  },
+  {
+    icon: `<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`,
+    title: 'Safe & Secure',
+    description: 'Your data is encrypted with 256-bit SSL technology. We never sell your personal information to unauthorized third parties.',
+  },
+  {
+    icon: `<rect x="2" y="7" width="20" height="15" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M16 7V5a2 2 0 00-4 0v2M12 12v4M10 14h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`,
+    title: 'Flexible Loan Terms',
+    description: 'Choose from a range of loan amounts and repayment terms that fit your financial situation — from 6 to 72 months.',
+  },
+  {
+    icon: `<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`,
+    title: 'No Obligation to Accept',
+    description: 'Comparing offers is completely free. You are under no obligation to accept any offer presented to you through our platform.',
+  },
+  {
+    icon: `<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>`,
+    title: 'Competitive Rates',
+    description: 'Our lender marketplace drives competition, helping you find offers that reflect your creditworthiness and financial profile.',
+  },
+];
+---
+
+<section id="features" class="py-20 md:py-28" aria-labelledby="features-heading">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+    <div class="mb-14 text-center">
+      <p class="section-label mb-3">Why LendPath</p>
+      <h2 id="features-heading" class="text-3xl font-extrabold sm:text-4xl" style="color: #f1f5f9; letter-spacing: -0.02em;">
+        Built Around Your Needs
+      </h2>
+      <p class="mt-4 text-slate-400 max-w-xl mx-auto">
+        We built LendPath to make loan shopping straightforward, transparent, and respectful of your time and privacy.
+      </p>
+    </div>
+
+    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {features.map((feature) => (
+        <article class="card group">
+          <div
+            class="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl transition-colors duration-200"
+            style="background: rgba(0,87,255,0.1); border: 1px solid rgba(0,87,255,0.2); color: #60a5fa;"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <Fragment set:html={feature.icon} />
+            </svg>
+          </div>
+          <h3 class="mb-2 text-base font-semibold text-white">{feature.title}</h3>
+          <p class="text-sm leading-relaxed text-slate-400">{feature.description}</p>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>

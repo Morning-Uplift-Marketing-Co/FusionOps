@@ -1,5 +1,5 @@
 {
-  "templateId": "goldrush-v2",
+  "templateId": "lendpath_bolt",
   "cfPagesProject": "lp-jora-creditz-main",
   "cfApiToken": "",
   "cfAccountId": "",
@@ -36,5 +36,5 @@
   "radius": "subtle",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-23T05:37:07.274Z"
+  "deployedAt": "2026-03-24T01:38:07.735Z"
 }

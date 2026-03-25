@@ -1,13 +1,13 @@
 {
-  "templateId": "goldrush-v2",
+  "templateId": "orange-zip-local",
   "cfPagesProject": "lp-scratchpaypet-tech",
   "cfApiToken": "",
   "cfAccountId": "",
   "brand": "Scratchpay",
   "domain": "scratchpaypet.tech",
-  "h1": "Get $100-$5000 Fast for Pet Care",
-  "sub": "Unexpected vet bill? Get quick funding for your beloved pet, simply.",
-  "cta": "Get Pet Funding Now",
+  "h1": "Get $100-$5000 Fast Funding Today!",
+  "sub": "Simple online application. Get the quick funding you need stress-free.",
+  "cta": "Apply For Cash",
   "phone": "1-800-SCRATCH-PAYPE",
   "email": "support@scratchpaypet.tech",
   "address": "108 West 13th St, Wilmington, DE 19801",
@@ -16,9 +16,9 @@
   "amountMax": 5000,
   "aprMin": 5.99,
   "aprMax": 35.99,
-  "primaryColor": "",
-  "accentColor": "",
-  "conversionId": "AW-12345",
+  "primaryColor": "#3b5bdb",
+  "accentColor": "#f97316",
+  "conversionId": "AW-8888",
   "gtagFormStartLabel": "form_start",
   "gtagFormSubmitLabel": "form_submit",
   "formStartLabel": "form_start",
@@ -36,5 +36,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-23T06:57:44.466Z"
+  "deployedAt": "2026-03-24T05:10:27.296Z"
 }
