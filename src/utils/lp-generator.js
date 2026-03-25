@@ -60,7 +60,7 @@ export function generateApplyPage(site) {
   if (site.aid?.trim()) {
     // Auto-generate LeadsGate form with full tracking callbacks (Module 2 spec)
     formContent = `<script type="text/javascript">
-var clickid=new URLSearchParams(window.location.search).get('clickid')||'';
+var clickid=(function(){var p=new URLSearchParams(window.location.search);var u=p.get('clickid')||p.get('vlcid')||p.get('click_id')||p.get('cid')||p.get('cpid')||p.get('gclid')||'';if(u)return u;try{return sessionStorage.getItem('clickid')||sessionStorage.getItem('vlcid')||''}catch(_){}try{var m=document.cookie.match(/(?:^|; )clickid=([^;]*)/);return m?decodeURIComponent(m[1]):''}catch(_){return''}})();
 var formStartFired=sessionStorage.getItem('_fs')==='1';
 var aliasOn=${site.trackingAliasMode ? 'true' : 'false'};
 var aliasMap={pv:'n1',form_start:'n2',form_submit:'n3',sold_lead:'n4',step_change:'n5',success:'n6',amount_selected:'n7',zip_entered:'n8',time_on_page_30s:'n9',time_on_page_60s:'n10',scroll_25:'n11',scroll_50:'n12',scroll_75:'n13',scroll_100:'n14'};
@@ -74,11 +74,11 @@ var _lg_form_init_={
     pxEmit('fl');
     pxEmit('form_start',{source:'onFormLoad',click_id:clickid});
   },
-  onStepChange:function(step){pxEmit('step',{step:step});pxEmit('step_change',{step:step,click_id:clickid});},
+  onStepChange:function(step){pxEmit('step',{step:step});pxEmit('step_change',{step:step,click_id:clickid});if(Number(step)>=8&&!window.__formSubmitFired){window.__formSubmitFired=true;${hasGads ? `gtag('event','conversion',{send_to:'${site.conversionId}/${esc(site.formSubmitLabel || '')}'});` : ''}pxEmit('fs',{clickid:clickid,source:'step_fallback'});pxEmit('form_submit',{click_id:clickid,source:'step_fallback'});}},
   onSubmit:function(){
-    ${hasGads ? `gtag('event','conversion',{send_to:'${site.conversionId}/${esc(site.formSubmitLabel || '')}'});` : ''}
+    if(!window.__formSubmitFired){window.__formSubmitFired=true;${hasGads ? `gtag('event','conversion',{send_to:'${site.conversionId}/${esc(site.formSubmitLabel || '')}'});` : ''}
     pxEmit('fs',{clickid:clickid});
-    pxEmit('form_submit',{click_id:clickid});
+    pxEmit('form_submit',{click_id:clickid});}
   },
   onSuccess:function(response){
     var leadType=(response&&response.type)||'';
@@ -106,6 +106,8 @@ var _lg_form_init_={
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Apply - ${brand}</title>
 <meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" href="/vite.svg" type="image/svg+xml" />
 <!-- v2|${site.id || 'x'}|${fingerprint} -->
 ${hasGads ? `<script async src="https://www.googletagmanager.com/gtag/js?id=${site.conversionId}"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${site.conversionId}');</script>` : '<!-- No Google Ads conversion ID configured -->'}
 <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:${f.family},system-ui,sans-serif;background:hsl(${c.bg[0]},${c.bg[1]}%,${c.bg[2]}%);min-height:100vh}</style>

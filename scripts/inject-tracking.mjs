@@ -762,6 +762,9 @@ if (type === 'astro') {
     'src/pages/apply.astro': `---
 // PUBLIC_AID from deploy .env (inject-tracking / CI)
 const aid = import.meta.env.PUBLIC_AID || '14881';
+const conversionId = import.meta.env.PUBLIC_CONVERSIONID || '';
+const formStartLabel = import.meta.env.PUBLIC_FORMSTARTLABEL || '';
+const formSubmitLabel = import.meta.env.PUBLIC_FORMSUBMITLABEL || '';
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -770,6 +773,8 @@ const aid = import.meta.env.PUBLIC_AID || '14881';
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Apply</title>
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="icon" href="/vite.svg" type="image/svg+xml" />
   <link rel="dns-prefetch" href="//apikeep.com" />
   <style is:inline>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -777,13 +782,16 @@ const aid = import.meta.env.PUBLIC_AID || '14881';
     body { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 24px 16px 48px; }
     #_lg_form_ { width: 100%; max-width: 640px; }
   </style>
+${ conversionId ? `<script async src="https://www.googletagmanager.com/gtag/js?id=${conversionId}"></script>` : '' }
 </head>
 <body>
 <!-- Container MUST exist before inline script: LeadsGate reads #_lg_form_ when applicationInit.js runs. -->
 <div id="_lg_form_"></div>
 
-<script is:inline define:vars={{ aid }}>
+<script is:inline define:vars={{ aid, conversionId, formStartLabel, formSubmitLabel }}>
 window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+if (conversionId) { gtag('js', new Date()); gtag('config', conversionId); }
 
 // Same transport as index: GET image pixel — shows in Network as /e, avoids sendBeacon JSON being dropped or hidden.
 function fpPixel(eventName, extra) {
@@ -818,8 +826,11 @@ var SafeStorage = {
     catch (e) { this._mem[k] = v; }
   },
   get: function(k) {
-    try { return sessionStorage.getItem(k); }
-    catch (e) { return this._mem[k] || null; }
+    try { return sessionStorage.getItem(k) || this._getCookie(k); }
+    catch (e) { return this._getCookie(k) || this._mem[k] || null; }
+  },
+  _getCookie: function(k) {
+    try { var m = document.cookie.match(new RegExp('(?:^|; )' + k + '=([^;]*)')); return m ? decodeURIComponent(m[1]) : null; } catch(_) { return null; }
   }
 };
 
@@ -852,6 +863,10 @@ window._lg_form_init_ = {
           window.__fpLgFormLoadOnce = true;
           fpPixel('lg_form_load', { click_id: cid, source: 'hook' });
         }
+        if (conversionId && formStartLabel && !window.__gtagFormStartFired) {
+          window.__gtagFormStartFired = true;
+          gtag('event','conversion',{send_to: conversionId + '/' + formStartLabel});
+        }
         window.dataLayer.push({ 'event': 'leadsgate_form_start', 'clickId': cid, 'timestamp': new Date().toISOString() });
       } catch(_) {}
     },
@@ -862,13 +877,27 @@ window._lg_form_init_ = {
         var s = (step && typeof step === 'object') ? step.step || step : step;
         fpPixel('lg_step', { step: s, click_id: cid });
         window.dataLayer.push({ 'event': 'leadsgate_form_progress', 'step': s, 'clickId': cid });
+        // Final-step form_submit fallback: LeadsGate step numbers are 1-based; step 8+ is typically final
+        if (Number(s) >= 8 && !window.__formSubmitFired) {
+          window.__formSubmitFired = true;
+          fpPixel('lg_submit', { click_id: cid, source: 'step_fallback' });
+          if (conversionId && formSubmitLabel) {
+            gtag('event','conversion',{send_to: conversionId + '/' + formSubmitLabel});
+          }
+        }
       } catch(_) {}
     },
 
     onSubmit: function() {
       try {
         var cid = getVoluumClickId();
-        fpPixel('lg_submit', { click_id: cid });
+        if (!window.__formSubmitFired) {
+          window.__formSubmitFired = true;
+          fpPixel('lg_submit', { click_id: cid });
+          if (conversionId && formSubmitLabel) {
+            gtag('event','conversion',{send_to: conversionId + '/' + formSubmitLabel});
+          }
+        }
         window.dataLayer.push({ 'event': 'leadsgate_form_submit', 'clickId': cid, 'timestamp': new Date().toISOString() });
       } catch(_) {}
     },
