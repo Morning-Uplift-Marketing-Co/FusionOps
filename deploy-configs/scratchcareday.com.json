@@ -1,13 +1,13 @@
 {
-  "templateId": "orange-lending-bolt",
+  "templateId": "greenrush-lending",
   "cfPagesProject": "lp-scratchcareday-com",
   "cfApiToken": "",
   "cfAccountId": "",
   "brand": "Scratchpay",
   "domain": "scratchcareday.com",
-  "h1": "Quick Pet Funding: Get Up To $5000",
-  "sub": "Easily cover unexpected vet bills or pet expenses with confidence.",
-  "cta": "Get Pet Funding",
+  "h1": "Get $100-$5000 for Pet Care Fast",
+  "sub": "Unexpected vet bills are stressful. We make pet funding simple.",
+  "cta": "See Your Options",
   "phone": "1-800-SCRATCH-CARED",
   "email": "support@scratchcareday.com",
   "address": "30 N Gould St, Ste R, Sheridan, WY 82801",
@@ -36,5 +36,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-25T00:25:42.367Z"
+  "deployedAt": "2026-03-25T01:18:50.390Z"
 }
