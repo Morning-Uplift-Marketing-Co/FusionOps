@@ -10,6 +10,8 @@ import {
   resolveEntryPoint,
   extractCssVariables,
   analyzeTemplate,
+  getTemplateFileContent,
+  normalizeTemplatePath,
 } from '../template-analyzer.js';
 
 // ─── Test Fixtures ───────────────────────────────────────────────────────────
@@ -213,6 +215,18 @@ describe('resolveEntryPoint', () => {
     expect(result.type).toBe('astro');
   });
 
+  it('should prefer dist/index.html over Astro when both exist', () => {
+    const built = {
+      ...ASTRO_PROJECT,
+      'dist/index.html':
+        '<!DOCTYPE html><html><head><title>Built</title></head><body><h1>Built</h1></body></html>',
+    };
+    const result = resolveEntryPoint(built);
+    expect(result.path).toBe('dist/index.html');
+    expect(result.type).toBe('html');
+    expect(result.renderable).toBe(true);
+  });
+
   it('should find entry via suffix match', () => {
     const wrapped = {
       'my-project/src/pages/index.astro': '<html></html>',
@@ -227,6 +241,25 @@ describe('resolveEntryPoint', () => {
     expect(result.path).toBeNull();
     expect(result.type).toBeNull();
     expect(result.renderable).toBe(false);
+  });
+});
+
+describe('getTemplateFileContent', () => {
+  it('reads dist/index.html when the key uses backslashes', () => {
+    const files = { 'dist\\index.html': '<html>ok</html>' };
+    expect(getTemplateFileContent(files, 'dist/index.html')).toBe('<html>ok</html>');
+  });
+
+  it('matches nested dist paths', () => {
+    const files = { 'pkg/dist/index.html': '<html>n</html>' };
+    expect(getTemplateFileContent(files, 'dist/index.html')).toBe('<html>n</html>');
+  });
+});
+
+describe('normalizeTemplatePath', () => {
+  it('normalizes backslashes and leading slashes', () => {
+    expect(normalizeTemplatePath('dist\\index.html')).toBe('dist/index.html');
+    expect(normalizeTemplatePath('/dist/index.html')).toBe('dist/index.html');
   });
 });
 
