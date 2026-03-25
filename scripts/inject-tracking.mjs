@@ -246,19 +246,45 @@ const PIXEL_BODY_SNIPPET = `
   setTimeout(function(){ fpPixel('top_30s'); }, 30000);
   setTimeout(function(){ fpPixel('top_60s'); }, 60000);
 
-  // Amount slider tracking
+  // Amount slider + ZIP — same micro-conversion rule as TrackingDashboard: form_start on zip/amount interact
+  // (LeadsGate onFormLoad on /apply still fires lg_form_load separately when the embed loads.)
   document.addEventListener('DOMContentLoaded', function(){
+    var landingFormStartKey = '_fp_fs_landing';
+    function fireLandingFormStart(source) {
+      try {
+        if (sessionStorage.getItem(landingFormStartKey) === '1') return;
+        sessionStorage.setItem(landingFormStartKey, '1');
+      } catch (_) {
+        if (window.__fpLandingFormStartDone) return;
+        window.__fpLandingFormStartDone = true;
+      }
+      fpPixel('lg_form_load', { source: source || 'landing_micro' });
+    }
     var slider = document.querySelector('input[type="range"][id*="amount"], input[type="range"][name*="amount"], .amountSlider, [data-amt]');
     if (slider) {
       var debounce;
-      slider.addEventListener('input', function(){ clearTimeout(debounce); debounce = setTimeout(function(){ fpPixel('amt', {amount: slider.value}); }, 400); });
+      slider.addEventListener('input', function(){
+        clearTimeout(debounce);
+        debounce = setTimeout(function(){
+          fpPixel('amt', {amount: slider.value});
+          fireLandingFormStart('amount_slider');
+        }, 400);
+      });
     }
     // ZIP input tracking
     var zip = document.querySelector('input[id*="zip"], input[name*="zip"], input[placeholder*="ZIP"], .zipCode, input[type="text"][maxlength="5"]');
     if (zip) {
       var zfired = false;
-      zip.addEventListener('focus', function(){ if (!zfired) { zfired = true; fpPixel('ze', {source:'focus'}); } });
-      zip.addEventListener('input', function(){ if (zip.value.length === 5) fpPixel('ze', {zip: zip.value}); });
+      zip.addEventListener('focus', function(){
+        if (!zfired) { zfired = true; fpPixel('ze', {source:'focus'}); }
+        fireLandingFormStart('zip_focus');
+      });
+      zip.addEventListener('input', function(){
+        if (zip.value.length === 5) {
+          fpPixel('ze', {zip: zip.value});
+          fireLandingFormStart('zip_5');
+        }
+      });
     }
   });
 })();
@@ -637,7 +663,8 @@ function injectIntoAstro(filePath, projectRoot) {
   // Inject into <head> at the top for priority
   const root = projectRoot || path.resolve(path.dirname(filePath), '..', '..');
   const envAstro = loadDotEnv(root);
-  const headInject = astroRuntime + '\n' + VOLUUM_HEAD_SNIPPET;  if (/<\s*head(\s[^>]*)?>/i.test(content)) {
+  const headInject = astroRuntime + '\n' + VOLUUM_HEAD_SNIPPET;
+  if (/<\s*head(\s[^>]*)?>/i.test(content)) {
     content = content.replace(/<\s*head(\s[^>]*)?>/i, (m) => `${m}\n${headInject}`);
   } else if (/<\s*\/\s*head\s*>/i.test(content)) {
     content = content.replace(/<\s*\/\s*head\s*>/i, `${headInject}\n$&`);
@@ -752,15 +779,35 @@ const aid = import.meta.env.PUBLIC_AID || '14881';
   </style>
 </head>
 <body>
+<!-- Container MUST exist before inline script: LeadsGate reads #_lg_form_ when applicationInit.js runs. -->
+<div id="_lg_form_"></div>
 
 <script is:inline define:vars={{ aid }}>
 window.dataLayer = window.dataLayer || [];
 
+// Same transport as index: GET image pixel — shows in Network as /e, avoids sendBeacon JSON being dropped or hidden.
 function fpPixel(eventName, extra) {
   try {
     var endpoint = 'https://t.' + window.location.hostname + '/e';
-    var payload = Object.assign({ e: eventName, d: window.location.hostname, ts: Math.floor(Date.now()/1000) }, extra || {});
-    navigator.sendBeacon(endpoint, JSON.stringify(payload));
+    var cid = getVoluumClickId();
+    var payload = { e: eventName, d: window.location.hostname, ts: Date.now() };
+    if (cid) { payload.cid = cid; payload.cpid = cid; payload.click_id = cid; }
+    if (extra && typeof extra === 'object') {
+      for (var k in extra) {
+        if (!Object.prototype.hasOwnProperty.call(extra, k)) continue;
+        var v = extra[k];
+        if (v === undefined || v === null) continue;
+        if (typeof v === 'object') continue;
+        payload[k] = v;
+      }
+    }
+    var q = new URLSearchParams();
+    Object.keys(payload).forEach(function(k) {
+      var v = payload[k];
+      if (v !== undefined && v !== null && v !== '') q.set(k, String(v));
+    });
+    var img = new Image(1, 1);
+    img.src = endpoint + '?' + q.toString();
   } catch(_) {}
 }
 
@@ -790,58 +837,65 @@ function getVoluumClickId() {
   fpPixel('pv', cid ? { click_id: cid } : {});
 })();
 
+// LeadsGate applicationInit.js only copies init.hooks → _lg_form_.hooks (not root-level onFormLoad).
 window._lg_form_init_ = {
   aid: aid,
   template: "fresh",
   ref: window.location.hostname,
   get click_id() { return getVoluumClickId(); },
 
-  onFormLoad: function() {
-    try {
-      var cid = getVoluumClickId();
-      fpPixel('lg_form_load', { click_id: cid });
-      window.dataLayer.push({ 'event': 'leadsgate_form_start', 'clickId': cid, 'timestamp': new Date().toISOString() });
-    } catch(_) {}
-  },
+  hooks: {
+    onFormLoad: function() {
+      try {
+        var cid = getVoluumClickId();
+        if (!window.__fpLgFormLoadOnce) {
+          window.__fpLgFormLoadOnce = true;
+          fpPixel('lg_form_load', { click_id: cid, source: 'hook' });
+        }
+        window.dataLayer.push({ 'event': 'leadsgate_form_start', 'clickId': cid, 'timestamp': new Date().toISOString() });
+      } catch(_) {}
+    },
 
-  onStepChange: function(step) {
-    try {
-      var cid = getVoluumClickId();
-      var s = (step && typeof step === 'object') ? step.step || step : step;
-      window.dataLayer.push({ 'event': 'leadsgate_form_progress', 'step': s, 'clickId': cid });
-    } catch(_) {}
-  },
+    onStepChange: function(step) {
+      try {
+        var cid = getVoluumClickId();
+        var s = (step && typeof step === 'object') ? step.step || step : step;
+        fpPixel('lg_step', { step: s, click_id: cid });
+        window.dataLayer.push({ 'event': 'leadsgate_form_progress', 'step': s, 'clickId': cid });
+      } catch(_) {}
+    },
 
-  onSubmit: function() {
-    try {
-      var cid = getVoluumClickId();
-      fpPixel('lg_submit', { click_id: cid });
-      window.dataLayer.push({ 'event': 'leadsgate_form_submit', 'clickId': cid, 'timestamp': new Date().toISOString() });
-    } catch(_) {}
-  },
+    onSubmit: function() {
+      try {
+        var cid = getVoluumClickId();
+        fpPixel('lg_submit', { click_id: cid });
+        window.dataLayer.push({ 'event': 'leadsgate_form_submit', 'clickId': cid, 'timestamp': new Date().toISOString() });
+      } catch(_) {}
+    },
 
-  onSuccess: function(data) {
-    try {
-      if (!data) return;
-      var voluumCid = getVoluumClickId();
-      var type = data.type || 'unknown';
-      var leadId = data.lead_id || '';
-      var payout = data.price || 0;
-      var status = type === 'soldLead' ? 'approved' : type === 'rejectLead' ? 'declined' : 'pending';
-      var finalPayout = payout > 0 ? payout : (status === 'declined' ? 5.00 : 50.00);
+    onSuccess: function(data) {
+      try {
+        if (!data) return;
+        var voluumCid = getVoluumClickId();
+        var type = data.type || 'unknown';
+        var leadId = data.lead_id || '';
+        var payout = data.price || 0;
+        var status = type === 'soldLead' ? 'approved' : type === 'rejectLead' ? 'declined' : 'pending';
+        var finalPayout = payout > 0 ? payout : (status === 'declined' ? 5.00 : 50.00);
 
-      fpPixel('lg_' + status, { click_id: voluumCid, lead_id: leadId, status: status, payout: finalPayout });
+        fpPixel('lg_' + status, { click_id: voluumCid, lead_id: leadId, status: status, payout: finalPayout });
 
-      window.dataLayer.push({ 'event': 'lead_conversion_all', 'leadStatus': status, 'leadType': type, 'transactionId': leadId, 'conversionValue': finalPayout, 'clickId': voluumCid });
+        window.dataLayer.push({ 'event': 'lead_conversion_all', 'leadStatus': status, 'leadType': type, 'transactionId': leadId, 'conversionValue': finalPayout, 'clickId': voluumCid });
 
-      if (type === 'soldLead') {
-        window.dataLayer.push({ 'event': 'lead_conversion_approved', 'transactionId': leadId, 'conversionValue': finalPayout, 'clickId': voluumCid });
-      } else if (type === 'rejectLead') {
-        window.dataLayer.push({ 'event': 'lead_declined', 'transactionId': leadId, 'conversionValue': finalPayout, 'clickId': voluumCid });
-      } else {
-        window.dataLayer.push({ 'event': 'lead_pending', 'transactionId': leadId, 'conversionValue': finalPayout, 'clickId': voluumCid });
-      }
-    } catch(_) {}
+        if (type === 'soldLead') {
+          window.dataLayer.push({ 'event': 'lead_conversion_approved', 'transactionId': leadId, 'conversionValue': finalPayout, 'clickId': voluumCid });
+        } else if (type === 'rejectLead') {
+          window.dataLayer.push({ 'event': 'lead_declined', 'transactionId': leadId, 'conversionValue': finalPayout, 'clickId': voluumCid });
+        } else {
+          window.dataLayer.push({ 'event': 'lead_pending', 'transactionId': leadId, 'conversionValue': finalPayout, 'clickId': voluumCid });
+        }
+      } catch(_) {}
+    }
   }
 };
 
@@ -852,9 +906,29 @@ script.async = true;
 script.src = 'https://apikeep.com/form/applicationInit.js';
 document.body.appendChild(script);
 
-</script>
+// If LeadsGate never calls onFormLoad, still emit form_start when the embed mounts (deduped with hook).
+(function setupLgFormLoadFallback() {
+  var lgDiv = document.getElementById('_lg_form_');
+  if (!lgDiv) return;
+  var obs = new MutationObserver(function() {
+    if (window.__fpLgFormLoadOnce) { obs.disconnect(); return; }
+    if (lgDiv.children.length > 0) {
+      window.__fpLgFormLoadOnce = true;
+      obs.disconnect();
+      fpPixel('lg_form_load', { click_id: getVoluumClickId(), source: 'observer' });
+    }
+  });
+  obs.observe(lgDiv, { childList: true, subtree: true });
+  setTimeout(function() {
+    try { obs.disconnect(); } catch(_) {}
+    if (!window.__fpLgFormLoadOnce) {
+      window.__fpLgFormLoadOnce = true;
+      fpPixel('lg_form_load', { click_id: getVoluumClickId(), source: 'timeout', error: 'form_not_loaded' });
+    }
+  }, 15000);
+})();
 
-<div id="_lg_form_"></div>
+</script>
 </body>
 </html>
 `,

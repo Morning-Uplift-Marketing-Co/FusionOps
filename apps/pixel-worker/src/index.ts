@@ -22,14 +22,20 @@ const PIXEL_EVENT_ALIASES: Record<string, string> = {
   fl: 'form_start',
   form_load: 'form_start',
   leadsgate_form_start: 'form_start',
+  lg_form_load: 'form_start',
+  lg_form_ready: 'form_start',
   form_start: 'form_start',
   fs: 'form_submit',
   leadsgate_form_submit: 'form_submit',
+  lg_submit: 'form_submit',
   form_submit: 'form_submit',
   step: 'step_change',
   leadsgate_form_progress: 'step_change',
+  lg_step: 'step_change',
   step_change: 'step_change',
   success: 'success',
+  lg_success_all: 'success',
+  lg_success: 'sold_lead',
   soldlead: 'sold_lead',
   sold_lead: 'sold_lead',
   lead_conversion_approved: 'sold_lead',
@@ -39,6 +45,8 @@ const PIXEL_EVENT_ALIASES: Record<string, string> = {
   zip_entered: 'zip_entered',
   t30: 'time_on_page_30s',
   t60: 'time_on_page_60s',
+  top_30s: 'time_on_page_30s',
+  top_60s: 'time_on_page_60s',
   n1: 'pv',
   n2: 'form_start',
   n3: 'form_submit',
@@ -63,6 +71,8 @@ function canonicalPixelEvent(rawEvent: string): string {
   if (shortScrollMatch) return `scroll_${shortScrollMatch[1]}`;
   const longScrollMatch = value.match(/^scroll_(25|50|75|100)$/);
   if (longScrollMatch) return `scroll_${longScrollMatch[1]}`;
+  const scrollPctMatch = value.match(/^scroll_(25|50|75|100)%$/);
+  if (scrollPctMatch) return `scroll_${scrollPctMatch[1]}`;
   if (value === 'time_on_page_30s') return 'time_on_page_30s';
   if (value === 'time_on_page_60s') return 'time_on_page_60s';
   return value;

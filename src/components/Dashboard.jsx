@@ -346,6 +346,7 @@ export function Dashboard({ sites, stats, ops, setPage, startCreate, settings = 
                                 {[
                                     { l: "Build New", icon: "➕", fn: startCreate },
                                     { l: "AI Assets", icon: "✨", fn: () => setPage("variant") },
+                                    { l: "Pixel Events", icon: "⚡", fn: () => setPage("realtime-events") },
                                     { l: "Ops Center", icon: "🏢", fn: () => setPage("ops") },
                                     { l: "Settings", icon: "⚙", fn: () => setPage("settings") },
                                 ].map((a, i) => (

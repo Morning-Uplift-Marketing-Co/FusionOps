@@ -34,6 +34,69 @@ function extractHost(value) {
   }
 }
 
+/** Merge query + POST body into one param bag for Voluum postback relay (multi-site via `vd`). */
+async function parseVoluumPostbackMergedParams(request, url, method) {
+  const merged = new URLSearchParams(url.search);
+  if (method !== 'POST') return merged;
+  const ct = (request.headers.get('content-type') || '').toLowerCase();
+  let text = '';
+  try {
+    text = await request.text();
+  } catch (_e) {
+    return merged;
+  }
+  if (!text || !String(text).trim()) return merged;
+  try {
+    if (ct.includes('application/json')) {
+      const obj = JSON.parse(text);
+      if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
+        for (const [k, v] of Object.entries(obj)) {
+          if (v == null || typeof v === 'object') continue;
+          merged.set(k, String(v));
+        }
+      }
+    } else {
+      const bodyParams = new URLSearchParams(text);
+      for (const [k, v] of bodyParams) merged.set(k, v);
+    }
+  } catch (_e) { /* keep query-only */ }
+  return merged;
+}
+
+function normalizeVoluumDomainParam(vd) {
+  const h = extractHost(String(vd || '').trim());
+  return h.replace(/\.$/, '');
+}
+
+/** Basic SSRF guard for outbound Voluum postback fetches. Optional env.VOLUUM_FORWARD_DOMAIN_ALLOWLIST = comma suffixes (e.g. voluumtrk.com,my-track-domain.com). */
+function isSafeVoluumForwardHost(host, env) {
+  if (!host || typeof host !== 'string') return false;
+  const h = host.toLowerCase().trim();
+  if (h.length < 3 || h.length > 253) return false;
+  if (h === 'localhost') return false;
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(h)) return false;
+  if (h.startsWith('[')) return false;
+  if (h.includes('..')) return false;
+  if (!/^[a-z0-9.-]+$/.test(h)) return false;
+  const parts = h.split('.');
+  if (parts.some((p) => !p || p.length > 63)) return false;
+
+  const list = String(env?.VOLUUM_FORWARD_DOMAIN_ALLOWLIST || '').trim();
+  if (list) {
+    const suffixes = list.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+    const ok = suffixes.some((suffix) => h === suffix || h.endsWith('.' + suffix));
+    if (!ok) return false;
+  }
+  return true;
+}
+
+function voluumForwardSearchParams(merged) {
+  const fwd = new URLSearchParams(merged);
+  fwd.delete('vd');
+  fwd.delete('voluum_domain');
+  return fwd;
+}
+
 const TRUSTED_PAGES_SUFFIXES = [
   '.fusionops-web.pages.dev',
   '.fusionops.pages.dev',
@@ -1296,14 +1359,21 @@ const PIXEL_EVENT_ALIASES = {
   fl: 'form_start',
   form_load: 'form_start',
   leadsgate_form_start: 'form_start',
+  /** LeadsGate hooks in goldrush / inject-tracking apply.astro */
+  lg_form_load: 'form_start',
+  lg_form_ready: 'form_start',
   form_start: 'form_start',
   fs: 'form_submit',
   leadsgate_form_submit: 'form_submit',
+  lg_submit: 'form_submit',
   form_submit: 'form_submit',
   step: 'step_change',
   leadsgate_form_progress: 'step_change',
+  lg_step: 'step_change',
   step_change: 'step_change',
   success: 'success',
+  lg_success_all: 'success',
+  lg_success: 'sold_lead',
   soldlead: 'sold_lead',
   sold_lead: 'sold_lead',
   lead_conversion_approved: 'sold_lead',
@@ -1313,6 +1383,8 @@ const PIXEL_EVENT_ALIASES = {
   zip_entered: 'zip_entered',
   t30: 'time_on_page_30s',
   t60: 'time_on_page_60s',
+  top_30s: 'time_on_page_30s',
+  top_60s: 'time_on_page_60s',
   n1: 'pv',
   n2: 'form_start',
   n3: 'form_submit',
@@ -1337,6 +1409,8 @@ function canonicalPixelEvent(rawEvent) {
   if (shortScrollMatch) return `scroll_${shortScrollMatch[1]}`;
   const longScrollMatch = value.match(/^scroll_(25|50|75|100)$/);
   if (longScrollMatch) return `scroll_${longScrollMatch[1]}`;
+  const scrollPctMatch = value.match(/^scroll_(25|50|75|100)%$/);
+  if (scrollPctMatch) return `scroll_${scrollPctMatch[1]}`;
   if (value === 'time_on_page_30s') return 'time_on_page_30s';
   if (value === 'time_on_page_60s') return 'time_on_page_60s';
   return value;
@@ -1375,6 +1449,55 @@ async function parsePixelPayloadFromRequest(request, url, method) {
   return payload;
 }
 
+/** GET /api/postbacks — module scope only; never uses fetch-local `db` (avoids TDZ / name-collision with nested `queryFromDb(db)`). */
+async function handleVoluumPostbacksApiGet(env, url) {
+  try {
+    const binding = env?.DB;
+    if (!binding) {
+      return json({ success: true, postbacks: [], count: 0 });
+    }
+    const domain = url.searchParams.get('domain') || '';
+    const limit = Math.min(parseInt(url.searchParams.get('limit') || '200', 10), 1000);
+    const since = parseInt(url.searchParams.get('since') || '0', 10);
+
+    const tableExists = await binding
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='voluum_postbacks' LIMIT 1")
+      .first();
+    if (!tableExists) return json({ success: true, postbacks: [], count: 0 });
+
+    const schema = await binding.prepare('PRAGMA table_info(voluum_postbacks)').all();
+    const colSet = new Set((schema?.results || []).map((c) => String(c.name || '')));
+    const baseCols = ['id', 'domain', 'click_id', 'lead_id', 'payout', 'type', 'ts'];
+    const optionalCols = ['voluum_domain', 'forward_status', 'forward_http_status', 'forward_error'];
+    const selectCols = [
+      ...baseCols,
+      ...optionalCols.filter((c) => colSet.has(c)),
+    ].join(', ');
+
+    let stmt;
+    if (domain && colSet.has('domain')) {
+      stmt = binding.prepare(
+        `SELECT ${selectCols} FROM voluum_postbacks WHERE domain LIKE ? AND ts > ? ORDER BY ts DESC LIMIT ?`
+      ).bind(`%${domain}%`, since, limit);
+    } else {
+      stmt = binding.prepare(
+        `SELECT ${selectCols} FROM voluum_postbacks WHERE ts > ? ORDER BY ts DESC LIMIT ?`
+      ).bind(since, limit);
+    }
+
+    const { results } = await stmt.all();
+    const postbacks = (results || []).map((r) => ({
+      ...r,
+      ts: Number(r.ts || 0),
+      payout: Number(r.payout || 0),
+      forward_http_status: r.forward_http_status != null ? Number(r.forward_http_status) : null,
+    }));
+    return json({ success: true, postbacks, count: postbacks.length });
+  } catch (e) {
+    return json({ success: false, error: e.message }, 500);
+  }
+}
+
 export default {
   async fetch(request, env) {
     // Handle CORS preflight
@@ -1386,12 +1509,14 @@ export default {
     const path = url.pathname;
     const method = request.method;
     const hostname = url.hostname;
+    // Main D1 binding — must be declared here so early routes (/e, /v, /api/postbacks, …) never hit TDZ
+    // from a duplicate `const db` declared later in this same function.
+    const db = env.DB;
 
     // ═══ PIXEL ENDPOINT — handles t.{domain}/e from Workers Route ═══
     // When accessed via Workers Route (t.domain/*), path = /e
     if (path === '/e' && (method === 'POST' || method === 'GET')) {
       try {
-        const db = env.DB;
         // Ensure pixel_events table exists (idempotent)
         await db.prepare(`CREATE TABLE IF NOT EXISTS pixel_events (
           id TEXT PRIMARY KEY,
@@ -1444,13 +1569,13 @@ export default {
     }
 
     // ═══ VOLUUM/LEADSGATE POSTBACK — handles t.{domain}/v ═══
-    // Publicly accessible — no auth required (S2S from LeadsGate servers)
+    // Logs every hit to D1, then forwards to Voluum when `vd` (Voluum tracking host) or DEFAULT_VOLUUM_POSTBACK_DOMAIN is set.
+    // Multi-site: put vd=link.yourtracker.com (or full URL) on the affiliate postback URL alongside normal Voluum tokens.
     if (path === '/v' && (method === 'GET' || method === 'POST' || method === 'OPTIONS')) {
       if (method === 'OPTIONS') {
         return new Response(null, { status: 204, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS' } });
       }
       try {
-        const db = env.DB;
         await db.prepare(`CREATE TABLE IF NOT EXISTS voluum_postbacks (
           id TEXT PRIMARY KEY,
           domain TEXT,
@@ -1463,23 +1588,73 @@ export default {
           raw TEXT,
           ts INTEGER DEFAULT (unixepoch())
         )`).run();
+        for (const alterSql of [
+          'ALTER TABLE voluum_postbacks ADD COLUMN voluum_domain TEXT',
+          'ALTER TABLE voluum_postbacks ADD COLUMN forward_status TEXT',
+          'ALTER TABLE voluum_postbacks ADD COLUMN forward_http_status INTEGER',
+          'ALTER TABLE voluum_postbacks ADD COLUMN forward_error TEXT',
+        ]) {
+          try {
+            await db.prepare(alterSql).run();
+          } catch (_e) { /* column exists */ }
+        }
 
-        const p = url.searchParams;
+        const p = await parseVoluumPostbackMergedParams(request, url, method);
         const clickId = p.get('click_id') || p.get('cid') || p.get('clickid') || '';
-        const leadId  = p.get('lead_id') || p.get('txid') || '';
-        const payout  = parseFloat(p.get('payout') || p.get('price') || '0');
-        const type    = p.get('type') || 'soldLead';
-        const domain  = hostname.replace(/^t\./, '');
-        const ip      = request.headers.get('CF-Connecting-IP') || '';
-        const ua      = request.headers.get('User-Agent') || '';
-        const raw     = request.url;
-        const id      = uid();
+        const leadId = p.get('lead_id') || p.get('txid') || '';
+        const payout = parseFloat(p.get('payout') || p.get('price') || '0');
+        const type = p.get('type') || 'soldLead';
+        const domain = hostname.replace(/^t\./, '');
+        const ip = request.headers.get('CF-Connecting-IP') || '';
+        const ua = request.headers.get('User-Agent') || '';
+        const raw = request.url;
+        const id = uid();
+
+        const vdParam = normalizeVoluumDomainParam(p.get('vd') || p.get('voluum_domain') || '');
+        const defaultVd = normalizeVoluumDomainParam(env.DEFAULT_VOLUUM_POSTBACK_DOMAIN || env.VOLUUM_POSTBACK_DOMAIN || '');
+        const voluumHost = vdParam || defaultVd || '';
 
         await db.prepare(
-          `INSERT INTO voluum_postbacks (id, domain, click_id, lead_id, payout, type, ip, ua, raw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-        ).bind(id, domain, clickId, leadId, payout, type, ip, ua, raw).run();
+          `INSERT INTO voluum_postbacks (id, domain, click_id, lead_id, payout, type, ip, ua, raw, voluum_domain, forward_status, forward_http_status, forward_error)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ).bind(id, domain, clickId, leadId, payout, type, ip, ua, raw, voluumHost || null, 'pending', null, null).run();
 
-        console.log('[postback]', { id, clickId, leadId, payout, type, domain });
+        let forwardStatus = 'skipped';
+        let forwardHttp = null;
+        let forwardErr = null;
+
+        if (voluumHost && isSafeVoluumForwardHost(voluumHost, env)) {
+          const fwdQs = voluumForwardSearchParams(p);
+          const forwardUrl = `https://${voluumHost}/postback?${fwdQs.toString()}`;
+          try {
+            const fr = await fetch(forwardUrl, {
+              method: 'GET',
+              redirect: 'manual',
+              headers: { 'User-Agent': 'FusionOps-Postback-Relay/1' },
+            });
+            forwardHttp = fr.status;
+            if (fr.status >= 200 && fr.status < 400) {
+              forwardStatus = 'ok';
+            } else {
+              forwardStatus = 'http_error';
+              forwardErr = await fr.text().then((t) => String(t || '').slice(0, 500)).catch(() => `status ${fr.status}`);
+            }
+          } catch (fe) {
+            forwardStatus = 'error';
+            forwardErr = String(fe.message || fe).slice(0, 500);
+          }
+        } else if (voluumHost) {
+          forwardStatus = 'bad_host';
+          forwardErr = 'vd failed validation or allowlist';
+        }
+
+        try {
+          await db.prepare(
+            `UPDATE voluum_postbacks SET forward_status = ?, forward_http_status = ?, forward_error = ? WHERE id = ?`
+          ).bind(forwardStatus, forwardHttp, forwardErr, id).run();
+        } catch (_u) { /* older schema without columns — ignore */ }
+
+        console.log('[postback]', { id, clickId, leadId, payout, type, domain, voluumHost: voluumHost || null, forwardStatus, forwardHttp });
         return new Response('ok', {
           status: 200,
           headers: { 'Content-Type': 'text/plain', 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' },
@@ -1510,7 +1685,6 @@ export default {
     if (thumbUploadMatch && method === 'POST') {
       const id = decodeURIComponent(thumbUploadMatch[1]);
       try {
-        const db = env.DB;
         const formData = await request.formData();
         const file = formData.get('image');
         if (!file || typeof file === 'string') return json({ error: 'No image file provided' }, 400);
@@ -1535,7 +1709,6 @@ export default {
     if (thumbGenMatch && method === 'POST') {
       const id = decodeURIComponent(thumbGenMatch[1]);
       try {
-        const db = env.DB;
         await ensureTemplateManagerSchema(db);
         // Ensure thumbnail columns exist before querying
         try { await db.prepare('ALTER TABLE templates ADD COLUMN thumbnail_url TEXT').run(); } catch (_e) {}
@@ -1578,7 +1751,6 @@ export default {
     // Called by apply.astro to avoid exposing aid directly in HTML source
     if (path === '/api/cfg' && method === 'GET') {
       try {
-        const db = env.DB;
         const domain = url.searchParams.get('d') || '';
         if (!domain) return json({ error: 'Missing d param' }, 400);
         const row = await db.prepare(
@@ -1602,14 +1774,14 @@ export default {
         const limit = Math.min(parseInt(url.searchParams.get('limit') || '100'), 500);
         const since = parseInt(url.searchParams.get('since') || '0', 10);
 
-        // Query one DB binding and normalize schema differences.
-        async function queryFromDb(db) {
-          const tableExists = await db
+        // Query one DB binding and normalize schema differences. (param not named `db` — avoids clashing with fetch-local `const db`.)
+        async function queryFromDb(d1Conn) {
+          const tableExists = await d1Conn
             .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='pixel_events' LIMIT 1")
             .first();
           if (!tableExists) return [];
 
-          const schema = await db.prepare('PRAGMA table_info(pixel_events)').all();
+          const schema = await d1Conn.prepare('PRAGMA table_info(pixel_events)').all();
           const columns = new Set((schema?.results || []).map((c) => String(c.name || '')));
 
           const tsExpr = columns.has('ts')
@@ -1632,7 +1804,7 @@ export default {
 
           let stmt;
           if (domain && columns.has('domain')) {
-            stmt = db.prepare(
+            stmt = d1Conn.prepare(
               `SELECT id, ${domainExpr} AS domain, event, ${gclidExpr} AS gclid, ${clickExpr} AS click_id, ${dataExpr} AS data, ${tsExpr} AS ts
                FROM pixel_events
                WHERE ${domainExpr} LIKE ? AND ${tsExpr} > ?
@@ -1640,7 +1812,7 @@ export default {
                LIMIT ?`
             ).bind(`%${domain}%`, since, limit);
           } else {
-            stmt = db.prepare(
+            stmt = d1Conn.prepare(
               `SELECT id, ${domainExpr} AS domain, event, ${gclidExpr} AS gclid, ${clickExpr} AS click_id, ${dataExpr} AS data, ${tsExpr} AS ts
                FROM pixel_events
                WHERE ${tsExpr} > ?
@@ -1687,39 +1859,9 @@ export default {
       }
     }
 
-    // ═══ VOLUUM POSTBACKS API — query stored postbacks ═══
+    // ═══ VOLUUM POSTBACKS API — query stored postbacks (t.{site}/v relay log) ═══
     if (path === '/api/postbacks' && method === 'GET') {
-      try {
-        const domain = url.searchParams.get('domain') || '';
-        const limit  = Math.min(parseInt(url.searchParams.get('limit') || '200'), 1000);
-        const since  = parseInt(url.searchParams.get('since') || '0', 10);
-
-        const tableExists = await db
-          .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='voluum_postbacks' LIMIT 1")
-          .first();
-        if (!tableExists) return json({ success: true, postbacks: [], count: 0 });
-
-        let stmt;
-        if (domain) {
-          stmt = db.prepare(
-            `SELECT id, domain, click_id, lead_id, payout, type, ts
-             FROM voluum_postbacks WHERE domain LIKE ? AND ts > ?
-             ORDER BY ts DESC LIMIT ?`
-          ).bind(`%${domain}%`, since, limit);
-        } else {
-          stmt = db.prepare(
-            `SELECT id, domain, click_id, lead_id, payout, type, ts
-             FROM voluum_postbacks WHERE ts > ?
-             ORDER BY ts DESC LIMIT ?`
-          ).bind(since, limit);
-        }
-
-        const { results } = await stmt.all();
-        const postbacks = (results || []).map(r => ({ ...r, ts: Number(r.ts || 0), payout: Number(r.payout || 0) }));
-        return json({ success: true, postbacks, count: postbacks.length });
-      } catch (e) {
-        return json({ success: false, error: e.message }, 500);
-      }
+      return handleVoluumPostbacksApiGet(env, url);
     }
 
     // ═══ PROXY ROUTES (no auth required — proxy forwards auth headers) ═══
@@ -2383,8 +2525,6 @@ export default {
         return json({ error: 'Unauthorized (untrusted origin, API_SECRET not configured)' }, 401);
       }
     }
-
-    const db = env.DB;
 
     const neonSql = getNeonSql(env);
     if (neonSql) {
@@ -5247,7 +5387,7 @@ Return this exact JSON shape:
             return json({ error: 'No AI API key configured. Add Gemini API Key in Settings.' }, 400);
           }
           const { brand = '', domain = '', loanType = 'personal loan', amountMin = 100, amountMax = 5000, h1 = '', cta = '', lang = 'English' } = body;
-          const prompt = `You are an SEO copywriter for loan landing pages.
+          const prompt = `You are an PPC Google Ads copywriter for loan landing pages.
 Generate meta title and description. Respond ONLY with valid JSON.
 IMPORTANT: Never use the exact phrase "Personal Loans" in your output. Use alternatives like "personal finance", "quick funding", or "fast cash" instead.
 
@@ -5261,7 +5401,7 @@ Language: ${lang}
 
 Return this exact JSON shape:
 {
-  "metaTitle": "SEO title (50-60 chars, include brand and amount)",
+  "metaTitle": "PPC title (50-60 chars, include brand and amount)",
   "metaDesc": "Meta description (140-160 chars, include CTA and amount)"
 }`;
           const enrichedBody = { ...body, geminiKey: resolvedGeminiKey, anthropicKey: resolvedAnthropicKey };
