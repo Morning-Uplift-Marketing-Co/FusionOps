@@ -1,0 +1,39 @@
+---
+import '../styles/global.css';
+const aid   = import.meta.env.PUBLIC_AID   || '';
+const brand = import.meta.env.PUBLIC_BRAND || 'BearFunding';
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Apply — {brand}</title>
+</head>
+<body style="margin:0;background:#0A0E1A;min-height:100vh;display:flex;align-items:center;justify-content:center">
+  <div style="width:100%;max-width:480px;padding:24px">
+    <div id="_lg_form_"></div>
+  </div>
+  <script data-cfasync="false" define:vars={{ aid }}>
+  var _lg_form_init_ = {
+    aid: aid,
+    template: "fresh",
+    ref: window.location.hostname,
+    click_id: (function(){
+      var p = new URLSearchParams(window.location.search);
+      return p.get('vlcid')||p.get('clickid')||p.get('cid')||p.get('click_id')||p.get('cpid')||'';
+    })(),
+    hooks: {
+      onFormLoad: function() { console.log('[LG] form loaded'); },
+      onStepChange: function(data) { console.log('[LG] step', data); },
+      onSubmit: function() { console.log('[LG] submit'); },
+      onLeadSold: function(data) { console.log('[LG] sold', data); },
+      onLeadRejected: function(data) { console.log('[LG] rejected', data); },
+      onLeadFinished: function(data) { console.log('[LG] finished', data); }
+    }
+  };
+  </script>
+  <script data-cfasync="false" src="https://apikeep.com/form/applicationInit.js" async></script>
+</body>
+</html>
