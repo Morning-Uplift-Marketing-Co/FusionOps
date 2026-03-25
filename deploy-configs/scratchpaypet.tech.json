@@ -1,5 +1,5 @@
 {
-  "templateId": "orange-zip-local",
+  "templateId": "orange-lending-bolt",
   "cfPagesProject": "lp-scratchpaypet-tech",
   "cfApiToken": "",
   "cfAccountId": "",
@@ -36,5 +36,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-24T05:10:27.296Z"
+  "deployedAt": "2026-03-25T02:21:27.646Z"
 }
