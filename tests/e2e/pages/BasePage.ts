@@ -18,8 +18,9 @@ export class BasePage {
    */
   async goto(path: string = '') {
     await this.page.goto(`${this.baseURL}${path}`, {
-      waitUntil: 'networkidle',
-      timeout: 30000,
+      // networkidle flakes on SPAs (WS, polling, parallel E2E workers)
+      waitUntil: 'domcontentloaded',
+      timeout: 60000,
     });
   }
 

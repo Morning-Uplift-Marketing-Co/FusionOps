@@ -255,7 +255,8 @@ test.describe('LP Wizard - Step 4: Design Selection', () => {
     await wizardPage.completeStepProduct();
     await wizardPage.clickNext();
 
-    await wizardPage.completeStepTemplate();
+    // Pick a template that exposes theme controls (first card order is not stable)
+    await wizardPage.completeStepTemplate('Classic');
     await wizardPage.clickNext();
   });
 
