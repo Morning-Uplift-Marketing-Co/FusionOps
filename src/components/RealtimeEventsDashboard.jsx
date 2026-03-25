@@ -6,8 +6,23 @@ const EVENT_COLORS = {
   form_start: "bg-amber-500/15 text-amber-300",
   form_submit: "bg-red-500/15 text-red-300",
   sold_lead: "bg-emerald-500/15 text-emerald-300",
+  lg_form_load: "bg-amber-500/15 text-amber-300",
+  lg_form_ready: "bg-amber-500/15 text-amber-300",
+  lg_step: "bg-sky-500/15 text-sky-300",
+  lg_submit: "bg-red-500/15 text-red-300",
+  lg_success: "bg-emerald-500/15 text-emerald-300",
+  lg_success_all: "bg-emerald-500/15 text-emerald-300",
   default: "bg-slate-500/15 text-slate-300",
 };
+
+/** Map LeadsGate / legacy pixel names into funnel buckets for summary cards. */
+function pixelEventFunnelBucket(event) {
+  const e = String(event || "").trim().toLowerCase();
+  if (["form_start", "fl", "lg_form_load", "lg_form_ready"].includes(e)) return "form_start";
+  if (["form_submit", "fs", "lg_submit"].includes(e)) return "form_submit";
+  if (["sold_lead", "success", "lg_success", "lg_success_all"].includes(e)) return "sold_lead";
+  return null;
+}
 
 function normalizeTs(value) {
   if (value === null || value === undefined || value === "") return 0;
@@ -44,15 +59,49 @@ function normalizeRows(rows = []) {
     .sort((a, b) => b.ts - a.ts);
 }
 
+function normalizePostbackRows(rows = []) {
+  return (rows || [])
+    .map((r) => {
+      const tsValue = normalizeTs(r.ts ?? 0);
+      return {
+        id: String(r.id || `pb-${r.domain || "x"}-${tsValue}`),
+        domain: String(r.domain || ""),
+        clickId: String(r.click_id || ""),
+        leadId: String(r.lead_id || ""),
+        payout: Number(r.payout || 0),
+        type: String(r.type || ""),
+        ts: tsValue,
+        voluumDomain: r.voluum_domain != null ? String(r.voluum_domain) : "",
+        forwardStatus: r.forward_status != null ? String(r.forward_status) : "",
+        forwardHttp: r.forward_http_status != null && r.forward_http_status !== "" ? Number(r.forward_http_status) : null,
+        forwardError: r.forward_error != null ? String(r.forward_error).slice(0, 240) : "",
+      };
+    })
+    .sort((a, b) => b.ts - a.ts);
+}
+
+const FORWARD_STATUS_COLORS = {
+  ok: "bg-emerald-500/15 text-emerald-300",
+  skipped: "bg-slate-500/15 text-slate-300",
+  pending: "bg-amber-500/15 text-amber-300",
+  http_error: "bg-orange-500/15 text-orange-300",
+  error: "bg-red-500/15 text-red-300",
+  bad_host: "bg-red-500/15 text-red-200",
+  default: "bg-slate-500/15 text-slate-300",
+};
+
 function prettyTs(ts) {
   if (!ts) return "-";
   return new Date(ts * 1000).toLocaleString();
 }
 
-export function RealtimeEventsDashboard({ sites = [] }) {
+export function RealtimeEventsDashboard({ sites = [], embedded = false }) {
+  const [view, setView] = useState("pixel");
   const [events, setEvents] = useState([]);
+  const [postbacks, setPostbacks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [postbackError, setPostbackError] = useState("");
   const [paused, setPaused] = useState(false);
   const [selectedDomain, setSelectedDomain] = useState("");
   const [windowMinutes, setWindowMinutes] = useState(15);
@@ -62,50 +111,52 @@ export function RealtimeEventsDashboard({ sites = [] }) {
   const domainOptions = useMemo(() => {
     const fromSites = (sites || []).map((s) => s.domain).filter(Boolean);
     const fromEvents = events.map((e) => e.domain).filter(Boolean);
-    return Array.from(new Set([...fromSites, ...fromEvents])).sort((a, b) => a.localeCompare(b));
-  }, [sites, events]);
+    const fromPb = postbacks.map((p) => p.domain).filter(Boolean);
+    return Array.from(new Set([...fromSites, ...fromEvents, ...fromPb])).sort((a, b) => a.localeCompare(b));
+  }, [sites, events, postbacks]);
 
-  const fetchEvents = useCallback(async () => {
+  const refreshAll = useCallback(async () => {
     setLoading(true);
     setError("");
+    setPostbackError("");
     const since = Math.floor(Date.now() / 1000) - Math.max(1, Number(windowMinutes || 15)) * 60;
-    const params = new URLSearchParams({
-      limit: "400",
-      since: String(since),
-    });
-    if (selectedDomain) params.set("domain", selectedDomain);
+    const pixelParams = new URLSearchParams({ limit: "400", since: String(since) });
+    if (selectedDomain) pixelParams.set("domain", selectedDomain);
+    const pbParams = new URLSearchParams({ limit: "300", since: String(since) });
+    if (selectedDomain) pbParams.set("domain", selectedDomain);
 
     try {
-      const res = await api.get(`/api/pixel/events?${params.toString()}`);
-      if (res?.error) {
-        setError(res.error || "Failed to load events");
-        return;
-      }
-      if (!res?.success) {
-        setError(res?.error || "Unexpected response from events API");
-        return;
-      }
-
-      const rows = normalizeRows(res.events || []);
-      setEvents(rows);
-      setLastUpdatedAt(new Date());
+      const res = await api.get(`/api/pixel/events?${pixelParams.toString()}`);
+      if (res?.error) setError(res.error || "Failed to load pixel events");
+      else if (!res?.success) setError(res?.error || "Unexpected response from /api/pixel/events");
+      else setEvents(normalizeRows(res.events || []));
     } catch (e) {
-      setError(e?.message || "Failed to load events");
-    } finally {
-      setLoading(false);
+      setError(e?.message || "Failed to load pixel events");
     }
+
+    try {
+      const pb = await api.get(`/api/postbacks?${pbParams.toString()}`);
+      if (pb?.error) setPostbackError(pb.error || "Failed to load postbacks");
+      else if (!pb?.success) setPostbackError(pb?.error || "Unexpected response from /api/postbacks");
+      else setPostbacks(normalizePostbackRows(pb.postbacks || []));
+    } catch (e) {
+      setPostbackError(e?.message || "Failed to load postbacks");
+    }
+
+    setLastUpdatedAt(new Date());
+    setLoading(false);
   }, [selectedDomain, windowMinutes]);
 
   useEffect(() => {
-    fetchEvents();
-  }, [fetchEvents]);
+    refreshAll();
+  }, [refreshAll]);
 
   useEffect(() => {
     if (paused) return;
     const intervalMs = Math.max(1, Number(pollSeconds || 3)) * 1000;
-    const id = setInterval(fetchEvents, intervalMs);
+    const id = setInterval(refreshAll, intervalMs);
     return () => clearInterval(id);
-  }, [fetchEvents, paused, pollSeconds]);
+  }, [refreshAll, paused, pollSeconds]);
 
   const stats = useMemo(() => {
     const byEvent = events.reduce((acc, row) => {
@@ -113,28 +164,95 @@ export function RealtimeEventsDashboard({ sites = [] }) {
       return acc;
     }, {});
 
+    let formStart = 0;
+    let formSubmit = 0;
+    let soldLead = 0;
+    for (const row of events) {
+      const b = pixelEventFunnelBucket(row.event);
+      if (b === "form_start") formStart += 1;
+      else if (b === "form_submit") formSubmit += 1;
+      else if (b === "sold_lead") soldLead += 1;
+    }
+
     return {
       total: events.length,
       pv: byEvent.pv || 0,
-      formStart: byEvent.form_start || 0,
-      formSubmit: byEvent.form_submit || 0,
-      soldLead: byEvent.sold_lead || 0,
+      formStart,
+      formSubmit,
+      soldLead,
       byEvent,
     };
   }, [events]);
 
+  const postbackStats = useMemo(() => {
+    let revenue = 0;
+    let sold = 0;
+    let forwardOk = 0;
+    let forwardIssues = 0;
+    for (const row of postbacks) {
+      const t = String(row.type || "").toLowerCase();
+      if (t === "soldlead" || t === "sold_lead") {
+        sold += 1;
+        revenue += Number(row.payout || 0);
+      }
+      const fs = String(row.forwardStatus || "");
+      if (fs === "ok") forwardOk += 1;
+      else if (["http_error", "error", "bad_host"].includes(fs)) forwardIssues += 1;
+    }
+    return {
+      total: postbacks.length,
+      sold,
+      revenue,
+      forwardOk,
+      forwardIssues,
+    };
+  }, [postbacks]);
+
+  const outerClass = embedded
+    ? "max-w-[1400px] mx-auto py-2 space-y-3 text-[hsl(var(--foreground))]"
+    : "max-w-[1400px] mx-auto p-6 space-y-4 text-[hsl(var(--foreground))]";
+
   return (
-    <div className="max-w-[1400px] mx-auto p-6 space-y-4 text-[hsl(var(--foreground))]">
+    <div className={outerClass}>
       <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-          <h2 className="text-xl font-bold">⚡ Realtime Events Dashboard</h2>
+          <h2 className={embedded ? "text-lg font-bold" : "text-xl font-bold"}>
+            {embedded ? "⚡ Live pixel events" : "⚡ Realtime Events Dashboard"}
+          </h2>
           <div className="text-xs text-[hsl(var(--muted-foreground))]">
             {lastUpdatedAt ? `Last update: ${lastUpdatedAt.toLocaleTimeString()}` : "Waiting for first fetch..."}
           </div>
         </div>
         <p className="text-xs text-[hsl(var(--muted-foreground))]">
-          Live polling from <code className="text-[11px]">/api/pixel/events</code> for first-party tracking events.
+          Polling <code className="text-[11px]">/api/pixel/events</code> (first-party pixel) and{" "}
+          <code className="text-[11px]">/api/postbacks</code> (Voluum relay <code className="text-[11px]">/v</code>) together.
+          {embedded ? " Same view as sidebar → Realtime Events." : ""}
         </p>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => setView("pixel")}
+          className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-colors ${
+            view === "pixel"
+              ? "bg-[hsl(var(--primary))] text-white border-[hsl(var(--primary))]"
+              : "border-[hsl(var(--border))] bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--secondary))]"
+          }`}
+        >
+          First-party pixel
+        </button>
+        <button
+          type="button"
+          onClick={() => setView("postbacks")}
+          className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-colors ${
+            view === "postbacks"
+              ? "bg-[hsl(var(--primary))] text-white border-[hsl(var(--primary))]"
+              : "border-[hsl(var(--border))] bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--secondary))]"
+          }`}
+        >
+          Voluum postbacks (/v)
+        </button>
       </div>
 
       <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4">
@@ -180,7 +298,7 @@ export function RealtimeEventsDashboard({ sites = [] }) {
           <div className="text-xs flex items-end gap-2">
             <button
               type="button"
-              onClick={fetchEvents}
+              onClick={refreshAll}
               disabled={loading}
               className="px-3 py-2 rounded-lg bg-[hsl(var(--primary))] text-white font-semibold disabled:opacity-40"
             >
@@ -195,71 +313,144 @@ export function RealtimeEventsDashboard({ sites = [] }) {
             </button>
             <button
               type="button"
-              onClick={() => setEvents([])}
+              onClick={() => (view === "pixel" ? setEvents([]) : setPostbacks([]))}
               className="px-3 py-2 rounded-lg border border-red-500/40 bg-red-500/10 text-red-400 font-semibold hover:bg-red-500/20"
             >
-              Clear Log
+              Clear log
             </button>
           </div>
         </div>
 
-        {error && (
-          <div className="mt-3 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-300">
-            {error}
+        {(error || postbackError) && (
+          <div className="mt-3 space-y-2">
+            {error && (
+              <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+                Pixel: {error}
+              </div>
+            )}
+            {postbackError && (
+              <div className="rounded-lg border border-orange-500/40 bg-orange-500/10 px-3 py-2 text-xs text-orange-200">
+                Postbacks: {postbackError}
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      <div className="grid md:grid-cols-5 gap-3">
-        <StatCard label="Events" value={stats.total} />
-        <StatCard label="Page Views (pv)" value={stats.pv} />
-        <StatCard label="Form Start" value={stats.formStart} />
-        <StatCard label="Form Submit" value={stats.formSubmit} />
-        <StatCard label="Sold Lead" value={stats.soldLead} />
-      </div>
-
-      <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] overflow-hidden">
-        <div className="px-4 py-3 border-b border-[hsl(var(--border))] text-sm font-semibold">Recent Events</div>
-        <div className="max-h-[560px] overflow-auto">
-          <table className="w-full text-xs">
-            <thead className="sticky top-0 bg-[hsl(var(--card))] border-b border-[hsl(var(--border))]">
-              <tr className="text-left text-[hsl(var(--muted-foreground))]">
-                <th className="px-3 py-2">Time</th>
-                <th className="px-3 py-2">Domain</th>
-                <th className="px-3 py-2">Event</th>
-                <th className="px-3 py-2">Click ID</th>
-                <th className="px-3 py-2">GCLID</th>
-                <th className="px-3 py-2">Data</th>
-              </tr>
-            </thead>
-            <tbody>
-              {events.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-3 py-8 text-center text-[hsl(var(--muted-foreground))]">
-                    No events found for selected filters.
-                  </td>
-                </tr>
-              ) : (
-                events.map((row) => {
-                  const chip = EVENT_COLORS[row.event] || EVENT_COLORS.default;
-                  return (
-                    <tr key={row.id} className="border-b border-[hsl(var(--border))/0.6]">
-                      <td className="px-3 py-2 whitespace-nowrap">{prettyTs(row.ts)}</td>
-                      <td className="px-3 py-2">{row.domain || "-"}</td>
-                      <td className="px-3 py-2">
-                        <span className={`inline-flex px-2 py-0.5 rounded-full font-semibold ${chip}`}>{row.event}</span>
-                      </td>
-                      <td className="px-3 py-2 font-mono">{row.clickId || "-"}</td>
-                      <td className="px-3 py-2 font-mono">{row.gclid || "-"}</td>
-                      <td className="px-3 py-2 max-w-[420px] truncate" title={row.data || ""}>{row.data || "-"}</td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+      {view === "pixel" ? (
+        <div className="grid md:grid-cols-5 gap-3">
+          <StatCard label="Events" value={stats.total} />
+          <StatCard label="Page Views (pv)" value={stats.pv} />
+          <StatCard label="Form Start" value={stats.formStart} />
+          <StatCard label="Form Submit" value={stats.formSubmit} />
+          <StatCard label="Sold Lead" value={stats.soldLead} />
         </div>
-      </div>
+      ) : (
+        <div className="grid md:grid-cols-5 gap-3">
+          <StatCard label="Postbacks" value={postbackStats.total} />
+          <StatCard label="Sold (type)" value={postbackStats.sold} />
+          <StatCard label="Revenue (payout)" value={`$${postbackStats.revenue.toFixed(2)}`} />
+          <StatCard label="Relay OK" value={postbackStats.forwardOk} />
+          <StatCard label="Relay errors" value={postbackStats.forwardIssues} />
+        </div>
+      )}
+
+      {view === "pixel" ? (
+        <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] overflow-hidden">
+          <div className="px-4 py-3 border-b border-[hsl(var(--border))] text-sm font-semibold">Recent pixel events</div>
+          <div className="max-h-[560px] overflow-auto">
+            <table className="w-full text-xs">
+              <thead className="sticky top-0 bg-[hsl(var(--card))] border-b border-[hsl(var(--border))]">
+                <tr className="text-left text-[hsl(var(--muted-foreground))]">
+                  <th className="px-3 py-2">Time</th>
+                  <th className="px-3 py-2">Domain</th>
+                  <th className="px-3 py-2">Event</th>
+                  <th className="px-3 py-2">Click ID</th>
+                  <th className="px-3 py-2">GCLID</th>
+                  <th className="px-3 py-2">Data</th>
+                </tr>
+              </thead>
+              <tbody>
+                {events.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-3 py-8 text-center text-[hsl(var(--muted-foreground))]">
+                      No events found for selected filters.
+                    </td>
+                  </tr>
+                ) : (
+                  events.map((row) => {
+                    const chip = EVENT_COLORS[row.event] || EVENT_COLORS.default;
+                    return (
+                      <tr key={row.id} className="border-b border-[hsl(var(--border))/0.6]">
+                        <td className="px-3 py-2 whitespace-nowrap">{prettyTs(row.ts)}</td>
+                        <td className="px-3 py-2">{row.domain || "-"}</td>
+                        <td className="px-3 py-2">
+                          <span className={`inline-flex px-2 py-0.5 rounded-full font-semibold ${chip}`}>{row.event}</span>
+                        </td>
+                        <td className="px-3 py-2 font-mono">{row.clickId || "-"}</td>
+                        <td className="px-3 py-2 font-mono">{row.gclid || "-"}</td>
+                        <td className="px-3 py-2 max-w-[420px] truncate" title={row.data || ""}>{row.data || "-"}</td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] overflow-hidden">
+          <div className="px-4 py-3 border-b border-[hsl(var(--border))] text-sm font-semibold">Recent Voluum postbacks</div>
+          <div className="max-h-[560px] overflow-auto">
+            <table className="w-full text-xs">
+              <thead className="sticky top-0 bg-[hsl(var(--card))] border-b border-[hsl(var(--border))]">
+                <tr className="text-left text-[hsl(var(--muted-foreground))]">
+                  <th className="px-3 py-2">Time</th>
+                  <th className="px-3 py-2">Domain</th>
+                  <th className="px-3 py-2">Type</th>
+                  <th className="px-3 py-2">Click ID</th>
+                  <th className="px-3 py-2">Lead ID</th>
+                  <th className="px-3 py-2">Payout</th>
+                  <th className="px-3 py-2">Voluum host</th>
+                  <th className="px-3 py-2">Relay</th>
+                  <th className="px-3 py-2">HTTP</th>
+                </tr>
+              </thead>
+              <tbody>
+                {postbacks.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="px-3 py-8 text-center text-[hsl(var(--muted-foreground))]">
+                      No postbacks in this window. Set LeadsGate postback to your Worker route, e.g.{" "}
+                      <code className="text-[11px]">https://t.example.com/v?vd=...</code>
+                    </td>
+                  </tr>
+                ) : (
+                  postbacks.map((row) => {
+                    const fchip = FORWARD_STATUS_COLORS[row.forwardStatus] || FORWARD_STATUS_COLORS.default;
+                    return (
+                      <tr key={row.id} className="border-b border-[hsl(var(--border))/0.6]">
+                        <td className="px-3 py-2 whitespace-nowrap">{prettyTs(row.ts)}</td>
+                        <td className="px-3 py-2">{row.domain || "-"}</td>
+                        <td className="px-3 py-2 font-mono">{row.type || "-"}</td>
+                        <td className="px-3 py-2 font-mono max-w-[100px] truncate" title={row.clickId}>{row.clickId || "-"}</td>
+                        <td className="px-3 py-2 font-mono max-w-[100px] truncate" title={row.leadId}>{row.leadId || "-"}</td>
+                        <td className="px-3 py-2">{Number.isFinite(row.payout) ? row.payout.toFixed(2) : "-"}</td>
+                        <td className="px-3 py-2 max-w-[120px] truncate" title={row.voluumDomain}>{row.voluumDomain || "-"}</td>
+                        <td className="px-3 py-2">
+                          <span className={`inline-flex px-2 py-0.5 rounded-full font-semibold ${fchip}`} title={row.forwardError || ""}>
+                            {row.forwardStatus || "-"}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 font-mono">{row.forwardHttp != null ? String(row.forwardHttp) : "-"}</td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -173,7 +173,8 @@ const ENDPOINT_GROUPS = [
     name: "Pixel",
     icon: "📡",
     endpoints: [
-      { id: "pixel-events", method: "GET", name: "Pixel Events", path: "/pixel/events?domain=_healthcheck&limit=5" },
+      { id: "pixel-events", method: "GET", name: "Pixel Events", path: "/api/pixel/events?limit=5&since=0" },
+      { id: "postbacks", method: "GET", name: "Voluum postbacks", path: "/api/postbacks?limit=5&since=0" },
     ],
   },
 ];

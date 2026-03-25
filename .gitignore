@@ -11,6 +11,9 @@ dist
 .wrangler/
 .dev.vars
 
+# Local / one-off logs
+alpha-monitoring.log
+
 # OS
 .DS_Store
 Thumbs.db
