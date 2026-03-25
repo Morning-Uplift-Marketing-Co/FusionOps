@@ -151,6 +151,26 @@ function denyUnlessTrustedOrBearer(request, url, env) {
   return json({ error: 'Unauthorized (untrusted origin)' }, 401);
 }
 
+/**
+ * Bound-D1 direct-query: one statement only; SELECT / WITH only (after optional EXPLAIN).
+ * Blocks writes and PRAGMA even if outer auth is compromised.
+ */
+function isReadOnlyD1DirectSql(sql) {
+  let s = String(sql || '').trim();
+  if (!s) return false;
+  s = s.replace(/\/\*[\s\S]*?\*\//g, ' ');
+  s = s
+    .split(/\r?\n/)
+    .map((line) => line.replace(/--[^\n]*/, ''))
+    .join('\n');
+  s = s.trim();
+  const parts = s.split(';').map((x) => x.trim()).filter(Boolean);
+  if (parts.length !== 1) return false;
+  let one = parts[0];
+  one = one.replace(/^\s*EXPLAIN\s+(QUERY\s+PLAN\s+)?/i, '').trim();
+  return /^(SELECT|WITH)\b/i.test(one);
+}
+
 function getNeonSql(env) {
   const connStr = env?.NEON_DATABASE_URL;
   if (!connStr || typeof connStr !== 'string') return null;
@@ -2606,9 +2626,8 @@ export default {
       }
     } else if (path.startsWith('/api/') && !isMcpRoute) {
       const publicNoAuth = new Set(['/api/openapi.json']);
-      const isAiRoute = path.startsWith('/api/ai/');
-      const isSettingsRoute = path === '/api/settings';
-      if (!publicNoAuth.has(path) && !isAiRoute && !isSettingsRoute && !isTrustedOriginRequest(request, url, env)) {
+      // No API_SECRET: do not exempt /api/ai/* or /api/settings — require trusted origin like other routes.
+      if (!publicNoAuth.has(path) && !isTrustedOriginRequest(request, url, env)) {
         return json({ error: 'Unauthorized (untrusted origin, API_SECRET not configured)' }, 401);
       }
     }
@@ -5328,6 +5347,16 @@ export default {
           const { sql, params = [] } = body;
 
           if (!sql) return json({ success: false, error: 'Missing SQL query' }, 400);
+          if (!isReadOnlyD1DirectSql(sql)) {
+            return json(
+              {
+                success: false,
+                error: 'Only a single SELECT or WITH statement is allowed',
+                code: 'D1_DIRECT_READ_ONLY',
+              },
+              400,
+            );
+          }
 
           // Use env.DB binding directly
           const stmt = env.DB.prepare(sql);
