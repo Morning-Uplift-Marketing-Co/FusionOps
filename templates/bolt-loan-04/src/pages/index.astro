@@ -1,0 +1,49 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Hero from '../components/Hero.astro';
+import HowItWorks from '../components/HowItWorks.astro';
+import LenderLogos from '../components/LenderLogos.astro';
+import Features from '../components/Features.astro';
+import RatesTable from '../components/RatesTable.astro';
+import PaymentCalculator from '../components/PaymentCalculator.astro';
+import Testimonials from '../components/Testimonials.astro';
+import FAQ from '../components/FAQ.astro';
+import CTABanner from '../components/CTABanner.astro';
+import DisclaimerBar from '../components/DisclaimerBar.astro';
+import Footer from '../components/Footer.astro';
+import Modal from '../components/Modal.astro';
+import StickyMobileCTA from '../components/StickyMobileCTA.astro';
+import '../styles/global.css';
+---
+
+<Layout
+  title="LendPath — Find Loans Up to $5,000"
+  description="Compare loan offers from multiple lenders in minutes. No hard credit pull required. Amounts from $1,000 to $5,000 with APRs from 5.90%."
+>
+  <a
+    href="#main-content"
+    class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-white focus:font-semibold"
+  >
+    Skip to main content
+  </a>
+
+  <Nav />
+
+  <main id="main-content">
+    <Hero />
+    <HowItWorks />
+    <LenderLogos />
+    <Features />
+    <RatesTable />
+    <PaymentCalculator />
+    <Testimonials />
+    <FAQ />
+<CTABanner />
+  </main>
+
+  <DisclaimerBar />
+  <Footer />
+  <Modal />
+  <StickyMobileCTA />
+</Layout>

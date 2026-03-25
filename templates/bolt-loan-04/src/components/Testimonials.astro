@@ -1,0 +1,129 @@
+---
+const reviews = [
+  {
+    name: 'Sarah M.',
+    location: 'Austin, TX',
+    rating: 5,
+    quote: 'I needed funds quickly for a home repair and LendPath made the entire process painless. I had multiple offers within minutes and picked the one that worked best for me.',
+    loanPurpose: 'Home improvement',
+    datePublished: '2024-10-15',
+  },
+  {
+    name: 'James T.',
+    location: 'Chicago, IL',
+    rating: 5,
+    quote: 'Comparing loans used to feel overwhelming. LendPath showed me real offers side-by-side. No pressure, no hard sell — just clear numbers I could actually compare.',
+    loanPurpose: 'Debt consolidation',
+    datePublished: '2024-11-02',
+  },
+  {
+    name: 'Priya K.',
+    location: 'Phoenix, AZ',
+    rating: 4,
+    quote: 'The application took about two minutes and I found a rate much better than what my bank offered. Highly recommend at least checking before going straight to your bank.',
+    loanPurpose: 'Major purchase',
+    datePublished: '2024-11-20',
+  },
+  {
+    name: 'Marcus D.',
+    location: 'Atlanta, GA',
+    rating: 5,
+    quote: 'As someone rebuilding credit, I appreciated that checking my options didn\'t hurt my score. Found a lender willing to work with my situation.',
+    loanPurpose: 'Personal expenses',
+    datePublished: '2024-12-03',
+  },
+  {
+    name: 'Linda R.',
+    location: 'Seattle, WA',
+    rating: 5,
+    quote: 'The transparency of seeing APR and monthly payments upfront before I committed was exactly what I needed. No surprises.',
+    loanPurpose: 'Medical expenses',
+    datePublished: '2024-12-10',
+  },
+  {
+    name: 'Carlos V.',
+    location: 'Miami, FL',
+    rating: 4,
+    quote: 'Simple process, honest platform. They were clear that they\'re a marketplace, not a lender, which I actually appreciated — no hidden agenda.',
+    loanPurpose: 'Auto repair',
+    datePublished: '2025-01-05',
+  },
+];
+---
+
+<!-- Structured data: AggregateRating -->
+<script type="application/ld+json" set:html={JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "LendPath Loan Marketplace",
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "4.8",
+    "reviewCount": reviews.length.toString(),
+    "bestRating": "5",
+    "worstRating": "1"
+  },
+  "review": reviews.map(r => ({
+    "@type": "Review",
+    "author": { "@type": "Person", "name": r.name },
+    "reviewRating": { "@type": "Rating", "ratingValue": r.rating.toString(), "bestRating": "5" },
+    "reviewBody": r.quote,
+    "datePublished": r.datePublished
+  }))
+})} />
+
+<section class="py-20 md:py-28" style="background: var(--surface-2);" aria-labelledby="testimonials-heading">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+    <div class="mb-14 text-center">
+      <p class="section-label mb-3">Customer Stories</p>
+      <h2 id="testimonials-heading" class="text-3xl font-extrabold sm:text-4xl" style="color: #f1f5f9; letter-spacing: -0.02em;">
+        Real People. Real Outcomes.
+      </h2>
+      <p class="mt-4 text-slate-400 max-w-xl mx-auto text-sm">
+        <!-- COMPLIANCE REVIEW REQUIRED: results are not typical; verify disclaimer coverage -->
+        Individual results vary. Testimonials reflect personal experiences and are not representative of typical results.
+      </p>
+    </div>
+
+    <div class="grid gap-5 sm:grid-cols-3">
+      {reviews.slice(0, 3).map((review) => (
+        <article class="card flex flex-col" itemscope itemtype="https://schema.org/Review">
+          <meta itemprop="datePublished" content={review.datePublished} />
+          <div class="mb-3 flex items-center justify-between">
+            <div class="stars text-sm" aria-label={`${review.rating} out of 5 stars`}>
+              {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
+            </div>
+            <span class="rounded-full px-2 py-0.5 text-xs font-medium" style="background: rgba(0,87,255,0.12); color: #93bbff;">
+              {review.loanPurpose}
+            </span>
+          </div>
+          <blockquote itemprop="reviewBody" class="flex-1 text-sm leading-relaxed text-slate-300 mb-4">
+            &ldquo;{review.quote}&rdquo;
+          </blockquote>
+          <footer class="flex items-center gap-3 pt-4" style="border-top: 1px solid var(--border);">
+            <div class="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white" style="background: var(--primary);">
+              {review.name.charAt(0)}
+            </div>
+            <div>
+              <div class="text-sm font-semibold text-white" itemprop="author" itemscope itemtype="https://schema.org/Person">
+                <span itemprop="name">{review.name}</span>
+              </div>
+              <div class="text-xs text-slate-500">{review.location}</div>
+            </div>
+          </footer>
+        </article>
+      ))}
+    </div>
+
+    <!-- Aggregate rating display -->
+    <div class="mt-12 flex flex-col items-center gap-3 text-center sm:flex-row sm:justify-center sm:gap-8">
+      <div class="flex items-center gap-2">
+        <span class="stars text-xl">★★★★★</span>
+        <span class="text-2xl font-extrabold text-white">4.8</span>
+        <span class="text-sm text-slate-400">/ 5</span>
+      </div>
+      <!-- COMPLIANCE REVIEW REQUIRED: verify review count -->
+      <div class="text-sm text-slate-400">Based on 12,000+ verified reviews</div>
+    </div>
+  </div>
+</section>
