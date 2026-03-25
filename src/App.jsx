@@ -1114,12 +1114,16 @@ useEffect(() => {
           st('Saving template to database...');
           const _rawId = (templateData.newFolderId || templateData.templateName || '').toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
           const safeTemplateId = _rawId.length >= 2 ? _rawId : `tpl-${Date.now().toString(36)}`;
+          const fmt = templateData.templateFormat || null;
+          const userBadge = templateData.badge;
+          const badgeLoveable =
+            fmt === 'vite-react' && (!userBadge || userBadge === 'New');
           const templatePayload = {
             name: templateData.templateName,
             description: templateData.templateDescription,
             category: templateData.category || 'general',
-            badge: templateData.badge || 'New',
-            format: templateData.templateFormat || null,
+            badge: badgeLoveable ? 'Loveable' : (userBadge || 'New'),
+            format: fmt,
             sourceCode: templateData.generatedCode,
             files: templateData.generatedFiles || {},
           };
@@ -1144,16 +1148,23 @@ useEffect(() => {
 
           notify(`Template "${templateData.templateName}" saved!`, 'success');
 
-          // 2. Push to GitHub if Astro project
+          // 2. Push to GitHub if Astro or Vite (Loveable) project — same tree layout under templates/{id}/
           const files = templateData.generatedFiles;
-          const isAstro = templateData.templateFormat === 'astro' || (files && Object.keys(files).some(f => f.endsWith('.astro')));
+          const fileKeys = files && typeof files === 'object' ? Object.keys(files) : [];
+          const isAstro =
+            templateData.templateFormat === 'astro' ||
+            fileKeys.some((f) => f.endsWith('.astro'));
+          const isVite =
+            templateData.templateFormat === 'vite-react' ||
+            (fileKeys.includes('index.html') &&
+              fileKeys.some((f) => /(^|\/)vite\.config\.(ts|mts|js|mjs|cjs)$/i.test(f)));
           const ghToken = settings?.githubToken;
           const ghOwner = settings?.githubRepoOwner;
           const ghRepo = settings?.githubRepoName;
           const templateId = templateData.newFolderId;
 
-          if (isAstro && files && Object.keys(files).length > 0 && ghToken && ghOwner && ghRepo && templateId) {
-            st(`Pushing ${Object.keys(files).length} files to GitHub (templates/${templateId}/)...`);
+          if ((isAstro || isVite) && fileKeys.length > 0 && ghToken && ghOwner && ghRepo && templateId) {
+            st(`Pushing ${fileKeys.length} files to GitHub (templates/${templateId}/)...`);
             await pushAstroTemplateToGitHub({ token: ghToken, owner: ghOwner, repo: ghRepo, templateId, files });
           }
 

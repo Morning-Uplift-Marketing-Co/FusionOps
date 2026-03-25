@@ -34,7 +34,8 @@ export function StepReview({ c, building }) {
     const rows = [
         ["Brand", c.brand], ["Domain", c.domain || "—"], ["Type", LOAN_TYPES.find(l => l.id === c.loanType)?.label],
         ["Template", selectedTemplate?.name || "Classic LP"],
-        ["Range", `$${c.amountMin}–$${c.amountMax}`], ["APR", `${c.aprMin}%–${c.aprMax}%`],
+        ["Loan range (defaults)", `$${c.amountMin}–$${c.amountMax}`],
+        ["APR (defaults)", `${c.aprMin}%–${c.aprMax}%`],
         ["Colors", co.name], ["Ads ID", c.conversionId || "—"], ["AID", c.aid || "—"],
     ];
 
