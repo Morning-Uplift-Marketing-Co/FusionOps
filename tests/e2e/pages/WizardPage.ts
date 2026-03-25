@@ -278,43 +278,17 @@ export class WizardPage extends BasePage {
   /**
    * Complete Step 2: Product
    */
-  async completeStepProduct(data: {
-    loanType?: string;
-    amountMin?: number;
-    amountMax?: number;
-    aprMin?: number;
-    aprMax?: number;
-  } = {}) {
-    // Select loan type (Personal is default - first button)
+  async completeStepProduct(data: { loanType?: string } = {}) {
     if (data.loanType) {
       const loanButton = this.loanTypeButtons.filter({ hasText: data.loanType });
       if (await loanButton.isVisible()) {
         await loanButton.click();
       }
     } else {
-      // Click first loan type
       const firstLoan = this.loanTypeButtons.first();
       if (await firstLoan.isVisible()) {
         await firstLoan.click();
       }
-    }
-
-    // Set amounts
-    const inputs = this.page.locator('input[type="number"], input');
-    const numInputs = await inputs.count();
-
-    // Amount inputs are typically 0 and 1 index
-    if (data.amountMin !== undefined && numInputs > 0) {
-      await inputs.nth(0).fill(String(data.amountMin));
-    }
-    if (data.amountMax !== undefined && numInputs > 1) {
-      await inputs.nth(1).fill(String(data.amountMax));
-    }
-    if (data.aprMin !== undefined && numInputs > 2) {
-      await inputs.nth(2).fill(String(data.aprMin));
-    }
-    if (data.aprMax !== undefined && numInputs > 3) {
-      await inputs.nth(3).fill(String(data.aprMax));
     }
   }
 
@@ -459,13 +433,8 @@ export class WizardPage extends BasePage {
     });
     await this.clickNext();
 
-    // Step 2: Product
-    await this.completeStepProduct({
-      amountMin: 500,
-      amountMax: 10000,
-      aprMin: 5.99,
-      aprMax: 35.99,
-    });
+    // Step 2: Product (loan type only; amounts use wizard defaults)
+    await this.completeStepProduct();
     await this.clickNext();
 
     // Step 3: Template

@@ -39,10 +39,20 @@ const API_BASE = process.env.VITE_API_BASE || 'https://lp-factory-api.misty-feat
 
 export default defineConfig({
   integrations: [react()],
+  // Pin dev port so Playwright webServer.url matches (avoid silent fallback to 4322, etc.)
+  server: {
+    port: 4323,
+    strictPort: true,
+  },
   vite: {
     plugins: [tailwindcss()],
+    // Playwright sets VITE_E2E=1 on the dev server process; Vite does not expose ad-hoc env to client by default
+    define: {
+      'import.meta.env.VITE_E2E': JSON.stringify(process.env.VITE_E2E || ''),
+    },
     server: {
       port: 4323,
+      strictPort: true,
       host: true,
       fs: { allow: ['../..', '.'] },
       proxy: {

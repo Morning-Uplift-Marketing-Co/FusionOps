@@ -1,4 +1,17 @@
 import { test, expect } from '@playwright/test';
+import type { Page } from '@playwright/test';
+
+/** Open LP Wizard from sidebar (works when sidebar is collapsed — uses aria-label on nav + buttons). */
+async function openLpWizardFromSidebar(page: Page) {
+  const mainNav = page.getByRole('navigation', { name: /FusionOps main/i });
+  await mainNav.getByRole('button', { name: /^LP Wizard$/i }).click();
+  await page.waitForTimeout(400);
+  const createLPBtn = page.locator('button').filter({ hasText: /\+ Create New LP|\+ Create LP/i }).first();
+  if (await createLPBtn.isVisible({ timeout: 2500 }).catch(() => false)) {
+    await createLPBtn.click();
+    await page.waitForTimeout(400);
+  }
+}
 
 /**
  * Basic E2E Tests for LP Wizard - Direct Navigation
@@ -30,33 +43,11 @@ test.describe('LP Wizard - Basic Navigation', () => {
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
 
-    // Look for navigation
-    const nav = page.locator('nav');
-    await expect(nav.first()).toBeVisible({ timeout: 15000 });
-
-    // Get all buttons in nav
-    const navButtons = nav.locator('button');
-    const count = await navButtons.count();
-
-    console.log(`Found ${count} navigation buttons`);
-
-    // Find and click LP Wizard
-    let found = false;
-    for (let i = 0; i < count; i++) {
-      const text = await navButtons.nth(i).textContent();
-      console.log(`Button ${i}: "${text}"`);
-
-      if (text?.includes('LP Wizard') || text?.includes('Wizard')) {
-        await navButtons.nth(i).click();
-        found = true;
-        break;
-      }
-    }
-
-    expect(found).toBe(true);
+    const mainNav = page.getByRole('navigation', { name: /FusionOps main/i });
+    await expect(mainNav).toBeVisible({ timeout: 15000 });
+    await openLpWizardFromSidebar(page);
 
     // Wait for wizard to appear
-    await page.waitForTimeout(500);
     await page.screenshot({ path: 'test-artifacts/screenshots/02-wizard-opened.png' });
   });
 
@@ -64,17 +55,7 @@ test.describe('LP Wizard - Basic Navigation', () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
-    // Navigate to wizard via sidebar
-    const nav = page.locator('nav');
-    const navButtons = nav.locator('button');
-
-    for (let i = 0; i < await navButtons.count(); i++) {
-      const text = await navButtons.nth(i).textContent();
-      if (text?.includes('LP Wizard') || text?.includes('Wizard')) {
-        await navButtons.nth(i).click();
-        break;
-      }
-    }
+    await openLpWizardFromSidebar(page);
 
     // Wait for wizard to load
     await page.waitForTimeout(1000);
@@ -94,19 +75,7 @@ test.describe('LP Wizard - Step 1: Brand Information', () => {
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
 
-    // Navigate to wizard
-    const nav = page.locator('nav');
-    const navButtons = nav.locator('button');
-
-    for (let i = 0; i < await navButtons.count(); i++) {
-      const text = await navButtons.nth(i).textContent();
-      if (text?.includes('LP Wizard') || text?.includes('Wizard')) {
-        await navButtons.nth(i).click();
-        break;
-      }
-    }
-
-    await page.waitForTimeout(500);
+    await openLpWizardFromSidebar(page);
   });
 
   test('should display brand form fields', async ({ page }) => {
@@ -181,16 +150,8 @@ test.describe('LP Wizard - Multi-Step Flow', () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
-    // Navigate to wizard
-    const nav = page.locator('nav');
-    const navButtons = nav.locator('button');
-
-    // Click LP Wizard in sidebar, then + Create New LP
-    await page.locator('nav button').filter({ hasText: /LP Wizard/i }).click();
-    await page.waitForTimeout(500);
-    const createLPBtn = page.locator('button').filter({ hasText: /Create.*LP|\+ Create/i }).first();
-    if (await createLPBtn.isVisible({ timeout: 3000 }).catch(() => false)) await createLPBtn.click();
-    await page.waitForTimeout(1000);
+    await openLpWizardFromSidebar(page);
+    await page.waitForTimeout(600);
 
     // Step 1: Fill Brand - use non-number, non-checkbox inputs only
     const textInputs = page.locator('input:not([type="number"]):not([type="checkbox"])');
@@ -242,16 +203,8 @@ test.describe('LP Wizard - Screenshot Tour', () => {
     // Screenshot 1: Dashboard
     await page.screenshot({ path: 'test-artifacts/tour/01-dashboard.png', fullPage: true });
 
-    // Navigate to wizard
-    const nav = page.locator('nav');
-    const navButtons = nav.locator('button');
-
-    // Click LP Wizard in sidebar, then + Create New LP
-    await page.locator('nav button').filter({ hasText: /LP Wizard/i }).click();
-    await page.waitForTimeout(500);
-    const createLPBtn = page.locator('button').filter({ hasText: /Create.*LP|\+ Create/i }).first();
-    if (await createLPBtn.isVisible({ timeout: 3000 }).catch(() => false)) await createLPBtn.click();
-    await page.waitForTimeout(1000);
+    await openLpWizardFromSidebar(page);
+    await page.waitForTimeout(600);
 
     // Screenshot 2: Wizard Step 1
     await page.screenshot({ path: 'test-artifacts/tour/02-wizard-step1.png', fullPage: true });
