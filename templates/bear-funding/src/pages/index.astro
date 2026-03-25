@@ -1,0 +1,556 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const h1        = import.meta.env.PUBLIC_H1        || 'Check Your Rate in 2 Minutes — No Paperwork, No Waiting';
+const sub       = import.meta.env.PUBLIC_SUB       || "Checking your rate won't affect your credit score.";
+const cta       = import.meta.env.PUBLIC_CTA       || 'See My Offers — Free';
+const amountMin = import.meta.env.PUBLIC_AMOUNTMIN || '$500';
+const amountMax = import.meta.env.PUBLIC_AMOUNTMAX || '$10,000';
+const brand     = import.meta.env.PUBLIC_BRAND     || 'BearFunding';
+const voluumClickUrl = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '';
+const ctaHref   = voluumClickUrl || '#apply';
+
+const h1Parts = h1.split('—');
+const h1Main  = h1Parts[0]?.trim() || h1;
+const h1Sub   = h1Parts[1]?.trim() || '';
+---
+<Layout title={brand}>
+
+<!-- HERO -->
+<section class="hero" aria-labelledby="h1">
+  <div class="hero-grid" aria-hidden="true"></div>
+  <div class="orb orb-1" aria-hidden="true"></div>
+  <div class="orb orb-2" aria-hidden="true"></div>
+
+  <div class="wrap hero-inner">
+    <div class="hero-copy">
+      <div class="hero-tag">
+        <svg viewBox="0 0 10 10" fill="currentColor"><circle cx="5" cy="5" r="4"/></svg>
+        2-Minute Form · Instant Match
+      </div>
+      <h1 id="h1">
+        {h1Main} —<br><i>{h1Sub}</i>
+      </h1>
+      <p class="hero-lead">
+        {sub} We use a soft inquiry to match you with licensed lenders — so you can explore installment loan offers from {amountMin} to {amountMax} freely, without affecting your credit score.
+      </p>
+      <div class="hero-pills">
+        <div class="pill">
+          <svg viewBox="0 0 14 14" fill="none" width="13" height="13"><path d="M2 7l3.5 3.5L12 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          No hidden fees
+        </div>
+        <div class="pill">
+          <svg viewBox="0 0 14 14" fill="none" width="13" height="13"><rect x="1.5" y="3" width="11" height="8" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M5 7h4M7 5v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          Fixed monthly payments
+        </div>
+        <div class="pill">
+          <svg viewBox="0 0 14 14" fill="none" width="13" height="13"><path d="M7 1L1.5 4v4.5C1.5 11.5 4 13.5 7 14c3-.5 5.5-2.5 5.5-5.5V4L7 1z" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M4.5 7.5l2 2 3.5-3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          Secure application
+        </div>
+        <div class="pill">
+          <svg viewBox="0 0 14 14" fill="none" width="13" height="13"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.2"/><path d="M7 4v4l2 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          No credit impact
+        </div>
+      </div>
+      <div class="mobile-trust-strip" aria-label="Trust indicators">
+        <div class="mts-item">
+          <svg viewBox="0 0 10 10" fill="none" width="10" height="10" aria-hidden="true"><path d="M5 1L1 3v3c0 2 1.5 3 4 3.5C7.5 9 9 8 9 6V3L5 1z" stroke="#0EA97B" stroke-width="1.1" fill="none"/><path d="M3 5.5l1.2 1.2 2.5-2.5" stroke="#0EA97B" stroke-width="1.1" stroke-linecap="round"/></svg>
+          256-bit SSL
+        </div>
+        <div class="mts-sep" aria-hidden="true"></div>
+        <div class="mts-item">
+          <svg viewBox="0 0 10 10" fill="none" width="10" height="10" aria-hidden="true"><path d="M2 5.5l2 2 4-4" stroke="#0EA97B" stroke-width="1.3" stroke-linecap="round"/></svg>
+          No hard pull
+        </div>
+        <div class="mts-sep" aria-hidden="true"></div>
+        <div class="mts-item">
+          <svg viewBox="0 0 10 10" fill="none" width="10" height="10" aria-hidden="true"><path d="M2 5.5l2 2 4-4" stroke="#0EA97B" stroke-width="1.3" stroke-linecap="round"/></svg>
+          100+ lenders
+        </div>
+        <div class="mts-sep" aria-hidden="true"></div>
+        <div class="mts-item">
+          <svg viewBox="0 0 10 10" fill="none" width="10" height="10" aria-hidden="true"><path d="M2 5.5l2 2 4-4" stroke="#0EA97B" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Free to check
+        </div>
+      </div>
+
+      <div class="hero-nums">
+        <div class="num-item">
+          <div class="num-v">100+</div>
+          <div class="num-l">Lender partners</div>
+        </div>
+        <div class="num-item">
+          <div class="num-v">{amountMax}</div>
+          <div class="num-l">Maximum amount</div>
+        </div>
+        <div class="num-item">
+          <div class="num-v">2 min</div>
+          <div class="num-l">To complete</div>
+        </div>
+      </div>
+      <div class="lender-trust-row" aria-label="Lender network preview">
+        <span class="lender-trust-lbl">Network includes</span>
+        <div class="lender-dots">
+          <div class="lender-dot" title="Lender partner">SB</div>
+          <div class="lender-dot" title="Lender partner">OP</div>
+          <div class="lender-dot" title="Lender partner">FN</div>
+          <div class="lender-dot" title="Lender partner">LC</div>
+          <div class="lender-dot" title="Lender partner">UL</div>
+        </div>
+        <span class="lender-more">+ 95 more licensed lenders</span>
+      </div>
+      <div>
+        <div class="licensed-badge">
+          <svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 1L1 3.5v3C1 9 3.5 10.5 6 11c2.5-.5 5-2 5-4.5v-3L6 1z" stroke="currentColor" stroke-width="1.1" fill="none"/><path d="M3.5 6.5l1.5 1.5 3-3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          All lenders are state-licensed &amp; CFPB-regulated
+        </div>
+      </div>
+    </div>
+
+    <!-- FORM CARD -->
+    <div class="form-wrap" id="get-matched">
+      <div class="form-card">
+        <div class="adv-disclosure" role="note">
+          <svg viewBox="0 0 14 14" fill="none" width="13" height="13" aria-hidden="true"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M7 6v4M7 4.5v.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Advertisement &nbsp;·&nbsp; {brand} is a paid lead-generation service, not an independent financial advisor or lender.
+        </div>
+        <div class="fc-head">
+          <p class="fc-title">See Your Offers — Free</p>
+          <p class="fc-sub">No credit impact · No obligation · 256-bit encrypted</p>
+          <span class="fc-secure">
+            <svg viewBox="0 0 10 10" fill="none" width="10" height="10"><path d="M5 1L1 3v3c0 2 1.5 3.5 4 4 2.5-.5 4-2 4-4V3L5 1z" stroke="currentColor" stroke-width="1.1" fill="none"/><path d="M3.5 5.5l1.2 1.2L7 4" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            SSL Encrypted · No Hard Pull
+          </span>
+        </div>
+
+        <form id="hero-form" novalidate>
+          <p style="font-size:12.5px;font-weight:600;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">How much do you need?</p>
+          <div class="amount-grid" id="amount-grid" role="group" aria-label="Select loan amount">
+            <button type="button" class="amt-btn" data-v="1000">$1,000</button>
+            <button type="button" class="amt-btn" data-v="2000">$2,000</button>
+            <button type="button" class="amt-btn active" data-v="3000">$3,000</button>
+            <button type="button" class="amt-btn" data-v="5000">$5,000</button>
+            <button type="button" class="amt-btn" data-v="7500">$7,500</button>
+            <button type="button" class="amt-btn" data-v={amountMax.replace(/[^0-9]/g,'')}>{amountMax}</button>
+          </div>
+          <input type="hidden" id="loan-amount" value="3000">
+          <div id="err-amount" class="err-msg"></div>
+
+          <div class="fgroup">
+            <label for="zip">ZIP Code</label>
+            <input
+              type="text" id="zip" name="zip"
+              inputmode="numeric" maxlength="5"
+              placeholder="e.g. 10001"
+              autocomplete="postal-code"
+              required
+              aria-describedby="err-zip"
+            >
+            <div id="err-zip" class="err-msg"></div>
+          </div>
+
+          <button type="submit" class="btn-cta" id="hero-cta">
+            <span class="btn-txt">
+              <svg viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M9 1L17 9 9 17M17 9H1" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              {cta}
+            </span>
+            <span class="spinner" aria-hidden="true"></span>
+          </button>
+        </form>
+
+        <div class="tcpa-wrap">
+          <div class="tcpa-row">
+            <input type="checkbox" id="tcpa-check" class="tcpa-checkbox" required aria-required="true" aria-describedby="tcpa-err">
+            <label for="tcpa-check" class="tcpa-text">
+              I agree to the <a href="#" onclick="event.preventDefault();openSheet('privacy')">Privacy Policy</a> and <a href="#" onclick="event.preventDefault();openSheet('terms')">Terms of Use</a>, and consent to be contacted by {brand} and its lender partners via email, telephone, and automated SMS (including autodialers and pre-recorded messages) at the contact info I provide. <strong>This consent is not a condition of receiving any goods or services.</strong> Msg &amp; data rates may apply. Reply STOP to opt out.
+            </label>
+          </div>
+          <div class="tcpa-err" id="tcpa-err" role="alert">Please check the box above to continue.</div>
+        </div>
+        <div class="fc-no-pull">
+          <svg viewBox="0 0 12 12" fill="none" width="12" height="12"><path d="M6 1L1 3.5v4C1 10 3.5 11.5 6 12c2.5-.5 5-2 5-4.5v-4L6 1z" stroke="currentColor" stroke-width="1" fill="none"/></svg>
+          Checking offers does not affect your credit score
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <svg viewBox="0 0 1440 72" xmlns="http://www.w3.org/2000/svg" class="wave" preserveAspectRatio="none" style="display:block;width:100%;height:50px;margin-top:80px" aria-hidden="true">
+    <path d="M0 72V40C360 0 720 80 1080 40 1260 20 1380 48 1440 40V72z"/>
+  </svg>
+</section>
+
+<!-- TRUST BAR -->
+<div class="trust-bar">
+  <div class="wrap trust-row">
+    <div class="ti">
+      <div class="ti-dot"><svg viewBox="0 0 10 10" fill="none" width="10" height="10"><path d="M2 5.5l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      No Obligation
+    </div>
+    <div class="ti">
+      <div class="ti-dot"><svg viewBox="0 0 10 10" fill="none" width="10" height="10"><path d="M2 5.5l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      256-Bit SSL
+    </div>
+    <div class="ti">
+      <div class="ti-dot"><svg viewBox="0 0 10 10" fill="none" width="10" height="10"><path d="M2 5.5l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      No Hard Credit Pull
+    </div>
+    <div class="ti">
+      <div class="ti-dot"><svg viewBox="0 0 10 10" fill="none" width="10" height="10"><path d="M2 5.5l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      Decision in Minutes
+    </div>
+    <div class="ti">
+      <div class="ti-dot"><svg viewBox="0 0 10 10" fill="none" width="10" height="10"><path d="M2 5.5l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      Free to Check
+    </div>
+  </div>
+</div>
+
+<!-- STATS BAR -->
+<div class="stats-bar" aria-label="Company statistics">
+  <div class="wrap">
+    <div class="stats-row">
+      <div class="stat-block">
+        <div class="sb-val">$2.4B+</div>
+        <div class="sb-lbl">Loan requests facilitated</div>
+      </div>
+      <div class="stat-block">
+        <div class="sb-val">850K+</div>
+        <div class="sb-lbl">Customers matched</div>
+      </div>
+      <div class="stat-block">
+        <div class="sb-val">100+</div>
+        <div class="sb-lbl">Licensed lender partners</div>
+      </div>
+      <div class="stat-block">
+        <div class="sb-val">4.7★</div>
+        <div class="sb-lbl">Average customer rating</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MEDIA STRIP -->
+<div class="media-strip" aria-label="Media coverage">
+  <div class="wrap">
+    <div class="media-label">As referenced in</div>
+    <div class="media-logos">
+      <div class="media-logo">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="1" y="5" width="16" height="10" rx="2" fill="currentColor" opacity=".6"/><path d="M4 2h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".6"/></svg>
+        <span>Forbes</span>
+      </div>
+      <div class="media-logo">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4" opacity=".6"/><path d="M5 8h6M8 5v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".6"/></svg>
+        <span>NerdWallet</span>
+      </div>
+      <div class="media-logo">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12v8H2z" stroke="currentColor" stroke-width="1.3" opacity=".6"/><path d="M5 7h6M5 10h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" opacity=".6"/></svg>
+        <span>Bankrate</span>
+      </div>
+      <div class="media-logo">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1l2 5h5l-4 3 1.5 5L8 11l-4.5 3L5 9 1 6h5z" stroke="currentColor" stroke-width="1.2" fill="none" opacity=".6"/></svg>
+        <span>LendingTree</span>
+      </div>
+      <div class="media-logo">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="3" stroke="currentColor" stroke-width="1.3" opacity=".6"/><path d="M5 8h6M8 5v6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" opacity=".6"/></svg>
+        <span>Credit Karma</span>
+      </div>
+      <div class="media-logo">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="6" r="3.5" stroke="currentColor" stroke-width="1.3" opacity=".6"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" opacity=".6"/></svg>
+        <span>The Balance</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section class="hiw">
+  <div class="wrap">
+    <div class="s-head">
+      <div class="s-eyebrow">How It Works</div>
+      <h2>Three steps to<br>your loan offers</h2>
+      <p class="s-lead">Our matching process is simple, secure, and completely free. You're never obligated to accept any offer.</p>
+    </div>
+    <div class="hiw-grid">
+      <div class="hiw-card">
+        <div class="hiw-num">Step One</div>
+        <div class="hiw-icon">
+          <svg viewBox="0 0 22 22" fill="none"><rect x="3" y="4" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 9h8M7 13h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div class="hiw-title">Fill out the short form</div>
+        <div class="hiw-body">Select the amount you need, enter your ZIP code, and answer a few quick questions. The whole thing takes about 2 minutes.</div>
+        <div class="connector-line" aria-hidden="true">
+          <svg viewBox="0 0 24 12" fill="none"><path d="M2 6h16M14 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+      <div class="hiw-card">
+        <div class="hiw-num">Step Two</div>
+        <div class="hiw-icon">
+          <svg viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M8 11l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="hiw-title">Get matched instantly</div>
+        <div class="hiw-body">We search our network of licensed lenders in real-time and surface the offers that best match your request and profile.</div>
+        <div class="connector-line" aria-hidden="true">
+          <svg viewBox="0 0 24 12" fill="none"><path d="M2 6h16M14 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+      <div class="hiw-card">
+        <div class="hiw-num">Step Three</div>
+        <div class="hiw-icon">
+          <svg viewBox="0 0 22 22" fill="none"><path d="M4 11l5 5L18 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="hiw-title">Review &amp; choose</div>
+        <div class="hiw-body">Compare offers side-by-side with full APR, monthly payment, and terms. Pick the one that works for you — or walk away. No pressure.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RATES -->
+<section class="rates-section">
+  <div class="wrap" style="position:relative;z-index:1">
+    <div class="s-head">
+      <div class="s-eyebrow">Rates &amp; Terms</div>
+      <h2>Clear rates,<br>zero hidden fees</h2>
+      <p class="s-lead">Rates and terms are set by individual lenders based on your application. The examples below are representative only.</p>
+    </div>
+    <div class="rates-grid">
+      <div class="rate-card">
+        <div class="rate-amt">$1,000</div>
+        <div class="rate-lbl">Smaller amounts</div>
+        <div class="rate-divider"></div>
+        <div class="rate-apr">5.99% – 18.99% APR</div>
+        <div class="rate-terms">12–24 month terms</div>
+      </div>
+      <div class="rate-card pop">
+        <div class="rate-pop-badge">Most Requested</div>
+        <div class="rate-amt">$3,000</div>
+        <div class="rate-lbl">Mid-range</div>
+        <div class="rate-divider"></div>
+        <div class="rate-apr">9.99% – 24.99% APR</div>
+        <div class="rate-terms">12–48 month terms</div>
+      </div>
+      <div class="rate-card">
+        <div class="rate-amt">$7,500</div>
+        <div class="rate-lbl">Larger amounts</div>
+        <div class="rate-divider"></div>
+        <div class="rate-apr">15.99% – 35.99% APR</div>
+        <div class="rate-terms">24–60 month terms</div>
+      </div>
+    </div>
+  </div>
+  <svg viewBox="0 0 1440 64" xmlns="http://www.w3.org/2000/svg" class="wave-b" preserveAspectRatio="none" style="display:block;width:100%;height:44px;margin-top:72px;fill:#fff" aria-hidden="true">
+    <path d="M0 0C360 64 720 0 1080 48 1260 64 1380 16 1440 0V64H0z"/>
+  </svg>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials-section" aria-labelledby="reviews-title">
+  <div class="wrap">
+    <div class="s-head">
+      <div class="s-eyebrow">Customer Reviews</div>
+      <h2 id="reviews-title">Real people,<br>real experiences</h2>
+      <p class="s-lead">Verified reviews from customers who used {brand} to find loan offers.</p>
+    </div>
+    <div class="reviews-grid">
+      <div class="review-card">
+        <span class="rev-verified">Verified</span>
+        <div class="rev-stars">
+          <svg class="rev-star" viewBox="0 0 16 16"><path d="M8 1l1.8 4.2 4.5.4-3.4 2.9 1 4.4L8 10.8l-3.9 2.1 1-4.4L1.7 5.6l4.5-.4L8 1z"/></svg>
+          <svg class="rev-star" viewBox="0 0 16 16"><path d="M8 1l1.8 4.2 4.5.4-3.4 2.9 1 4.4L8 10.8l-3.9 2.1 1-4.4L1.7 5.6l4.5-.4L8 1z"/></svg>
+          <svg class="rev-star" viewBox="0 0 16 16"><path d="M8 1l1.8 4.2 4.5.4-3.4 2.9 1 4.4L8 10.8l-3.9 2.1 1-4.4L1.7 5.6l4.5-.4L8 1z"/></svg>
+          <svg class="rev-star" viewBox="0 0 16 16"><path d="M8 1l1.8 4.2 4.5.4-3.4 2.9 1 4.4L8 10.8l-3.9 2.1 1-4.4L1.7 5.6l4.5-.4L8 1z"/></svg>
+          <svg class="rev-star" viewBox="0 0 16 16"><path d="M8 1l1.8 4.2 4.5.4-3.4 2.9 1 4.4L8 10.8l-3.9 2.1 1-4.4L1.7 5.6l4.5-.4L8 1z"/></svg>
+        </div>
+        <p class="review-body">I needed $2,500 for a car repair and was nervous about my credit. The form took maybe 3 minutes, and I had three offers to compare within an hour. I picked one with a rate way better than I expected.</p>
+        <div class="reviewer">
+          <div class="rev-avatar" style="background:#EEF2FF;color:#4F46E5">DM</div>
+          <div>
+            <div class="rev-name">David M.</div>
+            <div class="rev-meta">Austin, TX &nbsp;·&nbsp; Borrowed $2,500</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="review-card">
+        <span class="rev-verified">Verified</span>
+        <div class="rev-stars">
+          <svg class="rev-star" viewBox="0 0 16 16"><path d="M8 1l1.8 4.2 4.5.4-3.4 2.9 1 4.4L8 10.8l-3.9 2.1 1-4.4L1.7 5.6l4.5-.4L8 1z"/></svg>
+          <svg class="rev-star" viewBox="0 0 16 16"><path d="M8 1l1.8 4.2 4.5.4-3.4 2.9 1 4.4L8 10.8l-3.9 2.1 1-4.4L1.7 5.6l4.5-.4L8 1z"/></svg>
+          <svg class="rev-star" viewBox="0 0 16 16"><path d="M8 1l1.8 4.2 4.5.4-3.4 2.9 1 4.4L8 10.8l-3.9 2.1 1-4.4L1.7 5.6l4.5-.4L8 1z"/></svg>
+          <svg class="rev-star" viewBox="0 0 16 16"><path d="M8 1l1.8 4.2 4.5.4-3.4 2.9 1 4.4L8 10.8l-3.9 2.1 1-4.4L1.7 5.6l4.5-.4L8 1z"/></svg>
+          <svg class="rev-star" viewBox="0 0 16 16"><path d="M8 1l1.8 4.2 4.5.4-3.4 2.9 1 4.4L8 10.8l-3.9 2.1 1-4.4L1.7 5.6l4.5-.4L8 1z"/></svg>
+        </div>
+        <p class="review-body">What I appreciated most is that checking offers didn't touch my credit score. I could look at everything without any pressure. The whole process felt transparent — no hidden surprises.</p>
+        <div class="reviewer">
+          <div class="rev-avatar" style="background:#FFF7ED;color:#C2410C">SR</div>
+          <div>
+            <div class="rev-name">Sarah R.</div>
+            <div class="rev-meta">Phoenix, AZ &nbsp;·&nbsp; Borrowed $5,000</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="review-card">
+        <span class="rev-verified">Verified</span>
+        <div class="rev-stars">
+          <svg class="rev-star" viewBox="0 0 16 16"><path d="M8 1l1.8 4.2 4.5.4-3.4 2.9 1 4.4L8 10.8l-3.9 2.1 1-4.4L1.7 5.6l4.5-.4L8 1z"/></svg>
+          <svg class="rev-star" viewBox="0 0 16 16"><path d="M8 1l1.8 4.2 4.5.4-3.4 2.9 1 4.4L8 10.8l-3.9 2.1 1-4.4L1.7 5.6l4.5-.4L8 1z"/></svg>
+          <svg class="rev-star" viewBox="0 0 16 16"><path d="M8 1l1.8 4.2 4.5.4-3.4 2.9 1 4.4L8 10.8l-3.9 2.1 1-4.4L1.7 5.6l4.5-.4L8 1z"/></svg>
+          <svg class="rev-star" viewBox="0 0 16 16"><path d="M8 1l1.8 4.2 4.5.4-3.4 2.9 1 4.4L8 10.8l-3.9 2.1 1-4.4L1.7 5.6l4.5-.4L8 1z"/></svg>
+          <svg class="rev-star" viewBox="0 0 16 16" style="opacity:.3"><path d="M8 1l1.8 4.2 4.5.4-3.4 2.9 1 4.4L8 10.8l-3.9 2.1 1-4.4L1.7 5.6l4.5-.4L8 1z"/></svg>
+        </div>
+        <p class="review-body">I was skeptical at first — too many sites like this turn out to be scammy. But {brand} was upfront about everything. They clearly stated they're a matching service, not a lender. That honesty won me over.</p>
+        <div class="reviewer">
+          <div class="rev-avatar" style="background:#F0FDF4;color:#15803D">JT</div>
+          <div>
+            <div class="rev-name">James T.</div>
+            <div class="rev-meta">Orlando, FL &nbsp;·&nbsp; Borrowed $1,500</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="reviews-agg">
+      <div class="agg-block">
+        <div class="agg-val">4.7</div>
+        <div class="agg-stars">
+          <svg class="rev-star" viewBox="0 0 16 16" width="18" height="18"><path d="M8 1l1.8 4.2 4.5.4-3.4 2.9 1 4.4L8 10.8l-3.9 2.1 1-4.4L1.7 5.6l4.5-.4L8 1z"/></svg>
+          <svg class="rev-star" viewBox="0 0 16 16" width="18" height="18"><path d="M8 1l1.8 4.2 4.5.4-3.4 2.9 1 4.4L8 10.8l-3.9 2.1 1-4.4L1.7 5.6l4.5-.4L8 1z"/></svg>
+          <svg class="rev-star" viewBox="0 0 16 16" width="18" height="18"><path d="M8 1l1.8 4.2 4.5.4-3.4 2.9 1 4.4L8 10.8l-3.9 2.1 1-4.4L1.7 5.6l4.5-.4L8 1z"/></svg>
+          <svg class="rev-star" viewBox="0 0 16 16" width="18" height="18"><path d="M8 1l1.8 4.2 4.5.4-3.4 2.9 1 4.4L8 10.8l-3.9 2.1 1-4.4L1.7 5.6l4.5-.4L8 1z"/></svg>
+          <svg class="rev-star" viewBox="0 0 16 16" width="18" height="18" style="opacity:.35"><path d="M8 1l1.8 4.2 4.5.4-3.4 2.9 1 4.4L8 10.8l-3.9 2.1 1-4.4L1.7 5.6l4.5-.4L8 1z"/></svg>
+        </div>
+        <div class="agg-lbl">Average rating</div>
+      </div>
+      <div class="agg-div"></div>
+      <div class="agg-block">
+        <div class="agg-val">12,400+</div>
+        <div class="agg-lbl" style="margin-top:13px">Verified reviews</div>
+      </div>
+      <div class="agg-div"></div>
+      <div class="agg-block">
+        <div class="agg-val">96%</div>
+        <div class="agg-lbl" style="margin-top:13px">Would recommend</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECURITY BADGES -->
+<div class="security-section" aria-label="Security and compliance certifications">
+  <div class="wrap">
+    <div class="security-row">
+      <div class="sec-badge">
+        <div class="sec-icon" style="background:#EFF6FF">
+          <svg viewBox="0 0 24 24" fill="none" width="18" height="18"><path d="M12 2L4 6v6c0 5 3.5 9.7 8 11 4.5-1.3 8-6 8-11V6L12 2z" stroke="#2563EB" stroke-width="1.5" fill="none"/><path d="M8 12l3 3 5-5" stroke="#2563EB" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div>
+          <div class="sec-title">256-Bit SSL</div>
+          <div class="sec-sub">Bank-grade encryption</div>
+        </div>
+      </div>
+      <div class="sec-badge">
+        <div class="sec-icon" style="background:#F0FDF4">
+          <svg viewBox="0 0 24 24" fill="none" width="18" height="18"><rect x="3" y="3" width="18" height="18" rx="4" stroke="#16A34A" stroke-width="1.5"/><path d="M8 12l3 3 5-5" stroke="#16A34A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div>
+          <div class="sec-title">CCPA Compliant</div>
+          <div class="sec-sub">California privacy law</div>
+        </div>
+      </div>
+      <div class="sec-badge">
+        <div class="sec-icon" style="background:#FFF7ED">
+          <svg viewBox="0 0 24 24" fill="none" width="18" height="18"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17 5.8 21.3l2.4-7.4L2 9.4h7.6L12 2z" stroke="#EA580C" stroke-width="1.5" fill="none"/></svg>
+        </div>
+        <div>
+          <div class="sec-title">TCPA Compliant</div>
+          <div class="sec-sub">FTC consent standards</div>
+        </div>
+      </div>
+      <div class="sec-badge">
+        <div class="sec-icon" style="background:#ECFDF5">
+          <svg viewBox="0 0 24 24" fill="none" width="18" height="18"><circle cx="12" cy="12" r="9" stroke="#059669" stroke-width="1.5"/><path d="M9 12l2 2 4-4" stroke="#059669" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div>
+          <div class="sec-title">CFPB Guidelines</div>
+          <div class="sec-sub">Federal standards met</div>
+        </div>
+      </div>
+      <div class="sec-badge">
+        <div class="sec-icon" style="background:#F5F3FF">
+          <svg viewBox="0 0 24 24" fill="none" width="18" height="18"><rect x="5" y="2" width="14" height="20" rx="3" stroke="#7C3AED" stroke-width="1.5"/><path d="M9 7h6M9 11h6M9 15h4" stroke="#7C3AED" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div>
+          <div class="sec-title">Licensed Lenders</div>
+          <div class="sec-sub">State-regulated network</div>
+        </div>
+      </div>
+      <div class="sec-badge">
+        <div class="sec-icon" style="background:#FEF2F2">
+          <svg viewBox="0 0 24 24" fill="none" width="18" height="18"><path d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z" stroke="#DC2626" stroke-width="1.5"/><path d="M16 12a1 1 0 110-2 1 1 0 010 2z" fill="#DC2626"/></svg>
+        </div>
+        <div>
+          <div class="sec-title">No Data Selling</div>
+          <div class="sec-sub">CCPA opt-out available</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FAQ -->
+<section class="faq-section">
+  <div class="wrap">
+    <div class="s-head">
+      <div class="s-eyebrow">Questions</div>
+      <h2>Common questions</h2>
+    </div>
+    <div class="faq-wrap">
+      <details open>
+        <summary>Is {brand} a lender?
+          <span class="faq-ico"><svg viewBox="0 0 12 12" fill="none" width="12" height="12"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+        </summary>
+        <p class="faq-body">No. {brand} is a free loan-matching service, not a lender. We connect you with licensed lenders in our network. We have no involvement in the credit decision, loan agreement, or any fees charged by lenders.</p>
+      </details>
+      <details>
+        <summary>Will checking my offers affect my credit score?
+          <span class="faq-ico"><svg viewBox="0 0 12 12" fill="none" width="12" height="12"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+        </summary>
+        <p class="faq-body">Using {brand} to check offers does not constitute a hard credit inquiry. It will not affect your credit score. If you proceed with a lender and formally accept an offer, that lender may perform a hard credit pull.</p>
+      </details>
+      <details>
+        <summary>What loan amounts are available?
+          <span class="faq-ico"><svg viewBox="0 0 12 12" fill="none" width="12" height="12"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+        </summary>
+        <p class="faq-body">Lenders in our network offer installment loans from {amountMin} to {amountMax}. The amount you qualify for depends on your state of residence, income, creditworthiness, and individual lender criteria.</p>
+      </details>
+      <details>
+        <summary>How quickly can I receive funds?
+          <span class="faq-ico"><svg viewBox="0 0 12 12" fill="none" width="12" height="12"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+        </summary>
+        <p class="faq-body">Timing depends entirely on the lender. If approved, many lenders can fund your account as soon as the next business day. {brand} does not control funding timelines, and approval is never guaranteed.</p>
+      </details>
+      <details>
+        <summary>Which states are eligible?
+          <span class="faq-ico"><svg viewBox="0 0 12 12" fill="none" width="12" height="12"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+        </summary>
+        <p class="faq-body">{brand} serves most U.S. states. Availability, maximum loan amounts, and eligible APR ranges vary by state. Residents of some states may not receive offers due to local lending laws or lender restrictions.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- CTA STRIP -->
+<section class="cta-section">
+  <div class="wrap">
+    <h2>Ready to see your options?</h2>
+    <p>2-minute form. No hard pull. No obligation.</p>
+    <a href={ctaHref} class="btn-cta-lg">
+      <svg viewBox="0 0 18 18" fill="none" width="17" height="17" aria-hidden="true"><path d="M9 1L17 9 9 17M17 9H1" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Get Matched Now — Free
+    </a>
+  </div>
+</section>
+
+</Layout>
