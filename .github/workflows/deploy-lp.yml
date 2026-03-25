@@ -223,6 +223,9 @@ jobs:
           CONFIG_FILE="${{ steps.config.outputs.file }}"
           AID=$(node -e "const c=require('$GITHUB_WORKSPACE/$CONFIG_FILE');console.log(c.aid||'14881')")
           BRAND=$(node -e "const c=require('$GITHUB_WORKSPACE/$CONFIG_FILE');console.log(c.brand||'Apply')")
+          CID=$(node -e "const c=require('$GITHUB_WORKSPACE/$CONFIG_FILE');console.log(c.conversionId||'')")
+          FSL=$(node -e "const c=require('$GITHUB_WORKSPACE/$CONFIG_FILE');console.log(c.gtagFormStartLabel||c.formStartLabel||'')")
+          FSUB=$(node -e "const c=require('$GITHUB_WORKSPACE/$CONFIG_FILE');console.log(c.gtagFormSubmitLabel||c.formSubmitLabel||'')")
 
           # Check if apply.html already exists in dist
           if [ ! -f dist/apply.html ] && [ ! -f dist/apply/index.html ]; then
@@ -230,7 +233,7 @@ jobs:
             node --input-type=module -e "
             import { generateApplyHtml } from '$GITHUB_WORKSPACE/packages/lp-template-generator/src/shared/unified-tracking.js';
             import fs from 'node:fs';
-            const html = generateApplyHtml('${AID}', '${BRAND}');
+            const html = generateApplyHtml('${AID}', '${BRAND}', { conversionId: '${CID}', formStartLabel: '${FSL}', formSubmitLabel: '${FSUB}' });
             fs.mkdirSync('dist', { recursive: true });
             fs.writeFileSync('dist/apply.html', html);
             console.log('Generated dist/apply.html (' + html.length + ' bytes)');

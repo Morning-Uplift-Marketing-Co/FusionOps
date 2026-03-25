@@ -15,7 +15,13 @@
  * for imported templates that don't use our variable syntax.
  */
 
-import { detectDependencies, extractCssVariables, identifyFramework, resolveEntryPoint } from './template-analyzer.js';
+import {
+  detectDependencies,
+  extractCssVariables,
+  getTemplateFileContent,
+  identifyFramework,
+  resolveEntryPoint,
+} from './template-analyzer.js';
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
@@ -109,23 +115,20 @@ export function buildPreviewHtml(files, site = {}, colors = null, basePath = '')
 // ─── Raw HTML Extraction ─────────────────────────────────────────────────────
 
 function extractRawHtml(files, entry, framework) {
-  // Prefer dist/index.html if it exists (pre-built by user/CI)
-  const distHtmlPaths = [
-    'dist/index.html',
-    'out/index.html',
-    'build/index.html'
-  ];
+  // Prefer dist/index.html if it exists (pre-built by user/CI); keys may use `\` on Windows
+  const distHtmlPaths = ['dist/index.html', 'out/index.html', 'build/index.html'];
   for (const path of distHtmlPaths) {
-    if (files[path]) return files[path];
+    const c = getTemplateFileContent(files, path);
+    if (typeof c === 'string' && c.trim()) return c;
   }
 
   if (!entry.path) {
     // Last resort: try to find any HTML file
-    const htmlKey = Object.keys(files).find(k => k.endsWith('.html'));
+    const htmlKey = Object.keys(files).find((k) => /\.html$/i.test(k.replace(/\\/g, '/')));
     return htmlKey ? files[htmlKey] : null;
   }
 
-  const content = files[entry.path];
+  const content = getTemplateFileContent(files, entry.path);
   if (!content) return null;
 
   // HTML files can be returned as-is

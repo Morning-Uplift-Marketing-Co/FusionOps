@@ -258,6 +258,34 @@ export function detectDependencies(files) {
 // ─── Entry Point Resolution ──────────────────────────────────────────────────
 
 /**
+ * Normalize a template file key for comparisons (Windows backslashes → forward slashes).
+ * @param {string} p
+ * @returns {string}
+ */
+export function normalizeTemplatePath(p) {
+  return String(p || '').replace(/\\/g, '/').replace(/^\/+/, '');
+}
+
+/**
+ * Read file content when keys may use `\\` or nested paths (e.g. `pkg/dist/index.html`).
+ * @param {Record<string, string>} files
+ * @param {string} logicalPath — e.g. `dist/index.html`
+ * @returns {string|undefined}
+ */
+export function getTemplateFileContent(files, logicalPath) {
+  if (!files || logicalPath == null || logicalPath === '') return undefined;
+  const want = normalizeTemplatePath(logicalPath);
+  for (const k of Object.keys(files)) {
+    if (normalizeTemplatePath(k) === want) return files[k];
+  }
+  for (const k of Object.keys(files)) {
+    const nk = normalizeTemplatePath(k);
+    if (nk.endsWith('/' + want)) return files[k];
+  }
+  return undefined;
+}
+
+/**
  * @typedef {Object} EntryResult
  * @property {string|null} path     — Relative path to the entry file
  * @property {'astro'|'html'|'tsx'|'jsx'|null} type
@@ -265,14 +293,17 @@ export function detectDependencies(files) {
  */
 
 const ENTRY_CANDIDATES = [
-  // Astro (highest priority)
+  // Pre-built bundles first (CI / local `astro build` output — best preview fidelity)
+  { pattern: 'dist/index.html',         type: 'html',   renderable: true },
+  { pattern: 'out/index.html',          type: 'html',   renderable: true },
+  { pattern: 'build/index.html',        type: 'html',   renderable: true },
+  // Astro source
   { pattern: 'src/pages/index.astro',   type: 'astro',  renderable: true },
   { pattern: 'pages/index.astro',       type: 'astro',  renderable: true },
   { pattern: 'index.astro',             type: 'astro',  renderable: true },
-  // Static HTML
+  // Static HTML (root / public)
   { pattern: 'index.html',              type: 'html',   renderable: true },
   { pattern: 'public/index.html',       type: 'html',   renderable: true },
-  { pattern: 'dist/index.html',         type: 'html',   renderable: true },
   // React (needs build)
   { pattern: 'src/App.tsx',             type: 'tsx',     renderable: false },
   { pattern: 'src/App.jsx',             type: 'jsx',     renderable: false },
