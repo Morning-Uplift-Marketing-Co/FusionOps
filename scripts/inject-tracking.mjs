@@ -663,7 +663,8 @@ function injectIntoAstro(filePath, projectRoot) {
   // Inject into <head> at the top for priority
   const root = projectRoot || path.resolve(path.dirname(filePath), '..', '..');
   const envAstro = loadDotEnv(root);
-  const headInject = astroRuntime + '\n' + VOLUUM_HEAD_SNIPPET;  if (/<\s*head(\s[^>]*)?>/i.test(content)) {
+  const headInject = astroRuntime + '\n' + VOLUUM_HEAD_SNIPPET;
+  if (/<\s*head(\s[^>]*)?>/i.test(content)) {
     content = content.replace(/<\s*head(\s[^>]*)?>/i, (m) => `${m}\n${headInject}`);
   } else if (/<\s*\/\s*head\s*>/i.test(content)) {
     content = content.replace(/<\s*\/\s*head\s*>/i, `${headInject}\n$&`);
