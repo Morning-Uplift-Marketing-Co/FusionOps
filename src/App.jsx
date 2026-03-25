@@ -210,6 +210,13 @@ useEffect(() => {
 
   // ── Auth check on boot (runs ONCE on mount) ─────────────────────
   useEffect(() => {
+    // Playwright / local E2E: allow dashboard without credentials (never set in production builds)
+    if (import.meta.env.VITE_E2E === "1") {
+      console.info("[auth] VITE_E2E=1 — bypassing login gate for automated tests");
+      setUser({ id: "e2e-local", email: "e2e@local.test", name: "E2E", role: "admin" });
+      setAuthChecked(true);
+      return;
+    }
     // Bypass auth entirely if Neon is not configured —
     // no DB = no auth possible, let the app run without login gate.
     const neonConnStr = NEON_URL || LS.get("settings")?.neonUrl || "";
