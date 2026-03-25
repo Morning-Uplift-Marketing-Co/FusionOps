@@ -1,5 +1,5 @@
 {
-  "templateId": "orange-lending-bolt",
+  "templateId": "bear-funding",
   "cfPagesProject": "lp-scratchpaypet-tech",
   "cfApiToken": "",
   "cfAccountId": "",
@@ -36,5 +36,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-25T03:40:12.827Z"
+  "deployedAt": "2026-03-25T10:58:35.983Z"
 }
