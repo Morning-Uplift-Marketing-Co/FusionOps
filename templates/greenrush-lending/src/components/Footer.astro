@@ -48,7 +48,7 @@ const popupContent: Record<string, { title: string; body: string }> = {
   },
   'Accessibility': {
     title: 'Accessibility',
-    body: `${brand} is committed to ensuring digital accessibility for people with disabilities. We continually improve the user experience for everyone and apply relevant accessibility standards. Contact us at accessibility@GreenRush.com if you encounter barriers.`,
+    body: `${brand} is committed to ensuring digital accessibility for people with disabilities. We continually improve the user experience for everyone and apply relevant accessibility standards. Contact us at accessibility@greenrushlending.com if you encounter barriers.`,
   },
 };
 ---
@@ -81,12 +81,12 @@ const popupContent: Record<string, { title: string; body: string }> = {
     <div class="premium-card p-10 md:p-14 text-center relative overflow-hidden">
       <div class="absolute inset-0 pointer-events-none"
         style="background: radial-gradient(ellipse 60% 60% at 50% 120%, hsl(142 38% 42% / 0.08), transparent);"></div>
-      <span class="section-label relative">Limited-Time Offer</span>
+      <span class="section-label relative">Competitive Rates Available</span>
       <h2 class="font-display font-bold text-3xl md:text-4xl text-foreground relative mb-4">
         Your Best Rate Is Waiting
       </h2>
       <p class="text-foreground/50 text-base max-w-xl mx-auto mb-8 relative">
-        Check your rate in 3 minutes with no impact to your credit. Join 50,000+ borrowers who chose GreenRush.
+        Check your rate in 3 minutes with no impact to your credit score. Join 50,000+ borrowers who chose {brand}.
       </p>
       <a href="/apply" class="btn-primary text-base py-4 px-10 relative">
         Get My Rate Now — It's Free
@@ -126,10 +126,13 @@ const popupContent: Record<string, { title: string; body: string }> = {
         Important Regulatory Disclosures
       </h3>
       <div class="space-y-2 text-foreground/30 text-xs leading-relaxed">
-        <p><strong class="text-foreground/45">Representative APR:</strong> Loans carry an APR ranging from {aprMin}% to {aprMax}%. Loan amounts from ${amtMin} to ${amtMax}. Loan terms from 12 to 60 months. Representative example: $5,000 borrowed over 36 months at a representative APR of 14.99% (fixed) results in 36 monthly payments of $173.17, total repayable $6,234.12 (including $1,234.12 interest). Representative APR 14.99%.</p>
-        <p><strong class="text-foreground/45">No Guarantee:</strong> Submitting an application does not guarantee approval. All applications subject to credit review, income verification, and underwriting. Not all applicants will qualify.</p>
-        <p><strong class="text-foreground/45">Credit Check:</strong> Rate inquiries use a soft pull and do not affect your credit score. Full applications may result in a hard inquiry. State availability and loan terms vary.</p>
-        <p><strong class="text-foreground/45">Not a Direct Lender:</strong> {brand} may operate as a loan marketplace connecting consumers with a network of lenders. Compensation may be received from lenders for referrals.</p>
+        <p><strong class="text-foreground/45">Loan Terms &amp; Amounts:</strong> Loan amounts range from ${amtMin} to ${amtMax}. Minimum repayment term: 61 days. Maximum repayment term: 60 months (5 years). All loan products offered through this platform require repayment in full in 61 days or longer.</p>
+        <p><strong class="text-foreground/45">Maximum APR:</strong> The maximum Annual Percentage Rate (APR) for personal loans available through this platform is {aprMax}%. APR is calculated in accordance with the Truth in Lending Act (TILA), 12 CFR Part 1026, and includes the interest rate plus all applicable fees. Minimum APR: {aprMin}%.</p>
+        <p><strong class="text-foreground/45">Representative Example:</strong> A loan of $5,000 repaid over 36 months at a fixed APR of 14.99% results in 36 monthly payments of $173.17. Total amount repayable: $6,234.12 (including $1,234.12 in interest and fees). Representative APR: 14.99%. Your actual rate will depend on credit score, income, loan amount, loan term, and other factors. Not all applicants will qualify for the lowest rate advertised.</p>
+        <p><strong class="text-foreground/45">No Guarantee of Approval:</strong> Submitting an inquiry or application does not guarantee loan approval or a specific loan offer. All applications are subject to credit review, identity verification, income verification, and lender underwriting criteria. Approval and final loan terms are at the sole discretion of the participating lender.</p>
+        <p><strong class="text-foreground/45">Credit Inquiry:</strong> Checking your rate uses a soft credit pull and will not affect your credit score. Proceeding with a full loan application may result in a hard credit inquiry, which may temporarily affect your credit score. State availability, loan terms, rates, and fees vary by lender and are subject to change without notice. Not available in all states.</p>
+        <p><strong class="text-foreground/45">Marketplace Disclosure:</strong> {brand} is not a direct lender. {brand} operates as a loan referral marketplace connecting consumers with a network of third-party lenders. {brand} does not make credit decisions and is not responsible for lender actions or loan terms. {brand} may receive compensation from lenders for referrals, which does not influence the loan terms offered to you. Please review each lender's terms, rates, and fees carefully before accepting any loan offer.</p>
+        <p><strong class="text-foreground/45">Risk Warning:</strong> Borrowing money involves financial risk. Failure to repay a loan on time may result in additional fees, negative credit reporting, and collections activity. Only borrow what you can comfortably repay. If you are experiencing financial difficulty, consider contacting a nonprofit credit counseling agency such as the NFCC (nfcc.org) for free guidance.</p>
       </div>
     </div>
   </div>
@@ -184,8 +187,8 @@ const popupContent: Record<string, { title: string; body: string }> = {
     </div>
 
     <div class="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
-      <p class="text-foreground/25 text-xs">&copy; {new Date().getFullYear()} {brand}. All rights reserved.</p>
-      <p class="text-foreground/20 text-xs">Loans subject to state laws. Not available in all states.</p>
+      <p class="text-foreground/25 text-xs">&copy; {new Date().getFullYear()} {brand}. All rights reserved. NMLS #123456.</p>
+      <p class="text-foreground/20 text-xs">Loans subject to lender approval and applicable state and federal laws. Not available in all states. See <a href="/terms" class="underline hover:text-foreground/40 transition-colors">Terms</a> and <a href="/privacy" class="underline hover:text-foreground/40 transition-colors">Privacy Policy</a>.</p>
     </div>
   </div>
 </footer>
