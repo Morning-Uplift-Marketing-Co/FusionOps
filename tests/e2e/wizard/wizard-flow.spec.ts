@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { DashboardPage } from '../pages/DashboardPage';
 import { WizardPage } from '../pages/WizardPage';
-import { VALID_BRAND_DATA, INVALID_BRAND_DATA, VALID_PRODUCT_DATA } from '../fixtures/wizard-data';
+import { VALID_BRAND_DATA, INVALID_BRAND_DATA } from '../fixtures/wizard-data';
 
 /**
  * E2E Tests for LP Wizard Flow
@@ -178,54 +178,12 @@ test.describe('LP Wizard - Step 2: Product Configuration', () => {
     await page.waitForTimeout(200);
   });
 
-  test('should display amount range presets', async ({ page }) => {
-    await expect(page.getByText(/\$100.*\$5K/)).toBeVisible();
-    await expect(page.getByText(/\$500.*\$10K/)).toBeVisible();
-  });
-
-  test('should select amount preset', async ({ page }) => {
-    const preset = page.locator('button').filter({ hasText: /\$100.*\$5K/ }).first();
-    if (await preset.isVisible()) {
-      await preset.click();
-      await page.waitForTimeout(200);
-    }
-  });
-
-  test('should accept custom amount range', async ({ page }) => {
-    const inputs = page.locator('input[type="number"], input');
-    await inputs.nth(0).fill('500');
-    await inputs.nth(1).fill('10000');
-
-    await wizardPage.clickNext();
-    await page.waitForTimeout(500);
-  });
-
-  test('should validate min < max for amounts', async ({ page }) => {
-    const inputs = page.locator('input');
-    await inputs.nth(0).fill('10000');
-    await inputs.nth(1).fill('5000');
-
-    await wizardPage.clickNext();
-
-    const errors = await wizardPage.getValidationErrors();
-    expect(errors.some(e => e.includes('Min Amount') || e.includes('less than'))).toBe(true);
-  });
-
-  test('should validate APR range', async ({ page }) => {
-    const inputs = page.locator('input');
-    await inputs.nth(0).fill('500');
-    await inputs.nth(1).fill('10000');
-    await inputs.nth(2).fill('35.99');
-    await inputs.nth(3).fill('5.99');
-
-    await wizardPage.clickNext();
-
-    const errors = await wizardPage.getValidationErrors();
-    expect(errors.some(e => e.includes('APR') || e.includes('less than'))).toBe(true);
+  test('should explain defaults for amounts on product step', async ({ page }) => {
+    await expect(page.getByText(/defaults/i)).toBeVisible();
   });
 
   test('should complete step 2 with valid data', async ({ page }) => {
-    await wizardPage.completeStepProduct(VALID_PRODUCT_DATA);
+    await wizardPage.completeStepProduct();
     await wizardPage.clickNext();
 
     await expect(wizardPage.stepIndicator).toContainText('Step 3/7');

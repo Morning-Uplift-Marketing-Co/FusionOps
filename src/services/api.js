@@ -66,8 +66,12 @@ async function request(path, opts = {}) {
     };
 
     // Longer timeout for registrar/automation endpoints (external APIs are slower)
-    const isSlowEndpoint = url.includes('/automation/registrar') || url.includes('/cloudflare/');
-    const timeoutMs = opts.timeout || (isSlowEndpoint ? 30000 : 10000);
+    const isSlowEndpoint =
+        url.includes('/automation/registrar') ||
+        url.includes('/cloudflare/') ||
+        url.includes('/generate-thumb') ||
+        url.includes('/upload-thumb');
+    const timeoutMs = opts.timeout || (isSlowEndpoint ? (url.includes('/generate-thumb') ? 90000 : 45000) : 10000);
 
     // Add timeout to prevent hanging requests
     const controller = new AbortController();

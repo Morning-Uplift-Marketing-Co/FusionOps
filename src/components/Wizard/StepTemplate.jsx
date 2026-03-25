@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, Camera } from "lucide-react";
 import { THEME as T } from "../../constants";
 import { Field } from "../ui/field";
-import { getTemplateById, DEFAULT_TEMPLATE_ID, getAllTemplates, getTemplateDiagnostics, resolveWizardCategory } from "./template-utils";
+import { getTemplateById, DEFAULT_TEMPLATE_ID, getAllTemplates, getTemplateDiagnostics, resolveWizardCategory, buildTemplateThumbnailUrl } from "./template-utils";
 import { getAllTemplatesAsync, deleteTemplate } from "../../utils/template-registry";
+import { api } from "../../services/api";
+import { buildThumbnailPreviewDocument } from "../../utils/template-thumbnail-preview.js";
 
 const CATEGORIES = [
     { id: "all", label: "All" },
@@ -12,13 +14,15 @@ const CATEGORIES = [
     { id: "custom", label: "Custom" },
 ];
 
-export function StepTemplate({ c, u }) {
+export function StepTemplate({ c, u, notify }) {
     const selectedTemplate = getTemplateById(c.templateId || DEFAULT_TEMPLATE_ID);
     const [templates, setTemplates] = useState(getAllTemplates());
     const [deletingId, setDeletingId] = useState(null);
     const [clearingBroken, setClearingBroken] = useState(false);
     const [filter, setFilter] = useState("all");
     const [showDebug, setShowDebug] = useState(false);
+    const [generatingThumb, setGeneratingThumb] = useState(null);
+    const [uploadingThumb, setUploadingThumb] = useState(null);
 
     useEffect(() => {
         let active = true;
@@ -59,6 +63,71 @@ export function StepTemplate({ c, u }) {
         }
     };
 
+    const refreshTemplates = async () => {
+        const updated = await getAllTemplatesAsync();
+        setTemplates(updated);
+        window.dispatchEvent(new CustomEvent("lp-template-refresh"));
+    };
+
+    const handleGenerateThumb = async (e, tpl) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!tpl.dbId) return;
+        setGeneratingThumb(tpl.dbId);
+        notify?.("กำลังโหลดรายละเอียดเทมเพลต + สร้างภาพแบบเดียวกับ Preview…", "info");
+        const detail = await api.get(`/templates/${tpl.dbId}`);
+        if (detail?.error) {
+            setGeneratingThumb(null);
+            notify?.(String(detail.error), "warning");
+            return;
+        }
+        const files = detail?.files && typeof detail.files === "object" ? detail.files : {};
+        if (!Object.keys(files).length) {
+            setGeneratingThumb(null);
+            notify?.("ไม่มีไฟล์ในเทมเพลต — อัปโหลดรูปด้วย Up แทน", "warning");
+            return;
+        }
+        let previewHtml;
+        try {
+            previewHtml = buildThumbnailPreviewDocument(files, {
+                dbId: tpl.dbId,
+                brand: detail?.name || tpl.name,
+            });
+        } catch (err) {
+            setGeneratingThumb(null);
+            notify?.(String(err?.message || err) || "สร้าง preview HTML ไม่ได้", "warning");
+            return;
+        }
+        const res = await api.post(`/templates/${tpl.dbId}/generate-thumb`, { previewHtml });
+        setGeneratingThumb(null);
+        if (res.error) {
+            notify?.(String(res.error), "warning");
+            return;
+        }
+        notify?.("บันทึก thumbnail แล้ว", "success");
+        await refreshTemplates();
+    };
+
+    const handleUploadThumb = async (e, tpl) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const input = e.target;
+        const file = input.files?.[0];
+        input.value = "";
+        if (!file || !tpl.dbId) return;
+        setUploadingThumb(tpl.dbId);
+        const fd = new FormData();
+        fd.append("image", file);
+        const res = await api.postForm(`/templates/${tpl.dbId}/upload-thumb`, fd);
+        setUploadingThumb(null);
+        if (res.error) {
+            notify?.(String(res.error), "warning");
+            return;
+        }
+        notify?.("อัปโหลด thumbnail แล้ว", "success");
+        await refreshTemplates();
+    };
+
     const handleClearAllBroken = async () => {
         const brokenCustom = templates.filter(t => t.source === 'api' && t.health && t.health.usable === false);
         const allCustom = templates.filter(t => t.source === 'api');
@@ -91,7 +160,7 @@ export function StepTemplate({ c, u }) {
                 <div style={{ fontSize: 28, marginBottom: 8 }}>🧩</div>
                 <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Template Selection</h2>
                 <p style={{ fontSize: 12, color: T.muted }}>
-                    Runtime templates loaded: {templates.length} ({diagnostics.bySource.module} module, {diagnostics.bySource.legacy} legacy, {diagnostics.bySource.api} custom)
+                    Choose a template. Custom: <strong>Gen</strong> loads full template from API and screenshots the same preview document as Template Manager; <strong>Up</strong> uploads your own image.
                 </p>
             </div>
 
@@ -113,11 +182,14 @@ export function StepTemplate({ c, u }) {
                     );
                 })}
             </div>
-            <div style={{ fontSize: 11, color: T.muted, marginBottom: 14 }}>
-                {filter === "all"
-                    ? `Visible ${filtered.length}/${categorized.length} templates. ${brokenCount > 0 ? `${brokenCount} broken.` : 'No broken templates detected.'}`
-                    : `Filter "${filter}" hides ${filterHiddenCount} template(s). Showing ${filtered.length}.`}
-            </div>
+            {showDebug && (
+                <div style={{ fontSize: 11, color: T.muted, marginBottom: 14 }}>
+                    Runtime: {templates.length} loaded ({diagnostics.bySource.module} module, {diagnostics.bySource.legacy} legacy, {diagnostics.bySource.api} custom).
+                    {filter === "all"
+                        ? ` Visible ${filtered.length}/${categorized.length}. ${brokenCount > 0 ? `${brokenCount} broken.` : "No broken templates detected."}`
+                        : ` Filter "${filter}" hides ${filterHiddenCount} template(s). Showing ${filtered.length}.`}
+                </div>
+            )}
 
             {/* Template Cards Grid */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
@@ -135,6 +207,7 @@ export function StepTemplate({ c, u }) {
                         : "linear-gradient(180deg, hsl(215 60% 52%), hsl(215 55% 38%))";
                     const previewDark = tpl._cat === 'pet';
                     const previewIcon = tpl._cat === 'pet' ? "🐾" : tpl._cat === 'custom' ? "⚡" : "💰";
+                    const thumbSrc = buildTemplateThumbnailUrl(tpl);
 
                     return (
                         <div key={tpl.id} style={{ position: 'relative' }}>
@@ -154,16 +227,29 @@ export function StepTemplate({ c, u }) {
                             >
                                 {/* Thumbnail Preview */}
                                 <div style={{
-                                    height: 90, background: previewBg,
+                                    height: 90,
+                                    background: thumbSrc ? "#0f1419" : previewBg,
                                     display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                                     gap: 2, position: "relative", borderBottom: `1px solid ${T.border}`,
+                                    overflow: "hidden",
                                 }}>
-                                    <div style={{ fontSize: 22 }}>{previewIcon}</div>
-                                    <div style={{
-                                        fontSize: 13, fontWeight: 800,
-                                        color: previewDark ? "hsl(220 20% 18%)" : "#fff",
-                                        letterSpacing: "-.3px",
-                                    }}>{tpl.name}</div>
+                                    {thumbSrc ? (
+                                        <img
+                                            src={thumbSrc}
+                                            alt=""
+                                            style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }}
+                                            onError={(e) => { e.target.style.display = "none"; }}
+                                        />
+                                    ) : (
+                                        <>
+                                            <div style={{ fontSize: 22 }}>{previewIcon}</div>
+                                            <div style={{
+                                                fontSize: 13, fontWeight: 800,
+                                                color: previewDark ? "hsl(220 20% 18%)" : "#fff",
+                                                letterSpacing: "-.3px",
+                                            }}>{tpl.name}</div>
+                                        </>
+                                    )}
 
                                     {tpl.badge && (
                                         <div style={{
@@ -195,7 +281,23 @@ export function StepTemplate({ c, u }) {
                                 {/* Info */}
                                 <div style={{ padding: "10px 14px" }}>
                                     <div style={{ fontSize: 13, fontWeight: 700 }}>{tpl.name}</div>
-                                    <div style={{ fontSize: 11, color: T.dim, marginTop: 3, lineHeight: 1.4 }}>{tpl.description}</div>
+                                    {tpl.description ? (
+                                        <div
+                                            title={tpl.description}
+                                            style={{
+                                                fontSize: 11,
+                                                color: T.dim,
+                                                marginTop: 3,
+                                                lineHeight: 1.4,
+                                                display: "-webkit-box",
+                                                WebkitLineClamp: 3,
+                                                WebkitBoxOrient: "vertical",
+                                                overflow: "hidden",
+                                            }}
+                                        >
+                                            {tpl.description}
+                                        </div>
+                                    ) : null}
                                 </div>
                             </button>
 
@@ -218,6 +320,69 @@ export function StepTemplate({ c, u }) {
                                 </button>
                             )}
                             <style>{`div:hover > .delete-tpl-btn { opacity: 1 !important; }`}</style>
+
+                            {isCustom && tpl.dbId ? (
+                                <div
+                                    style={{
+                                        position: "absolute",
+                                        top: 62,
+                                        right: 6,
+                                        display: "flex",
+                                        gap: 4,
+                                        zIndex: 6,
+                                    }}
+                                    onClick={(ev) => ev.stopPropagation()}
+                                >
+                                    <button
+                                        type="button"
+                                        title="Generate thumbnail (screenshot template HTML on server)"
+                                        disabled={!!generatingThumb || !!uploadingThumb}
+                                        onClick={(ev) => handleGenerateThumb(ev, tpl)}
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 3,
+                                            padding: "3px 7px",
+                                            fontSize: 10,
+                                            fontWeight: 700,
+                                            borderRadius: 6,
+                                            border: `1px solid ${T.border}`,
+                                            background: "rgba(15,20,25,0.75)",
+                                            color: "#e8eef5",
+                                            cursor: generatingThumb === tpl.dbId ? "wait" : "pointer",
+                                            opacity: generatingThumb && generatingThumb !== tpl.dbId ? 0.45 : 1,
+                                        }}
+                                    >
+                                        <Camera size={11} />
+                                        {generatingThumb === tpl.dbId ? "…" : "Gen"}
+                                    </button>
+                                    <label
+                                        title="Upload PNG/JPEG as thumbnail"
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            padding: "3px 7px",
+                                            fontSize: 10,
+                                            fontWeight: 700,
+                                            borderRadius: 6,
+                                            border: `1px solid ${T.border}`,
+                                            background: "rgba(15,20,25,0.75)",
+                                            color: "#e8eef5",
+                                            cursor: uploadingThumb === tpl.dbId ? "wait" : "pointer",
+                                            opacity: uploadingThumb && uploadingThumb !== tpl.dbId ? 0.45 : 1,
+                                        }}
+                                    >
+                                        {uploadingThumb === tpl.dbId ? "…" : "Up"}
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            style={{ display: "none" }}
+                                            disabled={!!generatingThumb || !!uploadingThumb}
+                                            onChange={(ev) => handleUploadThumb(ev, tpl)}
+                                        />
+                                    </label>
+                                </div>
+                            ) : null}
                         </div>
                     );
                 })}
