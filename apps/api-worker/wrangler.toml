@@ -23,6 +23,11 @@ preview_database_id = "99437cde-5e7c-4b58-97ad-69e43019c6ff"
 [browser]
 binding = "BROWSER"
 
+[observability]
+[observability.logs]
+enabled = true
+invocation_logs = true
+
 # R2 Bucket — stores generated thumbnails
 [[r2_buckets]]
 binding = "THUMBS"
@@ -31,3 +36,7 @@ bucket_name = "lp-factory-thumbs"
 # Optional Worker var: max bytes for POST /api/templates JSON body (default 41943040 = 40 MiB).
 # Set in dashboard: Workers → lp-factory-api → Settings → Variables, or wrangler secret/vars.
 # TEMPLATE_POST_MAX_BYTES = "52428800"
+#
+# Voluum postback relay (GET t.{site}/v): optional plain-text vars (not secrets):
+# DEFAULT_VOLUUM_POSTBACK_DOMAIN = "link.your-voluum-domain.com"   # used when request has no vd=
+# VOLUUM_FORWARD_DOMAIN_ALLOWLIST = "voluumtrk.com,your-track-domain.com"   # if set, vd= host must match

@@ -1,6 +1,8 @@
 # OpenClaw Agents for LP Factory
 
-7 automation agents that monitor and manage the LP Factory system via OpenClaw.
+**Scheduled (cron):** 7 automation agents that monitor LP Factory via Telegram + GitHub/API.
+
+**On-demand skills:** 7 extra playbooks under `openclaw/skills/` for local repo work, live URL checks, GitHub log triage, planning runbooks, dev-agent handoff, and one-shot ops briefs. Copy **all** of `openclaw/skills/*` into your OpenClaw skills directory.
 
 ## Quick Setup
 
@@ -56,11 +58,28 @@ DAILY_BUDGET_LIMIT="500"
 
 ### 3. Install Skills
 
-Copy skills to OpenClaw workspace:
+Copy **every** skill folder to your OpenClaw workspace (path may vary by install; see [OpenClaw skills](https://docs.openclaw.ai/skills)):
 
 ```bash
 cp -r openclaw/skills/* ~/.openclaw/workspace/skills/
 ```
+
+| Skill folder | OpenClaw name | Purpose |
+|--------------|---------------|---------|
+| `deploy-monitor` | `lp_deploy_monitor` | Recent `deploy-lp.yml` runs → Telegram |
+| `domain-health` | `lp_domain_health` | HTTP / SSL / DNS per active site |
+| `ads-watchdog` | `lp_ads_watchdog` | Policy / disapprovals (Multilogin) |
+| `spend-alert` | `lp_spend_alert` | Voluum + LendingCards vs budget |
+| `quality-gate-reporter` | `lp_quality_gate_reporter` | New templates → quality checks |
+| `cf-cleanup` | `lp_cf_cleanup` | Orphan CF Pages/DNS (confirm before delete) |
+| `template-scout` | `lp_template_scout` | Bolt / Lovable scouting |
+| `lp-template-pipeline` | `lp_template_pipeline` | Local convert / pack / inject-tracking / test |
+| `lp-live-tracking-verify` | `lp_live_tracking_verify` | Live URL HTML + pixel/gtag checks |
+| `lp-ci-local-triage` | `lp_ci_local_triage` | `npm run check/lint/test` on dev machine |
+| `lp-planning-runbook` | `lp_planning_runbook` | Follow `.planning/**/*.md` steps |
+| `lp-github-workflow-triage` | `lp_github_workflow_triage` | `gh run view --log-failed` deep dive |
+| `lp-dev-session-delegate` | `lp_dev_session_delegate` | Hand off task to Claude Code / Codex / Cursor |
+| `lp-ops-daily-brief` | `lp_ops_daily_brief` | One message: deploys + API snapshot + spend pointer |
 
 ### 4. Register Cron Jobs
 

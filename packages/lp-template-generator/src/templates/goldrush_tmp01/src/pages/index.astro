@@ -1,0 +1,63 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Hero from '../components/Hero.astro';
+import HowItWorks from '../components/HowItWorks.astro';
+import Calculator from '../components/Calculator.astro';
+import APRTable from '../components/APRTable.astro';
+import Testimonials from '../components/Testimonials.astro';
+import Eligibility from '../components/Eligibility.astro';
+import FAQ from '../components/FAQ.astro';
+import Footer from '../components/Footer.astro';
+
+const brand = import.meta.env.PUBLIC_BRAND || 'GoldRush Lending';
+const ctaHref = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '/apply';
+const domain    = import.meta.env.PUBLIC_DOMAIN    || 'example.com';
+const h1        = import.meta.env.PUBLIC_H1        || '';
+const sub       = import.meta.env.PUBLIC_SUB       || '';
+const cta       = import.meta.env.PUBLIC_CTA       || 'Apply Now';
+const phone     = import.meta.env.PUBLIC_PHONE     || '';
+const emailAddr = import.meta.env.PUBLIC_EMAIL     || '';
+const email     = import.meta.env.PUBLIC_EMAIL     || '';
+const aprMin    = import.meta.env.PUBLIC_APRMIN    || '5.99';
+const aprMax    = import.meta.env.PUBLIC_APRMAX    || '35.99';
+const amountMin = import.meta.env.PUBLIC_AMOUNTMIN || '500';
+const amountMax = import.meta.env.PUBLIC_AMOUNTMAX || '10000';
+---
+
+<Layout
+  title={`${brand} — Premium Installment Loans Up to $35,000`}
+  description="Apply for a personal installment loan in minutes. Fixed monthly payments, competitive APR, no hidden fees. Borrow $1,000–$35,000."
+>
+  <Hero />
+  <HowItWorks />
+  <hr class="section-divider" />
+  <Calculator />
+  <hr class="section-divider" />
+  <APRTable />
+  <hr class="section-divider" />
+  <Testimonials />
+  <hr class="section-divider" />
+  <Eligibility />
+  <hr class="section-divider" />
+  <FAQ />
+  <Footer />
+
+  <style is:inline>
+    @media (max-width: 768px) {
+      body { padding-bottom: 88px; }
+    }
+  </style>
+
+  <script is:inline>
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -32px 0px' });
+
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  </script>
+</Layout>
