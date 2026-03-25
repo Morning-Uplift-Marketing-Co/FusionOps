@@ -604,6 +604,46 @@ function parseTemplateFiles(raw) {
   return {};
 }
 
+function normalizeTemplateFileKey(k) {
+  return String(k || '').replace(/\\/g, '/').replace(/^\/+/, '');
+}
+
+/** Read a template file by logical path (handles Windows keys and nested dirs). */
+function getTemplateFileFromMap(files, logicalPath) {
+  if (!files || typeof files !== 'object' || !logicalPath) return '';
+  const want = normalizeTemplateFileKey(logicalPath);
+  for (const key of Object.keys(files)) {
+    if (normalizeTemplateFileKey(key) === want) return String(files[key] ?? '');
+  }
+  for (const key of Object.keys(files)) {
+    const nk = normalizeTemplateFileKey(key);
+    if (nk.endsWith('/' + want)) return String(files[key] ?? '');
+  }
+  return '';
+}
+
+/**
+ * Pick HTML for thumbnail screenshot: prefer CI/build output, then root index, then Astro entry.
+ * @returns {{ html: string, source: string|null }}
+ */
+function pickTemplateHtmlForThumb(files) {
+  if (!files || typeof files !== 'object') return { html: '', source: null };
+  const distOrder = ['dist/index.html', 'out/index.html', 'build/index.html'];
+  for (const p of distOrder) {
+    const html = getTemplateFileFromMap(files, p);
+    if (html.trim()) return { html, source: p };
+  }
+  const keys = Object.keys(files);
+  const idx =
+    keys.find((k) => normalizeTemplateFileKey(k) === 'index.html') ||
+    keys.find((k) => normalizeTemplateFileKey(k).endsWith('/index.html')) ||
+    keys.find((k) => normalizeTemplateFileKey(k).endsWith('index.astro'));
+  if (!idx) return { html: '', source: null };
+  let html = String(files[idx] || '');
+  html = html.replace(/^---[\s\S]*?---\n?/, '');
+  return { html, source: idx };
+}
+
 function getTemplateQualityGateReport({ files = {}, sourceCode = '', category = '' } = {}) {
   const fileMap = files && typeof files === 'object' ? files : {};
   const source = String(sourceCode || '');
@@ -1713,19 +1753,29 @@ export default {
         // Ensure thumbnail columns exist before querying
         try { await db.prepare('ALTER TABLE templates ADD COLUMN thumbnail_url TEXT').run(); } catch (_e) {}
         try { await db.prepare('ALTER TABLE templates ADD COLUMN thumbnail_generated_at TEXT').run(); } catch (_e) {}
+        /** Same document the web app builds (dist-first + base href + injections). */
+        let previewHtmlFromClient = '';
+        try {
+          const ct = request.headers.get('content-type') || '';
+          if (ct.includes('application/json')) {
+            const body = await request.json();
+            if (body && typeof body.previewHtml === 'string' && body.previewHtml.trim()) {
+              previewHtmlFromClient = body.previewHtml.trim();
+            }
+          }
+        } catch (_parse) {
+          /* empty or invalid JSON body — fall back to server-side pick */
+        }
         // Load template from D1 — uses files column (JSON string), not data
         const row = await db.prepare(`SELECT id, files, name, thumbnail_url FROM templates WHERE id = ? AND COALESCE(is_deleted,0) = 0 LIMIT 1`).bind(id).first();
         if (!row) return json({ error: 'Template not found' }, 404);
         const files = parseTemplateFiles(row.files);
-        // Find HTML to render — prefer index.html, else strip Astro frontmatter
-        const htmlKeys = Object.keys(files);
-        const htmlKey = htmlKeys.find(k => k === 'index.html')
-          || htmlKeys.find(k => k.endsWith('/index.html'))
-          || htmlKeys.find(k => k.endsWith('index.astro'));
-        if (!htmlKey) return json({ error: 'No renderable HTML found in template' }, 422);
-        let html = String(files[htmlKey] || '');
-        // Strip Astro frontmatter if present
-        html = html.replace(/^---[\s\S]*?---\n?/, '');
+        let html = previewHtmlFromClient;
+        if (!html) {
+          const picked = pickTemplateHtmlForThumb(files);
+          if (!picked.html.trim()) return json({ error: 'No renderable HTML found in template' }, 422);
+          html = picked.html;
+        }
         // Launch browser and screenshot
         const browser = await puppeteer.launch(env.BROWSER);
         const page = await browser.newPage();

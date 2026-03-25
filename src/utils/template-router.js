@@ -2,8 +2,9 @@ import { generateApplyPage } from "./lp-generator.js";
 import { generateAstroProject } from "./astro-generator.jsx";
 import { getTemplateGenerator, resolveTemplateId as resolveId, clearCustomTemplatesCache, fetchCustomTemplates, getCustomTemplatesCache, registry } from "./template-registry.js";
 import { detectTemplateFormat, resolveTemplateEntry } from "./template-standard.js";
-import { identifyFramework } from "./template-analyzer.js";
+import { getTemplateFileContent, identifyFramework } from "./template-analyzer.js";
 import { buildPreviewHtml } from "./template-preview-runtime.js";
+import { injectDistPreviewBase } from "./template-thumbnail-preview.js";
 import { generatePhone } from "./phone-gen.js";
 import { generateBusinessAddress } from "./contact-gen.js";
 import { ADAPTER_RUNTIME_VERSION } from "../adapters/runtime-version.ts";
@@ -1041,9 +1042,13 @@ export function generateHtmlByTemplate(site) {
     const customTemplate = customTemplatesCache.find(t => t.id === templateId || t.dbId === templateId);
     if (customTemplate && customTemplate.files) {
       // Prefer pre-built HTML (dist/index.html) — 100% accurate, no conversion needed
-      const builtHtml = customTemplate.files['dist/index.html'];
+      const builtHtml = getTemplateFileContent(customTemplate.files, 'dist/index.html');
       if (builtHtml) {
-        return ensureTrackingBaselineHtml(builtHtml, site);
+        const withBase =
+          customTemplate.dbId != null && String(customTemplate.dbId).trim()
+            ? injectDistPreviewBase(builtHtml, String(customTemplate.dbId).trim())
+            : builtHtml;
+        return ensureTrackingBaselineHtml(withBase, site);
       }
 
       // Use the smart analyzer to choose the right rendering path
