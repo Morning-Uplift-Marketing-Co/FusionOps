@@ -69,24 +69,10 @@ export class DashboardPage extends BasePage {
    * The wizard is accessed via the sidebar with the lightning bolt icon and "LP Wizard" text
    */
   async startCreateLP() {
-    // The sidebar has a button with the text "LP Wizard"
-    const lpWizardLink = this.page.locator('nav button').filter({ hasText: /LP Wizard/i });
-
-    // Also try by icon if text doesn't work
-    if (!(await lpWizardLink.isVisible())) {
-      const sidebarButtons = this.page.locator('nav button, nav a');
-      const count = await sidebarButtons.count();
-
-      for (let i = 0; i < count; i++) {
-        const text = await sidebarButtons.nth(i).textContent();
-        if (text?.includes('LP Wizard') || text?.includes('Create')) {
-          await sidebarButtons.nth(i).click();
-          return;
-        }
-      }
-    }
-
-    await lpWizardLink.click();
+    // Prefer accessible name: sidebar may be collapsed (no visible "LP Wizard" text, only icon)
+    const mainNav = this.page.getByRole('navigation', { name: /FusionOps main/i });
+    const lpWizard = mainNav.getByRole('button', { name: /^LP Wizard$/i });
+    await lpWizard.click();
   }
 
   /**

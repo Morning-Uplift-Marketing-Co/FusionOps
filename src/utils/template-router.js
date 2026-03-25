@@ -40,10 +40,18 @@ function resolveTemplateId(site) {
 // Module template IDs for quick lookup
 const MODULE_TEMPLATE_IDS = ['classic', 'pdl-loans-v1', 'pdl-loans-v3', 'simple-lp', 'pet-care-loans', 'elastic-credits-v3', 'scratchpay-bridge', 'pet-loans-v1', 'installment-loans-v1', 'installment-loans-v2', 'pet-care-v2', 'installment-golden', 'pet-care-golden', 'leadgen-golden', 'flowbite-loan', 'hyperui-loan'];
 
-// Check if a template ID is a module template
-function isModuleTemplate(templateId) {
+// Check if a template ID is a module template (used by wizard + build pipeline)
+export function isModuleTemplate(templateId) {
+  if (!templateId || typeof templateId !== 'string') return false;
   return MODULE_TEMPLATE_IDS.includes(templateId) ||
     templateId === 'pdl-loansv1'; // alias
+}
+
+/** Built-in legacy entries that behave like module templates for wizard capabilities */
+export const LEGACY_MODULE_LIKE_TEMPLATE_IDS = ['astro-test002'];
+
+export function isLegacyModuleLikeTemplate(templateId) {
+  return LEGACY_MODULE_LIKE_TEMPLATE_IDS.includes(templateId);
 }
 
 // Get color object for template substitution

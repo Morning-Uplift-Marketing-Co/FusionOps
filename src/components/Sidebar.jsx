@@ -214,8 +214,8 @@ export function Sidebar({ page, setPage, siteCount, taskBadge, startCreate, star
                     )}
                 </div>
 
-                {/* Nav */}
-                <nav className="p-1.5 flex-1">
+                {/* Nav — aria-label so collapsed rail + Playwright target the app sidebar, not Astro dev overlays */}
+                <nav className="p-1.5 flex-1" aria-label="FusionOps main">
                     {items.map(it => {
                         const active = page === it.id;
                         const ButtonWrapper = it.external ? 'a' : 'button';
@@ -223,6 +223,8 @@ export function Sidebar({ page, setPage, siteCount, taskBadge, startCreate, star
                         return (
                             <ButtonWrapper
                                 key={it.id}
+                                aria-label={it.label}
+                                title={collapsed ? it.label : undefined}
                                 onClick={() => {
                                     if (it.external) return;
                                     console.log("Sidebar click:", it.id);

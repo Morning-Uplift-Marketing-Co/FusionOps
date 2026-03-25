@@ -161,6 +161,8 @@ export default defineConfig({
     env: {
       // Set environment variables for the dev server
       NODE_ENV: 'test',
+      // App.jsx skips auth gate so wizard E2E can reach the sidebar (see VITE_E2E check)
+      VITE_E2E: '1',
     },
   },
 
