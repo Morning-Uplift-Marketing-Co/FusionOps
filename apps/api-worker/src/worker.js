@@ -131,6 +131,26 @@ function isTrustedOriginRequest(request, url, env) {
   return TRUSTED_PAGES_SUFFIXES.some((suffix) => sourceHost.endsWith(suffix));
 }
 
+/** Cap client-supplied HTML for Browser Rendering (abuse / memory). */
+const THUMB_PREVIEW_HTML_MAX_BYTES = 2 * 1024 * 1024;
+
+/** Cap manual thumbnail upload size. */
+const THUMB_UPLOAD_MAX_BYTES = 8 * 1024 * 1024;
+
+/**
+ * Expensive template thumb mutations: require same trust as authenticated /api —
+ * Bearer API_SECRET, or browser Origin/Referer on allowlist (see isTrustedOriginRequest).
+ */
+function denyUnlessTrustedOrBearer(request, url, env) {
+  const auth = request.headers.get('Authorization') || '';
+  if (env.API_SECRET && auth === `Bearer ${env.API_SECRET}`) return null;
+  if (isTrustedOriginRequest(request, url, env)) return null;
+  if (env.API_SECRET) {
+    return json({ error: 'Unauthorized (missing/invalid Bearer and untrusted origin)' }, 401);
+  }
+  return json({ error: 'Unauthorized (untrusted origin)' }, 401);
+}
+
 function getNeonSql(env) {
   const connStr = env?.NEON_DATABASE_URL;
   if (!connStr || typeof connStr !== 'string') return null;
@@ -1725,12 +1745,20 @@ export default {
     if (thumbUploadMatch && method === 'POST') {
       const id = decodeURIComponent(thumbUploadMatch[1]);
       try {
+        const authDeny = denyUnlessTrustedOrBearer(request, url, env);
+        if (authDeny) return authDeny;
         const formData = await request.formData();
         const file = formData.get('image');
         if (!file || typeof file === 'string') return json({ error: 'No image file provided' }, 400);
         const contentType = file.type || 'image/png';
         if (!contentType.startsWith('image/')) return json({ error: 'File must be an image' }, 400);
         const buffer = await file.arrayBuffer();
+        if (buffer.byteLength > THUMB_UPLOAD_MAX_BYTES) {
+          return json(
+            { error: 'Image too large', code: 'THUMB_UPLOAD_LIMIT', limit: THUMB_UPLOAD_MAX_BYTES },
+            413,
+          );
+        }
         await env.THUMBS.put(`thumbs/${id}.png`, buffer, { httpMetadata: { contentType: 'image/png' } });
         try { await db.prepare('ALTER TABLE templates ADD COLUMN thumbnail_url TEXT').run(); } catch (_e) {}
         try { await db.prepare('ALTER TABLE templates ADD COLUMN thumbnail_generated_at TEXT').run(); } catch (_e) {}
@@ -1749,6 +1777,8 @@ export default {
     if (thumbGenMatch && method === 'POST') {
       const id = decodeURIComponent(thumbGenMatch[1]);
       try {
+        const authDeny = denyUnlessTrustedOrBearer(request, url, env);
+        if (authDeny) return authDeny;
         await ensureTemplateManagerSchema(db);
         // Ensure thumbnail columns exist before querying
         try { await db.prepare('ALTER TABLE templates ADD COLUMN thumbnail_url TEXT').run(); } catch (_e) {}
@@ -1765,6 +1795,19 @@ export default {
           }
         } catch (_parse) {
           /* empty or invalid JSON body — fall back to server-side pick */
+        }
+        if (previewHtmlFromClient) {
+          const bytes = new TextEncoder().encode(previewHtmlFromClient).byteLength;
+          if (bytes > THUMB_PREVIEW_HTML_MAX_BYTES) {
+            return json(
+              {
+                error: 'previewHtml too large',
+                code: 'PREVIEW_HTML_LIMIT',
+                limit: THUMB_PREVIEW_HTML_MAX_BYTES,
+              },
+              413,
+            );
+          }
         }
         // Load template from D1 — uses files column (JSON string), not data
         const row = await db.prepare(`SELECT id, files, name, thumbnail_url FROM templates WHERE id = ? AND COALESCE(is_deleted,0) = 0 LIMIT 1`).bind(id).first();
@@ -2546,12 +2589,6 @@ export default {
         },
       };
       return json(spec);
-    }
-
-    // ═══ DEBUG MCP SECRET (temporary) ═══
-    if (path === '/api/debug/mcp-secret' && method === 'GET') {
-      // TEMPORARY: allow all origins for testing (remove after use)
-      return json({ MCP_SHARED_SECRET: env.MCP_SHARED_SECRET || '(not set)' });
     }
 
     // Auth check:
