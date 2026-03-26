@@ -6,6 +6,15 @@
  */
 import { useState, useEffect, useCallback, useRef } from "react";
 import { LS } from "../utils";
+import { generateProxyPoolRowsFromSettings, getAvailableProviders } from "../services/proxy-providers.js";
+import { QUALITY_TRUST_APPROVE_THRESHOLD } from "../services/ip-quality-pipeline.js";
+
+function proxyFailsQualityScore(p) {
+    if (p.status === "rejected") return true;
+    const t = Number(p.trust_score);
+    if (Number.isFinite(t) && t >= 0 && t < QUALITY_TRUST_APPROVE_THRESHOLD) return true;
+    return false;
+}
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Button } from "./ui/button";
@@ -139,6 +148,16 @@ export function ProxyListTab({ accounts = [], profiles = [] }) {
     const [bulkText, setBulkText] = useState("");
     const [bulkProvider, setBulkProvider] = useState("nodemaven");
     const [bulkCountry, setBulkCountry] = useState("TH");
+    const [showFromSettings, setShowFromSettings] = useState(false);
+    const [pullProvider, setPullProvider] = useState("nodemaven");
+    const [pullCount, setPullCount] = useState(10);
+    const [pullCountry, setPullCountry] = useState("US");
+    const [pullState, setPullState] = useState("");
+    const [pullCity, setPullCity] = useState("");
+    const [pullFilter, setPullFilter] = useState("medium");
+    const [pulling, setPulling] = useState(false);
+    const [pullError, setPullError] = useState(null);
+    const [bulkDeletingScore, setBulkDeletingScore] = useState(false);
     const [filter, setFilter] = useState("all");
     const [scanning, setScanning] = useState(null); // null | "all" | proxy_id
     const [scanProgress, setScanProgress] = useState({ done: 0, total: 0 });
@@ -205,6 +224,44 @@ export function ProxyListTab({ accounts = [], profiles = [] }) {
         setProxies(prev => prev.filter(p => p.id !== id));
     };
 
+    /** Remove proxies that failed quality scan (rejected or trust < threshold). */
+    const purgeFailingByScore = async (includeAssigned) => {
+        const failing = proxies.filter(proxyFailsQualityScore);
+        const targets = includeAssigned ? failing : failing.filter((p) => !p.assigned_to);
+        if (targets.length === 0) return;
+
+        const assignedInTargets = targets.filter((p) => p.assigned_to).length;
+        if (!includeAssigned && failing.length > targets.length) {
+            const skipped = failing.length - targets.length;
+            if (!window.confirm(
+                `ลบ ${targets.length} พร็อกซีที่ไม่ผ่านเกณฑ์ (rejected หรือ Trust < ${QUALITY_TRUST_APPROVE_THRESHOLD}) — เฉพาะที่ยังไม่ assign\n` +
+                `(ข้าม ${skipped} รายการที่ assign อยู่ — ใช้ปุ่ม "รวมที่ assign" ถ้าต้องการลบด้วย)`
+            )) return;
+        } else if (includeAssigned && assignedInTargets > 0) {
+            if (!window.confirm(
+                `ลบ ${targets.length} พร็อกซีที่ไม่ผ่านเกณฑ์ รวม ${assignedInTargets} รายการที่ผูก profile อยู่ — แน่ใจหรือไม่?`
+            )) return;
+        } else if (!window.confirm(
+            `ลบ ${targets.length} พร็อกซีที่ไม่ผ่านเกณฑ์ (rejected หรือ Trust < ${QUALITY_TRUST_APPROVE_THRESHOLD})?`
+        )) return;
+
+        setBulkDeletingScore(true);
+        const removed = [];
+        try {
+            for (const p of targets) {
+                const result = await d1Execute("DELETE FROM ops_proxy_pool WHERE id = ?", [p.id]);
+                if (result?.success) removed.push(p.id);
+            }
+            if (removed.length < targets.length) {
+                console.warn("[ProxyPool] purgeFailingByScore: some D1 deletes failed");
+            }
+            const rm = new Set(removed);
+            setProxies((prev) => prev.filter((p) => !rm.has(p.id)));
+        } finally {
+            setBulkDeletingScore(false);
+        }
+    };
+
     /* ── Add / Update ── */
     const addProxy = async (form) => {
         const proxy = {
@@ -263,6 +320,85 @@ export function ProxyListTab({ accounts = [], profiles = [] }) {
         setProxies(prev => [...newProxies, ...prev]);
         setShowBulk(false);
         setBulkText("");
+    };
+
+    /* ── Generate rows from Settings credentials (gateway + session usernames) ── */
+    const configuredProviders = useCallback(() => {
+        const s = LS.get("settings") || {};
+        return getAvailableProviders(s).filter((p) => p.configured);
+    }, []);
+
+    useEffect(() => {
+        if (!showFromSettings) return;
+        const list = configuredProviders();
+        if (list.length && !list.some((p) => p.id === pullProvider)) {
+            setPullProvider(list[0].id);
+        }
+    }, [showFromSettings, pullProvider, configuredProviders]);
+
+    const pullFromSettings = async () => {
+        setPullError(null);
+        const s = LS.get("settings") || {};
+        const available = getAvailableProviders(s).filter((p) => p.configured);
+        if (available.length === 0) {
+            setPullError("ยังไม่ได้ตั้งค่า proxy ใน Settings → ใส่ NodeMaven / SmartProxy / SOAX / Bright Data ก่อน");
+            return;
+        }
+        if (!available.some((p) => p.id === pullProvider)) {
+            setPullError("เลือกผู้ให้บริการที่ตั้งค่า credentials แล้ว");
+            return;
+        }
+        setPulling(true);
+        try {
+            const { rows, error } = generateProxyPoolRowsFromSettings(
+                pullProvider,
+                pullCount,
+                {
+                    country: pullCountry.trim(),
+                    state: pullState.trim(),
+                    city: pullCity.trim(),
+                    filter: pullFilter,
+                    protocol: "http",
+                },
+                s
+            );
+            if (error) {
+                setPullError(error);
+                return;
+            }
+            const newProxies = rows.map((r) => ({
+                id: uid(),
+                host: r.host,
+                port: r.port,
+                username: r.username,
+                password: r.password,
+                provider: r.provider,
+                country: r.country,
+                city: r.city,
+                state: r.state,
+                asn: "",
+                isp: "",
+                fraud_score: -1,
+                trust_score: -1,
+                latency_ms: -1,
+                timezone: "",
+                is_proxy: -1,
+                status: "pending",
+                assigned_to: "",
+                scan_details: "",
+                last_scan_at: "",
+                created_at: new Date().toISOString(),
+            }));
+            for (const px of newProxies) {
+                await saveProxy(px);
+            }
+            setProxies((prev) => [...newProxies, ...prev]);
+            setShowFromSettings(false);
+        } catch (e) {
+            setPullError(e?.message || "ดึงรายการไม่สำเร็จ");
+        } finally {
+            setPulling(false);
+        }
     };
 
     /* ── Quality Scan ── */
@@ -380,6 +516,13 @@ export function ProxyListTab({ accounts = [], profiles = [] }) {
         assigned: proxies.filter(p => p.assigned_to).length,
     };
 
+    const lsSettings = LS.get("settings") || {};
+    const pullConfiguredProviders = getAvailableProviders(lsSettings).filter((p) => p.configured);
+
+    const failingProxies = proxies.filter(proxyFailsQualityScore);
+    const failingUnassignedCount = failingProxies.filter((p) => !p.assigned_to).length;
+    const failingAssignedOnlyCount = failingProxies.filter((p) => !!p.assigned_to).length;
+
     return (
         <div className="space-y-4">
             {/* Header */}
@@ -400,6 +543,31 @@ export function ProxyListTab({ accounts = [], profiles = [] }) {
                             Scan All ({counts.pending})
                         </Button>
                     )}
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => purgeFailingByScore(false)}
+                        disabled={!!scanning || bulkDeletingScore || failingUnassignedCount === 0}
+                        className="text-xs h-7 text-red-400 border-red-500/30 hover:bg-red-500/10"
+                        title={`ลบรายการที่ status=rejected หรือ Trust ต่ำกว่า ${QUALITY_TRUST_APPROVE_THRESHOLD} (ยังไม่ assign)`}
+                    >
+                        {bulkDeletingScore ? "…" : `ลบไม่ผ่าน (${failingUnassignedCount})`}
+                    </Button>
+                    {failingAssignedOnlyCount > 0 && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => purgeFailingByScore(true)}
+                            disabled={!!scanning || bulkDeletingScore}
+                            className="text-xs h-7 text-amber-500/90 border-amber-500/35 hover:bg-amber-500/10"
+                            title="ลบทุกรายการที่ไม่ผ่านเกณฑ์ รวมที่ assign แล้ว"
+                        >
+                            ลบรวม assign ({failingProxies.length})
+                        </Button>
+                    )}
+                    <Button variant="outline" size="sm" onClick={() => { setShowFromSettings((v) => !v); setPullError(null); }} className="text-xs h-7">
+                        จาก Settings
+                    </Button>
                     <Button variant="outline" size="sm" onClick={() => setShowBulk(v => !v)} className="text-xs h-7">Bulk Import</Button>
                     <Button variant="outline" size="sm" onClick={exportList} className="text-xs h-7">Export</Button>
                     <Button size="sm" onClick={() => { setShowAdd(v => !v); setEditId(null); }} className="text-xs h-7">+ Add</Button>
@@ -421,6 +589,102 @@ export function ProxyListTab({ accounts = [], profiles = [] }) {
                     </div>
                 ))}
             </div>
+
+            {/* Generate from Settings (saved API credentials → gateway rows with unique sessions) */}
+            {showFromSettings && (
+                <Card>
+                    <CardContent className="pt-4 space-y-3">
+                        <h4 className="text-xs font-semibold">ดึงพร็อกซีจาก Settings</h4>
+                        <p className="text-[10px] text-[hsl(var(--muted-foreground))] leading-relaxed">
+                            สร้างรายการ <code className="text-[9px]">host:port:user:pass</code> จาก credentials ที่บันทึกใน Settings (แยก session ต่อแถว)
+                            — ไม่ต้องคัดลอกจากแดชบอร์ดผู้ให้บริการ โหมดนี้เหมาะกับ residential backconnect (NodeMaven, Decodo/SmartProxy ฯลฯ)
+                        </p>
+                        {pullError && (
+                            <div className="text-xs text-red-500 bg-red-500/10 border border-red-500/20 rounded px-2 py-1.5">{pullError}</div>
+                        )}
+                        <div className="flex flex-wrap items-end gap-3">
+                            <div>
+                                <label className="text-[10px] text-[hsl(var(--muted-foreground))] block mb-1">ผู้ให้บริการ</label>
+                                <select
+                                    value={pullProvider}
+                                    onChange={(e) => setPullProvider(e.target.value)}
+                                    className="px-2 py-1.5 text-xs rounded border border-[hsl(var(--border))] bg-[hsl(var(--background))] min-w-[140px]"
+                                >
+                                    {pullConfiguredProviders.map((p) => (
+                                        <option key={p.id} value={p.id}>
+                                            {p.name}
+                                        </option>
+                                    ))}
+                                    {pullConfiguredProviders.length === 0 && (
+                                        <option value="nodemaven">— ตั้งค่าใน Settings ก่อน —</option>
+                                    )}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-[10px] text-[hsl(var(--muted-foreground))] block mb-1">จำนวนแถว</label>
+                                <input
+                                    type="number"
+                                    min={1}
+                                    max={50}
+                                    value={pullCount}
+                                    onChange={(e) => setPullCount(Math.min(50, Math.max(1, parseInt(e.target.value, 10) || 10)))}
+                                    className="w-20 px-2 py-1.5 text-xs rounded border border-[hsl(var(--border))] bg-[hsl(var(--background))]"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] text-[hsl(var(--muted-foreground))] block mb-1">ประเทศ (optional)</label>
+                                <input
+                                    value={pullCountry}
+                                    onChange={(e) => setPullCountry(e.target.value.toUpperCase())}
+                                    maxLength={2}
+                                    placeholder="US"
+                                    className="w-14 px-2 py-1.5 text-xs rounded border border-[hsl(var(--border))] bg-[hsl(var(--background))] font-mono"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] text-[hsl(var(--muted-foreground))] block mb-1">รัฐ/ภูมิภาค</label>
+                                <input
+                                    value={pullState}
+                                    onChange={(e) => setPullState(e.target.value)}
+                                    placeholder="optional"
+                                    className="w-28 px-2 py-1.5 text-xs rounded border border-[hsl(var(--border))] bg-[hsl(var(--background))]"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] text-[hsl(var(--muted-foreground))] block mb-1">เมือง</label>
+                                <input
+                                    value={pullCity}
+                                    onChange={(e) => setPullCity(e.target.value)}
+                                    placeholder="optional"
+                                    className="w-28 px-2 py-1.5 text-xs rounded border border-[hsl(var(--border))] bg-[hsl(var(--background))]"
+                                />
+                            </div>
+                            {pullProvider === "nodemaven" && (
+                                <div>
+                                    <label className="text-[10px] text-[hsl(var(--muted-foreground))] block mb-1">IP quality filter</label>
+                                    <select
+                                        value={pullFilter}
+                                        onChange={(e) => setPullFilter(e.target.value)}
+                                        className="px-2 py-1.5 text-xs rounded border border-[hsl(var(--border))] bg-[hsl(var(--background))]"
+                                    >
+                                        <option value="low">low</option>
+                                        <option value="medium">medium</option>
+                                        <option value="high">high</option>
+                                    </select>
+                                </div>
+                            )}
+                        </div>
+                        <div className="flex justify-end gap-2">
+                            <Button variant="outline" size="sm" onClick={() => setShowFromSettings(false)} className="text-xs h-7">
+                                ปิด
+                            </Button>
+                            <Button size="sm" onClick={pullFromSettings} disabled={pulling} className="text-xs h-7">
+                                {pulling ? "กำลังเพิ่ม…" : "เพิ่มเข้า Pool"}
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Bulk Import */}
             {showBulk && (

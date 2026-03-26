@@ -1,0 +1,3 @@
+# Railway / Nixpacks — undici v7 needs Node 20.18+; v6 works on 18+ but 20 LTS is safer.
+[variables]
+NIXPACKS_NODE_VERSION = "20"
