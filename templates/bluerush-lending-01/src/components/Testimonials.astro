@@ -1,0 +1,153 @@
+---
+const reviews = [
+  {
+    name: 'Sarah M.',
+    location: 'Austin, TX',
+    amount: '$18,000',
+    purpose: 'Debt Consolidation',
+    rating: 5,
+    quote: "I consolidated three high-interest cards into one clean payment. The rate was better than I expected, and the whole process took less than a day.",
+    avatar: 'SM',
+    color: 'hsl(168 100% 38%)',
+  },
+  {
+    name: 'James R.',
+    location: 'Chicago, IL',
+    amount: '$8,500',
+    purpose: 'Home Improvement',
+    rating: 5,
+    quote: "Finally renovated my kitchen. The funds hit my account the morning after I signed. No runaround, no confusing paperwork. Exceptional service.",
+    avatar: 'JR',
+    color: 'hsl(37 91% 55%)',
+  },
+  {
+    name: 'Priya N.',
+    location: 'San Jose, CA',
+    amount: '$25,000',
+    purpose: 'Medical Bills',
+    rating: 5,
+    quote: "Faced a $25K surgery bill and was terrified. BlueRush approved me within hours, fixed rate, manageable payments. Genuinely life-changing.",
+    avatar: 'PN',
+    color: 'hsl(204 100% 52%)',
+  },
+  {
+    name: 'Marcus T.',
+    location: 'Atlanta, GA',
+    amount: '$5,000',
+    purpose: 'Emergency Fund',
+    rating: 5,
+    quote: "The soft credit check meant I could compare options without damaging my score. Transparent from start to finish — rare in this industry.",
+    avatar: 'MT',
+    color: 'hsl(168 100% 38%)',
+  },
+  {
+    name: 'Linda K.',
+    location: 'Denver, CO',
+    amount: '$12,000',
+    purpose: 'Car Repair',
+    rating: 5,
+    quote: "My car broke down and I needed cash fast. Applied at 9pm, approved by midnight, money in my account the next morning. Absolutely incredible.",
+    avatar: 'LK',
+    color: 'hsl(37 91% 55%)',
+  },
+  {
+    name: 'David L.',
+    location: 'Seattle, WA',
+    amount: '$30,000',
+    purpose: 'Business Startup',
+    rating: 5,
+    quote: "Used the loan to fund my first six months of inventory. The fixed payments made forecasting easy. I'm now profitable and already paid it off early.",
+    avatar: 'DL',
+    color: 'hsl(204 100% 52%)',
+  },
+];
+
+const stats = [
+  { val: '4.8', unit: '/ 5.0', label: 'Average rating across 12,400+ reviews' },
+  { val: '96%', unit: '', label: 'Customers would recommend us' },
+  { val: '24h', unit: '', label: 'Average time from approval to funding' },
+];
+---
+
+<section id="testimonials" class="py-20 md:py-28 px-6 overflow-hidden">
+  <div class="max-w-6xl mx-auto">
+
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-14">
+      <div>
+        <span class="section-label">Customer Stories</span>
+        <h2 class="section-title mb-2">Real People. Real Results.</h2>
+        <p class="text-base max-w-md" style="color: hsl(213 20% 52%);">Over 50,000 borrowers have trusted us with their financial goals.</p>
+      </div>
+
+      <!-- Aggregate rating -->
+      <div class="glass-card px-6 py-4 flex items-center gap-4 flex-shrink-0">
+        <div class="text-center">
+          <div class="font-display font-bold text-3xl mono-num" style="color: hsl(213 70% 10%);">4.8</div>
+          <div class="flex gap-0.5 justify-center mt-1">
+            {[1,2,3,4,5].map(() => (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="hsl(37 91% 55%)" stroke="none">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            ))}
+          </div>
+        </div>
+        <div class="h-10 w-px" style="background: hsl(213 20% 88%);"></div>
+        <div>
+          <div class="text-sm font-semibold" style="color: hsl(213 70% 10% / 0.75);">12,400+ reviews</div>
+          <div class="text-xs mt-0.5" style="color: hsl(213 20% 52%);">Verified customers</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Review cards -->
+    <div class="grid md:grid-cols-3 gap-4 mb-10">
+      {reviews.map((r, i) => (
+        <div class={`premium-card p-6 flex flex-col gap-5 reveal hover:-translate-y-0.5 transition-transform duration-200${i >= 3 ? ' hidden md:flex' : ''}`}>
+          <!-- Stars -->
+          <div class="flex gap-0.5">
+            {Array(r.rating).fill(0).map(() => (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="hsl(37 91% 55%)" stroke="none">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            ))}
+          </div>
+
+          <!-- Quote -->
+          <blockquote class="text-sm leading-relaxed flex-1" style="color: hsl(213 70% 10% / 0.65);">
+            &ldquo;{r.quote}&rdquo;
+          </blockquote>
+
+          <!-- Author row -->
+          <div class="flex items-center justify-between border-t pt-4" style="border-color: hsl(213 20% 88%);">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0"
+                style={`background: ${r.color}18; color: ${r.color};`}>
+                {r.avatar}
+              </div>
+              <div>
+                <div class="text-sm font-semibold" style="color: hsl(213 70% 10% / 0.85);">{r.name}</div>
+                <div class="text-xs" style="color: hsl(213 20% 52%);">{r.location}</div>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="font-mono font-bold text-sm" style={`color: ${r.color};`}>{r.amount}</div>
+              <div class="text-xs" style="color: hsl(213 20% 52%);">{r.purpose}</div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <!-- Stats row -->
+    <div class="grid grid-cols-3 gap-4">
+      {stats.map(s => (
+        <div class="glass-card p-5 text-center">
+          <div class="font-display font-bold text-2xl mono-num mb-1" style="color: hsl(213 70% 10%);">
+            {s.val}<span class="text-base" style="color: hsl(213 20% 52%);">{s.unit}</span>
+          </div>
+          <div class="text-xs leading-relaxed" style="color: hsl(213 20% 52%);">{s.label}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

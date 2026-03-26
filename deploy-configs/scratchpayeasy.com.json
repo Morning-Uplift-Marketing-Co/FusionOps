@@ -1,6 +1,8 @@
 {
   "templateId": "bluerush_lending",
   "cfPagesProject": "lp-scratchpayeasy-com",
+  "cfZoneId": "",
+  "skipDnsUpsert": true,
   "cfApiToken": "",
   "cfAccountId": "",
   "brand": "Scratchpay",
@@ -36,5 +38,5 @@
   "radius": "pill",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-26T00:46:43.884Z"
+  "deployedAt": "2026-03-26T08:29:55.893Z"
 }

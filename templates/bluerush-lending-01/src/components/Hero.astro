@@ -1,0 +1,282 @@
+---
+const brand  = import.meta.env.PUBLIC_BRAND   || 'BlueRush Lending';
+const h1     = import.meta.env.PUBLIC_H1      || 'The Smarter Way to Borrow';
+const sub    = import.meta.env.PUBLIC_SUB     || 'Fixed-rate installment loans from $1,000 to $5,000. Transparent terms, no surprises.';
+const cta    = import.meta.env.PUBLIC_CTA     || 'Check Your Rate';
+const aprMin = import.meta.env.PUBLIC_APRMIN  || '5.99';
+
+const trustItems = [
+  { icon: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`, label: '256-bit SSL' },
+  { icon: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>`, label: 'No hidden fees' },
+  { icon: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>`, label: '50,000+ borrowers' },
+  { icon: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>`, label: 'NMLS Licensed' },
+];
+---
+
+<!-- NAV — dark navy bar -->
+<header id="site-nav" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+  style="background: hsl(213 70% 9% / 0.97); border-bottom: 1px solid hsl(168 100% 38% / 0.12);">
+  <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+    <div class="flex items-center gap-2.5">
+      <div class="w-7 h-7 rounded-lg flex items-center justify-center"
+        style="background: linear-gradient(135deg, hsl(168 100% 40%), hsl(168 100% 28%));">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <span class="font-display font-bold text-sm" style="color: #fff;">{brand}</span>
+    </div>
+
+    <nav class="hidden md:flex items-center gap-7">
+      <a href="#calculator" style="color: rgba(255,255,255,0.55); font-size: 0.875rem; font-weight: 500; transition: color 0.15s;" onmouseover="this.style.color='rgba(255,255,255,0.9)'" onmouseout="this.style.color='rgba(255,255,255,0.55)'">Calculator</a>
+      <a href="#how-it-works" style="color: rgba(255,255,255,0.55); font-size: 0.875rem; font-weight: 500; transition: color 0.15s;" onmouseover="this.style.color='rgba(255,255,255,0.9)'" onmouseout="this.style.color='rgba(255,255,255,0.55)'">How It Works</a>
+      <a href="#rates" style="color: rgba(255,255,255,0.55); font-size: 0.875rem; font-weight: 500; transition: color 0.15s;" onmouseover="this.style.color='rgba(255,255,255,0.9)'" onmouseout="this.style.color='rgba(255,255,255,0.55)'">Rates</a>
+      <a href="#faq" style="color: rgba(255,255,255,0.55); font-size: 0.875rem; font-weight: 500; transition: color 0.15s;" onmouseover="this.style.color='rgba(255,255,255,0.9)'" onmouseout="this.style.color='rgba(255,255,255,0.55)'">FAQ</a>
+    </nav>
+
+    <a href="/apply" class="btn-primary py-2.5 px-5 text-sm">Check My Rate</a>
+  </div>
+</header>
+
+<!-- HERO — full dark navy -->
+<section class="relative min-h-screen flex items-center pt-16 px-6 overflow-hidden"
+  style="background: hsl(213 70% 9%);">
+
+  <!-- Dot grid on dark bg -->
+  <div class="absolute inset-0 pointer-events-none" style="background-image: radial-gradient(circle, hsl(168 100% 70% / 0.05) 1px, transparent 1px); background-size: 28px 28px;"></div>
+
+  <!-- Ambient teal glow -->
+  <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] pointer-events-none"
+    style="background: radial-gradient(ellipse, hsl(168 100% 38% / 0.09), transparent 65%);"></div>
+  <div class="absolute bottom-1/3 right-0 w-96 h-96 pointer-events-none"
+    style="background: radial-gradient(circle, hsl(37 91% 55% / 0.06), transparent 65%);"></div>
+
+  <div class="max-w-6xl mx-auto w-full grid md:grid-cols-2 gap-14 items-center py-20">
+    <!-- Left: Copy -->
+    <div>
+      <!-- Label row -->
+      <div class="flex items-center gap-2.5 mb-8">
+        <span style="display:inline-block; font-size:0.6875rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:hsl(168 100% 60%); background:hsl(168 100% 38% / 0.12); border:1px solid hsl(168 100% 38% / 0.25); padding:0.375rem 0.875rem; border-radius:999px;">
+          Rates from {aprMin}% APR
+        </span>
+        <span style="display:inline-flex; align-items:center; gap:0.375rem; font-size:0.75rem; font-weight:500; padding:0.25rem 0.625rem; border-radius:999px; border:1px solid hsl(168 100% 38% / 0.2); color:rgba(255,255,255,0.5); background:hsl(168 100% 38% / 0.07);">
+          <span class="w-1.5 h-1.5 rounded-full animate-pulse" style="background: hsl(168 100% 55%);"></span>
+          Instant Decision
+        </span>
+      </div>
+
+      <h1 class="font-display font-bold leading-[1.08] tracking-tight text-4xl sm:text-5xl md:text-5xl lg:text-[3.5rem]" style="color: #fff; margin-bottom: 1.5rem;">
+        {h1}<br/>
+        <span style="background: linear-gradient(135deg, hsl(168 100% 55%), hsl(168 100% 70%), hsl(37 91% 65%)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Without the Hassle</span>
+      </h1>
+
+      <p style="color: rgba(255,255,255,0.5); font-size: 1.125rem; line-height: 1.7; margin-bottom: 2.5rem; max-width: 26rem;">
+        {sub}
+      </p>
+
+      <!-- CTA group -->
+      <div class="flex flex-col gap-3 mb-10 max-w-sm">
+        <!-- Amount selection -->
+        <div>
+          <p style="color: rgba(255,255,255,0.35); font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.625rem;">How much do you need?</p>
+          <div class="grid grid-cols-3 gap-1.5" id="amount-grid">
+            {[
+              { label: '$500',   val: '500'  },
+              { label: '$1,000', val: '1000' },
+              { label: '$2,000', val: '2000' },
+              { label: '$3,000', val: '3000' },
+              { label: '$4,000', val: '4000' },
+              { label: '$5,000', val: '5000' },
+            ].map((btn, i) => (
+              <button
+                type="button"
+                data-amount={btn.val}
+                class={`amount-btn-dark rounded-xl transition-all duration-200 border focus:outline-none flex items-center justify-center py-3 px-1 ${i === 2 ? 'amount-btn-dark--active' : ''}`}
+              >
+                <span class="amount-btn-val">{btn.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div class="relative flex items-center">
+          <input
+            type="text"
+            inputmode="numeric"
+            maxlength="5"
+            placeholder="Enter your ZIP code"
+            style="background: hsl(213 70% 12%); border: 1px solid hsl(168 100% 38% / 0.2); color: #fff; border-radius: var(--radius); padding: 1rem 1.25rem; padding-right: 3rem; width: 100%; font-size: 1rem; outline: none; transition: border-color 0.2s;"
+            onfocus="this.style.borderColor='hsl(168 100% 38% / 0.5)'"
+            onblur="this.style.borderColor='hsl(168 100% 38% / 0.2)'"
+          />
+          <svg class="absolute right-4 pointer-events-none" style="color: rgba(255,255,255,0.25);" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
+          </svg>
+        </div>
+
+        <a href="/apply" class="btn-primary text-base py-4 px-8 w-full justify-center">
+          {cta}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </div>
+
+      <!-- Trust bar -->
+      <div class="flex flex-wrap gap-x-5 gap-y-2.5">
+        {trustItems.map(item => (
+          <div style="display:flex; align-items:center; gap:0.375rem; color:rgba(255,255,255,0.3); font-size:0.75rem; font-weight:500;">
+            <span style="color: hsl(168 100% 55%);" set:html={item.icon} />
+            {item.label}
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- Right: Floating cards on dark bg -->
+    <div class="relative h-[480px] hidden md:block">
+      <!-- Main loan card -->
+      <div class="absolute top-8 left-0 right-8 p-6 animate-float rounded-xl"
+        style="background: hsl(213 70% 13%); border: 1px solid hsl(168 100% 38% / 0.18); box-shadow: 0 8px 40px rgba(0,0,0,0.4), 0 0 0 1px hsl(168 100% 38% / 0.06); will-change: transform;">
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <p style="color:rgba(255,255,255,0.35); font-size:0.6875rem; font-weight:600; text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.25rem;">Loan Amount</p>
+            <p class="font-display font-bold text-2xl mono-num" style="color:#fff;">$5,000</p>
+          </div>
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center"
+            style="background: linear-gradient(135deg, hsl(168 100% 40%), hsl(168 100% 28%));">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="mb-5">
+          <div class="flex justify-between text-xs mb-2" style="color:rgba(255,255,255,0.3);">
+            <span>3 of 24 payments</span>
+            <span style="color: hsl(168 100% 55%); font-weight:600;">On Track</span>
+          </div>
+          <div class="h-1.5 rounded-full overflow-hidden" style="background: hsl(213 70% 18%);">
+            <div class="h-full rounded-full w-[12%]"
+              style="background: linear-gradient(90deg, hsl(168 100% 40%), hsl(168 100% 55%));"></div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          {[
+            { label: 'Monthly', val: '$231' },
+            { label: 'APR', val: '9.99%' },
+            { label: 'Term', val: '24mo' },
+          ].map(stat => (
+            <div class="rounded-xl p-3 text-center" style="background: hsl(213 70% 17%);">
+              <div class="font-display font-bold text-sm mono-num" style="color:#fff;">{stat.val}</div>
+              <div style="color:rgba(255,255,255,0.35); font-size:0.6875rem; margin-top:0.125rem;">{stat.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <!-- Approval card -->
+      <div class="absolute bottom-4 right-0 left-12 p-4 animate-float-slow flex items-center gap-4 rounded-xl"
+        style="background: hsl(213 70% 13%); border: 1px solid hsl(168 100% 38% / 0.2); box-shadow: 0 4px 20px rgba(0,0,0,0.35); will-change: transform;">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background: hsl(168 100% 38% / 0.15);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="hsl(168 100% 55%)" stroke-width="2.5" stroke-linecap="round">
+            <path d="M20 6L9 17l-5-5"/>
+          </svg>
+        </div>
+        <div>
+          <p style="color:#fff; font-weight:600; font-size:0.875rem;">Application Approved</p>
+          <p style="color:rgba(255,255,255,0.35); font-size:0.75rem;">Funds arrive in your account today</p>
+        </div>
+        <div class="ml-auto mono-num text-xs font-bold px-2 py-1 rounded-lg" style="color: hsl(168 100% 55%); background: hsl(168 100% 38% / 0.12);">+$5,000</div>
+      </div>
+
+      <!-- Rate badge -->
+      <div class="absolute top-4 right-0 p-4 w-36 text-center animate-float rounded-xl"
+        style="animation-delay: 1s; background: hsl(213 70% 13%); border: 1px solid hsl(37 91% 55% / 0.25); box-shadow: 0 4px 20px rgba(0,0,0,0.3); will-change: transform;">
+        <div style="color:rgba(255,255,255,0.3); font-size:0.6875rem; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:0.25rem;">Your Rate</div>
+        <div class="font-display font-bold text-2xl mono-num" style="color: hsl(37 91% 65%);">9.99<span style="font-size:0.875rem; font-weight:600;">%</span></div>
+        <div style="color:rgba(255,255,255,0.25); font-size:0.6875rem; margin-top:0.25rem;">Fixed APR</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const grid = document.getElementById('amount-grid');
+    if (grid) {
+      grid.addEventListener('click', (e) => {
+        const btn = (e.target as HTMLElement).closest('.amount-btn-dark') as HTMLButtonElement | null;
+        if (!btn) return;
+        grid.querySelectorAll('.amount-btn-dark').forEach(b => b.classList.remove('amount-btn-dark--active'));
+        btn.classList.add('amount-btn-dark--active');
+      });
+    }
+  </script>
+
+  <!-- Stats bar — dark teal tinted -->
+  <div class="absolute bottom-0 left-0 right-0" style="background: hsl(213 70% 11%); border-top: 1px solid hsl(168 100% 38% / 0.1);">
+    <div class="max-w-6xl mx-auto px-6 py-5 grid grid-cols-2 md:grid-cols-4 gap-4">
+      {[
+        { val: '$2.4B+', label: 'Loans Originated' },
+        { val: '50,000+', label: 'Happy Borrowers' },
+        { val: '4.8 / 5', label: 'Average Rating' },
+        { val: '24hrs', label: 'Avg. Funding Time' },
+      ].map(s => (
+        <div class="text-center">
+          <div class="font-display font-bold text-xl md:text-2xl mono-num" style="color:#fff;">{s.val}</div>
+          <div style="color:rgba(255,255,255,0.3); font-size:0.75rem; margin-top:0.125rem;">{s.label}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style is:inline>
+  .amount-btn-dark {
+    background: hsl(213 70% 14%);
+    border-color: hsl(168 100% 38% / 0.15);
+    touch-action: manipulation;
+    min-height: 3.25rem;
+  }
+  .amount-btn-dark .amount-btn-sub {
+    font-size: 0.6rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.28);
+    line-height: 1;
+  }
+  .amount-btn-dark .amount-btn-val {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.45);
+    line-height: 1;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .amount-btn-dark:hover {
+    background: hsl(168 100% 38% / 0.1);
+    border-color: hsl(168 100% 38% / 0.4);
+    transform: translateY(-1px);
+  }
+  .amount-btn-dark:hover .amount-btn-sub {
+    color: rgba(255,255,255,0.4);
+  }
+  .amount-btn-dark:hover .amount-btn-val {
+    color: rgba(255,255,255,0.9);
+  }
+  .amount-btn-dark--active {
+    background: hsl(168 100% 38% / 0.15);
+    border-color: hsl(168 100% 38% / 0.5);
+    box-shadow: 0 0 0 1px hsl(168 100% 38% / 0.2);
+  }
+  .amount-btn-dark--active .amount-btn-sub {
+    color: hsl(168 100% 55% / 0.55);
+  }
+  .amount-btn-dark--active .amount-btn-val {
+    color: hsl(168 100% 62%);
+  }
+  .amount-btn-dark--active:hover {
+    transform: none;
+  }
+</style>
