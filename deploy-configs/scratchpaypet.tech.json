@@ -18,8 +18,8 @@
   "amountMax": 5000,
   "aprMin": 5.99,
   "aprMax": 35.99,
-  "primaryColor": "",
-  "accentColor": "",
+  "primaryColor": "#3b5bdb",
+  "accentColor": "#f97316",
   "conversionId": "AW-8888",
   "gtagFormStartLabel": "form_start",
   "gtagFormSubmitLabel": "form_submit",
@@ -42,20 +42,20 @@
       "name": "Sarah K.",
       "location": "Austin, TX",
       "rating": 5,
-      "text": "My dog suddenly got sick and needed emergency care. Scratchpay made it so easy to get approved quickly, letting me focus on his recovery instead of the bill. Lifesaver!"
+      "text": "My dog suddenly fell ill, and I was panicking about the emergency vet bill. Scratchpay made it so easy to get approved quickly, letting me focus on my pup's recovery without financial stress."
     },
     {
-      "name": "Michael P.",
-      "location": "Denver, CO",
+      "name": "Mark D.",
+      "location": "Seattle, WA",
       "rating": 5,
-      "text": "My cat needed dental surgery, and the cost was daunting. Scratchpay offered flexible payment options that fit my budget perfectly. The application was straightforward, and I got approval fast."
+      "text": "My cat needed extensive dental work, and the cost was a bit overwhelming. Scratchpay offered a flexible payment plan that fit my budget perfectly, ensuring my cat got the care she deserved."
     },
     {
       "name": "Jessica M.",
-      "location": "Seattle, WA",
+      "location": "Miami, FL",
       "rating": 5,
-      "text": "My new puppy wasn't feeling well, and the vet recommended a series of expensive diagnostics. Scratchpay helped me cover the costs, ensuring my little guy got the care he needed without delay. Highly recommend!"
+      "text": "Adopting our new puppy was exciting, but the initial costs for supplies and first vet visits added up fast. Scratchpay provided the financial bridge we needed to welcome our new family member without worry."
     }
   ],
-  "deployedAt": "2026-03-26T23:41:25.790Z"
+  "deployedAt": "2026-03-26T23:45:05.414Z"
 }
