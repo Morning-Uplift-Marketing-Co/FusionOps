@@ -7,8 +7,8 @@
   "cfAccountId": "",
   "brand": "Scratchpay",
   "domain": "scratchpetlending.com",
-  "h1": "Fast Pet Funding Up To $5000!",
-  "sub": "Unexpected vet bills? Get fast, stress-free funding for your beloved pet.",
+  "h1": "Get Pet Funding Up To $5000 Fast!",
+  "sub": "Care for your beloved pet without financial worry. Simple, stress-free funding.",
   "cta": "Apply Now",
   "phone": "1-800-SCRATCH-PETLE",
   "email": "support@scratchpetlending.com",
@@ -20,7 +20,7 @@
   "aprMax": 35.99,
   "primaryColor": "#3b5bdb",
   "accentColor": "#f97316",
-  "conversionId": "AW-123",
+  "conversionId": "AW-1234",
   "gtagFormStartLabel": "eHnTCNDohJAcEI-vstVC",
   "gtagFormSubmitLabel": "TMkoCKaGhZAcEI-vstVC",
   "formStartLabel": "eHnTCNDohJAcEI-vstVC",
@@ -38,5 +38,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-26T17:42:50.074Z"
+  "deployedAt": "2026-03-26T17:47:22.868Z"
 }
