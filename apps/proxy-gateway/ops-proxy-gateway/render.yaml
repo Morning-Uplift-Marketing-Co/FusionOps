@@ -1,0 +1,16 @@
+# Build configuration for Render.com
+# Use this file to easily deploy your Proxy Gateway for free
+
+services:
+  - type: web
+    name: proxy-gateway-relay
+    env: node
+    plan: free
+    region: singapore # Change region to be closest to Cloudflare Worker (Singapore/Oregon etc.)
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/proxy/ping
+    # undici v7+ requires Node >=20.18; pin 20 LTS to avoid default Node 18 images crashing at startup
+    envVars:
+      - key: NODE_VERSION
+        value: "20.18.1"
