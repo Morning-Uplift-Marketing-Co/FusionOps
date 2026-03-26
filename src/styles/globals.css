@@ -74,8 +74,9 @@
     border-color: hsl(var(--border));
   }
 
+  /* Base rem scale: raises text-sm / text-base and most rem-based UI (~17% vs 18px). */
   html {
-    font-size: 18px;
+    font-size: 21px;
   }
 
   body {

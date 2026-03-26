@@ -7,10 +7,38 @@
  * Default base: http://127.0.0.1:50325 or http://local.adspower.net:50325/
  * In Vite dev, requests go via same-origin `/adspower-local` → proxy to 50325 (see astro.config.mjs).
  *
+ * On HTTPS production (e.g. Pages), the browser calls `POST /api/adspower/proxy` on the Worker; the Worker
+ * reads `adspowerLocalBase` + `adspowerApiKey` from D1 and forwards to the user’s HTTPS tunnel (ngrok, etc.).
+ *
  * Paid AdsPower + Local API enabled. With security on: Authorization: Bearer <api_key>.
  */
 
+import { api } from "./api.js";
+
 const FALLBACK_LOCAL = "http://127.0.0.1:50325";
+
+/**
+ * When true, AdsPower traffic goes through the API Worker (avoids mixed content + tunnel CORS).
+ * Do not rely on import.meta.env.DEV alone — some hosted builds have left DEV true in client chunks;
+ * use hostname so https://*.pages.dev always uses the relay.
+ */
+export function adspowerUsesWorkerProxy() {
+  if (typeof window === "undefined") return false;
+  if (window.location?.protocol !== "https:") return false;
+  const h = String(window.location.hostname || "").toLowerCase();
+  if (
+    h === "localhost" ||
+    h === "127.0.0.1" ||
+    h === "[::1]" ||
+    h.endsWith(".local")
+  ) {
+    return false;
+  }
+  if (/^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(h)) {
+    return false;
+  }
+  return true;
+}
 
 /**
  * @param {object} [settings]
@@ -31,12 +59,50 @@ function authHeaders(apiKey) {
   return h;
 }
 
+/** Browsers block or restrict HTTPS pages calling http://127.0.0.1:50325 (mixed content / private network). */
+function adsPowerHttpsLocalHint(settings, existingMsg = "") {
+  const m = String(existingMsg || "");
+  if (m.includes("HTTPS tunnel") || m.includes("Base URL")) return "";
+  if (typeof window === "undefined") return "";
+  if (window.location?.protocol !== "https:") return "";
+  const base = resolveAdsPowerBaseUrl(settings);
+  if (!/^http:\/\//i.test(base)) return "";
+  if (!/\b127\.0\.0\.1\b|\blocalhost\b|local\.adspower\.net/i.test(base)) return "";
+  return " — แดชบอร์ดเป็น HTTPS จึงเรียก Local API แบบ HTTP ไม่ได้: ตั้ง Base URL เป็น HTTPS tunnel ไปพอร์ต 50325 (Settings → Automation) หรือใช้ `npm run dev` บนเครื่องเดียวกับ AdsPower";
+}
+
+async function adsPowerFetchViaWorker(path, init = {}) {
+  const p = path.startsWith("/") ? path : `/${path}`;
+  const method = String(init.method || "GET").toUpperCase();
+  let bodyObj;
+  if (method !== "GET" && method !== "HEAD" && init.body) {
+    try {
+      bodyObj = typeof init.body === "string" ? JSON.parse(init.body) : init.body;
+    } catch {
+      bodyObj = {};
+    }
+  }
+  const payload = { path: p, method, ...(bodyObj !== undefined ? { body: bodyObj } : {}) };
+  const data = await api.post("/api/adspower/proxy", payload);
+  if (data && typeof data === "object" && data.error && data.code === undefined) {
+    return {
+      res: { status: 0, ok: false },
+      json: { code: -1, msg: data.hint ? `${data.error} — ${data.hint}` : String(data.error) },
+    };
+  }
+  return { res: { status: 200, ok: true }, json: data };
+}
+
 /**
  * @param {object} settings
  * @param {string} path — e.g. /status or /api/v2/browser-profile/list
  * @param {RequestInit} [init]
  */
 export async function adsPowerFetch(settings, path, init = {}) {
+  if (adspowerUsesWorkerProxy()) {
+    return adsPowerFetchViaWorker(path, init);
+  }
+
   const base = resolveAdsPowerBaseUrl(settings);
   const p = path.startsWith("/") ? path : `/${path}`;
   const url = `${base}${p}`;
@@ -44,24 +110,40 @@ export async function adsPowerFetch(settings, path, init = {}) {
     ...authHeaders(settings.adspowerApiKey),
     ...(init.headers || {}),
   };
-  const res = await fetch(url, { ...init, headers: mergedHeaders });
-  const text = await res.text();
-  let json;
   try {
-    json = text ? JSON.parse(text) : {};
-  } catch {
-    json = { _raw: text };
+    const res = await fetch(url, { ...init, headers: mergedHeaders });
+    const text = await res.text();
+    let json;
+    try {
+      json = text ? JSON.parse(text) : {};
+    } catch {
+      json = { _raw: text };
+    }
+    return { res, json };
+  } catch (e) {
+    const msg = e?.message || String(e);
+    return {
+      res: { status: 0, ok: false },
+      json: {
+        code: -1,
+        msg:
+          msg.includes("Failed to fetch") || msg === "Load failed"
+            ? "เชื่อมต่อ Local API ไม่ได้ (มักเกิดจากหน้า HTTPS ที่บล็อก http://127.0.0.1 — ตั้ง Base URL เป็น HTTPS tunnel ใน Settings → Automation)"
+            : msg,
+      },
+    };
   }
-  return { res, json };
 }
 
 /** GET /status — connection check */
 export async function getAdsPowerStatus(settings) {
   const { res, json } = await adsPowerFetch(settings, "/status", { method: "GET" });
   if (json?.code === 0) return { ok: true, msg: json.msg || "success", json };
+  const baseErr = json?.msg || (res.status ? `HTTP ${res.status}` : "เชื่อมต่อไม่สำเร็จ");
+  const hint = adsPowerHttpsLocalHint(settings, baseErr);
   return {
     ok: false,
-    error: json?.msg || `HTTP ${res.status}`,
+    error: hint ? `${baseErr}${hint}` : baseErr,
     json,
   };
 }
@@ -78,18 +160,22 @@ export async function listAdsPowerProfiles(settings, { page = 1, limit = 30, gro
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (json?.code === 0 && Array.isArray(json?.data?.list)) {
+  const rawList = json?.data?.list ?? json?.data?.profiles;
+  const list = Array.isArray(rawList) ? rawList : Array.isArray(json?.data) ? json.data : null;
+  if (json?.code === 0 && Array.isArray(list)) {
     return {
       ok: true,
-      profiles: json.data.list,
-      page: json.data.page,
-      limit: json.data.limit,
+      profiles: list,
+      page: json.data?.page,
+      limit: json.data?.limit,
       json,
     };
   }
+  const baseErr = json?.msg || `HTTP ${res.status}`;
+  const hint = adsPowerHttpsLocalHint(settings, baseErr);
   return {
     ok: false,
-    error: json?.msg || `HTTP ${res.status}`,
+    error: hint ? `${baseErr}${hint}` : baseErr,
     json,
   };
 }
