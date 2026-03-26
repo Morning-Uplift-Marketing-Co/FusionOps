@@ -1,0 +1,58 @@
+---
+import '../styles/global.css';
+
+const brand = import.meta.env.PUBLIC_BRAND || 'Pastel Lending';
+const conversionId = import.meta.env.PUBLIC_CONVERSION_ID || 'AW-16551193759';
+
+const {
+  title = `${brand} — Premium Installment Loans`,
+  description = 'Fast, flexible installment loans up to $35,000 with fixed monthly payments. Apply in minutes, funds in 24 hours.',
+} = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <script is:inline>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'ad_personalization': 'denied',
+      'analytics_storage': 'denied',
+      'wait_for_update': 500
+    });
+  </script>
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/favicon.svg" />
+  <meta name="theme-color" content="hsl(193,46%,52%)" />
+  
+  <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${conversionId}`}></script>
+  <script is:inline define:vars={{ conversionId }}>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', conversionId);
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" media="print" onload="this.media='all'" />
+</head>
+<body class="bg-background text-foreground antialiased">
+  <slot />
+  
+  </body>
+</html>
