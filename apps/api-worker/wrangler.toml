@@ -44,3 +44,7 @@ bucket_name = "lp-factory-thumbs"
 # Voluum postback relay (GET t.{site}/v): optional plain-text vars (not secrets):
 # DEFAULT_VOLUUM_POSTBACK_DOMAIN = "link.your-voluum-domain.com"   # used when request has no vd=
 # VOLUUM_FORWARD_DOMAIN_ALLOWLIST = "voluumtrk.com,your-track-domain.com"   # if set, vd= host must match
+
+# Proxy resolve relay (HTTPS Node gateway). No trailing slash. Override in Dashboard if you use another host.
+[vars]
+PROXY_RESOLVE_RELAY_URL = "https://proxy-gateway-hrld.onrender.com"
