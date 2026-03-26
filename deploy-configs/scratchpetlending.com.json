@@ -1,5 +1,5 @@
 {
-  "templateId": "bluerush-lending-01",
+  "templateId": "bear-funding",
   "cfPagesProject": "lp-scratchpetlending-com",
   "cfZoneId": "",
   "skipDnsUpsert": true,
@@ -18,8 +18,8 @@
   "amountMax": 5000,
   "aprMin": 5.99,
   "aprMax": 35.99,
-  "primaryColor": "",
-  "accentColor": "",
+  "primaryColor": "#3b5bdb",
+  "accentColor": "#f97316",
   "conversionId": "AW-17895823247",
   "gtagFormStartLabel": "eHnTCNDohJAcEI-vstVC",
   "gtagFormSubmitLabel": "TMkoCKaGhZAcEI-vstVC",
@@ -38,5 +38,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-26T20:46:22.047Z"
+  "deployedAt": "2026-03-26T20:48:23.767Z"
 }
