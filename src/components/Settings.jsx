@@ -9,6 +9,11 @@ import { getCfApiBase } from "../utils/api-proxy";
 import { detectIncompleteSettings } from "../services/account-lock";
 import { migrateSitesToD1 } from "../services/d1";
 import { loadSites } from "../services/neon";
+import { syncCloudflareRepoSecrets, isLikelyMaskedGithubSecret } from "../utils/github-repo-secrets";
+import { getAdsPowerStatus, listAdsPowerProfiles, resolveAdsPowerBaseUrl } from "../services/adspower";
+import { getProxyConfigWithFallback, getProviderFallbackOrder } from "../services/proxy-providers";
+import { runQualityPipeline } from "../services/ip-quality-pipeline";
+import { postProxyResolveIp } from "../services/nodemaven";
 
 /* ── Appearance / Theme Color ─────────────────────────────────── */
 const COLOR_PRESETS = [
@@ -64,7 +69,7 @@ function AppearanceSection() {
                 {/* Presets */}
                 <div className="grid grid-cols-4 gap-2">
                     {COLOR_PRESETS.map(p => (
-                        <button key={p.label} onClick={() => applyPreset(p)}
+                        <button type="button" key={p.label} onClick={() => applyPreset(p)}
                             title={p.label}
                             style={{ background: `linear-gradient(135deg,${p.primary},${p.gradEnd})`, outline: active === p.primary ? "2px solid white" : "none", outlineOffset: 2 }}
                             className="h-9 rounded-lg text-white text-[10px] font-semibold shadow-sm cursor-pointer border-0 transition-transform hover:scale-105">
@@ -97,6 +102,26 @@ function AppearanceSection() {
     );
 }
 
+/** Stable-width hex id hint — avoids layout jump + scroll anchoring pulling the page while typing */
+function Hex32IdHint({ value }) {
+    const t = String(value || "").trim();
+    const len = t.length;
+    const ok = /^[0-9a-f]{32}$/i.test(t);
+    return (
+        <span className="text-[10px] font-mono tabular-nums inline-block min-w-[4.75rem] text-left align-middle">
+            {len === 0 ? (
+                <span className="invisible select-none" aria-hidden>
+                    00/32
+                </span>
+            ) : ok ? (
+                <span className="text-[hsl(var(--success))]">✓ 32</span>
+            ) : (
+                <span className="text-[hsl(var(--destructive))]">✗ {len}/32</span>
+            )}
+        </span>
+    );
+}
+
 export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
     const asArray = (v) => Array.isArray(v) ? v : [];
     const [neonUrl, setNeonUrl] = useState(settings.neonUrl || import.meta.env.VITE_NEON_URL || "");
@@ -109,6 +134,10 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
     const [mlEmail, setMlEmail] = useState(settings.mlEmail || "");
     const [mlPassword, setMlPassword] = useState(settings.mlPassword || "");
     const [mlFolderId, setMlFolderId] = useState(settings.mlFolderId || "");
+
+    // AdsPower Local API (paid) — https://localapi-doc-en.adspower.com/docs/Rdw7Iu
+    const [adspowerApiKey, setAdspowerApiKey] = useState(settings.adspowerApiKey || "");
+    const [adspowerLocalBase, setAdspowerLocalBase] = useState(settings.adspowerLocalBase || "");
 
     // Voluum API
     const [voluumAccessKeyId, setVoluumAccessKeyId] = useState(settings.voluumAccessKeyId || import.meta.env.VITE_VOLUUM_ACCESS_KEY_ID || import.meta.env.PUBLIC_VOLUUM_ACCESS_KEY_ID || "");
@@ -137,6 +166,9 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
     const [githubRepoName, setGithubRepoName] = useState(settings.githubRepoName || "");
     const [githubRepoBranch, setGithubRepoBranch] = useState(settings.githubRepoBranch || "main");
     const [githubDeployWorkflow, setGithubDeployWorkflow] = useState(settings.githubDeployWorkflow || "deploy-lp.yml");
+    const [ghSecretsProfileId, setGhSecretsProfileId] = useState("");
+    const [githubSecretsSyncing, setGithubSecretsSyncing] = useState(false);
+    const [githubSecretsSyncMsg, setGithubSecretsSyncMsg] = useState("");
 
     // D1 Database credentials
     const [d1AccountId, setD1AccountId] = useState(settings.d1AccountId || "");
@@ -156,16 +188,22 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
     // Proxy Providers (fallback)
     const [spProxyUser, setSpProxyUser] = useState(settings.spProxyUser || "");
     const [spProxyPassword, setSpProxyPassword] = useState(settings.spProxyPassword || "");
+    const [spProxyHost, setSpProxyHost] = useState(settings.spProxyHost || "");
+    const [spProxyHttpPort, setSpProxyHttpPort] = useState(settings.spProxyHttpPort != null ? String(settings.spProxyHttpPort) : "");
+    const [spProxySocksPort, setSpProxySocksPort] = useState(settings.spProxySocksPort != null ? String(settings.spProxySocksPort) : "");
     const [soaxProxyUser, setSoaxProxyUser] = useState(settings.soaxProxyUser || "");
     const [soaxProxyPassword, setSoaxProxyPassword] = useState(settings.soaxProxyPassword || "");
     const [bdCustomer, setBdCustomer] = useState(settings.bdCustomer || "");
     const [bdZone, setBdZone] = useState(settings.bdZone || "");
     const [bdPassword, setBdPassword] = useState(settings.bdPassword || "");
     const [proxyPrimaryProvider, setProxyPrimaryProvider] = useState(settings.proxyPrimaryProvider || "nodemaven");
+    /** Optional Node relay (VPS/WSL) when Cloudflare Worker returns 502 for TCP to proxy */
+    const [proxyResolveRelayUrl, setProxyResolveRelayUrl] = useState(settings.proxyResolveRelayUrl || "");
 
     // IP Quality APIs
     const [ipinfoToken, setIpinfoToken] = useState(settings.ipinfoToken || "");
     const [scamalyticsKey, setScamalyticsKey] = useState(settings.scamalyticsKey || "");
+    const [scamalyticsUsername, setScamalyticsUsername] = useState(settings.scamalyticsUsername || "");
     const [ip2locationKey, setIp2locationKey] = useState(settings.ip2locationKey || "");
 
     const [hideRevenue, setHideRevenue] = useState(settings.hideRevenue === true);
@@ -285,6 +323,59 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
             setTestResult(p => ({ ...p, github: "fail", githubDetail: e.message }));
         }
         setTesting(null);
+    };
+
+    const ghSyncProfileOptions =
+        cfProfiles.length > 0
+            ? [
+                ...cfProfiles.map((p) => ({ value: p.id, label: p.name?.trim() || p.id })),
+                { value: "__legacy__", label: "Legacy: ช่อง CF Account + Token ด้านบน" },
+            ]
+            : [{ value: "__legacy__", label: "Legacy: ช่อง CF Account + Token ด้านบน" }];
+
+    const pickCfForGithubSync = () => {
+        const pid = ghSecretsProfileId || cfProfiles[0]?.id || "__legacy__";
+        if (pid === "__legacy__") {
+            return { accountId: String(cfAccountId || "").trim(), token: String(cfApiToken || "").trim() };
+        }
+        const p = cfProfiles.find((x) => x.id === pid);
+        if (p) return { accountId: String(p.accountId || "").trim(), token: String(p.apiToken || "").trim() };
+        return { accountId: String(cfAccountId || "").trim(), token: String(cfApiToken || "").trim() };
+    };
+
+    const syncGithubCfSecrets = async () => {
+        setGithubSecretsSyncMsg("");
+        const owner = String(githubRepoOwner || "").trim();
+        const repo = String(githubRepoName || "").trim();
+        const token = String(githubToken || "").trim();
+        if (isLikelyMaskedGithubSecret(token)) {
+            setGithubSecretsSyncMsg("⚠ ใส่ GitHub token จริงในช่องแล้วกด Save (หรือรีโหลดหน้า) — ตัวบังตาไม่ใช้ซิงก์ได้");
+            return;
+        }
+        if (!owner || !repo || !token) {
+            setGithubSecretsSyncMsg("⚠ กรอก GitHub token + Repo owner + Repo name");
+            return;
+        }
+        const { accountId, token: cfTok } = pickCfForGithubSync();
+        if (!cfTok || !accountId) {
+            setGithubSecretsSyncMsg("⚠ เลือก Cloudflare profile ที่มี Account ID + Token หรือกรอก CF ในโหมด legacy ด้านบน");
+            return;
+        }
+        setGithubSecretsSyncing(true);
+        try {
+            await syncCloudflareRepoSecrets({
+                token,
+                owner,
+                repo,
+                cfApiToken: cfTok,
+                cfAccountId: accountId,
+            });
+            setGithubSecretsSyncMsg("✓ อัปเดต CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID บน GitHub แล้ว (ทับ secret เดิมได้)");
+        } catch (e) {
+            setGithubSecretsSyncMsg(`✗ ${e?.message || e}`);
+        } finally {
+            setGithubSecretsSyncing(false);
+        }
     };
 
     const testNetlify = async () => {
@@ -495,23 +586,97 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
         setTesting(null);
     };
 
+    const testAdsPower = async () => {
+        setTesting("adspower");
+        const apSettings = { adspowerApiKey, adspowerLocalBase };
+        try {
+            const st = await getAdsPowerStatus(apSettings);
+            if (!st.ok) {
+                setTestResult((p) => ({
+                    ...p,
+                    adspower: "fail",
+                    adspowerDetail: st.error || "status failed",
+                }));
+                setTesting(null);
+                return;
+            }
+            const list = await listAdsPowerProfiles(apSettings, { page: 1, limit: 5 });
+            const n = list.ok ? list.profiles?.length ?? 0 : 0;
+            setTestResult((p) => ({
+                ...p,
+                adspower: "ok",
+                adspowerDetail: list.ok
+                    ? `Local API OK — sample ${n} profile(s) on page 1`
+                    : `Status OK — list: ${list.error || "n/a"}`,
+            }));
+        } catch (e) {
+            console.warn("[Settings] AdsPower test failed:", e?.message || e);
+            setTestResult((p) => ({
+                ...p,
+                adspower: "fail",
+                adspowerDetail: e?.message || String(e),
+            }));
+        }
+        setTesting(null);
+    };
+
     const save = async (s) => {
+        const scrollY = typeof window !== "undefined" ? window.scrollY : 0;
         setSaving(true);
         try {
             await setSettings(s);
         } finally {
             setSaving(false);
+            const restore = () => window.scrollTo(0, scrollY);
+            restore();
+            requestAnimationFrame(restore);
         }
     };
 
-    const Lbl = ({ children }) => <label className="text-[10px] text-[hsl(var(--muted-foreground))] block mb-0.5">{children}</label>;
-    const SectionHeader = ({ children }) => <div className="text-[11px] font-bold uppercase tracking-[1px] text-[hsl(var(--muted-foreground))] mb-3 mt-5 pb-1.5 border-b border-[hsl(var(--border))]">{children}</div>;
+    const Lbl = ({ children }) => <span className="text-[10px] text-[hsl(var(--muted-foreground))] block mb-0.5">{children}</span>;
+
+    const scrollToSettingsId = (id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+
+    const SettingsNavBtn = ({ id, children }) => (
+        <button
+            type="button"
+            onClick={(e) => {
+                e.preventDefault();
+                scrollToSettingsId(id);
+            }}
+            className="rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-left bg-[hsl(var(--muted))]/35 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]/55 hover:text-[hsl(var(--foreground))] border border-[hsl(var(--border))]/60 transition-colors"
+        >
+            {children}
+        </button>
+    );
+
+    const SettingsSection = ({ id, icon, title, desc, children, className = "" }) => (
+        <section id={id} className={`scroll-mt-24 pt-8 first:pt-2 border-t border-[hsl(var(--border))]/80 first:border-t-0 ${className}`}>
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 mb-5">
+                <span className="text-2xl shrink-0 leading-none" aria-hidden>
+                    {icon}
+                </span>
+                <div className="min-w-0 flex-1">
+                    <h2 className="text-base font-bold text-[hsl(var(--foreground))] m-0 tracking-tight">{title}</h2>
+                    {desc ? <p className="text-[12px] text-[hsl(var(--muted-foreground))] m-0 mt-1.5 max-w-3xl leading-relaxed">{desc}</p> : null}
+                </div>
+            </div>
+            <div className="space-y-4">{children}</div>
+        </section>
+    );
 
     return (
-        <div className="max-w-[1280px] animate-[fadeIn_.3s_ease]">
-            <header className="mb-6">
+        <div
+            className="max-w-5xl mx-auto animate-[fadeIn_.3s_ease] px-1 sm:px-0"
+            style={{ overflowAnchor: "none" }}
+        >
+            <header className="mb-5">
                 <h1 className="text-[24px] font-bold m-0 mb-1">Settings</h1>
-                <p className="text-[hsl(var(--muted-foreground))] text-sm">API keys, database connections, and deployment pipeline configuration</p>
+                <p className="text-[hsl(var(--muted-foreground))] text-sm m-0">ตั้งค่า API, ฐานข้อมูล, deploy, tracking และ automation — จัดเป็นหมวดด้านล่าง</p>
             </header>
 
             {/* Incomplete Settings Alert */}
@@ -546,48 +711,72 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                 return null;
             })()}
 
-            <Card className="mb-6">
-                <CardHeader>
-                    <CardTitle>Access Visibility</CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-3">
-                    <label className="flex items-start gap-3 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={hideRevenue}
-                            onChange={e => setHideRevenue(e.target.checked)}
-                            className="mt-0.5 rounded border-[hsl(var(--border))]"
-                        />
-                        <div>
-                            <div className="text-sm font-medium">Hide revenue and profit in employee view</div>
-                            <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
-                                Masks revenue, payout, profit, and ROI across dashboards without changing the underlying data.
-                            </p>
+            <nav
+                className="sticky top-12 sm:top-14 z-20 mb-8 flex flex-wrap gap-1.5 p-2.5 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))]/85 backdrop-blur-md shadow-sm"
+                aria-label="หมวด Settings"
+            >
+                <SettingsNavBtn id="settings-access">สิทธิ์ & สถานะ</SettingsNavBtn>
+                <SettingsNavBtn id="settings-data">ฐานข้อมูล</SettingsNavBtn>
+                <SettingsNavBtn id="settings-ai">AI</SettingsNavBtn>
+                <SettingsNavBtn id="settings-deploy">Deploy</SettingsNavBtn>
+                <SettingsNavBtn id="settings-tracking">Tracking</SettingsNavBtn>
+                <SettingsNavBtn id="settings-browsers">เบราว์เซอร์</SettingsNavBtn>
+                <SettingsNavBtn id="settings-proxy">พร็อกซี & IP</SettingsNavBtn>
+                <SettingsNavBtn id="settings-ui">หน้าตา</SettingsNavBtn>
+                <SettingsNavBtn id="settings-stats">สถิติ</SettingsNavBtn>
+            </nav>
+
+            <div className="pb-20">
+                <SettingsSection
+                    id="settings-access"
+                    icon="🔐"
+                    title="สิทธิ์การมองเห็น & สถานะระบบ"
+                    desc="ซ่อนตัวเลขรายได้จากมุมมองพนักงาน และดูสถานะการเชื่อมต่อ Neon / Legacy API"
+                >
+                    <div className="flex flex-wrap gap-2">
+                        <div className={`flex items-center gap-2 text-[11px] px-3 py-2 rounded-lg border shadow-sm ${neonOk ? "bg-[rgba(16,185,129,0.1)] text-[hsl(var(--success))] border-[rgba(16,185,129,0.2)]" : "bg-[rgba(239,68,68,0.1)] text-[hsl(var(--destructive))] border-[rgba(239,68,68,0.2)]"}`}>
+                            <span className="text-sm">{neonOk ? "●" : "○"}</span>
+                            {neonOk ? "Neon DB Connected" : "Neon DB Offline"}
                         </div>
-                    </label>
-                    <Button onClick={() => save({ hideRevenue })} disabled={saving} className="text-xs self-start">
-                        {saving ? "Saving..." : "💾 Save"}
-                    </Button>
-                </CardContent>
-            </Card>
+                        <div className={`flex items-center gap-2 text-[11px] px-3 py-2 rounded-lg border shadow-sm ${apiOk ? "bg-[rgba(16,185,129,0.08)] text-[hsl(var(--success))] border-[rgba(16,185,129,0.15)]" : "bg-[rgba(100,100,100,0.1)] text-[hsl(var(--muted-foreground))] border-[rgba(100,100,100,0.15)]"}`}>
+                            <span className="text-sm">{apiOk ? "●" : "○"}</span>
+                            {apiOk ? "Legacy API Active" : "Legacy API Offline"}
+                        </div>
+                    </div>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Access Visibility</CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex flex-col gap-3">
+                            <label className="flex items-start gap-3 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={hideRevenue}
+                                    onChange={e => setHideRevenue(e.target.checked)}
+                                    className="mt-0.5 rounded border-[hsl(var(--border))]"
+                                />
+                                <div>
+                                    <div className="text-sm font-medium">Hide revenue and profit in employee view</div>
+                                    <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
+                                        Masks revenue, payout, profit, and ROI across dashboards without changing the underlying data.
+                                    </p>
+                                </div>
+                            </label>
+                            <Button onClick={() => save({ hideRevenue })} disabled={saving} className="text-xs self-start">
+                                {saving ? "Saving..." : "💾 Save"}
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </SettingsSection>
 
-            <div className="flex flex-wrap gap-3 mb-6">
-                <div className={`flex items-center gap-2 text-[11px] px-3 py-2 rounded-lg border shadow-sm ${neonOk ? "bg-[rgba(16,185,129,0.1)] text-[hsl(var(--success))] border-[rgba(16,185,129,0.2)]" : "bg-[rgba(239,68,68,0.1)] text-[hsl(var(--destructive))] border-[rgba(239,68,68,0.2)]"}`}>
-                    <span className="text-sm">{neonOk ? "●" : "○"}</span>
-                    {neonOk ? "Neon DB Connected" : "Neon DB Offline"}
-                </div>
-                <div className={`flex items-center gap-2 text-[11px] px-3 py-2 rounded-lg border shadow-sm ${apiOk ? "bg-[rgba(16,185,129,0.08)] text-[hsl(var(--success))] border-[rgba(16,185,129,0.15)]" : "bg-[rgba(100,100,100,0.1)] text-[hsl(var(--muted-foreground))] border-[rgba(100,100,100,0.15)]"}`}>
-                    <span className="text-sm">{apiOk ? "●" : "○"}</span>
-                    {apiOk ? "Legacy API Active" : "Legacy API Offline"}
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-x-8 gap-y-2 items-start">
-                {/* Column 1: Infrastructure & API Providers */}
-                <div className="space-y-2">
-                    <section>
-                        <SectionHeader>🗄️ Infrastructure</SectionHeader>
-                        <Card className="mb-4">
+                <SettingsSection
+                    id="settings-data"
+                    icon="🗄️"
+                    title="ฐานข้อมูล"
+                    desc="Neon Postgres = แหล่งหลัก (sites, settings, deploys) · Cloudflare D1 = edge SQL สำหรับ Worker"
+                >
+                    <div className="grid md:grid-cols-2 gap-4 items-start">
+                        <Card className="mb-0">
                             <CardHeader><CardTitle>Neon Postgres</CardTitle></CardHeader>
                             <CardContent className="flex flex-col gap-2">
                                 <p className="text-[11px] text-[hsl(var(--muted-foreground))] -mt-2 mb-1">Serverless Postgres for persistent storage (settings, sites, deploys)</p>
@@ -597,11 +786,11 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                             </CardContent>
                         </Card>
 
-                        <Card className="mb-4">
+                        <Card className="mb-0">
                             <CardHeader><CardTitle>☁️ Cloudflare D1 Database</CardTitle></CardHeader>
                             <CardContent className="flex flex-col gap-2">
                                 <p className="text-[11px] text-[hsl(var(--muted-foreground))] -mt-2 mb-1">Edge SQL database for low-latency queries</p>
-                                <div><Lbl>Account ID {d1AccountId && (/^[0-9a-f]{32}$/i.test(d1AccountId.trim()) ? <span className="text-[hsl(var(--success))] text-[10px]">✓ {d1AccountId.trim().length} chars</span> : <span className="text-[hsl(var(--destructive))] text-[10px]">✗ {d1AccountId.trim().length}/32 chars</span>)}</Lbl><Inp value={d1AccountId} onChange={setD1AccountId} placeholder="32-char hex account ID" /></div>
+                                <div><Lbl>Account ID <Hex32IdHint value={d1AccountId} /></Lbl><Inp value={d1AccountId} onChange={setD1AccountId} placeholder="32-char hex account ID" /></div>
                                 <div><Lbl>Database ID (UUID)</Lbl><Inp value={d1DatabaseId} onChange={setD1DatabaseId} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" /></div>
                                 <div><Lbl>API Token</Lbl><Inp type="password" value={d1ApiToken} onChange={setD1ApiToken} placeholder="Cloudflare API Token with D1 permissions" /></div>
                                 {d1Result && (
@@ -623,11 +812,17 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                                 </div>
                             </CardContent>
                         </Card>
-                    </section>
+                    </div>
+                </SettingsSection>
 
-                    <section>
-                        <SectionHeader>🤖 AI Providers</SectionHeader>
-                        <Card className="mb-4">
+                <SettingsSection
+                    id="settings-ai"
+                    icon="🧠"
+                    title="AI providers"
+                    desc="Gemini ใช้เป็นหลักสำหรับ generate คอนเทนต์ — Anthropic เป็นช่องทางสำรอง"
+                >
+                    <div className="grid md:grid-cols-2 gap-4 items-start">
+                        <Card className="mb-0">
                             <CardHeader><CardTitle>Gemini API Key <span className="text-[hsl(var(--success))] text-[11px] font-normal">⭐ For AI Generation</span></CardTitle></CardHeader>
                             <CardContent className="flex flex-col gap-2">
                                 <p className="text-[11px] text-[hsl(var(--muted-foreground))] -mt-2 mb-1">🔑 Required for AI Copy Generator — Get free key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" className="text-[hsl(var(--accent))] underline">aistudio.google.com</a></p>
@@ -636,7 +831,7 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                             </CardContent>
                         </Card>
 
-                        <Card className="mb-4">
+                        <Card className="mb-0">
                             <CardHeader><CardTitle>Anthropic API Key</CardTitle></CardHeader>
                             <CardContent className="flex flex-col gap-2">
                                 <p className="text-[11px] text-[hsl(var(--muted-foreground))] -mt-2 mb-1">Backup provider — Currently Gemini is used for primary generation.</p>
@@ -652,13 +847,15 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                                 </div>
                             </CardContent>
                         </Card>
-                    </section>
-                </div>
+                    </div>
+                </SettingsSection>
 
-                {/* Column 2: Deploy Targets */}
-                <div className="space-y-2">
-                    <section>
-                        <SectionHeader>🚀 Deploy Targets</SectionHeader>
+                <SettingsSection
+                    id="settings-deploy"
+                    icon="🚀"
+                    title="Deploy targets"
+                    desc="Cloudflare หลายโปรไฟล์, Netlify, Vercel และ GitHub / CI — ใช้กับ Wizard และปุ่ม deploy"
+                >
                         <Card className="mb-4">
                             <CardHeader>
                                 <div className="flex items-center justify-between">
@@ -704,7 +901,7 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                                             {cfProfiles.find(p => p.id === editingProfile.id) ? "Edit Profile" : "New Profile"}
                                         </div>
                                         <div><Lbl>Profile Name</Lbl><Inp value={editingProfile.name} onChange={v => setEditingProfile(p => ({...p, name: v}))} placeholder="e.g. MCC-Alpha, Pet Sites, Loan Sites" /></div>
-                                        <div><Lbl>Account ID {editingProfile.accountId && (/^[0-9a-f]{32}$/i.test(editingProfile.accountId.trim()) ? <span className="text-[hsl(var(--success))] text-[10px]">✓ 32 chars</span> : <span className="text-[hsl(var(--destructive))] text-[10px]">✗ {editingProfile.accountId.trim().length}/32</span>)}</Lbl><Inp value={editingProfile.accountId} onChange={v => setEditingProfile(p => ({...p, accountId: v}))} placeholder="32-char hex ID" /></div>
+                                        <div><Lbl>Account ID <Hex32IdHint value={editingProfile.accountId} /></Lbl><Inp value={editingProfile.accountId} onChange={v => setEditingProfile(p => ({...p, accountId: v}))} placeholder="32-char hex ID" /></div>
                                         <div><Lbl>API Token</Lbl><Inp type="password" value={editingProfile.apiToken} onChange={v => setEditingProfile(p => ({...p, apiToken: v}))} placeholder="Bearer token..." /></div>
                                         <div className="flex gap-1.5 pt-1">
                                             <Button onClick={saveEditingProfile} disabled={!editingProfile.name?.trim() || !editingProfile.accountId?.trim() || !editingProfile.apiToken?.trim()} className="text-xs">💾 Save Profile</Button>
@@ -747,6 +944,15 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                             <CardHeader><CardTitle>🧬 Git Push Pipeline</CardTitle></CardHeader>
                             <CardContent className="flex flex-col gap-2">
                                 <p className="text-[10px] text-[hsl(var(--muted-foreground))] -mt-2">Used by <strong>GitHub Actions (Astro Build)</strong> deploy target — builds Astro templates correctly via CI</p>
+                                <div className="text-[10px] leading-relaxed rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--muted))/20] px-2.5 py-2 space-y-1">
+                                    <div className="font-semibold text-[hsl(var(--foreground))]">แยกบทบาท: พนักงาน vs แอดมิน</div>
+                                    <p className="text-[hsl(var(--muted-foreground))]"><strong className="text-[hsl(var(--foreground))]">พนักงาน</strong> ใส่แค่ Token + Repo ด้านล่าง — ชี้ DNS ผ่าน <strong>Cloudflare Profile</strong> ใน Wizard (ไม่ต้องเข้า GitHub Secrets)</p>
+                                    <p className="text-[hsl(var(--muted-foreground))]"><strong className="text-[hsl(var(--foreground))]">แอดมิน</strong> ใช้ปุ่ม <strong className="text-[hsl(var(--foreground))]">Sync CF → GitHub Secrets</strong> ด้านล่าง (ทับ secret เดิมได้) หรือตั้งมือใน GitHub → Secrets — ใช้ <strong className="text-[hsl(var(--foreground))]">Update</strong> ไม่ใช่สร้างชื่อซ้ำ</p>
+                                    <p className="text-[hsl(var(--muted-foreground))]">Deploy config ค่าเริ่มต้นจะให้ CI <strong className="text-[hsl(var(--foreground))]">ข้ามการแก้ DNS</strong> (<code className="text-[9px]">skipDnsUpsert: true</code>) เพื่อไม่พึ่ง zone ใน GitHub; ต้องการให้ CI ตั้ง CNAME เองให้ตั้ง <code className="text-[9px]">skipDnsUpsert: false</code> ในไฟล์ deploy-config</p>
+                                    {githubRepoOwner?.trim() && githubRepoName?.trim() ? (
+                                        <a className="text-[hsl(var(--primary))] underline-offset-2 hover:underline text-[10px] break-all" href={`https://github.com/${String(githubRepoOwner).trim()}/${String(githubRepoName).trim()}/settings/secrets/actions`} target="_blank" rel="noreferrer">เปิดหน้า Actions secrets ของ repo นี้ →</a>
+                                    ) : null}
+                                </div>
                                 <Inp type="password" value={githubToken} onChange={setGithubToken} placeholder="GitHub Token" />
                                 <div className="grid grid-cols-2 gap-2">
                                     <div><Lbl>Repo Owner</Lbl><Inp value={githubRepoOwner} onChange={setGithubRepoOwner} placeholder="my-user" /></div>
@@ -765,16 +971,45 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                                     <Button variant="ghost" onClick={testGitHub} disabled={!githubToken || testing === "github"} className="text-xs">{testing === "github" ? "⏳ Testing..." : "🔑 Test"}</Button>
                                     <Button onClick={() => save({ githubToken, githubRepoOwner, githubRepoName, githubRepoBranch, githubDeployWorkflow })} disabled={saving} className="text-xs">💾 Save</Button>
                                 </div>
+                                <div className="mt-3 pt-3 border-t border-[hsl(var(--border))] space-y-2">
+                                    <div className="text-[10px] font-semibold text-[hsl(var(--foreground))]">Sync CF → GitHub Actions secrets</div>
+                                    <p className="text-[9px] text-[hsl(var(--muted-foreground))] leading-snug">GitHub token ต้องมีสิทธิ์ <code className="text-[8px] bg-[hsl(var(--muted))/40] px-0.5 rounded">repo</code> (classic) หรือ fine-grained: <strong>Secrets</strong> = Read/Write สำหรับ repo นี้</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 items-end">
+                                        <div>
+                                            <Lbl>แหล่ง Cloudflare</Lbl>
+                                            <Sel
+                                                value={ghSecretsProfileId || cfProfiles[0]?.id || "__legacy__"}
+                                                onChange={setGhSecretsProfileId}
+                                                options={ghSyncProfileOptions}
+                                            />
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            onClick={syncGithubCfSecrets}
+                                            disabled={githubSecretsSyncing || !githubRepoOwner?.trim() || !githubRepoName?.trim()}
+                                            className="text-xs h-9"
+                                        >
+                                            {githubSecretsSyncing ? "⏳ กำลังซิงก์…" : "☁️ Sync CLOUDFLARE_* → GitHub"}
+                                        </Button>
+                                    </div>
+                                    {githubSecretsSyncMsg ? (
+                                        <div className={`text-[10px] rounded px-2 py-1.5 border ${githubSecretsSyncMsg.startsWith("✓") ? "bg-[rgba(16,185,129,0.08)] text-[hsl(var(--success))] border-[rgba(16,185,129,0.2)]" : "bg-[rgba(239,68,68,0.06)] text-[hsl(var(--destructive))] border-[rgba(239,68,68,0.15)]"}`}>
+                                            {githubSecretsSyncMsg}
+                                        </div>
+                                    ) : null}
+                                </div>
                             </CardContent>
                         </Card>
-                    </section>
-                </div>
+                </SettingsSection>
 
-                {/* Column 3: Automation & Services (Visible only on very wide screens or stacked) */}
-                <div className="space-y-2">
-                    <section>
-                        <SectionHeader>🤖 Automation</SectionHeader>
-                        <Card className="mb-4">
+                <SettingsSection
+                    id="settings-browsers"
+                    icon="🖥️"
+                    title="เบราว์เซอร์ & automation"
+                    desc="Multilogin X (cloud) และ AdsPower (Local API บนเครื่อง) — ใช้ร่วมกับเมนู Browser Profiles"
+                >
+                    <div className="grid md:grid-cols-2 gap-4 items-start">
+                        <Card className="mb-0">
                             <CardHeader><CardTitle>Multilogin X</CardTitle></CardHeader>
                             <CardContent className="flex flex-col gap-2">
                                 <p className="text-[10px] text-[hsl(var(--muted-foreground))] -mt-2">Browser automation & profile management</p>
@@ -790,10 +1025,56 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                                 </div>
                             </CardContent>
                         </Card>
-                    </section>
 
-                    <section>
-                        <SectionHeader>🔗 External Tracking</SectionHeader>
+                        <Card className="mb-0">
+                            <CardHeader>
+                                <CardTitle>
+                                    AdsPower Local API
+                                    {testResult.adspower === "ok" ? <span className="text-[hsl(var(--success))] text-[11px] font-normal ml-1">● OK</span> : testResult.adspower === "fail" ? <span className="text-[hsl(var(--destructive))] text-[11px] font-normal ml-1">● Failed</span> : null}
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="flex flex-col gap-2">
+                                <p className="text-[10px] text-[hsl(var(--muted-foreground))] -mt-2 leading-relaxed">
+                                    โปรแกรม AdsPower ต้องรันบนเครื่องเดียวกับเบราว์เซอร์ — Local API ปกติที่พอร์ต <code className="text-[9px] bg-[hsl(var(--muted))/30] px-1 rounded">50325</code>.
+                                    Dev server ใช้ proxy <code className="text-[9px] px-1 rounded bg-[hsl(var(--muted))/30]">/adspower-local</code> เพื่อเลี่ยง CORS.
+                                    โหมด HTTPS บนโฮสต์จริงอาจบล็อก <code className="text-[9px] px-1 rounded bg-[hsl(var(--muted))/30]">http://127.0.0.1</code> — ตั้งค่า Base URL เป็น HTTPS tunnel ได้
+                                </p>
+                                <p className="text-[9px] text-[hsl(var(--muted-foreground))]">
+                                    Docs:{" "}
+                                    <a className="text-[hsl(var(--primary))] underline" href="https://documenter.getpostman.com/view/45822952/2sB34hEzQH" target="_blank" rel="noreferrer">Postman</a>
+                                    {" · "}
+                                    <a className="text-[hsl(var(--primary))] underline" href="https://localapi-doc-en.adspower.com/docs/Rdw7Iu" target="_blank" rel="noreferrer">Official Local API</a>
+                                </p>
+                                <div><Lbl>API Key (ถ้าเปิด security ใน AdsPower)</Lbl><Inp type="password" value={adspowerApiKey} onChange={setAdspowerApiKey} placeholder="Bearer token จาก Automation → API" /></div>
+                                <div>
+                                    <Lbl>Base URL (ว่าง = dev ใช้ /adspower-local, production ใช้ http://127.0.0.1:50325)</Lbl>
+                                    <Inp value={adspowerLocalBase} onChange={setAdspowerLocalBase} placeholder="https://your-tunnel.example หรือ http://local.adspower.net:50325" />
+                                </div>
+                                <div className="text-[9px] text-[hsl(var(--muted-foreground))] font-mono break-all">
+                                    Effective: {resolveAdsPowerBaseUrl({ adspowerLocalBase })}
+                                </div>
+                                {testResult.adspower && (
+                                    <div className={`text-[11px] rounded px-2.5 py-1.5 ${testResult.adspower === "ok" ? "bg-[rgba(16,185,129,0.08)] text-[hsl(var(--success))] border border-[rgba(16,185,129,0.15)]" : "bg-[rgba(239,68,68,0.06)] text-[hsl(var(--destructive))] border border-[rgba(239,68,68,0.12)]"}`}>
+                                        {testResult.adspower === "ok" ? "✓" : "✗"} {testResult.adspowerDetail || testResult.adspower}
+                                    </div>
+                                )}
+                                <div className="flex gap-1.5 mt-1">
+                                    <Button variant="ghost" onClick={testAdsPower} disabled={testing === "adspower"} className="px-2 h-7 text-[10px]">
+                                        {testing === "adspower" ? "⏳ …" : "🔑 Test (status + list)"}
+                                    </Button>
+                                    <Button onClick={() => save({ adspowerApiKey, adspowerLocalBase })} disabled={saving} className="px-2 h-7 text-[10px]">Save</Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </SettingsSection>
+
+                <SettingsSection
+                    id="settings-tracking"
+                    icon="🎯"
+                    title="Tracking"
+                    desc="Voluum — ดึงข้อมูลแคมเปญและ attribution (ใช้กับ Voluum Explorer ในแอป)"
+                >
                         <Card className="mb-4">
                             <CardHeader><CardTitle>Voluum Tracker {testResult.voluum === "ok" ? <span className="text-[hsl(var(--success))] text-[11px] font-normal">● Connected</span> : testResult.voluum === "fail" ? <span className="text-[hsl(var(--destructive))] text-[11px] font-normal">● Failed</span> : null}</CardTitle></CardHeader>
                             <CardContent className="flex flex-col gap-2">
@@ -811,6 +1092,31 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                                     <Button variant="ghost" onClick={testVoluum} disabled={testing === "voluum"} className="px-2 h-7 text-[10px]">{testing === "voluum" ? "⏳ Testing..." : "🔑 Test Connection"}</Button>
                                     <Button onClick={() => save({ voluumAccessKeyId, voluumAccessKey })} disabled={saving} className="px-2 h-7 text-[10px]">{saving ? "Saving..." : "💾 Save"}</Button>
                                 </div>
+                            </CardContent>
+                        </Card>
+                </SettingsSection>
+
+                <SettingsSection
+                    id="settings-proxy"
+                    icon="🛡️"
+                    title="พร็อกซี & คุณภาพ IP"
+                    desc="NodeMaven + provider สำรอง, กุญแจ IPinfo / Scamalytics / IP2Location และ LendingCard สำหรับลิงก์บัตรกับโปรไฟล์"
+                >
+                        <Card className="mb-4 border border-[hsl(var(--border))]/90 bg-[hsl(var(--muted))]/12">
+                            <CardHeader><CardTitle className="text-sm">🔀 Proxy resolve relay</CardTitle></CardHeader>
+                            <CardContent className="flex flex-col gap-2">
+                                <p className="text-[9px] text-[hsl(var(--muted-foreground))] m-0 leading-relaxed">
+                                    ถ้า Worker ได้ <strong className="text-[hsl(var(--foreground))]">502</strong> (TCP จาก Cloudflare ไป gateway พร็อกซีไม่ได้) ให้รัน{" "}
+                                    <code className="text-[hsl(var(--foreground))]">npm run proxy-relay</code> บนเครื่อง/VPS แล้วใส่ URL ด้านล่าง — แอปจะลอง relay ก่อน Worker อัตโนมัติ
+                                    {" "}
+                                    <strong className="text-[hsl(var(--foreground))]">หมายเหตุ:</strong> ถ้าเปิดแอปผ่าน <code className="text-[hsl(var(--foreground))]">https://</code> (เช่น Pages)
+                                    เบราว์เซอร์จะบล็อกการเรียก <code className="text-[hsl(var(--foreground))]">http://127.0.0.1</code> — ต้องใช้ relay ที่เป็น{" "}
+                                    <code className="text-[hsl(var(--foreground))]">https://</code> (โดเมน + TLS) หรือทดสอบจาก dev บน <code className="text-[hsl(var(--foreground))]">http://localhost</code>
+                                    {" "}
+                                    <strong className="text-[hsl(var(--foreground))]">Production:</strong> ตั้งตัวแปร <code className="text-[hsl(var(--foreground))]">PROXY_RESOLVE_RELAY_URL</code> บน Cloudflare Worker (ชี้ไป <code className="text-[hsl(var(--foreground))]">https://relay…</code>)
+                                    แล้ว Worker จะส่งต่อ resolve-ip ให้เมื่อ TCP ล้ม — ผู้ใช้ทุกคนได้สแกนได้โดยไม่ต้องกรอก relay ในเบราว์เซอร์
+                                </p>
+                                <Inp value={proxyResolveRelayUrl} onChange={setProxyResolveRelayUrl} placeholder="http://127.0.0.1:8789 (ว่าง = ใช้แค่ Worker)" />
                             </CardContent>
                         </Card>
 
@@ -844,8 +1150,18 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                                         setTesting("nm");
                                         try {
                                             const { nodemavenApi } = await import("../services/nodemaven.js");
-                                            const result = await nodemavenApi.testConnection({ username: nmProxyUser, password: nmProxyPassword });
-                                            setTestResult(prev => ({ ...prev, nm: result.ok ? "ok" : "fail", nmDetail: result.ok ? `Gateway OK — ${result.latencyMs}ms` : (result.error || "Failed") }));
+                                            const result = await nodemavenApi.testConnection(
+                                                { username: nmProxyUser, password: nmProxyPassword },
+                                                { proxyResolveRelayUrl: proxyResolveRelayUrl.trim() }
+                                            );
+                                            const nmOk = result.success === true || result.ok === true;
+                                            setTestResult(prev => ({
+                                                ...prev,
+                                                nm: nmOk ? "ok" : "fail",
+                                                nmDetail: nmOk
+                                                    ? `Gateway OK — exit ${result.ip || "?"}` + (result.isp ? ` · ${result.isp}` : "")
+                                                    : (result.error || "Failed"),
+                                            }));
                                         } catch (e) {
                                             setTestResult(prev => ({ ...prev, nm: "fail", nmDetail: e?.message || "Error" }));
                                         }
@@ -857,9 +1173,14 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                         </Card>
 
                         <Card className="mb-4">
-                            <CardHeader><CardTitle>🔄 Proxy Providers (Fallback)</CardTitle></CardHeader>
+                            <CardHeader>
+                                <CardTitle>
+                                    🔄 Proxy Providers (Fallback)
+                                    {testResult.proxyFb === "ok" ? <span className="text-[hsl(var(--success))] text-[11px] font-normal ml-1">● OK</span> : testResult.proxyFb === "fail" ? <span className="text-[hsl(var(--destructive))] text-[11px] font-normal ml-1">● Failed</span> : null}
+                                </CardTitle>
+                            </CardHeader>
                             <CardContent className="flex flex-col gap-3">
-                                <p className="text-[10px] text-[hsl(var(--muted-foreground))] -mt-2">Backup residential proxy providers — auto-fallback when primary fails quality check</p>
+                                <p className="text-[10px] text-[hsl(var(--muted-foreground))] -mt-2">Backup residential proxy providers — auto-fallback when primary fails quality check. ลำดับลอง: ตาม Primary แล้วต่อด้วย provider อื่นที่กรอกครบ</p>
                                 <div>
                                     <Lbl>Primary Provider</Lbl>
                                     <Sel value={proxyPrimaryProvider} onChange={setProxyPrimaryProvider} options={[
@@ -871,9 +1192,15 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                                 </div>
                                 <div className="border border-[hsl(var(--border))] rounded-lg p-3 space-y-2">
                                     <div className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wide">SmartProxy</div>
+                                    <p className="text-[9px] text-[hsl(var(--muted-foreground))] leading-snug m-0">ใส่ <strong className="text-[hsl(var(--foreground))]">แค่ sub-user</strong> (แอปใส่ <code className="text-[hsl(var(--foreground))]">user-</code> + geo) <strong className="text-[hsl(var(--foreground))]">หรือวาง username เต็ม</strong> จาก Generate — แบบ <code className="text-[hsl(var(--foreground))]">_area-TH_</code> ใช้ตามที่ dashboard ให้ (ไม่เติม <code className="text-[hsl(var(--foreground))]">user-</code>) · โซนเอเชียตั้ง Host/พอร์ต เช่น <code className="text-[hsl(var(--foreground))]">as.smartproxy.net:3120</code> · ดีฟอลต์ Decodo <code className="text-[hsl(var(--foreground))]">gate.decodo.com:7000</code> · เก่า <code className="text-[hsl(var(--foreground))]">gate.smartproxy.com:10001</code></p>
                                     <div className="grid grid-cols-2 gap-2">
-                                        <div><Lbl>Username</Lbl><Inp value={spProxyUser} onChange={setSpProxyUser} placeholder="sp-username" /></div>
+                                        <div><Lbl>Username</Lbl><Inp value={spProxyUser} onChange={setSpProxyUser} placeholder="sub-user (ไม่ต้องพิมพ์ user-)" /></div>
                                         <div><Lbl>Password</Lbl><Inp type="password" value={spProxyPassword} onChange={setSpProxyPassword} placeholder="password" /></div>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                        <div className="sm:col-span-1"><Lbl>Host (ว่าง = ดีฟอลต์)</Lbl><Inp value={spProxyHost} onChange={setSpProxyHost} placeholder="gate.decodo.com" /></div>
+                                        <div><Lbl>HTTP port</Lbl><Inp value={spProxyHttpPort} onChange={setSpProxyHttpPort} placeholder="7000" /></div>
+                                        <div><Lbl>SOCKS port</Lbl><Inp value={spProxySocksPort} onChange={setSpProxySocksPort} placeholder="7000" /></div>
                                     </div>
                                 </div>
                                 <div className="border border-[hsl(var(--border))] rounded-lg p-3 space-y-2">
@@ -891,28 +1218,220 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                                         <div><Lbl>Password</Lbl><Inp type="password" value={bdPassword} onChange={setBdPassword} placeholder="password" /></div>
                                     </div>
                                 </div>
-                                <Button onClick={() => save({ spProxyUser, spProxyPassword, soaxProxyUser, soaxProxyPassword, bdCustomer, bdZone, bdPassword, proxyPrimaryProvider })} disabled={saving} className="px-2 h-7 text-[10px] self-start">{saving ? "Saving..." : "💾 Save Providers"}</Button>
+                                {testResult.proxyFb && (
+                                    <div className={`text-[11px] rounded px-2.5 py-1.5 space-y-1 ${testResult.proxyFb === "ok" ? "bg-[rgba(16,185,129,0.08)] text-[hsl(var(--success))] border border-[rgba(16,185,129,0.15)]" : "bg-[rgba(239,68,68,0.06)] text-[hsl(var(--destructive))] border border-[rgba(239,68,68,0.12)]"}`}>
+                                        <div>{testResult.proxyFb === "ok" ? "✓" : "✗"} {testResult.proxyFbDetail || testResult.proxyFb}</div>
+                                        {testResult.proxyFbOrder && <div className="text-[10px] opacity-90 font-mono break-all">Order: {testResult.proxyFbOrder}</div>}
+                                        {testResult.proxyFbProvider && <div className="text-[10px] opacity-90">Used: {testResult.proxyFbProvider}</div>}
+                                        {testResult.proxyFbExitIp && <div className="text-[10px] opacity-90 font-mono">Exit IP: {testResult.proxyFbExitIp}</div>}
+                                    </div>
+                                )}
+                                <div className="flex gap-1.5 flex-wrap">
+                                    <Button
+                                        variant="ghost"
+                                        disabled={testing === "proxyFb"}
+                                        className="px-2 h-7 text-[10px]"
+                                        onClick={async () => {
+                                            setTesting("proxyFb");
+                                            try {
+                                                const patch = {
+                                                    nmProxyUser,
+                                                    nmProxyPassword,
+                                                    spProxyUser,
+                                                    spProxyPassword,
+                                                    spProxyHost: spProxyHost.trim(),
+                                                    spProxyHttpPort: spProxyHttpPort.trim() ? parseInt(spProxyHttpPort, 10) : "",
+                                                    spProxySocksPort: spProxySocksPort.trim() ? parseInt(spProxySocksPort, 10) : "",
+                                                    soaxProxyUser,
+                                                    soaxProxyPassword,
+                                                    bdCustomer,
+                                                    bdZone,
+                                                    bdPassword,
+                                                    proxyPrimaryProvider,
+                                                    proxyResolveRelayUrl: proxyResolveRelayUrl.trim(),
+                                                };
+                                                const order = getProviderFallbackOrder(patch);
+                                                const cfg = getProxyConfigWithFallback({ profileId: "settings-test" }, patch);
+                                                if (cfg.error) {
+                                                    setTestResult((prev) => ({
+                                                        ...prev,
+                                                        proxyFb: "fail",
+                                                        proxyFbDetail: cfg.error,
+                                                        proxyFbOrder: order.join(" → "),
+                                                        proxyFbProvider: "",
+                                                        proxyFbExitIp: "",
+                                                    }));
+                                                    return;
+                                                }
+                                                const pr = await postProxyResolveIp(
+                                                    {
+                                                        host: cfg.host,
+                                                        port: cfg.port,
+                                                        username: cfg.username,
+                                                        password: cfg.password,
+                                                        protocol: cfg.protocol,
+                                                    },
+                                                    patch
+                                                );
+                                                if (!pr.ok) {
+                                                    setTestResult((prev) => ({
+                                                        ...prev,
+                                                        proxyFb: "fail",
+                                                        proxyFbDetail: pr.error,
+                                                        proxyFbOrder: order.join(" → "),
+                                                        proxyFbProvider: cfg.providerName,
+                                                        proxyFbExitIp: "",
+                                                    }));
+                                                    return;
+                                                }
+                                                const ipData = pr.data;
+                                                const exitIp = ipData.ip || ipData.query || "";
+                                                setTestResult((prev) => ({
+                                                    ...prev,
+                                                    proxyFb: "ok",
+                                                    proxyFbDetail: exitIp ? `ทดสอบผ่านพร็อกซี — ได้ exit IP` : "ตอบ OK (ไม่มี IP ใน body)",
+                                                    proxyFbOrder: order.join(" → "),
+                                                    proxyFbProvider: cfg.providerName,
+                                                    proxyFbExitIp: exitIp,
+                                                }));
+                                            } catch (e) {
+                                                setTestResult((prev) => ({
+                                                    ...prev,
+                                                    proxyFb: "fail",
+                                                    proxyFbDetail: e?.message || String(e),
+                                                    proxyFbOrder: "",
+                                                    proxyFbProvider: "",
+                                                    proxyFbExitIp: "",
+                                                }));
+                                            } finally {
+                                                setTesting(null);
+                                            }
+                                        }}
+                                    >
+                                        {testing === "proxyFb" ? "⏳ กำลังทดสอบ…" : "🧪 Test chain + exit IP"}
+                                    </Button>
+                                    <Button onClick={() => save({
+                                        spProxyUser,
+                                        spProxyPassword,
+                                        spProxyHost: spProxyHost.trim(),
+                                        spProxyHttpPort: spProxyHttpPort.trim() ? parseInt(spProxyHttpPort, 10) : "",
+                                        spProxySocksPort: spProxySocksPort.trim() ? parseInt(spProxySocksPort, 10) : "",
+                                        soaxProxyUser,
+                                        soaxProxyPassword,
+                                        bdCustomer,
+                                        bdZone,
+                                        bdPassword,
+                                        proxyPrimaryProvider,
+                                        proxyResolveRelayUrl: proxyResolveRelayUrl.trim(),
+                                    })} disabled={saving} className="px-2 h-7 text-[10px]">{saving ? "Saving..." : "💾 Save Providers"}</Button>
+                                </div>
                             </CardContent>
                         </Card>
 
                         <Card className="mb-4">
-                            <CardHeader><CardTitle>🔬 IP Quality APIs</CardTitle></CardHeader>
+                            <CardHeader>
+                                <CardTitle>
+                                    🔬 IP Quality APIs
+                                    {testResult.ipq === "ok" ? <span className="text-[hsl(var(--success))] text-[11px] font-normal ml-1">● Pass</span> : testResult.ipq === "warn" ? <span className="text-amber-400 text-[11px] font-normal ml-1">● REJECT</span> : testResult.ipq === "fail" ? <span className="text-[hsl(var(--destructive))] text-[11px] font-normal ml-1">● Failed</span> : null}
+                                </CardTitle>
+                            </CardHeader>
                             <CardContent className="flex flex-col gap-3">
-                                <p className="text-[10px] text-[hsl(var(--muted-foreground))] -mt-2">API keys for IP quality pipeline — ASN check, fraud detection, proxy/VPN detection, timezone verification</p>
+                                <p className="text-[10px] text-[hsl(var(--muted-foreground))] -mt-2">API keys for IP quality pipeline — ASN check, fraud detection, proxy/VPN detection, timezone verification. ทดสอบใช้ IP สาธารณะของคุณ (ipify) + ค่าที่กรอกในแบบฟอร์ม (ยังไม่ต้อง Save)</p>
                                 <div className="border border-[hsl(var(--border))] rounded-lg p-3 space-y-2">
                                     <div className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wide">IPinfo <span className="font-normal opacity-60">— ASN, ISP, Timezone, Geo</span></div>
                                     <Inp type="password" value={ipinfoToken} onChange={setIpinfoToken} placeholder="ipinfo.io access token" />
                                 </div>
                                 <div className="border border-[hsl(var(--border))] rounded-lg p-3 space-y-2">
                                     <div className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wide">Scamalytics <span className="font-normal opacity-60">— Fraud Score</span></div>
-                                    <Inp type="password" value={scamalyticsKey} onChange={setScamalyticsKey} placeholder="scamalytics.com API key" />
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <Inp type="password" value={scamalyticsKey} onChange={setScamalyticsKey} placeholder="API Key (a30b2f...)" />
+                                        <Inp value={scamalyticsUsername} onChange={setScamalyticsUsername} placeholder="e.g. 69b454433fb5e" />
+                                    </div>
+                                    <p className="text-[9px] text-[hsl(var(--muted-foreground))] m-0 mt-1 leading-relaxed">
+                                        *สำหรับ V3 API ให้ใส่ ID (เช่น <code className="text-[hsl(var(--foreground))]">69b454...</code>) ลงในช่องขวา เพื่อแก้ปัญหา 404
+                                    </p>
                                 </div>
                                 <div className="border border-[hsl(var(--border))] rounded-lg p-3 space-y-2">
                                     <div className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wide">IP2Location <span className="font-normal opacity-60">— Proxy/VPN Detection</span></div>
                                     <Inp type="password" value={ip2locationKey} onChange={setIp2locationKey} placeholder="ip2location.io API key" />
                                 </div>
-                                <p className="text-[9px] text-[hsl(var(--muted-foreground))] italic">All optional — pipeline falls back to IPQS + ip-api.com when keys are missing</p>
-                                <Button onClick={() => save({ ipinfoToken, scamalyticsKey, ip2locationKey })} disabled={saving} className="px-2 h-7 text-[10px] self-start">{saving ? "Saving..." : "💾 Save API Keys"}</Button>
+                                <p className="text-[9px] text-[hsl(var(--muted-foreground))] italic">All optional — pipeline falls back to IPQS (จากการ์ด NodeMaven ด้านบน) + ip-api.com when keys are missing</p>
+                                {testResult.ipq && (
+                                    <div
+                                        className={`text-[11px] rounded px-2.5 py-1.5 space-y-1 ${
+                                            testResult.ipq === "ok"
+                                                ? "bg-[rgba(16,185,129,0.08)] text-[hsl(var(--success))] border border-[rgba(16,185,129,0.15)]"
+                                                : testResult.ipq === "warn"
+                                                  ? "bg-amber-500/10 text-amber-200 border border-amber-500/20"
+                                                  : "bg-[rgba(239,68,68,0.06)] text-[hsl(var(--destructive))] border border-[rgba(239,68,68,0.12)]"
+                                        }`}
+                                    >
+                                        <div className="font-medium">{testResult.ipqDetail}</div>
+                                        {Array.isArray(testResult.ipqSteps) && testResult.ipqSteps.length > 0 && (
+                                            <ul className="text-[10px] font-mono space-y-0.5 list-disc list-inside opacity-95 m-0 pl-0.5">
+                                                {testResult.ipqSteps.map((line, i) => (
+                                                    <li key={i} className="break-all">
+                                                        {line}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </div>
+                                )}
+                                <div className="flex gap-1.5 flex-wrap">
+                                    <Button
+                                        variant="ghost"
+                                        disabled={testing === "ipq"}
+                                        className="px-2 h-7 text-[10px]"
+                                        onClick={async () => {
+                                            setTesting("ipq");
+                                            try {
+                                                let testIp = "1.1.1.1";
+                                                try {
+                                                    const ir = await fetch("https://api.ipify.org?format=json", { signal: AbortSignal.timeout(8000) });
+                                                    if (ir.ok) {
+                                                        const ij = await ir.json();
+                                                        if (ij.ip) testIp = ij.ip;
+                                                    }
+                                                } catch {
+                                                    /* use fallback IP */
+                                                }
+                                                const patch = { ipinfoToken, scamalyticsKey, scamalyticsUsername, ip2locationKey, ipqsApiKey };
+                                                const res = await runQualityPipeline(testIp, {}, {}, patch);
+                                                const stepLines = (res.steps || []).map((s) => {
+                                                    const label = s.label || s.name;
+                                                    if (s.skipped) return `${label}: skipped`;
+                                                    const mark = s.passed ? "✓" : "✗";
+                                                    let extra = "";
+                                                    if (s.name === "asn") extra = ` (${s.source || "?"})${s.asn ? ` ${s.asn}` : ""}${s.country ? ` ${s.country}` : ""}`;
+                                                    if (s.name === "fraud") extra = ` fraud=${s.fraudScore ?? "—"} (${s.source || "?"})`;
+                                                    if (s.name === "proxy_vpn") extra = ` (${s.source || "?"}) proxy=${s.isProxy ? "Y" : "n"} vpn=${s.isVpn ? "Y" : "n"}`;
+                                                    if (s.name === "latency") extra = s.latencyMs != null ? ` ${s.latencyMs}ms` : "";
+                                                    if (s.name === "timezone_geo") extra = s.skipped ? "" : ` countryMatch=${s.countryMatch} tzMatch=${s.timezoneMatch}`;
+                                                    return `${mark} ${label}${extra}`;
+                                                });
+                                                setTestResult((prev) => ({
+                                                    ...prev,
+                                                    ipq: res.verdict === "APPROVE" ? "ok" : "warn",
+                                                    ipqDetail: `IP ${testIp} · score ${res.score} · ${res.verdict}`,
+                                                    ipqSteps: stepLines,
+                                                }));
+                                            } catch (e) {
+                                                setTestResult((prev) => ({
+                                                    ...prev,
+                                                    ipq: "fail",
+                                                    ipqDetail: e?.message || String(e),
+                                                    ipqSteps: [],
+                                                }));
+                                            } finally {
+                                                setTesting(null);
+                                            }
+                                        }}
+                                    >
+                                        {testing === "ipq" ? "⏳ กำลังรัน pipeline…" : "🧪 Run pipeline test"}
+                                    </Button>
+                                    <Button onClick={() => save({ ipinfoToken, scamalyticsKey, scamalyticsUsername, ip2locationKey })} disabled={saving} className="px-2 h-7 text-[10px]">{saving ? "Saving..." : "💾 Save API Keys"}</Button>
+                                </div>
                             </CardContent>
                         </Card>
 
@@ -932,15 +1451,13 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                                 </div>
                             </CardContent>
                         </Card>
-                    </section>
+                </SettingsSection>
 
-                    <section>
-                        <SectionHeader>🎨 Appearance</SectionHeader>
-                        <AppearanceSection />
-                    </section>
+                <SettingsSection id="settings-ui" icon="🎨" title="หน้าตาแอป" desc="สีธีมและ accent — เก็บในเบราว์เซอร์">
+                    <AppearanceSection />
+                </SettingsSection>
 
-                    <section>
-                        <SectionHeader>📊 Performance Stats</SectionHeader>
+                <SettingsSection id="settings-stats" icon="📊" title="สถิติโปรเจกต์" desc="ภาพรวมจาก session ปัจจุบัน">
                         <Card className="mb-4">
                             <CardHeader><CardTitle>Project Overview</CardTitle></CardHeader>
                             <CardContent>
@@ -951,8 +1468,7 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                                 </div>
                             </CardContent>
                         </Card>
-                    </section>
-                </div>
+                </SettingsSection>
             </div>
         </div>
     );

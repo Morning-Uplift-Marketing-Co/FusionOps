@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## 3.6.1 (2026-03-26)
+
+### Bug Fixes & Improvements
+
+* **proxy:** implement Proxy Gateway worker logic to handle TCP blocks with fallback to Node.js proxy relay
+* **ip-quality:** support IPinfo Lite API with Bearer token fallback for missing geolocation fields
+* **ip-quality:** support Scamalytics V3 API endpoint format and add custom username parameter to fix 404s
+* **ops-center:** add API Health Check endpoints integration to Dashboard
+* **ops-center:** handle `mlProfiles` array map error gracefully when Sync from MLX fails
+* **profile-manager:** correctly parse LendingCards paginated API response results
+* **security:** protect template thumb mutations and remove MCP debug leak
+* **security:** tighten worker read-only direct-query auth when `API_SECRET` is unset
+* **tracker:** ensure gtag scripts and clickid parameters run across all 3 LP generator patterns
+
 ## 3.6.0 (2026-03-23)
 
 

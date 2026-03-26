@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 260 20% 5%;
+    --foreground: 0 0% 98%;
+
+    --card: 260 30% 10%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 260 30% 10%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 43 96% 56%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 263 76% 35%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 260 20% 15%;
+    --muted-foreground: 260 10% 65%;
+
+    --accent: 263 76% 35%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 260 20% 18%;
+    --input: 260 20% 18%;
+    --ring: 43 96% 56%;
+
+    --radius: 0.75rem;
+
+    /* LionFunds custom tokens */
+    --lion-gold: 43 96% 56%;
+    --lion-gold-dark: 36 91% 53%;
+    --royal-purple: 263 76% 35%;
+    --deep-purple: 244 52% 20%;
+    --obsidian: 260 20% 5%;
+    --section-dark: 244 52% 20%;
+    --section-purple: 260 50% 26%;
+    --section-light: 263 100% 98%;
+
+    --sidebar-background: 260 20% 5%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 43 96% 56%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 263 76% 35%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 260 20% 18%;
+    --sidebar-ring: 43 96% 56%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', sans-serif;
+  }
+}

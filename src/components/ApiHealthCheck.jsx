@@ -177,6 +177,92 @@ const ENDPOINT_GROUPS = [
       { id: "postbacks", method: "GET", name: "Voluum postbacks", path: "/api/postbacks?limit=5&since=0" },
     ],
   },
+  {
+    id: "proxy-tools",
+    name: "Proxy Tools (Worker)",
+    icon: "🔌",
+    endpoints: [
+      {
+        id: "proxy-resolve", method: "POST", name: "Resolve IP", path: "/proxy/resolve-ip",
+        body: { host: "1.1.1.1", port: "80", username: "user", password: "pwd" }, // dummy to bypass 400 bad request and test 502/401
+        checkSuccess: (res) => {
+          if (res?.error && String(res.error).includes("NETWORK_ERROR")) return false;
+          return true; // 407/502/401 mean the worker is alive
+        }
+      },
+      {
+        id: "proxy-dns", method: "POST", name: "DNS Check", path: "/proxy/dns-check",
+        body: { host: "1.1.1.1", port: "80", username: "user", password: "pwd" },
+        checkSuccess: (res) => res?.error && String(res.error).includes("NETWORK_ERROR") ? false : true,
+      },
+      {
+        id: "proxy-latency", method: "POST", name: "Latency Check", path: "/proxy/latency-check",
+        body: { host: "1.1.1.1", port: "80", username: "user", password: "pwd" },
+        checkSuccess: (res) => res?.error && String(res.error).includes("NETWORK_ERROR") ? false : true,
+      },
+    ],
+  },
+  {
+    id: "ip-quality",
+    name: "IP Quality Pipeline (External)",
+    icon: "🛡️",
+    endpoints: [
+      {
+        id: "ip-api", method: "GET", name: "IP-API (Geolocation)", path: "http://ip-api.com/json/8.8.8.8", isExternal: true,
+        checkSuccess: (res, fetchRes) => res && res.status !== "fail" && fetchRes.ok
+      },
+      {
+        id: "ipinfo", method: "GET", name: "IPinfo (ASN)", path: "https://ipinfo.io/8.8.8.8/json", isExternal: true,
+        getUrl: () => {
+          const s = LS.get("settings") || {};
+          const t = s.ipinfoToken?.trim();
+          if (t && t.toLowerCase().startsWith('bearer ')) {
+            return "https://api.ipinfo.io/lite/8.8.8.8";
+          }
+          return t ? `https://ipinfo.io/8.8.8.8?token=${t}` : "https://ipinfo.io/8.8.8.8/json";
+        },
+        getHeaders: () => {
+          const s = LS.get("settings") || {};
+          const t = s.ipinfoToken?.trim();
+          if (t && t.toLowerCase().startsWith('bearer ')) {
+            return { "Authorization": t };
+          }
+          return {};
+        },
+        checkSuccess: (res, fetchRes) => fetchRes.ok
+      },
+      {
+        id: "scamalytics", method: "GET", name: "Scamalytics (Fraud)", path: "https://api11.scamalytics.com/ip/8.8.8.8", isExternal: true,
+        getUrl: () => {
+          const s = LS.get("settings") || {};
+          const key = s.scamalyticsKey?.trim();
+          const user = s.scamalyticsUsername?.trim();
+          if (!key) return "https://api11.scamalytics.com/ip/8.8.8.8";
+          if (user) return `https://api11.scamalytics.com/v3/${user}/?key=${key}&ip=8.8.8.8`;
+          return `https://api11.scamalytics.com/ip/8.8.8.8?key=${key}`;
+        },
+        checkSuccess: (res, fetchRes) => fetchRes.ok || fetchRes.status === 403 || fetchRes.status === 401
+      },
+      {
+        id: "ip2location", method: "GET", name: "IP2Location (Proxy/VPN)", path: "https://api.ip2location.io/?ip=8.8.8.8", isExternal: true,
+        getUrl: () => {
+          const s = LS.get("settings") || {};
+          const key = s.ip2LocationKey?.trim();
+          return key ? `https://api.ip2location.io/?ip=8.8.8.8&key=${key}` : "https://api.ip2location.io/?ip=8.8.8.8";
+        },
+        checkSuccess: (res, fetchRes) => fetchRes.ok || fetchRes.status === 401 || fetchRes.status === 400
+      },
+      {
+        id: "ipqs", method: "GET", name: "IPQualityScore (Fallback)", path: "https://www.ipqualityscore.com/api/json/ip/key/8.8.8.8", isExternal: true,
+        getUrl: () => {
+          const s = LS.get("settings") || {};
+          const key = s.ipqsKey?.trim();
+          return key ? `https://www.ipqualityscore.com/api/json/ip/${key}/8.8.8.8` : "https://www.ipqualityscore.com/api/json/ip/MISSING_KEY/8.8.8.8";
+        },
+        checkSuccess: (res, fetchRes) => res && res.success !== undefined ? true : false
+      }
+    ],
+  },
 ];
 
 // ─── Flatten for counting ───
@@ -404,6 +490,49 @@ export function ApiHealthCheck() {
     const t0 = performance.now();
     try {
       let res;
+      if (ep.isExternal) {
+        // Direct fetch for external APIs
+        let url = ep.path;
+        let headers = {};
+        if (ep.getUrl) url = await ep.getUrl();
+        if (ep.getHeaders) headers = await ep.getHeaders();
+        
+        const fetchRes = await fetch(url, {
+          method: ep.method,
+          headers,
+          signal: AbortSignal.timeout(8000)
+        });
+        
+        const contentType = fetchRes.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          res = await fetchRes.json();
+        } else {
+          res = { status: fetchRes.status, text: await fetchRes.text() };
+        }
+        
+        // Custom success logic for external APIs
+        let ok = fetchRes.ok;
+        if (ep.checkSuccess) ok = ep.checkSuccess(res, fetchRes);
+        else if (res.status === "fail" || res.error) ok = false;
+        
+        const ms = Math.round(performance.now() - t0);
+        
+        let responseText;
+        try {
+          responseText = JSON.stringify(res, null, 2);
+          if (responseText.length > 4000) responseText = responseText.slice(0, 4000) + "\n\n... (truncated)";
+        } catch {
+          responseText = String(res);
+        }
+
+        setResults((prev) => ({
+          ...prev,
+          [ep.id]: { ok, ms, detail: ok ? `${ms}ms` : `HTTP ${fetchRes.status}`, responseText },
+        }));
+        return;
+      }
+
+      // Internal API via api service
       if (ep.method === "GET") {
         res = await api.get(ep.path);
       } else {
@@ -413,8 +542,12 @@ export function ApiHealthCheck() {
         }
         res = await api.post(ep.path, body);
       }
+      
       const ms = Math.round(performance.now() - t0);
-      const ok = res && !res.error;
+      let ok = res && !res.error;
+      if (ep.checkSuccess) {
+        ok = ep.checkSuccess(res);
+      }
 
       let responseText;
       try {

@@ -302,11 +302,20 @@ jobs:
             exit 0
           fi
 
-          ZONE_RESP=$(curl -s -X GET \
-            "https://api.cloudflare.com/client/v4/zones?name=$DOMAIN&account.id=$CF_ACCOUNT" \
+          ZONE_RESP=$(curl -s -G "https://api.cloudflare.com/client/v4/zones" \
+            --data-urlencode "name=$DOMAIN" \
+            --data-urlencode "account.id=$CF_ACCOUNT" \
             -H "Authorization: Bearer $CF_TOKEN" \
             -H "Content-Type: application/json")
           ZONE_ID=$(ZONE_RESP="$ZONE_RESP" node -e "const r=JSON.parse(process.env.ZONE_RESP||'{}');console.log((r.result&&r.result[0]&&r.result[0].id)||'')")
+          if [ -z "$ZONE_ID" ]; then
+            echo "Zone lookup with account.id empty; retrying zones?name= only..."
+            ZONE_RESP=$(curl -s -G "https://api.cloudflare.com/client/v4/zones" \
+              --data-urlencode "name=$DOMAIN" \
+              -H "Authorization: Bearer $CF_TOKEN" \
+              -H "Content-Type: application/json")
+            ZONE_ID=$(ZONE_RESP="$ZONE_RESP" node -e "const r=JSON.parse(process.env.ZONE_RESP||'{}');console.log((r.result&&r.result[0]&&r.result[0].id)||'')")
+          fi
 
           if [ -z "$ZONE_ID" ]; then
             echo "Skipping stale worker route cleanup: zone lookup failed for $DOMAIN"
@@ -363,19 +372,22 @@ jobs:
           fi
 
           echo "Adding custom domain $DOMAIN to Pages project $PROJECT..."
+          # Cloudflare Pages API requires body { "name": "hostname" } (not "domain") — wrong key yields 8000015 invalid TLD
+          ROOT_JSON=$(D="$DOMAIN" node -p "JSON.stringify({ name: process.env.D })")
           RESP=$(curl -s -X POST \
             "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT/pages/projects/$PROJECT/domains" \
             -H "Authorization: Bearer $CF_TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"domain\":\"$DOMAIN\"}")
+            -d "$ROOT_JSON")
           RESP="$RESP" node -e "const r=JSON.parse(process.env.RESP||'{}');const codes=(r.errors||[]).map(e=>String(e.code));if(!(r.success||codes.includes('8000013')||codes.includes('81057'))){console.warn('CF Pages root domain attach failed (continuing to DNS upsert):', JSON.stringify(r));process.exit(0)};console.log('CF Pages root domain attach:', JSON.stringify(r));"
 
           echo "Adding www.$DOMAIN custom domain to Pages project $PROJECT..."
+          WWW_JSON=$(D="www.$DOMAIN" node -p "JSON.stringify({ name: process.env.D })")
           RESP_WWW=$(curl -s -X POST \
             "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT/pages/projects/$PROJECT/domains" \
             -H "Authorization: Bearer $CF_TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"domain\":\"www.$DOMAIN\"}")
+            -d "$WWW_JSON")
           RESP_WWW="$RESP_WWW" node -e "const r=JSON.parse(process.env.RESP_WWW||'{}');const codes=(r.errors||[]).map(e=>String(e.code));if(!(r.success||codes.includes('8000013')||codes.includes('81057'))){console.warn('CF Pages www domain attach failed (continuing to DNS upsert):', JSON.stringify(r));process.exit(0)};console.log('CF Pages www domain attach:', JSON.stringify(r));"
 
       - name: Upsert Cloudflare DNS CNAME (root + www)
@@ -391,6 +403,8 @@ jobs:
           export CF_ACCOUNT="${CF_ACCOUNT_FROM_SECRET:-$CF_ACCOUNT_FROM_CONFIG}"
           CONFIG_FILE="${{ steps.config.outputs.file }}"
           DOMAIN=$(node -e "const c=require('./$CONFIG_FILE');const d=String(c.domain||'').trim().toLowerCase().replace(/^https?:\/\//,'').replace(/^\/\//,'').replace(/[/?#].*$/,'').replace(/\.+$/,'').replace(/^www\./,'');console.log(d)")
+          CF_ZONE_ID=$(node -e "const c=require('./$CONFIG_FILE');console.log(String(c.cfZoneId||'').trim().toLowerCase())")
+          SKIP_DNS=$(node -e "const c=require('./$CONFIG_FILE');process.stdout.write(c.skipDnsUpsert===true?'1':'')")
           DEPLOY_URL="${{ steps.deploy.outputs.url }}"
 
           if [ -z "$DOMAIN" ] || [ -z "$CF_TOKEN" ] || [ -z "$CF_ACCOUNT" ] || [ -z "$DEPLOY_URL" ]; then
@@ -401,14 +415,115 @@ jobs:
           PAGES_HOST=$(node -e "console.log(new URL(process.argv[1]).hostname)" "$DEPLOY_URL")
           echo "Will point $DOMAIN and www.$DOMAIN to $PAGES_HOST"
 
-          ZONE_RESP=$(curl -s -X GET \
-            "https://api.cloudflare.com/client/v4/zones?name=$DOMAIN&account.id=$CF_ACCOUNT" \
-            -H "Authorization: Bearer $CF_TOKEN" \
-            -H "Content-Type: application/json")
-          ZONE_ID=$(ZONE_RESP="$ZONE_RESP" node -e "const r=JSON.parse(process.env.ZONE_RESP||'{}');console.log((r.result&&r.result[0]&&r.result[0].id)||'')")
+          if [ "$SKIP_DNS" = "1" ]; then
+            echo "skipDnsUpsert=true in deploy config — skipping API DNS changes."
+            echo "Add proxied CNAME: $DOMAIN → $PAGES_HOST and www.$DOMAIN → $PAGES_HOST (or set cfZoneId and remove skipDnsUpsert to automate)."
+            exit 0
+          fi
+
+          ZONE_ID=""
+          if [ -n "$CF_ZONE_ID" ] && echo "$CF_ZONE_ID" | grep -Eq '^[a-f0-9]{32}$'; then
+            echo "Trying cfZoneId from deploy config..."
+            ZONE_VERIFY=$(curl -s "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID" \
+              -H "Authorization: Bearer $CF_TOKEN" \
+              -H "Content-Type: application/json")
+            ZONE_ID=$(ZONE_VERIFY="$ZONE_VERIFY" DOMAIN="$DOMAIN" ZID="$CF_ZONE_ID" node -e "
+              const r=JSON.parse(process.env.ZONE_VERIFY||'{}');
+              if (!r.success || !r.result?.id) process.stdout.write('');
+              else {
+                const want = (process.env.DOMAIN||'').toLowerCase();
+                const got = String(r.result.name||'').toLowerCase();
+                process.stdout.write(got === want ? process.env.ZID : '');
+              }
+            ")
+            if [ -z "$ZONE_ID" ]; then
+              echo "cfZoneId not usable (wrong id, token cannot read zone, or zone name != $DOMAIN). Falling back to lookup..."
+            fi
+          fi
 
           if [ -z "$ZONE_ID" ]; then
-            echo "Zone lookup failed: $ZONE_RESP"
+            ZONE_RESP=$(curl -s -G "https://api.cloudflare.com/client/v4/zones" \
+              --data-urlencode "name=$DOMAIN" \
+              --data-urlencode "account.id=$CF_ACCOUNT" \
+              -H "Authorization: Bearer $CF_TOKEN" \
+              -H "Content-Type: application/json")
+            ZONE_ID=$(ZONE_RESP="$ZONE_RESP" node -e "const r=JSON.parse(process.env.ZONE_RESP||'{}');console.log((r.result&&r.result[0]&&r.result[0].id)||'')")
+          fi
+          if [ -z "$ZONE_ID" ]; then
+            echo "Zone lookup with account.id returned no zone; retrying without account filter..."
+            ZONE_RESP=$(curl -s -G "https://api.cloudflare.com/client/v4/zones" \
+              --data-urlencode "name=$DOMAIN" \
+              -H "Authorization: Bearer $CF_TOKEN" \
+              -H "Content-Type: application/json")
+            ZONE_ID=$(ZONE_RESP="$ZONE_RESP" node -e "const r=JSON.parse(process.env.ZONE_RESP||'{}');console.log((r.result&&r.result[0]&&r.result[0].id)||'')")
+          fi
+          if [ -z "$ZONE_ID" ]; then
+            echo "Listing zones in account (first 50) for exact name match..."
+            LIST_RESP=$(curl -s -G "https://api.cloudflare.com/client/v4/zones" \
+              --data-urlencode "account.id=$CF_ACCOUNT" \
+              --data-urlencode "per_page=50" \
+              -H "Authorization: Bearer $CF_TOKEN" \
+              -H "Content-Type: application/json")
+            ZONE_ID=$(LIST_RESP="$LIST_RESP" DOMAIN="$DOMAIN" node -e "
+              const r=JSON.parse(process.env.LIST_RESP||'{}');
+              const d=(process.env.DOMAIN||'').toLowerCase();
+              const z=(r.result||[]).find(x=>String(x.name||'').toLowerCase()===d);
+              console.log(z?.id||'');
+            ")
+          fi
+          if [ -z "$ZONE_ID" ]; then
+            echo "Listing zones token can access (first 50, any account)..."
+            LIST_RESP=$(curl -s -G "https://api.cloudflare.com/client/v4/zones" \
+              --data-urlencode "per_page=50" \
+              -H "Authorization: Bearer $CF_TOKEN" \
+              -H "Content-Type: application/json")
+            ZONE_ID=$(LIST_RESP="$LIST_RESP" DOMAIN="$DOMAIN" node -e "
+              const r=JSON.parse(process.env.LIST_RESP||'{}');
+              const d=(process.env.DOMAIN||'').toLowerCase();
+              const z=(r.result||[]).find(x=>String(x.name||'').toLowerCase()===d);
+              console.log(z?.id||'');
+            ")
+          fi
+
+          if [ -z "$ZONE_ID" ]; then
+            echo "::error::No Cloudflare zone for $DOMAIN — this GitHub Actions token cannot see that zone."
+            echo "Note: LP Factory 'CF Profile' in the app is NOT used here. Only repo secrets CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID apply."
+            echo "If you use Tanongchai.wass@gmail.com in the browser, the zone may live under a different Cloudflare Account than CLOUDFLARE_ACCOUNT_ID in GitHub."
+            echo "Last name-filter API response: $ZONE_RESP"
+            echo "--- Diagnostics (token scope vs domain) ---"
+            ACC_JSON=$(curl -s -G "https://api.cloudflare.com/client/v4/accounts" \
+              --data-urlencode "per_page=20" \
+              -H "Authorization: Bearer $CF_TOKEN" \
+              -H "Content-Type: application/json")
+            ZLIST_JSON=$(curl -s -G "https://api.cloudflare.com/client/v4/zones" \
+              --data-urlencode "per_page=50" \
+              -H "Authorization: Bearer $CF_TOKEN" \
+              -H "Content-Type: application/json")
+            TARGET_DOMAIN="$DOMAIN" CF_ACCOUNT="$CF_ACCOUNT" ACC_JSON="$ACC_JSON" ZLIST_JSON="$ZLIST_JSON" node -e "
+              const acc = JSON.parse(process.env.ACC_JSON || '{}');
+              const zones = JSON.parse(process.env.ZLIST_JSON || '{}');
+              const want = (process.env.TARGET_DOMAIN || '').toLowerCase();
+              const cfAcct = process.env.CF_ACCOUNT || '';
+              if (!acc.success) console.log('GET /accounts failed:', JSON.stringify(acc.errors || acc));
+              else {
+                const rows = acc.result || [];
+                console.log('Accounts visible to CLOUDFLARE_API_TOKEN (' + rows.length + '):');
+                rows.forEach(a => console.log('  ', a.id, '|', a.name));
+              }
+              console.log('Workflow CLOUDFLARE_ACCOUNT_ID (must match the account that owns ' + want + '):', cfAcct);
+              if (!zones.success) console.log('GET /zones failed:', JSON.stringify(zones.errors || zones));
+              else {
+                const zr = zones.result || [];
+                console.log('Zone names this token can read (first page, ' + zr.length + '):');
+                console.log(zr.map(z => z.name).join(', ') || '(none)');
+                if (want && !zr.some(z => String(z.name || '').toLowerCase() === want))
+                  console.log('=> \"' + want + '\" is missing above → GitHub token is for another account, or token is limited to specific zones (edit token: include this zone or All zones).');
+              }
+            "
+            echo "---"
+            echo "Fix: (1) GitHub → Settings → Secrets → set CLOUDFLARE_ACCOUNT_ID to the Account ID shown in Cloudflare for the website that has $DOMAIN"
+            echo "     (2) Edit API token: Zone → Read + DNS → Edit, All zones in account (or include $DOMAIN explicitly)"
+            echo "     (3) Or set deploy-config \"cfZoneId\" + token with access to that zone, or \"skipDnsUpsert\": true for manual CNAMEs"
             exit 1
           fi
 
@@ -473,11 +588,19 @@ jobs:
             exit 0
           fi
 
-          ZONE_RESP=$(curl -s -X GET \
-            "https://api.cloudflare.com/client/v4/zones?name=$DOMAIN&account.id=$CF_ACCOUNT" \
+          ZONE_RESP=$(curl -s -G "https://api.cloudflare.com/client/v4/zones" \
+            --data-urlencode "name=$DOMAIN" \
+            --data-urlencode "account.id=$CF_ACCOUNT" \
             -H "Authorization: Bearer $CF_TOKEN" \
             -H "Content-Type: application/json")
           ZONE_ID=$(ZONE_RESP="$ZONE_RESP" node -e "const r=JSON.parse(process.env.ZONE_RESP||'{}');console.log((r.result&&r.result[0]&&r.result[0].id)||'')")
+          if [ -z "$ZONE_ID" ]; then
+            ZONE_RESP=$(curl -s -G "https://api.cloudflare.com/client/v4/zones" \
+              --data-urlencode "name=$DOMAIN" \
+              -H "Authorization: Bearer $CF_TOKEN" \
+              -H "Content-Type: application/json")
+            ZONE_ID=$(ZONE_RESP="$ZONE_RESP" node -e "const r=JSON.parse(process.env.ZONE_RESP||'{}');console.log((r.result&&r.result[0]&&r.result[0].id)||'')")
+          fi
 
           if [ -z "$ZONE_ID" ]; then
             echo "Skipping cache purge: zone lookup failed for $DOMAIN"

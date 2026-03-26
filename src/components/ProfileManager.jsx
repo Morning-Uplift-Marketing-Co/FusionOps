@@ -501,9 +501,9 @@ export function ProfileManager({ settings = {}, ops = {} }) {
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[22px] font-bold m-0">Profile Manager</h1>
+          <h1 className="text-[22px] font-bold m-0">Multilogin X</h1>
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Multilogin profiles with linked cards & proxies · {stats.total} profiles
+            Profiles with linked cards & proxies · {stats.total} profiles
           </p>
         </div>
         <div className="flex items-center gap-2">

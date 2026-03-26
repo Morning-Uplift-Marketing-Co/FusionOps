@@ -27,6 +27,33 @@ function getSettings() {
   }
 }
 
+/** Merge unsaved form fields over persisted settings (Settings page tests). */
+function mergedProxySettings(settingsOverride) {
+  if (settingsOverride === undefined || settingsOverride === null) return getSettings();
+  if (typeof settingsOverride !== "object") return getSettings();
+  return { ...getSettings(), ...settingsOverride };
+}
+
+const DEFAULT_PROVIDER_ORDER = ["nodemaven", "smartproxy", "soax", "brightdata"];
+
+/** Order used by getProxyConfigWithFallback — respects Settings "Primary Provider" unless proxyFallbackOrder JSON overrides. */
+export function getProviderFallbackOrder(settings = getSettings()) {
+  if (settings.proxyFallbackOrder) {
+    try {
+      const parsed = JSON.parse(settings.proxyFallbackOrder);
+      if (Array.isArray(parsed) && parsed.length) {
+        return parsed.filter((id) => PROVIDERS[id]);
+      }
+    } catch {
+      /* ignore invalid JSON */
+    }
+  }
+  const primary = String(settings.proxyPrimaryProvider || "nodemaven").toLowerCase();
+  const first = PROVIDERS[primary] ? primary : "nodemaven";
+  const rest = DEFAULT_PROVIDER_ORDER.filter((id) => id !== first);
+  return [first, ...rest];
+}
+
 /* ────────────────── Session ID Generator ────────────────── */
 
 function generateSessionId(profileId) {
@@ -57,14 +84,49 @@ const PROVIDERS = {
 
   smartproxy: {
     name: "SmartProxy",
-    host: "gate.smartproxy.com",
-    httpPort: 10001,
-    socks5Port: 10000,
+    /**
+     * Current Decodo/Smartproxy residential user:pass backconnect (help.smartproxy.com).
+     * Legacy: gate.smartproxy.com — set spProxyHost + spProxyHttpPort in Settings.
+     */
+    host: "gate.decodo.com",
+    httpPort: 7000,
+    socks5Port: 7000,
     settingsKeys: { user: "spProxyUser", pass: "spProxyPassword" },
+    /**
+     * Two dashboard styles:
+     * - Decodo/backconnect: user-subuser-country-us-session-… (hyphen chain; often needs user- prefix).
+     * - Regional endpoints (e.g. as.smartproxy.net): subuser_area-TH_state-BANGKOK_life-120_session-… — NO user- prefix, uses area- not country-.
+     */
     buildUsername(baseUser, { country, state, city, sessionId }) {
-      let parts = [baseUser];
-      if (country) parts.push(`country-${country.toLowerCase()}`);
-      if (state) parts.push(`state-${state.toLowerCase().replace(/\s+/g, "_")}`);
+      const raw = String(baseUser || "").trim();
+      const lower = raw.toLowerCase();
+      const hasSessionToken = /[_-]session[-_]/i.test(raw);
+
+      /* Underscore + area-XX = regional generator line — use verbatim (never prepend user-, never append profile geo). */
+      if (/_area-[a-z]{2}/i.test(raw)) {
+        let out = raw;
+        if (sessionId && !hasSessionToken) out = `${out}-session-${sessionId}`;
+        return out;
+      }
+
+      const hyphenComposed = /-(country|city|state|session|sessionduration|continent|asn|zip|area|life)-/.test(lower);
+      if (hyphenComposed) {
+        let out = raw;
+        if (!lower.startsWith("user-")) out = `user-${raw}`;
+        if (sessionId && !/-session-/.test(lower)) out = `${out}-session-${sessionId}`;
+        return out;
+      }
+
+      let u = raw;
+      if (!lower.startsWith("user-")) u = `user-${raw}`;
+      const parts = [u];
+      const cc = (country || "").toLowerCase();
+      if (country) parts.push(`country-${cc}`);
+      if (state && cc === "us") {
+        const st = state.toLowerCase().replace(/\s+/g, "_");
+        const slug = st.startsWith("us_") ? st : `us_${st}`;
+        parts.push(`state-${slug}`);
+      }
       if (city) parts.push(`city-${city.toLowerCase().replace(/\s+/g, "_")}`);
       if (sessionId) parts.push(`session-${sessionId}`);
       return parts.join("-");
@@ -107,23 +169,23 @@ const PROVIDERS = {
 
 /* ────────────────── Get Provider Credentials ────────────────── */
 
-function getProviderCredentials(providerId) {
-  const settings = getSettings();
+function getProviderCredentials(providerId, settings) {
+  const s = settings !== undefined && settings !== null ? settings : getSettings();
   const provider = PROVIDERS[providerId];
   if (!provider) return null;
 
   const keys = provider.settingsKeys;
 
   if (providerId === "brightdata") {
-    const customer = settings[keys.user] || "";
-    const zone = settings[keys.zone] || "";
-    const pass = settings[keys.pass] || "";
+    const customer = s[keys.user] || "";
+    const zone = s[keys.zone] || "";
+    const pass = s[keys.pass] || "";
     if (!customer || !pass) return null;
     return { customer, zone, pass };
   }
 
-  const user = settings[keys.user] || "";
-  const pass = settings[keys.pass] || "";
+  const user = s[keys.user] || "";
+  const pass = s[keys.pass] || "";
   if (!user || !pass) return null;
   return { user, pass };
 }
@@ -139,17 +201,19 @@ function getProviderCredentials(providerId) {
  * @param {object} opts.geo - { country, state, city }
  * @param {string} [opts.sessionId] - Reuse existing session ID
  * @param {string} [opts.protocol] - "http" | "socks5" (default: "http")
+ * @param {object} [settingsOverride] - merged into stored settings (e.g. unsaved form state)
  * @returns {object} { host, port, username, password, protocol, sessionId, provider } | { error }
  */
-export function getProxyConfig(providerId, opts = {}) {
+export function getProxyConfig(providerId, opts = {}, settingsOverride) {
+  const stored = mergedProxySettings(settingsOverride);
   const provider = PROVIDERS[providerId];
   if (!provider) return { error: `Unknown provider: ${providerId}` };
 
-  const creds = getProviderCredentials(providerId);
+  const creds = getProviderCredentials(providerId, stored);
   if (!creds) return { error: `${provider.name} credentials not configured in Settings.` };
 
   const protocol = opts.protocol || "http";
-  const port = protocol === "socks5" ? provider.socks5Port : provider.httpPort;
+  let port = protocol === "socks5" ? provider.socks5Port : provider.httpPort;
   const sessionId = opts.sessionId || generateSessionId(opts.profileId);
   const geo = opts.geo || {};
 
@@ -173,8 +237,18 @@ export function getProxyConfig(providerId, opts = {}) {
     });
   }
 
+  let host = provider.host;
+  if (providerId === "smartproxy") {
+    const h = stored.spProxyHost;
+    if (typeof h === "string" && h.trim()) host = h.trim();
+    const hp = parseInt(String(stored.spProxyHttpPort ?? ""), 10);
+    const sp = parseInt(String(stored.spProxySocksPort ?? ""), 10);
+    if (protocol === "http" && Number.isFinite(hp) && hp > 0) port = hp;
+    if (protocol === "socks5" && Number.isFinite(sp) && sp > 0) port = sp;
+  }
+
   return {
-    host: provider.host,
+    host,
     port,
     username,
     password: creds.pass || creds.password,
@@ -190,18 +264,15 @@ export function getProxyConfig(providerId, opts = {}) {
  * Tries each provider in priority order until one succeeds (has credentials).
  *
  * @param {object} opts - Same as getProxyConfig + { providers?: string[] }
+ * @param {object} [settingsOverride] - merged into stored settings (Settings tests / preview)
  * @returns {object} proxyConfig or { error }
  */
-export function getProxyConfigWithFallback(opts = {}) {
-  const settings = getSettings();
-  const fallbackOrder = settings.proxyFallbackOrder
-    ? JSON.parse(settings.proxyFallbackOrder)
-    : ["nodemaven", "smartproxy", "soax", "brightdata"];
-
-  const providers = opts.providers || fallbackOrder;
+export function getProxyConfigWithFallback(opts = {}, settingsOverride) {
+  const stored = mergedProxySettings(settingsOverride);
+  const providers = opts.providers || getProviderFallbackOrder(stored);
 
   for (const providerId of providers) {
-    const config = getProxyConfig(providerId, opts);
+    const config = getProxyConfig(providerId, opts, settingsOverride);
     if (!config.error) return config;
   }
 
@@ -247,6 +318,7 @@ export function getPrimaryProvider() {
 export const proxyProviders = {
   getProxyConfig,
   getProxyConfigWithFallback,
+  getProviderFallbackOrder,
   toMultiloginFormat,
   getAvailableProviders,
   getPrimaryProvider,

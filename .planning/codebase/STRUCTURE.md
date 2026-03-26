@@ -1,183 +1,182 @@
 # Codebase Structure
 
-**Analysis Date:** 2026-03-22
+**Analysis Date:** 2026-03-26
 
 ## Directory Layout
 
 ```
-[project-root]/
-├── src/                    # Canonical Astro + React application (use this for app code)
-│   ├── adapters/           # TemplateAdapter interface + contract
-│   ├── assets/             # Static assets consumed by the app
-│   ├── components/         # React UI (features + ui/)
-│   ├── constants/          # Shared constants (theme, defaults)
-│   ├── hooks/              # React hooks
-│   ├── layouts/            # Astro layouts
-│   ├── lib/                # Shared lib helpers (e.g. cn/utils)
-│   ├── pages/              # Astro routes + APIRoute handlers
-│   ├── services/           # API, auth, DB, build, integrations
-│   ├── styles/             # Global styles
-│   ├── templates/          # Embedded lander templates + per-template adapters
-│   ├── utils/              # Template analysis, deployers, generators
-│   ├── __tests__/          # Co-located tests under src
-│   ├── App.jsx             # Root React app (state, navigation)
-│   └── AppRoot.jsx         # Sentry + error boundary wrapper
-├── apps/                   # Deployable Cloudflare Worker apps (separate packages)
-│   ├── api-worker/         # Main API (src/worker.js)
-│   ├── worker/             # Callbacks / tracking / pixel routes
-│   ├── lander/             # Standalone lander Astro app
-│   ├── pixel-worker/       # Pixel-related worker
-│   └── cf-proxy/           # Proxy worker
+lp-factory-web/                    # package name: lp-factory-web (root package.json)
+├── apps/
+│   ├── api-worker/                # Cloudflare Worker — main REST API (worker.js)
+│   ├── worker/                    # Cloudflare Worker — callbacks, /track, /e (TypeScript)
+│   ├── pixel-worker/              # Cloudflare Worker — first-party pixel t.* /e
+│   ├── lander/                    # Standalone Astro lander app
+│   └── cf-proxy/                  # Minimal CORS proxy Worker
 ├── packages/
-│   └── lp-template-generator/   # @lp-factory/template-generator — CLI + core
-├── templates/              # External / bolt-import template projects (large; excluded from tsconfig)
-├── tests/                  # Vitest setup + unit + Playwright e2e
-│   ├── unit/
-│   └── e2e/
-├── scripts/                # Node maintenance, deploy helpers, converters
-├── public/                 # Astro public assets
-├── docs/                   # Project documentation
-├── deploy-configs/         # Deployment configuration artifacts
-├── schemas/                # JSON or data schemas (if present)
-├── astro.config.mjs        # Astro + Vite config (proxy, aliases)
-├── tsconfig.json           # TS: @/* → src/*
-├── vitest.config.ts        # Vitest: @ → src, #lp-template-generator
-├── eslint.config.js
-├── playwright.config.ts
-└── package.json            # Root scripts: astro, vitest, playwright
+│   └── lp-template-generator/     # Template registry + generate() implementations
+├── src/                           # Primary Astro + React application
+│   ├── pages/                     # Astro routes
+│   ├── layouts/
+│   ├── components/                # React UI (Wizard.jsx + Wizard/ steps, dashboards, …)
+│   ├── services/                  # api, auth, build, dns, d1, neon, …
+│   ├── utils/                     # template-router, deployers, helpers
+│   ├── hooks/
+│   ├── constants/
+│   ├── adapters/
+│   └── templates/                 # Full template project trees (Astro/Vite) used by tooling
+├── templates/                     # Additional template / import sandboxes (many Astro projects)
+├── utils/                         # Root-level Node/browser shared utils (registry bridge, deployers)
+├── scripts/                       # Node maintenance: pack-template, convert, deploy-org, tracking inject
+├── tests/                         # unit, e2e (Playwright wizard specs under tests/e2e/wizard/)
+├── deploy-configs/                # Per-site or org JSON deploy descriptors
+├── files/gen/                     # Generated asset helpers
+└── astro.config.mjs               # Astro + Vite (Tailwind, aliases, /api proxy)
 ```
-
-**Note:** The repository root may also contain legacy copies of `App.jsx`, `services/`, `components/`, etc. The **canonical** application tree is `src/` (referenced by `src/pages/*.astro` and `tsconfig.json`). Prefer editing under `src/` unless a root file is proven to be the live import target.
 
 ## Directory Purposes
 
 **`src/`:**
-- Purpose: FusionOps web UI, template tooling invoked from the browser, and shared build/quality logic.
-- Contains: `.jsx`/`.tsx` components, `.astro` pages, `.js` services, `.ts` adapters.
-- Key files: `src/App.jsx`, `src/AppRoot.jsx`, `src/services/api.js`, `src/pages/index.astro`
 
-**`src/pages/`:**
-- Purpose: File-based routing and HTTP endpoints implemented as Astro `APIRoute` modules.
-- Contains: `index.astro`, `docs/index.astro`, `my-sites-preview.astro`, `e.ts`, `robots.txt.ts`
-- Key files: `src/pages/index.astro` (main entry)
+- Purpose: Main product — FusionOps UI, wizard, ops dashboards, template management.
+- Contains: `.jsx`/`.tsx` React, `.astro` pages, client services.
+- Key files: `src/App.jsx`, `src/AppRoot.jsx`, `src/services/api.js`, `src/components/Wizard.jsx`, `src/utils/template-router.js`.
 
-**`src/services/`:**
-- Purpose: All non-UI application logic: network, persistence adapters, build pipeline, quality checks.
-- Contains: `build/`, `quality-check/`, integration modules, `api.js`, `neon.js`, `d1.js`, `auth.js`
-- Key files: `src/services/build/TemplateBuilder.js`, `src/services/api.js`
+**`apps/api-worker/`:**
 
-**`src/components/`:**
-- Purpose: React feature areas and design-system-style primitives.
-- Contains: Top-level feature folders (`Wizard/`, `OpsCenter/`, `TemplateGenerator/`, …) and `ui/` (buttons, inputs, toast, etc.)
+- Purpose: Production API surface; keep new HTTP endpoints here unless explicitly a callback/pixel-only concern.
+- Contains: `src/worker.js`, `migrations/`, `wrangler.toml`.
+- Key files: `apps/api-worker/src/worker.js` (all route branches).
 
-**`src/templates/`:**
-- Purpose: First-party template sources and `adapter.ts` files for template-specific behavior.
-- Contains: Nested `src/` trees per template (Astro/React components for landers), `lander-core/adapter.ts`, etc.
+**`apps/worker/` and `apps/pixel-worker/`:**
 
-**`apps/`:**
-- Purpose: Independently deployed Workers and auxiliary apps; each has its own `package.json` and Wrangler usage.
-- Contains: `api-worker`, `worker`, `lander`, etc.
+- Purpose: Isolated Workers with small surface areas — do not add general REST features here.
+- Contains: `src/index.ts`, lib handlers, D1 migrations.
 
 **`packages/lp-template-generator/`:**
-- Purpose: Reusable template generation library and CLI (`bin/lp-gen.js`).
-- Contains: `src/core/`, `src/templates/`
+
+- Purpose: Authoritative module templates and `generate(templateId, siteConfig)`.
+- Contains: `src/core/registry.js`, `src/core/generator.js`, `src/core/schema.js`, `src/templates/*`.
+
+**`utils/` (repo root):**
+
+- Purpose: Bridges used by scripts and/or legacy imports — e.g. `utils/template-registry.js` re-exports module + legacy template lists and calls `src/services/api`.
+- Contains: `lp-generator.js`, `astro-generator.jsx`, `template-registry.js`, `deployers/`.
+
+**`templates/` and `src/templates/`:**
+
+- Purpose: Runnable Astro (or Vite) projects for import, preview, or packaging — not the same as `packages/lp-template-generator` (which is generator code, not always a full app).
+- Contains: Per-template `package.json`, `astro.config.*`, `src/`.
+
+**`scripts/`:**
+
+- Purpose: CLI automation (template conversion, deploy helpers, tracking injection). Run via `npm run <script>` from root `package.json`.
 
 **`tests/`:**
-- Purpose: Cross-cutting tests — Vitest `tests/unit/`, Playwright `tests/e2e/`, shared fixtures.
-- Contains: `tests/unit/setup.ts`, `tests/e2e/global-setup.ts`
 
-**`templates/` (repo root):**
-- Purpose: Standalone template projects (e.g. imports from Bolt/Lovable); not part of strict `tsconfig` `include` for the main app.
-- Contains: Full mini-projects with their own `package.json` files
+- Purpose: Vitest unit tests and Playwright E2E; wizard flows under `tests/e2e/wizard/`.
+
+**`deploy-configs/`:**
+
+- Purpose: JSON configs consumed by deploy automation — pair changes with `scripts/deploy-org.js` or documented deploy flow.
 
 ## Key File Locations
 
 **Entry Points:**
-- `src/pages/index.astro`: Main `/` page mounting React.
-- `src/AppRoot.jsx`: Client bootstrap (Sentry, error UI).
-- `src/App.jsx`: Application shell and page state.
-- `apps/api-worker/src/worker.js`: Worker API entry.
-- `apps/worker/src/index.ts`: Callback/tracking worker entry.
+
+- `src/pages/index.astro` — home: loads `AppRoot` React island.
+- `src/pages/docs/index.astro`, `src/pages/my-sites-preview.astro`, `src/pages/robots.txt.ts` — secondary routes.
+- `apps/api-worker/src/worker.js` — API Worker entry.
+- `apps/worker/src/index.ts` — callback Worker entry.
+- `apps/pixel-worker/src/index.ts` — pixel Worker entry.
+- `apps/lander/` — own `astro.config` and pages (separate app).
 
 **Configuration:**
-- `astro.config.mjs`: Integrations, Vite proxy, Tailwind, path aliases for Vite.
-- `tsconfig.json`: TypeScript paths `@/*` → `src/*`.
-- `vitest.config.ts`: Test aliases and include globs.
-- `eslint.config.js`: Lint rules.
-- `playwright.config.ts`: E2E runner config.
+
+- `astro.config.mjs` — React integration, `VITE_*` / `.env.lock` bootstrap, port `4323`, `/api` proxy, aliases `@` → `src/templates/astrodeck-main/src`, `#lp-template-generator` → `packages/lp-template-generator/src`.
+- `package.json` (root) — Astro 6, React 19, Vitest, Playwright, Wrangler in devDeps.
+- `apps/*/wrangler.toml` — Worker names, D1/R2/browser bindings.
 
 **Core Logic:**
-- `src/services/api.js`: HTTP client for Worker API.
-- `src/services/build/TemplateBuilder.js`: Build orchestration.
-- `src/utils/deployers/index.js`: Deploy target routing.
+
+- `src/App.jsx` — routing by `page` state, wizard launch (`page === "create"`), settings/auth, site lists.
+- `src/components/Wizard.jsx` — step machine, validation, deploy orchestration, AI assist hooks.
+- `src/components/Wizard/` — step components (`StepBrand.jsx`, …), `step-mapper.js`, `template-utils.js`.
+- `utils/template-router.js` — central template generation dispatch.
+- `utils/template-registry.js` — module + legacy + API-backed custom templates.
 
 **Testing:**
-- `vitest.config.ts`: Vitest entry and coverage scope.
-- `tests/unit/setup.ts`: Unit test setup.
-- `tests/e2e/`: Playwright specs and page objects.
+
+- `vitest` config: discover via root `package.json` script `test` — configs typically at repo root (e.g. `vitest.config.*` if present).
+- `tests/e2e/wizard/wizard-basic.spec.ts`, `wizard-tracking.spec.ts`.
 
 ## Naming Conventions
 
 **Files:**
-- React components: `PascalCase.jsx` or `.tsx` (e.g. `Dashboard.jsx`, `src/components/ui/button.tsx`).
-- Services/utilities: `kebab-case.js` or descriptive camelCase (e.g. `cloudflare-dns.js`, `api.js`).
-- Tests: `*.test.js`, `*.spec.ts` co-located under `src/**/__tests__/` or under `tests/unit/`.
-- Astro: `*.astro` for pages/layouts; `APIRoute` modules often named by route (`e.ts`, `robots.txt.ts`).
+
+- React components: `PascalCase.jsx` or `.tsx` in `src/components/`.
+- Wizard steps: `Step*.jsx` under `src/components/Wizard/`.
+- Services: `camelCase.js` in `src/services/`.
+- Workers: `worker.js` (api) or `index.ts` (typed workers).
 
 **Directories:**
-- Feature folders: `PascalCase` or descriptive lowercase (`Wizard`, `OpsCenter`, `quality-check`).
-- `src/components/ui/`: Shared primitives (shadcn-style).
+
+- `kebab-case` for multi-word packages (`lp-template-generator`, `pixel-worker`).
+- Template folders often `snake_case` or `kebab-case` matching template id (e.g. `PDL_Loans_V3`).
 
 ## Where to Add New Code
 
-**New Feature:**
-- Primary UI: `src/components/<Feature>/` with exports consumed from `src/App.jsx` (add navigation/state there).
-- Feature-specific hooks: `src/hooks/`.
-- API calls: extend or add modules under `src/services/`; use `src/services/api.js` for HTTP to the Worker.
+**New dashboard / admin page:**
 
-**New Astro Page or Endpoint:**
-- Pages: `src/pages/<name>.astro`.
-- JSON/binary API routes: `src/pages/<name>.ts` exporting `GET`/`POST` per Astro `APIRoute` conventions.
+- Add a component under `src/components/`.
+- Register navigation and `page === "..."` branch in `src/App.jsx` (follow existing `Sidebar` / `setPage` patterns).
 
-**New Worker Route or Handler:**
-- Main API: `apps/api-worker/src/worker.js` (or extract modules from it following existing patterns in that file).
-- Callbacks/tracking: `apps/worker/src/` (`handlers/`, `lib/`).
+**New wizard step or change step order:**
 
-**New Template Kind:**
-- Adapter: implement `TemplateAdapter` in `src/adapters/` or `src/templates/<id>/adapter.ts`.
-- Template sources: under `src/templates/<id>/` mirroring existing layouts.
+- Extend `steps` and `validateStep` in `src/components/Wizard.jsx`.
+- Add or edit `src/components/Wizard/Step*.jsx` and export from `src/components/Wizard/index.js`.
+- Update `src/components/Wizard/step-mapper.js` and capabilities in `src/utils/wizard-template-capabilities.js` if visibility depends on template support.
 
-**New Deploy Target:**
-- Add module under `src/utils/deployers/<target>.js` and register in `src/utils/deployers/index.js` `DEPLOYERS` map.
+**New built-in template (module generator):**
 
-**Utilities:**
-- Shared helpers: `src/utils/`; cross-cutting React helpers: `src/lib/utils.ts` (existing `cn` pattern).
+- Add template under `packages/lp-template-generator/src/templates/<id>/` with `index.js` registering `generate`.
+- Ensure registration side-effect: add to `#lp-template-generator/templates` entrypoint (pattern used by `utils/template-router.js` import).
+- Extend `MODULE_TEMPLATE_IDS` (and any capability map) in `utils/template-router.js` if the wizard must treat it as a module template.
 
-**Tests:**
-- Unit/integration near code: `src/**/__tests__/*.test.js` or top-level `src/__tests__/`.
-- Broader unit tests: `tests/unit/`.
-- E2E: `tests/e2e/<area>/*.spec.ts` with page objects in `tests/e2e/pages/`.
+**New API endpoint:**
+
+- Implement branch in `apps/api-worker/src/worker.js` (keep CORS and auth consistent with neighboring routes).
+- Call from `src/services/api.js` by adding a method or using `api.get` / `api.post` with the new path.
+- Document in OpenAPI block inside `worker.js` if the `/api/openapi.json` surface should include it.
+
+**New deploy target:**
+
+- Implement in `utils/deployers/` (and mirror under `src/utils/deployers/` only if existing code imports from `src/` — grep for `deployTo` imports before choosing path).
+- Wire into `getAvailableTargets` and `deployTo` exports.
+
+**New Cloudflare Worker (new subdomain or protocol):**
+
+- Prefer `apps/<name>/` with its own `wrangler.toml`; avoid growing `worker.js` further unless it is truly API-bound.
 
 ## Special Directories
 
-**`dist/`:**
-- Purpose: Astro build output.
-- Generated: Yes (by `npm run build`).
-- Committed: No (typically gitignored).
+**`packages/lp-template-generator/src/templates/`:**
 
-**`node_modules/`:**
-- Purpose: Dependencies.
-- Generated: Yes.
-- Committed: No.
+- Purpose: Generator modules consumed via alias; not always deployable as-is without the core pipeline.
+- Generated: No — hand-maintained.
+- Committed: Yes.
 
-**`coverage/`:**
-- Purpose: Vitest coverage HTML/lcov.
-- Generated: Yes.
-- Committed: No.
+**`templates/` (root):**
 
-**`.env.lock` (if present):**
-- Purpose: Local non-secret defaults merged at dev time by `astro.config.mjs` (see file existence only; do not commit secrets).
+- Purpose: Large Astro/Vite trees for experiments and imports; may contain own `node_modules` when developers run them locally.
+- Generated: No.
+- Committed: Yes (per repo policy).
+
+**`.planning/`:**
+
+- Purpose: GSD / planning artifacts including this codebase map.
+- Generated: Partially hand-edited.
+- Committed: Typically yes.
 
 ---
 
-*Structure analysis: 2026-03-22*
+*Structure analysis: 2026-03-26*

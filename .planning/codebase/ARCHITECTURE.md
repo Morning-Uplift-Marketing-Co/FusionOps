@@ -1,158 +1,178 @@
 # Architecture
 
-**Analysis Date:** 2026-03-22
+**Analysis Date:** 2026-03-26
 
 ## Pattern Overview
 
-**Overall:** Monorepo-style single product — an Astro 5 static/SSR-capable shell hosting a React 19 single-page application (“FusionOps” / LP Factory), with Cloudflare Workers backends and browser-accessible data layers (Neon Postgres, Cloudflare D1 via API).
+**Overall:** Monorepo with an Astro-hosted React SPA (“FusionOps / LP Factory”) talking to one primary Cloudflare Workers REST API, plus separate Workers for affiliate callbacks and first-party pixel ingestion. Template output is generated in the browser build pipeline and on the server via shared generator code and API persistence.
 
 **Key Characteristics:**
-- **Hybrid UI:** Astro owns routing and document shell (`src/pages`, `src/layouts`); the main UX is one React tree hydrated with `client:only="react"` from `src/AppRoot.jsx`.
-- **Service-oriented frontend:** Feature logic lives in `src/services/` (HTTP client, auth, DB adapters, build/deploy automation), not in a formal MVC backend inside this repo’s web tree.
-- **Separate worker apps:** API and async work run in `apps/api-worker` and specialized workers under `apps/`, not inside the Astro process.
+
+- **Thin Astro shell, fat React app:** Pages are minimal; almost all product UI is `client:only="react"` under `src/App.jsx`.
+- **API-centric backend:** Business persistence, proxies, automation, and template CRUD live in `apps/api-worker/src/worker.js` (single fetch handler with path-based routing).
+- **Template system is split:** Declarative generators in `packages/lp-template-generator/`, routing/merge logic in `utils/template-router.js` and `utils/template-registry.js`, full Astro/Vite trees under `src/templates/` and `templates/`.
+- **Multiple Workers by concern:** API vs callback/beacon vs dedicated pixel host; do not assume one Worker does everything.
 
 ## Layers
 
-**Presentation (Astro + layouts):**
-- Purpose: Page routes, HTML shell, SEO-related endpoints, CSP-oriented dev server headers.
-- Location: `src/pages/`, `src/layouts/`
-- Contains: `.astro` pages, `APIRoute` handlers (e.g. `src/pages/e.ts`, `src/pages/robots.txt.ts`)
-- Depends on: React islands, `public/` assets
-- Used by: Browser requests, crawlers
+**Presentation (Astro + React):**
 
-**Presentation (React SPA):**
-- Purpose: Dashboard, wizard, ops center, settings, and all interactive UI.
-- Location: `src/components/`, `src/App.jsx`, `src/AppRoot.jsx`, `src/hooks/`
-- Contains: Feature modules (e.g. `Wizard/`, `OpsCenter/`, `TemplateGenerator/`), shared UI primitives under `src/components/ui/`
-- Depends on: `src/services/`, `src/utils/`, `src/constants`, `src/lib/utils.ts`
-- Used by: Astro pages that mount `AppRoot` (see `src/pages/index.astro`)
+- Purpose: Render shell, mount React, provide static/docs routes.
+- Location: `src/pages/`, `src/layouts/`, `src/AppRoot.jsx`, `src/App.jsx`, `src/components/`
+- Contains: Wizard, dashboards, settings, deploy UIs, shared UI primitives.
+- Depends on: `src/services/api.js`, `src/services/*`, `src/utils/*`, `packages/lp-template-generator` (via Vite alias `#lp-template-generator`).
+- Used by: End users in the browser.
 
-**Application services (browser + shared logic):**
-- Purpose: API calls, session/auth, Neon/D1 access wrappers, integrations (Cloudflare, registrars, proxies), template build pipeline, quality checks.
-- Location: `src/services/`
-- Contains: `api.js` (fetch wrapper), `auth.js`, `neon.js`, `d1.js`, `build/` (e.g. `TemplateBuilder.js`, `AstroBuilder.js`), `quality-check/`, integration modules (`cloudflare-*.js`, `voluum.js`, etc.)
-- Depends on: `src/utils/`, environment via `import.meta.env`, browser storage where noted in modules
-- Used by: React components and build utilities
+**Client services & state:**
 
-**Utilities & deploy orchestration:**
-- Purpose: Template analysis/normalization, deploy routing, generators, risk/fingerprint helpers.
-- Location: `src/utils/` (notably `deployers/index.js`, `template-analyzer.js`, `lp-generator.js`)
-- Contains: Pure helpers and orchestrators invoked from services and tests
-- Depends on: Node/browser APIs as documented per file
-- Used by: `src/services/build/`, UI flows, Vitest suites
+- Purpose: HTTP to API, auth session helpers, Neon/D1 helpers used from the client flow, Cloudflare DNS orchestration from wizard.
+- Location: `src/services/` (e.g. `api.js`, `auth`, `neon`, `d1`, `cloudflare-dns`, `build/`, `quality-check/`)
+- Contains: Fetch wrappers, domain/DNS helpers, optional direct DB paths where wired.
+- Depends on: `import.meta.env.VITE_*`, session storage, API base from `resolveApiBase()` in `src/services/api.js`.
+- Used by: `src/App.jsx`, `src/components/Wizard.jsx`, feature components.
 
-**Template adapters (pluggable contract):**
-- Purpose: Normalize and validate per-template site data for preview/build.
-- Location: `src/adapters/template-adapter.ts` (interface), `src/templates/*/adapter.ts` (implementations, e.g. `src/templates/lander-core/adapter.ts`)
-- Contains: TypeScript adapter modules implementing `TemplateAdapter`
-- Depends on: Template-specific utils (e.g. `src/utils/lp-generator.js`)
-- Used by: Template registry and build paths that resolve capabilities
+**Template generation & routing:**
 
-**Backend (Cloudflare Workers):**
-- Purpose: Primary REST API, automation proxies, tracking/callback endpoints, D1 migrations.
-- Location: `apps/api-worker/src/worker.js` (large route handler), `apps/worker/src/index.ts` (callbacks, `/track`, `/e` pixel), other `apps/*` packages as deployed units
-- Contains: Worker `fetch` handlers, CORS helpers, Neon usage in API worker
-- Depends on: Worker bindings (D1, env secrets — configured in deployment, not documented here)
-- Used by: `src/services/api.js` and proxy routes
+- Purpose: Resolve template ID → generator; produce HTML/Astro/files for preview and deploy; merge custom templates from API.
+- Location: `utils/template-router.js`, `utils/template-registry.js`, `utils/lp-generator.js`, `utils/astro-generator.jsx`, `packages/lp-template-generator/src/core/generator.js`, `packages/lp-template-generator/src/templates/*/index.js`
+- Contains: `generate()` contracts returning `{ files: { path: content } }`, capability flags for the wizard, legacy bridge list in `utils/template-registry.js`.
+- Depends on: Side-effect import `#lp-template-generator/templates` (see `utils/template-router.js`).
+- Used by: `src/components/Wizard.jsx`, build/deploy scripts, tests.
 
-**Template generator package:**
-- Purpose: Programmatic generation of Astro/template variants (CLI and library exports).
-- Location: `packages/lp-template-generator/` (`src/index.js`, `src/core/`, `src/templates/`)
-- Contains: Node-based generator and template registry
-- Depends on: Consumed via `#lp-template-generator` alias in Vite (`astro.config.mjs`, `vitest.config.ts`)
-- Used by: Scripts and tooling that import the package
+**API Worker (Cloudflare):**
+
+- Purpose: Authoritative REST API for sites, deploys, variants, settings, templates (including MCP ingest), proxy tunnels to third-party APIs, Voluum postback relay, pixel event reads, thumbnails (R2 + Puppeteer), OpenAPI doc.
+- Location: `apps/api-worker/src/worker.js`, `apps/api-worker/wrangler.toml`
+- Contains: Monolithic `fetch` router; D1 bindings `DB` and `PIXEL_DB`; optional Neon sync; R2 `THUMBS`; Browser Rendering for screenshots.
+- Depends on: Worker `env` bindings and secrets (configure in Wrangler/dashboard — do not commit values).
+- Used by: Browser app via `src/services/api.js`; dev server proxies `/api` (see `astro.config.mjs`).
+
+**Callback / tracking Worker:**
+
+- Purpose: LeadsGate callback URLs, internal `/track` beacon, and `/e` pixel handling tied to callback DB schema (`lead_callbacks`).
+- Location: `apps/worker/src/index.ts`, `apps/worker/src/handlers/callback.ts`, `apps/worker/src/lib/*`
+- Contains: Typed handler; D1 writes; CORS helpers; dedup/validation/voluum helpers.
+- Depends on: D1 binding `DB` in `apps/worker/wrangler.toml`.
+- Used by: Configured routes per domain (see comments in wrangler.toml).
+
+**Pixel Worker:**
+
+- Purpose: First-party pixel at `t.{domain}/e` — canonical event names, D1 `pixel_events` storage, health check.
+- Location: `apps/pixel-worker/src/index.ts`, `apps/pixel-worker/wrangler.toml`
+- Contains: POST/GET `/e`, event alias map, strict body size limit.
+- Depends on: D1 `DB` (pixel database id in wrangler).
+- Used by: Landers’ `sendBeacon` / tracking scripts hitting the `t.*` host.
+
+**Supporting apps:**
+
+- **`apps/lander/`:** Standalone Astro lander build (separate product surface from main app).
+- **`apps/cf-proxy/`:** Small CORS proxy Worker (`lp-cors-proxy`).
 
 ## Data Flow
 
-**Authenticated dashboard → API:**
+**Wizard → site record → deploy:**
 
-1. User interacts with React in `src/App.jsx`; state may persist via `localStorage` (see keys like `lpf2-settings` in `src/services/d1.js` and related modules).
-2. `src/services/api.js` resolves base URL (`VITE_API_BASE`, `window.__LP_API__`, or production default), builds URLs, attaches CSRF for same-origin mutations, and `fetch`es the remote Worker API.
-3. `apps/api-worker` handles JSON routes, CORS, and persistence (Neon/D1 patterns in `worker.js`).
+1. User fills steps in `src/components/Wizard.jsx`; `validateStep` enforces per-step rules; `resolveWizardTemplateCapabilities` in `src/utils/wizard-template-capabilities.js` gates UI.
+2. Preview/build artifacts: `generateHtmlByTemplate` / `generateDeployAssetsByTemplate` from `utils/template-router.js` call module `generate` or legacy generators.
+3. `addSite` / persistence flows in `src/App.jsx` use `api` and/or `src/services/d1.js` / `src/services/neon.js` depending on feature flags and environment.
+4. Deploy: `deployTo` from `utils/deployers` (and related under `utils/deployers/` / `src/utils/deployers/`) targets CF Pages, Netlify, Vercel, S3/CloudFront, etc., using settings and API proxies as needed.
 
-**Direct Neon from browser:**
+**Browser → API Worker:**
 
-1. `src/services/neon.js` uses `@neondatabase/serverless` in the browser for configured connection strings (`VITE_NEON_URL` and settings-driven configuration as implemented in that module).
-2. Tables are ensured via `ensureTables()` and CRUD helpers used by `src/services/auth.js` and app features.
+1. `src/services/api.js` builds URL via `buildApiUrl` (dedupes `/api` prefix), attaches `X-CSRF-Token` for same-origin mutations, applies timeouts.
+2. In local dev, Vite `server.proxy['/api']` forwards to `VITE_API_BASE` origin (see `astro.config.mjs`); production calls the Worker URL directly unless overridden.
+3. Worker authenticates/trusts origin for `/api/*` (except public routes like `/api/openapi.json`); routes by `url.pathname` inside `apps/api-worker/src/worker.js`.
 
-**Template build → deploy:**
+**Template CRUD / MCP:**
 
-1. User or automation supplies template files; `src/services/build/TemplateBuilder.js` detects framework via `src/utils/template-analyzer.js`, delegates to `AstroBuilder`, `ViteBuilder`, or `HtmlStaticBuilder`, runs anti-fingerprint and quality checks (`src/services/quality-check/QualityChecker.js`), then stages output.
-2. `src/utils/deployers/index.js` maps deploy target strings to modules (`cf-pages.js`, `netlify.js`, `vercel.js`, `s3-cloudfront.js`, `git-push.js`, `github-actions.js`, etc.) and coordinates Worker-backed calls where applicable.
+1. `GET/POST /api/templates` and related thumb routes live in the API Worker (search `path === '/api/templates'` in `worker.js`).
+2. MCP-specific routes under `/api/mcp/templates` receive or list templates for external tooling.
+3. Client refreshes custom templates via `fetchCustomTemplates` in `utils/template-registry.js` and events like `lp-template-refresh` from `src/App.jsx`.
 
-**Tracking / pixel:**
+**Landing page → pixel / postback:**
 
-1. Astro route `src/pages/e.ts` accepts beacon-style POST for first-party pixel logging (204 responses).
-2. `apps/worker` exposes `/e`, `/track`, and callback routes for external networks (see `apps/worker/src/index.ts`).
+1. LP sends events to pixel host → `apps/pixel-worker` persists to D1.
+2. Voluum and other postbacks may hit API Worker routes (e.g. `/api/postbacks`, forward logic with `vd` / allowlist in `worker.js`).
+3. Callback Worker handles `POST /callback/:account_id/leadsgate` and optional `/track` / `/e` for its deployment model.
 
 **State Management:**
-- React `useState` / effects in `src/App.jsx` for global UI state; `localStorage` for settings and session (see `src/services/auth.js`); no Redux/Zustand detected as core pattern.
+
+- Global UI state: React `useState` in `src/App.jsx` (page, `wizData`, `sites`, `settings`, auth user, deploys, etc.).
+- Wizard draft: `wizData` / `setWizData` passed as `config` / `setConfig` into `Wizard`.
+- Long-lived client config: `localStorage` via helpers in `src/utils` (e.g. settings merge with `ENV_DEFAULTS` in `App.jsx`).
 
 ## Key Abstractions
 
-**HTTP client:**
-- Purpose: Centralized API calls with timeout and CSRF behavior.
+**`api` client:**
+
+- Purpose: Typed-ish JSON HTTP to the Worker API.
 - Examples: `src/services/api.js`
-- Pattern: `request(path, opts)` + thin wrappers (`get`, `post`, etc. if exported)
+- Pattern: `api.get("/sites")` paths are relative to resolved API base; errors return `{ error, detail, url }` objects instead of throwing.
 
-**Template build orchestration:**
-- Purpose: Single pipeline for all template formats with quality gates.
-- Examples: `src/services/build/TemplateBuilder.js`, builders under `src/services/build/`
-- Pattern: Strategy by framework ID from `template-analyzer`
+**Template module `generate`:**
 
-**TemplateAdapter:**
-- Purpose: Contract for template-specific validation, mapping, and render/preview.
-- Examples: `src/adapters/template-adapter.ts`, `src/templates/lander-core/adapter.ts`
-- Pattern: Interface + per-template module
+- Purpose: Single entry for file manifests per template ID.
+- Examples: `packages/lp-template-generator/src/core/generator.js`, per-template `packages/lp-template-generator/src/templates/<id>/index.js`
+- Pattern: Return shape includes `files` map string paths → string contents; registry in `packages/lp-template-generator/src/core/registry.js`.
 
-**Deploy orchestrator:**
-- Purpose: Uniform `{ success, url, deployId, target, error }` style results across targets.
-- Examples: `src/utils/deployers/index.js`
+**Wizard capability resolution:**
+
+- Purpose: Keep wizard steps aligned with what a template supports.
+- Examples: `src/utils/wizard-template-capabilities.js`, `src/components/Wizard/step-mapper.js`
+- Pattern: Pure functions: capabilities → enabled steps; async `renderWizardSteps` loads step components without circular imports.
+
+**Deployer registry:**
+
+- Purpose: Choose deployment target from settings.
+- Examples: `utils/deployers/index.js` (and parallel `src/utils/deployers/` where duplicated — follow existing import site when adding targets).
 
 ## Entry Points
 
-**Astro dev/build:**
-- Location: `astro.config.mjs`
-- Triggers: `npm run dev`, `npm run build` (`package.json`)
-- Responsibilities: React integration (`@astrojs/react`), Tailwind Vite plugin, dev proxy `/api` → `VITE_API_BASE`, path aliases (`@` → `src/templates/astrodeck-main/src` in Vite; differs from `tsconfig` `@/*` → `src/*` — use explicit relative imports or know which tool resolves which alias)
+**Main web app:**
 
-**Primary UI page:**
 - Location: `src/pages/index.astro`
-- Triggers: `/` request
-- Responsibilities: `Layout` + `AppRoot` client island
+- Triggers: HTTP request to site root.
+- Responsibilities: `Layout` + `AppRoot` with `client:only="react"`.
 
 **React root:**
+
 - Location: `src/AppRoot.jsx` → `src/App.jsx`
-- Triggers: Client hydration of the index page
-- Responsibilities: Sentry init import order, error boundary, full app routing by `page` state
+- Triggers: Client hydration.
+- Responsibilities: Sentry init order, error boundary, auth gate, page switcher, Wizard when `page === "create"`.
 
-**Worker API:**
-- Location: `apps/api-worker/src/worker.js`
-- Triggers: HTTP to deployed worker origin
-- Responsibilities: REST surface, Neon, browser automation (`@cloudflare/puppeteer`), D1, CORS policy
+**API Worker:**
 
-**Callback / tracking worker:**
+- Location: `apps/api-worker/src/worker.js` default export `fetch` handler
+- Triggers: All HTTP to deployed Worker.
+- Responsibilities: Full REST surface, CORS, D1/Neon/R2, proxies.
+
+**Callback Worker:**
+
 - Location: `apps/worker/src/index.ts`
-- Triggers: `/callback/...`, `/track`, `/e`, `/health`
-- Responsibilities: LeadsGate callback handling (`handlers/callback.ts`), beacon ingestion
+- Triggers: Routed hostnames for callback/track/pixel (per deploy config).
+
+**Pixel Worker:**
+
+- Location: `apps/pixel-worker/src/index.ts`
+- Triggers: `t.{domain}` routes.
 
 ## Error Handling
 
-**Strategy:** Layered — UI boundaries (Sentry + React error boundaries), network timeouts in `src/services/api.js`, Worker-level `try/catch` with JSON error responses and CORS headers.
+**Strategy:** Layer-specific — React error boundaries in `src/AppRoot.jsx` / `src/components/ErrorBoundary.jsx`; API Worker returns JSON with status codes and logs via `console.error` for template POST failures; Workers use try/catch with generic 404/500 JSON.
 
 **Patterns:**
-- **React:** `src/AppRoot.jsx` imports `./services/sentry` first; uses `@sentry/react` `ErrorBoundary` when `VITE_SENTRY_DSN` is set, else `src/components/ErrorBoundary.jsx`
-- **Fetch:** `AbortController` timeout in `src/services/api.js`; slow endpoints get extended timeout
-- **Workers:** Handler-level catches (e.g. `apps/worker/src/index.ts` for callback path); `apps/api-worker/src/worker.js` uses `json()` helper for consistent error payloads
+
+- API client: Non-throwing `request()` — callers check `.error` on result.
+- Workers: Early `OPTIONS` CORS; `waitUntil` for async pixel/track processing where used.
 
 ## Cross-Cutting Concerns
 
-**Logging:** `console` in Workers and some routes; client-side Sentry breadcrumbs via `src/services/sentry.js` (as used from `App.jsx`).
+**Logging:** `console` in Workers; client `console.warn` on API network failure; Sentry in React when `VITE_SENTRY_DSN` set (`src/services/sentry`).
 
-**Validation:** Mixed — schema-style validation in template adapters; Worker-side validation helpers (e.g. `apps/worker/src/lib/validation.ts`); quality validators under `src/services/quality-check/validators/`.
+**Validation:** Wizard step validation in `src/components/Wizard.jsx`; API Worker parses bodies and validates paths/hosts (e.g. Voluum forward allowlist).
 
-**Authentication:** `src/services/auth.js` — PBKDF2 in browser, session in `localStorage`; admin checks and user APIs coordinate with Neon via `src/services/neon.js`. API worker enforces origin/trust policies (see `isTrustedOriginRequest` pattern in `apps/api-worker/src/worker.js`).
+**Authentication:** `src/services/auth.js` consumed by `App.jsx`; API routes require trusted origin or tokens for `/api/*` (see `isTrustedOriginRequest` and route guards in `worker.js`).
 
 ---
 
-*Architecture analysis: 2026-03-22*
+*Architecture analysis: 2026-03-26*

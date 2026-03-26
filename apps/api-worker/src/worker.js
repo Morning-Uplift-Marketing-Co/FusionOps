@@ -131,6 +131,46 @@ function isTrustedOriginRequest(request, url, env) {
   return TRUSTED_PAGES_SUFFIXES.some((suffix) => sourceHost.endsWith(suffix));
 }
 
+/** Cap client-supplied HTML for Browser Rendering (abuse / memory). */
+const THUMB_PREVIEW_HTML_MAX_BYTES = 2 * 1024 * 1024;
+
+/** Cap manual thumbnail upload size. */
+const THUMB_UPLOAD_MAX_BYTES = 8 * 1024 * 1024;
+
+/**
+ * Expensive template thumb mutations: require same trust as authenticated /api —
+ * Bearer API_SECRET, or browser Origin/Referer on allowlist (see isTrustedOriginRequest).
+ */
+function denyUnlessTrustedOrBearer(request, url, env) {
+  const auth = request.headers.get('Authorization') || '';
+  if (env.API_SECRET && auth === `Bearer ${env.API_SECRET}`) return null;
+  if (isTrustedOriginRequest(request, url, env)) return null;
+  if (env.API_SECRET) {
+    return json({ error: 'Unauthorized (missing/invalid Bearer and untrusted origin)' }, 401);
+  }
+  return json({ error: 'Unauthorized (untrusted origin)' }, 401);
+}
+
+/**
+ * Bound-D1 direct-query: one statement only; SELECT / WITH only (after optional EXPLAIN).
+ * Blocks writes and PRAGMA even if outer auth is compromised.
+ */
+function isReadOnlyD1DirectSql(sql) {
+  let s = String(sql || '').trim();
+  if (!s) return false;
+  s = s.replace(/\/\*[\s\S]*?\*\//g, ' ');
+  s = s
+    .split(/\r?\n/)
+    .map((line) => line.replace(/--[^\n]*/, ''))
+    .join('\n');
+  s = s.trim();
+  const parts = s.split(';').map((x) => x.trim()).filter(Boolean);
+  if (parts.length !== 1) return false;
+  let one = parts[0];
+  one = one.replace(/^\s*EXPLAIN\s+(QUERY\s+PLAN\s+)?/i, '').trim();
+  return /^(SELECT|WITH)\b/i.test(one);
+}
+
 function getNeonSql(env) {
   const connStr = env?.NEON_DATABASE_URL;
   if (!connStr || typeof connStr !== 'string') return null;
@@ -843,6 +883,122 @@ function toBase64(text) {
   return btoa(binary);
 }
 
+/** RFC 7617-style UTF-8 safe Basic auth for HTTP proxies (btoa(user:pass) breaks on non-Latin1). */
+function proxyBasicAuth(username, password) {
+  return toBase64(`${String(username ?? "")}:${String(password ?? "")}`);
+}
+
+/** Extra JSON for 502 when Workers cannot open TCP to the proxy (all providers share this path). */
+function proxyTcpFailurePayload(tcpErr, host, port) {
+  const msg = String(tcpErr?.message ?? tcpErr);
+  const disallowed =
+    /cannot connect to the specified address/i.test(msg) ||
+    /proxy request failed/i.test(msg);
+  const payload = { error: `Proxy connection failed: ${msg}` };
+  if (disallowed) {
+    payload.hint =
+      'ทุกค่ายพร็อกซีในแอปใช้ Worker เส้นทางเดียวกัน: เปิด TCP จาก Cloudflare ไปที่ host:port ของ gateway — ถ้าขั้นนี้ล้ม จะล้มทั้ง Smartproxy / NodeMaven / Bright Data พร้อมกัน แม้รหัสจะถูก (Multilogin บนเครื่องคุณอาจใช้พร็อกซีได้ปกติ). Production: ตั้ง PROXY_RESOLVE_RELAY_URL บน Worker ชี้ไป https://relay ของคุณ (รัน npm run proxy-relay บน VPS + TLS) แล้ว Worker จะส่งต่อ resolve-ip อัตโนมัติเมื่อ TCP ล้ม — แอป HTTPS ไม่ต้องเรียก http://127.0.0.1. ลอง: ยืนยันแผน Cloudflare Workers รองรับ outbound TCP sockets; ใช้ host+พอร์ตมาตรฐานจากเอกสารผู้ให้บริการ (เช่น gate.nodemaven.com:8080, brd.superproxy.io:22225, gate.decodo.com:7000). อ้างอิง: Cloudflare TCP sockets troubleshooting.';
+    payload.docs = 'https://developers.cloudflare.com/workers/runtime-apis/tcp-sockets/#troubleshooting';
+    payload.attempted = { host: String(host), port: Number(port) };
+    payload.fix =
+      'Cloudflare Dashboard → Workers → lp-factory-api → Settings → Variables → add PROXY_RESOLVE_RELAY_URL = https://your-relay.example.com (no /api). Deploy relay with: npm run proxy-relay on a VPS behind HTTPS; then wrangler deploy this worker.';
+  }
+  return payload;
+}
+
+/** Normalize relay origin for Worker → relay fetch (same path contract as scripts/proxy-resolve-relay.mjs). */
+function normalizeProxyRelayBase(env) {
+  let b = String(env?.PROXY_RESOLVE_RELAY_URL ?? '').trim();
+  if (!b) return '';
+  b = b.replace(/\/+$/, '');
+  if (b.endsWith('/api')) b = b.slice(0, -4);
+  if (!/^https?:\/\//i.test(b)) b = `https://${b}`;
+  try {
+    const u = new URL(b);
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return '';
+    const path = u.pathname.replace(/\/$/, '');
+    return `${u.origin}${path}`;
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * When outbound TCP to the residential proxy fails from the Worker, forward the same JSON body to an
+ * operator-run HTTPS relay (Node + undici on a VPS). Browser → Worker stays same-origin enough for CORS;
+ * avoids mixed-content (browser cannot call http://127.0.0.1 from https:// pages).
+ */
+async function forwardToProxyRelay(env, apiPath, jsonBody) {
+  const base = normalizeProxyRelayBase(env);
+  if (!base) return null;
+  const target = `${base}${apiPath}`;
+  const ac = new AbortController();
+  const tid = setTimeout(() => ac.abort(), 28000);
+  try {
+    const res = await fetch(target, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(jsonBody),
+      signal: ac.signal,
+    });
+    const text = await res.text();
+    return new Response(text, {
+      status: res.status,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+    });
+  } catch (e) {
+    return json(
+      {
+        error: `Relay unreachable: ${e.message}`,
+        relay_attempted: base,
+        hint: 'ตรวจสอบว่า VPS relay รันอยู่ เปิด HTTPS ถูกต้อง และ Worker ตั้ง PROXY_RESOLVE_RELAY_URL ตรงกับ public URL',
+      },
+      502
+    );
+  } finally {
+    clearTimeout(tid);
+  }
+}
+
+/**
+ * HTTP GET with absolute URL through an HTTP proxy (RFC 7230).
+ * Cloudflare: await socket.opened before write; await writer.close() after request so the readable stream is not cancelled mid-flight.
+ */
+async function httpGetThroughHttpProxy(proxyHost, proxyPort, proxyAuthB64, absoluteUrl, originHost) {
+  const socket = connect({ hostname: String(proxyHost), port: Number(proxyPort) });
+  await socket.opened;
+  const writer = socket.writable.getWriter();
+  const reader = socket.readable.getReader();
+  const httpReq = [
+    `GET ${absoluteUrl} HTTP/1.1`,
+    `Host: ${originHost}`,
+    `Proxy-Authorization: Basic ${proxyAuthB64}`,
+    `User-Agent: FusionOps-Worker/1.0`,
+    `Connection: close`,
+    ``,
+    ``,
+  ].join('\r\n');
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+  let responseText = '';
+  try {
+    await writer.write(encoder.encode(httpReq));
+    await writer.close();
+    const maxBytes = 524288;
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      if (value && value.byteLength) responseText += decoder.decode(value, { stream: true });
+      if (responseText.length > maxBytes) break;
+    }
+  } finally {
+    try {
+      await socket.close();
+    } catch (_) {}
+  }
+  return responseText;
+}
+
 function isMaskedSecret(value) {
   return /^[•*]+$/.test(String(value || "").trim());
 }
@@ -990,7 +1146,7 @@ const ALLOWED_COLS = {
 };
 
 // Secret keys that should never be returned in API responses
-const SECRET_KEYS = new Set(['apiKey', 'geminiKey', 'netlifyToken', 'lcToken', 'mlToken', 'mlPassword', 'githubToken']);
+const SECRET_KEYS = new Set(['apiKey', 'geminiKey', 'netlifyToken', 'lcToken', 'mlToken', 'mlPassword', 'githubToken', 'adspowerApiKey']);
 
 function redactSettings(obj) {
   const safe = {};
@@ -1049,7 +1205,7 @@ function mlxCacheSet(key, body, status, headers, ttlMs) {
   mlxCache.set(key, { body, status, headers, expiresAt: Date.now() + ttlMs });
 }
 
-async function handleProxy(request, url) {
+async function handleProxy(request, url, env) {
   let targetBase = null;
   let strippedPath = url.pathname;
 
@@ -1119,49 +1275,24 @@ async function handleProxy(request, url) {
   // Connects through the HTTP proxy to resolve the exit IP via ip-api.com
   if (url.pathname === '/api/proxy/resolve-ip' && request.method === 'POST') {
     try {
-      const { host, port, username, password, protocol } = await request.json();
+      const { host, port, username, password } = await request.json();
       if (!host || !port || !username || !password) {
         return json({ error: 'Missing proxy credentials (host, port, username, password)' }, 400);
       }
 
-      // Build proxy auth header (Base64 of username:password)
-      const proxyAuth = btoa(`${username}:${password}`);
-      const proxyUrl = `${protocol || 'http'}://${host}:${port}`;
+      const proxyAuth = proxyBasicAuth(username, password);
+      const relayCreds = { host, port, username, password };
 
-      // Method 1: Use CF Worker TCP connect() to tunnel through HTTP proxy
-      // CF Workers support connect() for TCP sockets
+      // When PROXY_RESOLVE_RELAY_URL is set, try relay first (TCP from CF to residential gates often fails).
+      if (normalizeProxyRelayBase(env)) {
+        const relayRes = await forwardToProxyRelay(env, '/api/proxy/resolve-ip', relayCreds);
+        if (relayRes?.ok) return relayRes;
+      }
+
       try {
-        const socket = connect({ hostname: host, port: Number(port) });
-        const writer = socket.writable.getWriter();
-        const reader = socket.readable.getReader();
-
-        // Send HTTP CONNECT-style request through HTTP proxy to ip-api.com
-        const httpReq = [
-          `GET http://ip-api.com/json/?fields=status,message,query,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,proxy,hosting HTTP/1.1`,
-          `Host: ip-api.com`,
-          `Proxy-Authorization: Basic ${proxyAuth}`,
-          `Connection: close`,
-          ``,
-          ``
-        ].join('\r\n');
-
-        const encoder = new TextEncoder();
-        await writer.write(encoder.encode(httpReq));
-
-        // Read response
-        const decoder = new TextDecoder();
-        let responseText = '';
-        let attempts = 0;
-        while (attempts < 50) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          responseText += decoder.decode(value, { stream: true });
-          if (responseText.includes('\r\n\r\n') && responseText.includes('}')) break;
-          attempts++;
-        }
-
-        try { writer.close(); } catch (_) {}
-        try { socket.close(); } catch (_) {}
+        const absoluteUrl =
+          'http://ip-api.com/json/?fields=status,message,query,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,proxy,hosting';
+        const responseText = await httpGetThroughHttpProxy(host, port, proxyAuth, absoluteUrl, 'ip-api.com');
 
         // Parse HTTP response — extract JSON body after headers
         const bodyStart = responseText.indexOf('\r\n\r\n');
@@ -1186,11 +1317,27 @@ async function handleProxy(request, url) {
           body = decoded;
         }
 
+        const bodyLower = body.toLowerCase();
+        const head = responseText.slice(0, Math.min(400, responseText.length)).toLowerCase();
+        if (
+          head.includes(' 407 ') ||
+          bodyLower.includes('access denied') ||
+          bodyLower.includes("couldn't log you in") ||
+          bodyLower.includes('could not log you in') ||
+          bodyLower.includes('proxy authentication') ||
+          (bodyLower.includes('confirm') && bodyLower.includes('password'))
+        ) {
+          return json({
+            error: 'Proxy rejected credentials. Check: (1) user+password (UTF-8/special chars OK now), (2) host:port — Decodo gate.decodo.com:7000 or legacy gate.smartproxy.com:10001, (3) username — sub-user only OR full string from dashboard; if full string includes -country- do not duplicate targeting.',
+            raw: body.slice(0, 280),
+          }, 502);
+        }
+
         // Extract JSON from body
         const jsonStart = body.indexOf('{');
         const jsonEnd = body.lastIndexOf('}');
         if (jsonStart === -1 || jsonEnd === -1) {
-          return json({ error: 'Invalid response from ip-api', raw: body.slice(0, 200) }, 502);
+          return json({ error: 'Invalid response from ip-api (non-JSON body — often proxy auth failure or HTML error page)', raw: body.slice(0, 200) }, 502);
         }
         const ipData = JSON.parse(body.slice(jsonStart, jsonEnd + 1));
 
@@ -1216,7 +1363,9 @@ async function handleProxy(request, url) {
           hosting: ipData.hosting,
         });
       } catch (tcpErr) {
-        return json({ error: `Proxy connection failed: ${tcpErr.message}` }, 502);
+        const relayed = await forwardToProxyRelay(env, '/api/proxy/resolve-ip', relayCreds);
+        if (relayed) return relayed;
+        return json(proxyTcpFailurePayload(tcpErr, host, port), 502);
       }
     } catch (e) {
       return json({ error: e.message }, 500);
@@ -1232,40 +1381,22 @@ async function handleProxy(request, url) {
         return json({ error: 'Missing proxy credentials' }, 400);
       }
 
-      const proxyAuth = btoa(`${username}:${password}`);
+      const proxyAuth = proxyBasicAuth(username, password);
+      const relayCreds = { host, port, username, password };
+
+      if (normalizeProxyRelayBase(env)) {
+        const relayRes = await forwardToProxyRelay(env, '/api/proxy/dns-check', relayCreds);
+        if (relayRes?.ok) return relayRes;
+      }
 
       try {
-        const socket = connect({ hostname: host, port: Number(port) });
-        const writer = socket.writable.getWriter();
-        const reader = socket.readable.getReader();
-
-        // Request DNS info through the proxy — use a DNS leak test endpoint
-        // We use ip-api.com which returns the requesting IP's info
-        const httpReq = [
-          `GET http://ip-api.com/json/?fields=query,countryCode,isp HTTP/1.1`,
-          `Host: ip-api.com`,
-          `Proxy-Authorization: Basic ${proxyAuth}`,
-          `Connection: close`,
-          ``,
-          ``
-        ].join('\r\n');
-
-        const encoder = new TextEncoder();
-        await writer.write(encoder.encode(httpReq));
-
-        const decoder = new TextDecoder();
-        let responseText = '';
-        let attempts = 0;
-        while (attempts < 50) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          responseText += decoder.decode(value, { stream: true });
-          if (responseText.includes('}')) break;
-          attempts++;
-        }
-
-        try { writer.close(); } catch (_) {}
-        try { socket.close(); } catch (_) {}
+        await httpGetThroughHttpProxy(
+          host,
+          port,
+          proxyAuth,
+          'http://ip-api.com/json/?fields=query,countryCode,isp',
+          'ip-api.com'
+        );
 
         // For DNS leak: in a real implementation we'd check the DNS resolver IP
         // For now, we return no leak detected (proxy is working = DNS is routed through it)
@@ -1276,7 +1407,9 @@ async function handleProxy(request, url) {
           note: "Basic DNS check — proxy connection confirmed",
         });
       } catch (tcpErr) {
-        return json({ error: `DNS check failed: ${tcpErr.message}` }, 502);
+        const relayed = await forwardToProxyRelay(env, '/api/proxy/dns-check', relayCreds);
+        if (relayed) return relayed;
+        return json(proxyTcpFailurePayload(tcpErr, host, port), 502);
       }
     } catch (e) {
       return json({ error: e.message }, 500);
@@ -1292,47 +1425,34 @@ async function handleProxy(request, url) {
         return json({ error: 'Missing proxy credentials' }, 400);
       }
 
-      const proxyAuth = btoa(`${username}:${password}`);
+      const proxyAuth = proxyBasicAuth(username, password);
+      const relayCreds = { host, port, username, password };
       const start = Date.now();
 
+      if (normalizeProxyRelayBase(env)) {
+        const relayRes = await forwardToProxyRelay(env, '/api/proxy/latency-check', relayCreds);
+        if (relayRes?.ok) return relayRes;
+      }
+
       try {
-        const socket = connect({ hostname: host, port: Number(port) });
-        const writer = socket.writable.getWriter();
-        const reader = socket.readable.getReader();
-
-        // Simple request through proxy to measure latency
-        const httpReq = [
-          `GET http://ip-api.com/json/?fields=query HTTP/1.1`,
-          `Host: ip-api.com`,
-          `Proxy-Authorization: Basic ${proxyAuth}`,
-          `Connection: close`,
-          ``,
-          ``
-        ].join('\r\n');
-
-        const encoder = new TextEncoder();
-        await writer.write(encoder.encode(httpReq));
-
-        const decoder = new TextDecoder();
-        let responseText = '';
-        let attempts = 0;
-        while (attempts < 50) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          responseText += decoder.decode(value, { stream: true });
-          if (responseText.includes('}')) break;
-          attempts++;
-        }
-
+        await httpGetThroughHttpProxy(
+          host,
+          port,
+          proxyAuth,
+          'http://ip-api.com/json/?fields=query',
+          'ip-api.com'
+        );
         const latencyMs = Date.now() - start;
-
-        try { writer.close(); } catch (_) {}
-        try { socket.close(); } catch (_) {}
 
         return json({ latencyMs });
       } catch (tcpErr) {
+        const relayed = await forwardToProxyRelay(env, '/api/proxy/latency-check', relayCreds);
+        if (relayed) return relayed;
         const latencyMs = Date.now() - start;
-        return json({ error: `Latency check failed: ${tcpErr.message}`, latencyMs }, 502);
+        const p = proxyTcpFailurePayload(tcpErr, host, port);
+        p.error = `Latency check failed: ${String(tcpErr?.message ?? tcpErr)}`;
+        p.latencyMs = latencyMs;
+        return json(p, 502);
       }
     } catch (e) {
       return json({ error: e.message }, 500);
@@ -1725,12 +1845,20 @@ export default {
     if (thumbUploadMatch && method === 'POST') {
       const id = decodeURIComponent(thumbUploadMatch[1]);
       try {
+        const authDeny = denyUnlessTrustedOrBearer(request, url, env);
+        if (authDeny) return authDeny;
         const formData = await request.formData();
         const file = formData.get('image');
         if (!file || typeof file === 'string') return json({ error: 'No image file provided' }, 400);
         const contentType = file.type || 'image/png';
         if (!contentType.startsWith('image/')) return json({ error: 'File must be an image' }, 400);
         const buffer = await file.arrayBuffer();
+        if (buffer.byteLength > THUMB_UPLOAD_MAX_BYTES) {
+          return json(
+            { error: 'Image too large', code: 'THUMB_UPLOAD_LIMIT', limit: THUMB_UPLOAD_MAX_BYTES },
+            413,
+          );
+        }
         await env.THUMBS.put(`thumbs/${id}.png`, buffer, { httpMetadata: { contentType: 'image/png' } });
         try { await db.prepare('ALTER TABLE templates ADD COLUMN thumbnail_url TEXT').run(); } catch (_e) {}
         try { await db.prepare('ALTER TABLE templates ADD COLUMN thumbnail_generated_at TEXT').run(); } catch (_e) {}
@@ -1749,6 +1877,8 @@ export default {
     if (thumbGenMatch && method === 'POST') {
       const id = decodeURIComponent(thumbGenMatch[1]);
       try {
+        const authDeny = denyUnlessTrustedOrBearer(request, url, env);
+        if (authDeny) return authDeny;
         await ensureTemplateManagerSchema(db);
         // Ensure thumbnail columns exist before querying
         try { await db.prepare('ALTER TABLE templates ADD COLUMN thumbnail_url TEXT').run(); } catch (_e) {}
@@ -1765,6 +1895,19 @@ export default {
           }
         } catch (_parse) {
           /* empty or invalid JSON body — fall back to server-side pick */
+        }
+        if (previewHtmlFromClient) {
+          const bytes = new TextEncoder().encode(previewHtmlFromClient).byteLength;
+          if (bytes > THUMB_PREVIEW_HTML_MAX_BYTES) {
+            return json(
+              {
+                error: 'previewHtml too large',
+                code: 'PREVIEW_HTML_LIMIT',
+                limit: THUMB_PREVIEW_HTML_MAX_BYTES,
+              },
+              413,
+            );
+          }
         }
         // Load template from D1 — uses files column (JSON string), not data
         const row = await db.prepare(`SELECT id, files, name, thumbnail_url FROM templates WHERE id = ? AND COALESCE(is_deleted,0) = 0 LIMIT 1`).bind(id).first();
@@ -1916,7 +2059,7 @@ export default {
 
     // ═══ PROXY ROUTES (no auth required — proxy forwards auth headers) ═══
     if (path.startsWith('/api/proxy/')) {
-      const proxyRes = await handleProxy(request, url);
+      const proxyRes = await handleProxy(request, url, env);
       if (proxyRes) return proxyRes;
     }
 
@@ -2548,12 +2691,6 @@ export default {
       return json(spec);
     }
 
-    // ═══ DEBUG MCP SECRET (temporary) ═══
-    if (path === '/api/debug/mcp-secret' && method === 'GET') {
-      // TEMPORARY: allow all origins for testing (remove after use)
-      return json({ MCP_SHARED_SECRET: env.MCP_SHARED_SECRET || '(not set)' });
-    }
-
     // Auth check:
     // - MCP routes use their own x-mcp-secret header auth (skip global Bearer check).
     // - Preferred: Bearer auth via API_SECRET.
@@ -2569,9 +2706,8 @@ export default {
       }
     } else if (path.startsWith('/api/') && !isMcpRoute) {
       const publicNoAuth = new Set(['/api/openapi.json']);
-      const isAiRoute = path.startsWith('/api/ai/');
-      const isSettingsRoute = path === '/api/settings';
-      if (!publicNoAuth.has(path) && !isAiRoute && !isSettingsRoute && !isTrustedOriginRequest(request, url, env)) {
+      // No API_SECRET: do not exempt /api/ai/* or /api/settings — require trusted origin like other routes.
+      if (!publicNoAuth.has(path) && !isTrustedOriginRequest(request, url, env)) {
         return json({ error: 'Unauthorized (untrusted origin, API_SECRET not configured)' }, 401);
       }
     }
@@ -5291,6 +5427,16 @@ export default {
           const { sql, params = [] } = body;
 
           if (!sql) return json({ success: false, error: 'Missing SQL query' }, 400);
+          if (!isReadOnlyD1DirectSql(sql)) {
+            return json(
+              {
+                success: false,
+                error: 'Only a single SELECT or WITH statement is allowed',
+                code: 'D1_DIRECT_READ_ONLY',
+              },
+              400,
+            );
+          }
 
           // Use env.DB binding directly
           const stmt = env.DB.prepare(sql);

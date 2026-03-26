@@ -4,6 +4,7 @@
  *
  * Deploy pipeline: github-actions.js maps Wizard fields → deploy-configs/{domain}.json;
  * deploy-lp.yml then writes PUBLIC_* env vars from that JSON (voluumId, voluumDomain, …).
+ * Optional deploy keys: cfZoneId (32-char hex), skipDnsUpsert (bool, default true in github-actions), cfPagesProject.
  *
  * Wizard Voluum labels vs deploy JSON:
  *   voluumCampaignId   → voluumId
@@ -68,6 +69,9 @@ export const SITE_FIELD_KEYS = Object.freeze([
   "formEmbed",
   "cfProfileId",
   "cfAccountId",
+  "cfZoneId",
+  "skipDnsUpsert",
+  "cfPagesProject",
   "internetbsAccountId",
   "domainProvider",
   "domainProviderAccountId",

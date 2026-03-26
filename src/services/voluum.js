@@ -116,12 +116,15 @@ function normalizeHost(value = "") {
     return String(value || "").trim().replace(/^https?:\/\//i, "").replace(/\/+$/, "");
 }
 
+/** Default tracking hostname prefix when none set (`link.*` is Voluum’s common default; `trk.*` is also typical — user can override in wizard). */
+export const DEFAULT_VOLUUM_TRACK_SUBDOMAIN = "trk";
+
 export function normalizeTrackingDomain(rawTrackingDomain = "", domain = "") {
     const cleanDomain = normalizeHost(domain);
-    const raw = normalizeHost(rawTrackingDomain).replace(/^(trk|vls)\./i, "link.");
+    const raw = normalizeHost(rawTrackingDomain);
     if (!cleanDomain) return raw;
     if (raw.endsWith(`.${cleanDomain}`) && raw.length > cleanDomain.length + 1) return raw;
-    return `link.${cleanDomain}`;
+    return `${DEFAULT_VOLUUM_TRACK_SUBDOMAIN}.${cleanDomain}`;
 }
 
 export function buildLanderTrackingUrl({ domain = "", campaignId = "", landerId = "", existingUrl = "" } = {}) {

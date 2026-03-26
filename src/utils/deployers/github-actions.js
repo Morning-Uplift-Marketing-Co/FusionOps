@@ -176,9 +176,23 @@ export async function deploy(assets, site, settings) {
   }
 
   // Build deploy config — written as JSON file, read by workflow
+  const cfZoneId = String(site.cfZoneId || existing.cfZoneId || '').trim().toLowerCase();
+  // Default true: staff use Settings → Cloudflare profiles + Wizard DNS; no GitHub CF zone alignment needed.
+  // Set skipDnsUpsert: false on the site or in deploy-config only if CI should upsert CNAMEs (secrets must match zone).
+  const skipDnsUpsert =
+    site.skipDnsUpsert === true || site.skipDnsUpsert === false
+      ? site.skipDnsUpsert
+      : existing.skipDnsUpsert === true || existing.skipDnsUpsert === false
+        ? existing.skipDnsUpsert
+        : true;
+
   const config = {
     templateId:      site.templateId    || 'installment-bear',
     cfPagesProject,
+    // Optional: hex zone id from Cloudflare Overview (when GET /zones?name= returns nothing)
+    cfZoneId:        /^[a-f0-9]{32}$/.test(cfZoneId) ? cfZoneId : '',
+    // If true, deploy-lp.yml skips automatic CNAME upsert (set CNAMEs manually or fix zone later)
+    skipDnsUpsert,
     // Security: do not persist CF credentials in deploy-config JSON.
     // Workflow should read CLOUDFLARE_* from GitHub repository secrets.
     cfApiToken:      '',

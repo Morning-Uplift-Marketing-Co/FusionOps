@@ -14,6 +14,8 @@
  *   0–69   → ❌ BLOCKED (must rotate IP)
  */
 
+import { collectResolveBases } from "./nodemaven";
+
 /* ────────────────── Settings ────────────────── */
 
 function getSettings() {
@@ -28,12 +30,23 @@ function getSettings() {
   }
 }
 
-function resolveWorkerBase() {
-  const fromWindow = typeof window !== "undefined" ? window.__LP_API__ : "";
-  const fromEnv = typeof import.meta !== "undefined" && import.meta.env ? import.meta.env.VITE_API_BASE : "";
-  const DEFAULT = "https://lp-factory-api.misty-feather-556e.workers.dev/api";
-  const apiBase = String(fromWindow || fromEnv || DEFAULT).replace(/\/+$/, "");
-  return apiBase.endsWith("/api") ? apiBase.slice(0, -4) : apiBase;
+/** Try relay then Worker for POST /api/proxy/* (same paths as Cloudflare Worker). */
+async function postProxyCheckPath(path, body, timeoutMs) {
+  const merge = getSettings();
+  for (const base of collectResolveBases(merge)) {
+    try {
+      const res = await fetch(`${base}${path}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+      if (res.ok) return res;
+    } catch {
+      /* next base */
+    }
+  }
+  return null;
 }
 
 /* ────────────────── Check 1: IP Blacklist ────────────────── */
@@ -184,21 +197,18 @@ function runGeoCheck(ipApiData, expectedCountry, expectedState) {
  */
 async function runDnsLeakCheck(proxyConfig) {
   try {
-    const workerBase = resolveWorkerBase();
-
-    const res = await fetch(`${workerBase}/api/proxy/dns-check`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const res = await postProxyCheckPath(
+      "/api/proxy/dns-check",
+      {
         host: proxyConfig.host,
         port: proxyConfig.port,
         username: proxyConfig.username,
         password: proxyConfig.password,
-      }),
-      signal: AbortSignal.timeout(8000),
-    });
+      },
+      8000
+    );
 
-    if (!res.ok) {
+    if (!res?.ok) {
       return { name: "DNS Leak", pass: true, penalty: 0, issues: ["DNS check endpoint unavailable — skipped"], data: null };
     }
 
@@ -225,27 +235,24 @@ async function runDnsLeakCheck(proxyConfig) {
  */
 async function runLatencyCheck(proxyConfig) {
   try {
-    const workerBase = resolveWorkerBase();
-
     const start = performance.now();
-    const res = await fetch(`${workerBase}/api/proxy/latency-check`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const res = await postProxyCheckPath(
+      "/api/proxy/latency-check",
+      {
         host: proxyConfig.host,
         port: proxyConfig.port,
         username: proxyConfig.username,
         password: proxyConfig.password,
-      }),
-      signal: AbortSignal.timeout(10000),
-    });
+      },
+      10000
+    );
 
     const elapsed = Math.round(performance.now() - start);
     const issues = [];
     let penalty = 0;
 
-    if (!res.ok) {
-      return { name: "Latency", pass: false, penalty: 25, issues: [`Proxy connection failed: HTTP ${res.status}`], data: { latencyMs: null } };
+    if (!res?.ok) {
+      return { name: "Latency", pass: false, penalty: 25, issues: [`Proxy connection failed: HTTP ${res?.status || "—"}`], data: { latencyMs: null } };
     }
 
     const data = await res.json();

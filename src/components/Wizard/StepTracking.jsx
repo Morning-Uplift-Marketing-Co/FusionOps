@@ -12,6 +12,7 @@ import {
   fetchTrafficSources as fetchVoluumTrafficSources,
   normalizeTrackingDomain,
   buildLanderTrackingUrl,
+  DEFAULT_VOLUUM_TRACK_SUBDOMAIN,
 } from "../../services/voluum";
 import { LS } from "../../utils";
 import { getOrCreateZone, upsertDnsRecord } from "../../services/cloudflare-dns";
@@ -28,6 +29,15 @@ const VOLUUM_API = (() => {
   const PROD = import.meta.env?.VITE_API_BASE || "https://lp-factory-api.misty-feather-556e.workers.dev/api";
   return String(fromWindow || fromEnv || (isLocal ? "/api" : PROD)).replace(/\/+$/, "");
 })();
+
+/** Fallback tracking host when `voluumTrackingDomain` is not set yet */
+function voluumDefaultHost(domain) {
+  const d = String(domain || "").trim();
+  return d ? `${DEFAULT_VOLUUM_TRACK_SUBDOMAIN}.${d}` : "";
+}
+function voluumHost(c) {
+  return c.voluumTrackingDomain || voluumDefaultHost(c.domain);
+}
 
 async function voluumProxy(token, method, path, body) {
   const controller = new AbortController();
@@ -73,8 +83,8 @@ export function clearVoluumCache() {
 
 function buildVoluumLanderScript(domain, trackingDomain) {
   if (!domain) return "";
-  // Accept full tracking domain (e.g. cdn.scratchpaypet.tech) or default to link.{domain}
-  const host = trackingDomain || `link.${domain}`;
+  // Accept full tracking domain (e.g. cdn.example.com) or default prefix from DEFAULT_VOLUUM_TRACK_SUBDOMAIN
+  const host = trackingDomain || `${DEFAULT_VOLUUM_TRACK_SUBDOMAIN}.${domain}`;
   return `<meta http-equiv="delegate-ch" content="sec-ch-ua https://${host}; sec-ch-ua-mobile https://${host}; sec-ch-ua-arch https://${host}; sec-ch-ua-model https://${host}; sec-ch-ua-platform https://${host}; sec-ch-ua-platform-version https://${host}; sec-ch-ua-bitness https://${host}; sec-ch-ua-full-version-list https://${host}; sec-ch-ua-full-version https://${host}"><style>.dtpcnt{opacity: 0;}</style>
 <script>
     (function(e,d,k,n,u,v,g,w,C,f,p,x,D,c,q,r,h,t,y,G,z){function A(){for(var a=d.querySelectorAll(".dtpcnt"),b=0,l=a.length;b<l;b++)a[b][w]=a[b][w].replace(/(^|\\s+)dtpcnt($|\\s+)/g,"")}function E(a,b,l,F){var m=new Date;m.setTime(m.getTime()+(F||864E5));d.cookie=a+"="+b+"; "+l+"samesite=Strict; expires="+m.toGMTString()+"; path=/";k.setItem(a,b);k.setItem(a+"-expires",m.getTime())}function B(a){var b=d.cookie.match(new RegExp("(^| )"+a+"=([^;]+)"));return b?b.pop():k.getItem(a+"-expires")&&+k.getItem(a+"-expires")>(new Date).getTime()?k.getItem(a):null}z="https:"===e.location.protocol?"secure; ":"";e[f]||(e[f]=function(){(e[f].q=e[f].q||[]).push(arguments)},r=d[u],d[u]=function(){r&&r.apply(this,arguments);if(e[f]&&!e[f].hasOwnProperty("params")&&/loaded|interactive|complete/.test(d.readyState))for(;c=d[v][p++];)/\\/?click\\/?($|(\\/[0-9]+)?$)/.test(c.pathname)&&(c[g]="javascrip"+e.postMessage.toString().slice(4,5)+":"+f+'.l="'+c[g]+'",void 0')},setTimeout(function(){(t=RegExp("[?&]cpid(=([^&#]*)|&|#|$)").exec(e.location.href))&&t[2]&&(h=t[2],y=B("vl-"+h));var a=B("vl-cep"),b=location[g];if("savedCep"===D&&a&&(!h||"undefined"===typeof h)&&0>b.indexOf("cep=")){var l=-1<b.indexOf("?")?"&":"?";b+=l+a}c=d.createElement("script");q=d.scripts[0];c.defer=1;c.src=x+(-1===x.indexOf("?")?"?":"&")+"lpref="+n(d.referrer)+"&lpurl="+n(b)+"&lpt="+n(d.title)+"&vtm="+(new Date).getTime()+(y?"&uw=no":"");c[C]=function(){for(p=0;c=d[v][p++];)/dtpCallback\\.l/.test(c[g])&&(c[g]=decodeURIComponent(c[g]).match(/dtpCallback\\.l="([^"]+)/)[1]);A()};q.parentNode.insertBefore(c,q);h&&E("vl-"+h,"1",z)},0),setTimeout(A,7E3))})(window,document,localStorage,encodeURIComponent,"onreadystatechange","links","href","className","onerror","dtpCallback",0,"https://${host}/d/.js","savedCep");
@@ -86,15 +96,19 @@ function normalizeVoluumScriptHost(script = "", domain = "") {
   const value = String(script || "");
   if (!value) return value;
 
-  // Generic normalize: any https://trk.xxx or https://vls.xxx -> https://link.xxx
-  let normalized = value.replace(/https:\/\/trk\./gi, "https://link.").replace(/https:\/\/vls\./gi, "https://link.");
-
-  // If domain is known, enforce link.{domain} for this lander
+  let normalized = value;
   const cleanDomain = String(domain || "").trim();
   if (cleanDomain) {
-    normalized = normalized
-      .replace(/https:\/\/link\.[^/\s"']+/gi, `https://link.${cleanDomain}`)
-      .replace(/https:\/\/trk\.[^/\s"']+/gi, `https://link.${cleanDomain}`);
+    // Keep subdomain label (link, trk, cdn, …); only fix wrong apex to this lander’s domain
+    normalized = normalized.replace(
+      /https:\/\/([a-z0-9-]+)\.([a-z0-9][a-z0-9.-]*\.[a-z]{2,})/gi,
+      (full, sub, host) => {
+        const apex = cleanDomain.toLowerCase();
+        const h = host.toLowerCase();
+        if (h === apex) return full;
+        return `https://${sub}.${apex}`;
+      },
+    );
   }
 
   return normalized;
@@ -148,12 +162,9 @@ export function StepTracking({ c, u }) {
     if (normalizedTrackingDomain && normalizedTrackingDomain !== c.voluumTrackingDomain) {
       u("voluumTrackingDomain", normalizedTrackingDomain);
     }
-    // Auto-fix CTA click URL only if it points to the wrong domain entirely
-    if (normalizedTrackingDomain && c.voluumClickUrl) {
-      const clickDomain = c.voluumClickUrl.replace(/^https?:\/\//, "").split("/")[0];
-      if (clickDomain && !clickDomain.endsWith(`.${c.domain}`) && clickDomain !== c.domain) {
-        u("voluumClickUrl", `https://${normalizedTrackingDomain}/click`);
-      }
+    // Seed CTA URL only when empty — do not overwrite user-edited or Voluum-provided URLs
+    if (normalizedTrackingDomain && !String(c.voluumClickUrl || "").trim()) {
+      u("voluumClickUrl", `https://${normalizedTrackingDomain}/click`);
     }
 
     if (c.voluumLanderScript) {
@@ -391,7 +402,7 @@ export function StepTracking({ c, u }) {
               <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-3 mt-1 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Tracking Domain</span>
-                  <span className="text-[11px] font-mono text-[hsl(var(--foreground))]">{c.voluumTrackingDomain || (c.domain ? `link.${c.domain}` : "—")}</span>
+                  <span className="text-[11px] font-mono text-[hsl(var(--foreground))]">{voluumHost(c) || "—"}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Campaign ID</span>
@@ -408,8 +419,8 @@ export function StepTracking({ c, u }) {
                 <div className="pt-1">
                   <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider block mb-1.5">Postback URL</span>
                   <div className="flex items-center gap-2">
-                    <code className="flex-1 text-[9px] font-mono bg-[hsl(var(--input))] border border-[hsl(var(--border))] rounded px-2 py-1.5 text-purple-400 break-all cursor-pointer" onClick={() => navigator.clipboard?.writeText(`https://${c.voluumTrackingDomain || (c.domain ? `link.${c.domain}` : 'TRACKING_DOMAIN')}/postback?cid={click_id}&payout={price}`)}>
-                      https://{c.voluumTrackingDomain || (c.domain ? `link.${c.domain}` : 'TRACKING_DOMAIN')}/postback?cid={'{click_id}'}&payout={'{price}'}
+                    <code className="flex-1 text-[9px] font-mono bg-[hsl(var(--input))] border border-[hsl(var(--border))] rounded px-2 py-1.5 text-purple-400 break-all cursor-pointer" onClick={() => navigator.clipboard?.writeText(`https://${voluumHost(c) || "TRACKING_DOMAIN"}/postback?cid={click_id}&payout={price}`)}>
+                      https://{voluumHost(c) || "TRACKING_DOMAIN"}/postback?cid={'{click_id}'}&payout={'{price}'}
                     </code>
                   </div>
                 </div>
@@ -518,7 +529,7 @@ export function StepTracking({ c, u }) {
                           if (!zone.success || !zone.zoneId) throw new Error(zone.error || "Failed to get zone");
 
                           const results = [];
-                          const trkSub = (c.voluumTrackingDomain || `link.${c.domain}`).split(".")[0];
+                          const trkSub = voluumHost(c).split(".")[0];
 
                           // 1. Tracking CNAME: trk.domain → CloudFront
                           const r1 = await upsertDnsRecord({
@@ -816,8 +827,8 @@ export function StepTracking({ c, u }) {
                     <input
                       type="text"
                       value={(() => {
-                        const td = c.voluumTrackingDomain || `link.${c.domain}`;
-                        // Extract only the subdomain word (e.g. "link" or "cdn")
+                        const td = voluumHost(c);
+                        // Extract only the subdomain word (e.g. "trk", "link", "cdn")
                         return td.replace(new RegExp(`\.${c.domain}$`), "").replace(/^https?:\/\//, "");
                       })()}
                       onChange={e => {
@@ -827,7 +838,7 @@ export function StepTracking({ c, u }) {
                       }}
                       style={{ width: "80px", minWidth: 0, flexShrink: 0 }}
                       className="flex-1 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--input))] px-2.5 py-1.5 text-[11px] font-mono text-[hsl(var(--foreground))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]/50"
-                      placeholder="link"
+                      placeholder={DEFAULT_VOLUUM_TRACK_SUBDOMAIN}
                     />
                     <span className="text-[11px] font-mono text-[hsl(var(--muted-foreground))] select-none flex-1 truncate">.{c.domain || "scratchpaypet.tech"}</span>
                     <button
@@ -845,7 +856,7 @@ export function StepTracking({ c, u }) {
                           if (!cfAccountId || !cfApiToken) throw new Error("Cloudflare credentials not found");
                           const zone = await getOrCreateZone(c.domain, cfAccountId, cfApiToken);
                           if (!zone.success || !zone.zoneId) throw new Error(zone.error || "Zone not found");
-                          const td = c.voluumTrackingDomain || `link.${c.domain}`;
+                          const td = voluumHost(c);
                           const r = await upsertDnsRecord({
                             zoneId: zone.zoneId, cfAccountId, cfApiToken,
                             domain: c.domain,
@@ -865,7 +876,7 @@ export function StepTracking({ c, u }) {
                     </button>
                   </div>
                   <div className="text-[10px] text-[hsl(var(--muted-foreground))]/60 flex items-center gap-1.5">
-                    <span>Full domain: <span className="font-mono">{c.voluumTrackingDomain || `link.${c.domain}`}</span></span>
+                    <span>Full domain: <span className="font-mono">{voluumHost(c)}</span></span>
                     {quickDnsResult && (
                       <span className={quickDnsResult.success ? "text-green-500" : "text-red-400"}>{quickDnsResult.message}</span>
                     )}
@@ -879,12 +890,12 @@ export function StepTracking({ c, u }) {
                       value={c.voluumClickUrl || ""}
                       onChange={e => u("voluumClickUrl", e.target.value)}
                       className="flex-1 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--input))] px-2.5 py-1.5 text-[11px] font-mono text-[hsl(var(--foreground))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]/50"
-                      placeholder={`https://${c.voluumTrackingDomain || `link.${c.domain || "domain.com"}`}/click`}
+                      placeholder={`https://${voluumHost(c) || `${DEFAULT_VOLUUM_TRACK_SUBDOMAIN}.${c.domain || "domain.com"}`}/click`}
                     />
                     <button
                       type="button"
                       onClick={() => {
-                        const td = c.voluumTrackingDomain || (c.domain ? `link.${c.domain}` : "");
+                        const td = voluumHost(c);
                         if (!td) return;
                         u("voluumClickUrl", `https://${td}/click`);
                       }}
@@ -895,7 +906,7 @@ export function StepTracking({ c, u }) {
                     <button
                       type="button"
                       onClick={() => {
-                        const td = c.voluumTrackingDomain || (c.domain ? `link.${c.domain}` : "");
+                        const td = voluumHost(c);
                         if (!td) return;
                         u("voluumClickUrl", `https://${td}/click`);
                         u("voluumLanderScript", buildVoluumLanderScript(c.domain, td));
@@ -916,7 +927,7 @@ export function StepTracking({ c, u }) {
                     <button
                       type="button"
                       onClick={() => {
-                        const td = c.voluumTrackingDomain || `link.${c.domain}`;
+                        const td = voluumHost(c);
                         u("voluumLanderScript", buildVoluumLanderScript(c.domain, td));
                         u("voluumClickUrl", `https://${td}/click`);
                       }}
@@ -937,18 +948,18 @@ export function StepTracking({ c, u }) {
                   className="w-full rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--input))] px-3 py-2 text-[11px] font-mono text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]/50 resize-y"
                 />
                 <div className="mt-3 space-y-2">
-                  <Field label="CTA Click URL" help="CTA buttons will redirect to this URL when Voluum is enabled">
+                  <Field label="CTA Click URL" help="Any HTTPS click endpoint Voluum gives you, or your tracking host + /click. Edit freely — it is not forced to “link.”">
                     <div className="flex gap-2">
                       <Inp
                         value={c.voluumClickUrl || ""}
                         onChange={v => u("voluumClickUrl", v)}
-                        placeholder={`https://link.${c.domain || "domain.com"}/click`}
+                        placeholder={`https://${voluumDefaultHost(c.domain) || `${DEFAULT_VOLUUM_TRACK_SUBDOMAIN}.domain.com`}/click`}
                       />
                       {c.domain && (
                         <button
                           type="button"
                           onClick={() => {
-                            const td = c.voluumTrackingDomain || `link.${c.domain}`;
+                            const td = voluumHost(c);
                             u("voluumClickUrl", `https://${td}/click`);
                           }}
                           className="px-3 py-1.5 text-[10px] rounded-lg bg-[hsl(var(--primary))/15] border border-[hsl(var(--primary))/40] text-[hsl(var(--primary))] font-semibold cursor-pointer whitespace-nowrap"
