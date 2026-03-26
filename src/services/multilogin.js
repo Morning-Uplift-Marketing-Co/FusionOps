@@ -308,9 +308,11 @@ async function getAutomationToken(expiration = "30d") {
 async function getProfiles(opts = {}) {
     const token = await ensureToken();
     if (!token) return { error: "Not authenticated" };
+    const rawLimit = opts.limit != null ? Number(opts.limit) : 15;
+    const limit = Math.min(Math.max(1, Number.isFinite(rawLimit) ? rawLimit : 15), 200);
     const body = {
         is_removed: false,
-        limit: Math.min(opts.limit || 50, 50),
+        limit,
         offset: opts.offset || 0,
         search_text: opts.search || "",
         storage_type: opts.storage_type || "all",

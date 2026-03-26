@@ -1,6 +1,29 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
+import { buildApiUrlWithBase } from "../../services/api.js";
+
+async function fetchTrackingJson(url, label, headers) {
+    const res = await fetch(url, { headers: headers || {} });
+    const text = await res.text();
+    const trimmed = text.trimStart();
+    if (trimmed.startsWith("<")) {
+        throw new Error(
+            `${label}: ได้หน้า HTML แทน JSON — ตั้ง VITE_API_BASE หรือ Settings → API base ให้ชี้ Cloudflare Worker (ลงท้าย /api) เพื่อ /api/postbacks และ /api/pixel/events`
+        );
+    }
+    let data;
+    try {
+        data = JSON.parse(text);
+    } catch {
+        throw new Error(`${label}: ตอบกลับไม่ใช่ JSON (HTTP ${res.status})`);
+    }
+    if (!res.ok) {
+        const msg = data?.error || data?.message || String(JSON.stringify(data)).slice(0, 160);
+        throw new Error(`${label}: HTTP ${res.status} — ${msg}`);
+    }
+    return data;
+}
 
 const fmt$ = (n) => `$${Number(n || 0).toFixed(2)}`;
 const fmtTime = (ts) => {
@@ -95,12 +118,14 @@ export function TrackingReconcileTab({ apiBase, apiHeaders }) {
         try {
             const since = sinceForRange();
             const domainQ = domain ? `&domain=${encodeURIComponent(domain)}` : "";
-            const [pbRes, pxRes] = await Promise.all([
-                fetch(`${apiBase}/api/postbacks?since=${since}&limit=500${domainQ}`, { headers: apiHeaders }),
-                fetch(`${apiBase}/api/pixel/events?since=${since}&limit=500${domainQ}`, { headers: apiHeaders }),
+            const qs = `since=${since}&limit=500${domainQ}`;
+            const baseOpt = apiBase && String(apiBase).trim() !== "" ? apiBase : undefined;
+            const pbUrl = buildApiUrlWithBase(`/api/postbacks?${qs}`, baseOpt);
+            const pxUrl = buildApiUrlWithBase(`/api/pixel/events?${qs}`, baseOpt);
+            const [pbData, pxData] = await Promise.all([
+                fetchTrackingJson(pbUrl, "Postbacks", apiHeaders),
+                fetchTrackingJson(pxUrl, "Pixel events", apiHeaders),
             ]);
-            const pbData = await pbRes.json();
-            const pxData = await pxRes.json();
             setPostbacks(pbData.postbacks || []);
             setPixelEvents(pxData.events || []);
         } catch (e) {
