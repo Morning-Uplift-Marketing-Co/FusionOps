@@ -1345,10 +1345,10 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                                     <div className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wide">Scamalytics <span className="font-normal opacity-60">— Fraud Score</span></div>
                                     <div className="grid grid-cols-2 gap-2">
                                         <Inp type="password" value={scamalyticsKey} onChange={setScamalyticsKey} placeholder="API Key (a30b2f...)" />
-                                        <Inp value={scamalyticsUsername} onChange={setScamalyticsUsername} placeholder="Username e.g. api11" />
+                                        <Inp value={scamalyticsUsername} onChange={setScamalyticsUsername} placeholder="e.g. 69b454433fb5e" />
                                     </div>
                                     <p className="text-[9px] text-[hsl(var(--muted-foreground))] m-0 mt-1 leading-relaxed">
-                                        *ถ้า Pipeline คืน 404 ให้ตรวจสอบ Username (ปกติเป็น <code className="text-[hsl(var(--foreground))]">api11</code> หรือชื่อคุณ)
+                                        *สำหรับ V3 API ให้ใส่ ID (เช่น <code className="text-[hsl(var(--foreground))]">69b454...</code>) ลงในช่องขวา เพื่อแก้ปัญหา 404
                                     </p>
                                 </div>
                                 <div className="border border-[hsl(var(--border))] rounded-lg p-3 space-y-2">

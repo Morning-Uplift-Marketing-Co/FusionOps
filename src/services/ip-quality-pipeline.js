@@ -219,10 +219,24 @@ async function checkFraud(ip, cfg) {
   }
 
   try {
-    // Note: Scamalytics API endpoints vary per account. We try a default approach
-    // or you could configure a 'scamalyticsUsername' in settings.
-    const userPrefix = cfg.scamalyticsUsername ? `${cfg.scamalyticsUsername}.` : "api11.";
-    const url = `https://${userPrefix}scamalytics.com/ip/${ip}?key=${key}`;
+    // Scamalytics V3 URL structure (based on user config)
+    // Settings fields:
+    //   - scamalyticsKey: e.g. "a30b2f..."
+    //   - scamalyticsUsername: e.g. "api11.scamalytics.com/v3/69b454433fb5e" 
+    //     (or we construct it if they just enter the "69b..." ID)
+    
+    let url = "";
+    if (cfg.scamalyticsUsername && cfg.scamalyticsUsername.includes("/")) {
+      // If user pastes the full prefix e.g. api11.scamalytics.com/v3/69b454433fb5e
+      url = `https://${cfg.scamalyticsUsername.replace(/^https?:\/\//, "").replace(/\/$/, "")}/?key=${key}&ip=${ip}`;
+    } else if (cfg.scamalyticsUsername) {
+      // If user just pasted the ID e.g. 69b454433fb5e
+      url = `https://api11.scamalytics.com/v3/${cfg.scamalyticsUsername}/?key=${key}&ip=${ip}`;
+    } else {
+      // Legacy V2 fallback
+      url = `https://api11.scamalytics.com/ip/${ip}?key=${key}`;
+    }
+
     const res = await fetch(url, {
       signal: AbortSignal.timeout(5000),
     });
@@ -232,12 +246,15 @@ async function checkFraud(ip, cfg) {
     }
 
     const data = await res.json();
-    const score = data.score != null ? Number(data.score) : -1;
+    
+    // Parse V3 response vs Legacy V2 response
+    const score = data.scamalytics ? Number(data.scamalytics.scamalytics_score) : (data.score != null ? Number(data.score) : -1);
+    const riskLevel = data.scamalytics ? data.scamalytics.scamalytics_risk : (data.risk || "");
 
     return {
       passed: score >= 0 && score < 40,
       fraudScore: score,
-      riskLevel: data.risk || "",
+      riskLevel: riskLevel,
       source: "Scamalytics",
     };
   } catch (e) {
