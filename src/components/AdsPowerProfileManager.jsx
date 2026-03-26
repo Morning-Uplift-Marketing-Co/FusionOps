@@ -168,17 +168,24 @@ export function AdsPowerProfileManager({ settings = {}, ops = {} }) {
   const canNext = profiles.length >= limit;
   const effectiveBase = resolveAdsPowerBaseUrl(settings);
   const mixedContentLikely =
-    !adspowerUsesWorkerProxy() &&
+    !adspowerUsesWorkerProxy(settings) &&
     typeof window !== "undefined" &&
     window.location.protocol === "https:" &&
     /^http:\/\//i.test(effectiveBase) &&
     /\b127\.0\.0\.1\b|\blocalhost\b|local\.adspower\.net/i.test(effectiveBase);
-  const devHint = import.meta.env.DEV ? null : adspowerUsesWorkerProxy() ? (
-    <p className="text-[10px] text-[hsl(var(--muted-foreground))] mt-2 leading-relaxed">
-      แดชบอร์ด HTTPS เรียก AdsPower ผ่าน <strong>API Worker</strong> — ตั้ง Base URL เป็น <strong>https://…</strong> (tunnel ไปพอร์ต 50325) แล้วกด{" "}
-      <strong>Save</strong> ใน Settings → Automation เพื่อให้ Worker อ่านค่าจาก D1
-    </p>
-  ) : (
+  const devHint = adspowerUsesWorkerProxy(settings) ? (
+    import.meta.env.DEV ? (
+      <p className="text-[10px] text-[hsl(var(--muted-foreground))] mt-2 leading-relaxed">
+        Dev + Base URL แบบ <strong>https://…</strong> → เรียกผ่าน <strong>API Worker</strong> (เลี่ยง CORS กับ ngrok) ค่าในฟอร์มส่งไปกับคำขอได้โดยไม่ต้อง Save ก่อน Test — ต้องชี้{" "}
+        <code className="text-[9px]">VITE_API_BASE</code> ไป Worker ที่ deploy แล้ว
+      </p>
+    ) : (
+      <p className="text-[10px] text-[hsl(var(--muted-foreground))] mt-2 leading-relaxed">
+        แดชบอร์ด HTTPS เรียก AdsPower ผ่าน <strong>API Worker</strong> — ตั้ง Base URL เป็น <strong>https://…</strong> (tunnel ไปพอร์ต 50325) แล้วกด{" "}
+        <strong>Save</strong> ใน Settings → Automation เพื่อให้ Worker อ่านค่าจาก D1
+      </p>
+    )
+  ) : import.meta.env.DEV ? null : (
     <p className="text-[10px] text-[hsl(var(--muted-foreground))] mt-2">
       Production: ตั้ง Base URL เป็น HTTPS tunnel ไปยังเครื่องที่รัน AdsPower
     </p>
