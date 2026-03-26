@@ -1,6 +1,8 @@
 {
   "templateId": "bluerush_lending",
   "cfPagesProject": "lp-petcarefinhub-com",
+  "cfZoneId": "",
+  "skipDnsUpsert": false,
   "cfApiToken": "",
   "cfAccountId": "",
   "brand": "petcarefinhub",
@@ -36,5 +38,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-26T01:25:32.467Z"
+  "deployedAt": "2026-03-26T01:29:39.704Z"
 }
