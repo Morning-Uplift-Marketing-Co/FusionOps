@@ -7,9 +7,9 @@
   "cfAccountId": "",
   "brand": "Scratchpay",
   "domain": "scratchpetlending.com",
-  "h1": "Quick Pet Funding: $100-$5000 Today",
-  "sub": "Stress-free financing for your beloved companion's health needs.",
-  "cta": "Get Funds Now",
+  "h1": "Fast Pet Funding Up To $5000!",
+  "sub": "Unexpected vet bills? Get fast, stress-free funding for your beloved pet.",
+  "cta": "Apply Now",
   "phone": "1-800-SCRATCH-PETLE",
   "email": "support@scratchpetlending.com",
   "address": "1603 Capitol Ave, Ste 310, Cheyenne, WY 82001",
@@ -20,7 +20,7 @@
   "aprMax": 35.99,
   "primaryColor": "#3b5bdb",
   "accentColor": "#f97316",
-  "conversionId": "AW-17895823247",
+  "conversionId": "AW-123",
   "gtagFormStartLabel": "eHnTCNDohJAcEI-vstVC",
   "gtagFormSubmitLabel": "TMkoCKaGhZAcEI-vstVC",
   "formStartLabel": "eHnTCNDohJAcEI-vstVC",
@@ -38,5 +38,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-26T17:28:32.762Z"
+  "deployedAt": "2026-03-26T17:42:50.074Z"
 }
