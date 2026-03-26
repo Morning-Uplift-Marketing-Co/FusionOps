@@ -61,7 +61,7 @@ export default defineConfig({
       'import.meta.env.VITE_E2E': JSON.stringify(process.env.VITE_E2E || ''),
     },
     server: {
-      port: 4323,
+      port: 4321,
       strictPort: true,
       host: true,
       fs: { allow: ['../..', '.'] },

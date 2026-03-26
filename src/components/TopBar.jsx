@@ -69,7 +69,9 @@ export function TopBar({ stats, settings, deploys, apiOk, neonOk, onReconnectNeo
                 <span className="mx-2.5 text-[hsl(var(--border))]">|</span>
                 Cost: <b className="text-[hsl(var(--foreground))]">${stats.spend.toFixed(2)}</b>
                 <span className="mx-2.5 text-[hsl(var(--border))]">|</span>
-                Deployed: <b className="text-[hsl(var(--foreground))]">{deploys?.length || 0}</b>
+                <span title="Last 100 deploy events (same site can appear many times). My Sites ‘Deployed’ counts unique sites with any live URL.">
+                    Deploy history: <b className="text-[hsl(var(--foreground))]">{deploys?.length || 0}</b>
+                </span>
             </div>
 
             {/* Right: service status icons */}

@@ -206,6 +206,11 @@ export async function register(email, password, role = "employee", name = "") {
  */
 export async function checkUsersExist() {
   try {
+    // loadUsers() returns [] when Neon is not connected yet — that must NOT mean "zero users"
+    // or a refresh shows first-run setup / "register new org" even though users exist in DB.
+    if (!db.getConnectionStatus().connected) {
+      return true;
+    }
     const users = await db.loadUsers();
     return Array.isArray(users) && users.length > 0;
   } catch {

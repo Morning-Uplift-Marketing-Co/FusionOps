@@ -122,6 +122,12 @@ export function sanitizeSettings(settings) {
     sanitized.neonUrl = envNeonUrl;
   }
 
+  // Same as Neon: bundled VITE_API_BASE must match production Worker so local dev hits same D1 as main site
+  const envApiBase = import.meta.env.VITE_API_BASE;
+  if (envApiBase && String(envApiBase).trim()) {
+    sanitized.apiBase = String(envApiBase).trim().replace(/\/+$/, "");
+  }
+
   // CRITICAL: ALWAYS enforce Voluum credentials (prevent losing tracking)
   if (import.meta.env.VITE_VOLUUM_ACCESS_KEY_ID) {
     sanitized.voluumKeyId = import.meta.env.VITE_VOLUUM_ACCESS_KEY_ID;
@@ -311,6 +317,13 @@ export function autoRecoverSettings(neonSettings, localStorageSettings = {}) {
       Object.entries(localStorageSettings).filter(([key]) => !(key in neonSettings))
     ),
   };
+
+  // Neon console often stores D1 UUID under cfD1DatabaseId; D1 REST + Settings UI use d1DatabaseId.
+  // If both rows exist but only cf* was updated, keep app + Sync Neon→D1 aligned with cf*.
+  const cfD1 = recovered.cfD1DatabaseId;
+  if (cfD1 != null && String(cfD1).trim() !== "") {
+    recovered.d1DatabaseId = String(cfD1).trim();
+  }
 
   // CRITICAL: Always enforce locked values
   const sanitized = sanitizeSettings(recovered);
