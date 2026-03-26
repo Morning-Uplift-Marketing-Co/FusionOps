@@ -1,7 +1,7 @@
 {
   "name": "lp-factory-web",
   "private": true,
-  "version": "3.6.0",
+  "version": "3.6.1",
   "type": "module",
   "scripts": {
     "prepare": "git config core.hooksPath .githooks",
@@ -24,6 +24,7 @@
     "convert-template": "node scripts/convert-template.mjs",
     "convert:vite-astro": "node scripts/convert-vite-to-astro-template.mjs",
     "inject:index-html-tracking": "node scripts/inject-index-html-tracking.mjs",
+    "proxy-relay": "node scripts/proxy-resolve-relay.mjs",
     "release": "standard-version",
     "volt": "volt"
   },
@@ -40,6 +41,7 @@
     "dotenv": "^17.3.1",
     "install": "^0.13.0",
     "jszip": "^3.10.1",
+    "libsodium-wrappers": "^0.8.2",
     "lucide-react": "^0.575.0",
     "node-fetch": "^3.3.2",
     "react": "^19.2.0",
@@ -61,7 +63,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitest/coverage-v8": "^4.0.18",
     "@vitest/ui": "^4.0.18",
-    "@voltagent/cli": "^0.1.21",
+    "@voltagent/cli": "^0.1.14",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
@@ -72,6 +74,7 @@
     "standard-version": "^9.5.0",
     "tailwindcss": "^4.2.0",
     "typescript": "^5.7.0",
+    "undici": "^7.24.4",
     "vitest": "^4.0.18",
     "wrangler": "^4.35.0"
   },

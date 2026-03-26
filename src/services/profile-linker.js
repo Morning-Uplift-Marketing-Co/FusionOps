@@ -17,6 +17,7 @@ import { multiloginApi } from "./multilogin";
 import { proxyProviders } from "./proxy-providers";
 import { ipQualityPipeline } from "./ip-quality-pipeline";
 import { leadingCardsApi } from "./leadingCards";
+import { postProxyResolveIp } from "./nodemaven";
 
 /* ────────────────── Settings ────────────────── */
 
@@ -30,14 +31,6 @@ function getSettings() {
   } catch {
     return {};
   }
-}
-
-function resolveWorkerBase() {
-  const fromWindow = typeof window !== "undefined" ? window.__LP_API__ : "";
-  const fromEnv = typeof import.meta !== "undefined" && import.meta.env ? import.meta.env.VITE_API_BASE : "";
-  const DEFAULT = "https://lp-factory-api.misty-feather-556e.workers.dev/api";
-  const apiBase = String(fromWindow || fromEnv || DEFAULT).replace(/\/+$/, "");
-  return apiBase.endsWith("/api") ? apiBase.slice(0, -4) : apiBase;
 }
 
 /* ────────────────── Helpers ────────────────── */
@@ -219,28 +212,22 @@ export async function linkProfileCardProxy(opts) {
   let qualityResult = null;
 
   try {
-    // Use the proxy to resolve its actual IP
-    const workerBase = resolveWorkerBase();
-
-    const ipRes = await fetch(`${workerBase}/api/proxy/resolve-ip`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const ipRes = await postProxyResolveIp(
+      {
         host: proxyConfig.host,
         port: proxyConfig.port,
         username: proxyConfig.username,
         password: proxyConfig.password,
         protocol: proxyConfig.protocol,
-      }),
-      signal: AbortSignal.timeout(15000),
-    });
-
+      },
+      getSettings()
+    );
     if (ipRes.ok) {
-      const ipData = await ipRes.json();
+      const ipData = ipRes.data;
       resolvedIp = ipData.ip || ipData.query || "";
     }
   } catch {
-    // IP resolution optional — continue with proxy config
+    /* IP resolution optional — continue with proxy config */
   }
 
   // Run quality pipeline if IP resolved
@@ -258,29 +245,25 @@ export async function linkProfileCardProxy(opts) {
 
         if (newConfig.error) break;
 
-        // Re-resolve IP
+        // Re-resolve IP (same worker base as main path — not legacy lp_settings)
         try {
-          const settings = JSON.parse(localStorage.getItem("lp_settings") || "{}");
-          const apiBase = settings.apiBase || "";
-          const workerBase = apiBase.endsWith("/api") ? apiBase.slice(0, -4) : apiBase;
-
-          const ipRes = await fetch(`${workerBase}/api/proxy/resolve-ip`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
+          const ipRes = await postProxyResolveIp(
+            {
               host: newConfig.host,
               port: newConfig.port,
               username: newConfig.username,
               password: newConfig.password,
-            }),
-            signal: AbortSignal.timeout(15000),
-          });
-
+              protocol: newConfig.protocol,
+            },
+            getSettings()
+          );
           if (ipRes.ok) {
-            const ipData = await ipRes.json();
+            const ipData = ipRes.data;
             resolvedIp = ipData.ip || ipData.query || "";
           }
-        } catch { continue; }
+        } catch {
+          continue;
+        }
 
         if (resolvedIp) {
           qualityResult = await ipQualityPipeline.runQualityPipeline(resolvedIp, geo);
@@ -604,24 +587,23 @@ export async function rotateProxy(profileId) {
   // Resolve new IP
   let newIp = "";
   try {
-    const workerBase = resolveWorkerBase();
-
-    const res = await fetch(`${workerBase}/api/proxy/resolve-ip`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const res = await postProxyResolveIp(
+      {
         host: newConfig.host,
         port: newConfig.port,
         username: newConfig.username,
         password: newConfig.password,
-      }),
-      signal: AbortSignal.timeout(15000),
-    });
+        protocol: newConfig.protocol,
+      },
+      getSettings()
+    );
     if (res.ok) {
-      const data = await res.json();
+      const data = res.data;
       newIp = data.ip || data.query || "";
     }
-  } catch { /* continue without IP */ }
+  } catch {
+    /* continue without IP */
+  }
 
   // Quality check
   let qualityResult = null;

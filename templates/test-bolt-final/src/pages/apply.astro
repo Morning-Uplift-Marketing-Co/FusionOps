@@ -1,0 +1,169 @@
+---
+// PUBLIC_AID from deploy .env (inject-tracking / CI)
+const aid = import.meta.env.PUBLIC_AID || '14881';
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Apply</title>
+  <link rel="dns-prefetch" href="//apikeep.com" />
+  <style is:inline>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; min-height: 100vh; background: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    body { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 24px 16px 48px; }
+    #_lg_form_ { width: 100%; max-width: 640px; }
+  </style>
+</head>
+<body>
+<div id="_lg_form_"></div>
+
+<script is:inline define:vars={{ aid }}>
+window.dataLayer = window.dataLayer || [];
+
+function fpPixel(eventName, extra) {
+  try {
+    var endpoint = 'https://t.' + window.location.hostname + '/e';
+    var cid = getVoluumClickId();
+    var payload = { e: eventName, d: window.location.hostname, ts: Date.now() };
+    if (cid) { payload.cid = cid; payload.cpid = cid; payload.click_id = cid; }
+    if (extra && typeof extra === 'object') {
+      for (var k in extra) {
+        if (!Object.prototype.hasOwnProperty.call(extra, k)) continue;
+        var v = extra[k];
+        if (v === undefined || v === null) continue;
+        if (typeof v === 'object') continue;
+        payload[k] = v;
+      }
+    }
+    var q = new URLSearchParams();
+    Object.keys(payload).forEach(function(k) {
+      var v = payload[k];
+      if (v !== undefined && v !== null && v !== '') q.set(k, String(v));
+    });
+    var img = new Image(1, 1);
+    img.src = endpoint + '?' + q.toString();
+  } catch(_) {}
+}
+
+var SafeStorage = {
+  _mem: {},
+  set: function(k, v) {
+    try { sessionStorage.setItem(k, v); }
+    catch (e) { this._mem[k] = v; }
+  },
+  get: function(k) {
+    try { return sessionStorage.getItem(k); }
+    catch (e) { return this._mem[k] || null; }
+  }
+};
+
+function getVoluumClickId() {
+  var urlParams = new URLSearchParams(window.location.search);
+  var fromUrl = urlParams.get('gclid') || urlParams.get('vlcid') || urlParams.get('clickid') || urlParams.get('cid') || urlParams.get('click_id') || urlParams.get('cpid') || '';
+  var fromStorage = SafeStorage.get('clickid') || SafeStorage.get('vlcid') || SafeStorage.get('voluum_cpid') || SafeStorage.get('voluum_cid') || '';
+  return fromUrl || fromStorage || '';
+}
+
+// Fire pv on apply page load
+(function() {
+  var p = new URLSearchParams(window.location.search);
+  var cid = p.get('clickid') || p.get('vlcid') || p.get('click_id') || p.get('cid') || p.get('cpid') || '';
+  fpPixel('pv', cid ? { click_id: cid } : {});
+})();
+
+// applicationInit.js sets _lg_form_.hooks = _lg_form_init_.hooks only (not root onFormLoad).
+window._lg_form_init_ = {
+  aid: aid,
+  template: "fresh",
+  ref: window.location.hostname,
+  get click_id() { return getVoluumClickId(); },
+
+  hooks: {
+    onFormLoad: function() {
+      try {
+        var cid = getVoluumClickId();
+        if (!window.__fpLgFormLoadOnce) {
+          window.__fpLgFormLoadOnce = true;
+          fpPixel('lg_form_load', { click_id: cid, source: 'hook' });
+        }
+        window.dataLayer.push({ 'event': 'leadsgate_form_start', 'clickId': cid, 'timestamp': new Date().toISOString() });
+      } catch(_) {}
+    },
+
+    onStepChange: function(step) {
+      try {
+        var cid = getVoluumClickId();
+        var s = (step && typeof step === 'object') ? step.step || step : step;
+        fpPixel('lg_step', { step: s, click_id: cid });
+        window.dataLayer.push({ 'event': 'leadsgate_form_progress', 'step': s, 'clickId': cid });
+      } catch(_) {}
+    },
+
+    onSubmit: function() {
+      try {
+        var cid = getVoluumClickId();
+        fpPixel('lg_submit', { click_id: cid });
+        window.dataLayer.push({ 'event': 'leadsgate_form_submit', 'clickId': cid, 'timestamp': new Date().toISOString() });
+      } catch(_) {}
+    },
+
+    onSuccess: function(data) {
+      try {
+        if (!data) return;
+        var voluumCid = getVoluumClickId();
+        var type = data.type || 'unknown';
+        var leadId = data.lead_id || '';
+        var payout = data.price || 0;
+        var status = type === 'soldLead' ? 'approved' : type === 'rejectLead' ? 'declined' : 'pending';
+        var finalPayout = payout > 0 ? payout : (status === 'declined' ? 5.00 : 50.00);
+
+        fpPixel('lg_' + status, { click_id: voluumCid, lead_id: leadId, status: status, payout: finalPayout });
+
+        window.dataLayer.push({ 'event': 'lead_conversion_all', 'leadStatus': status, 'leadType': type, 'transactionId': leadId, 'conversionValue': finalPayout, 'clickId': voluumCid });
+
+        if (type === 'soldLead') {
+          window.dataLayer.push({ 'event': 'lead_conversion_approved', 'transactionId': leadId, 'conversionValue': finalPayout, 'clickId': voluumCid });
+        } else if (type === 'rejectLead') {
+          window.dataLayer.push({ 'event': 'lead_declined', 'transactionId': leadId, 'conversionValue': finalPayout, 'clickId': voluumCid });
+        } else {
+          window.dataLayer.push({ 'event': 'lead_pending', 'transactionId': leadId, 'conversionValue': finalPayout, 'clickId': voluumCid });
+        }
+      } catch(_) {}
+    }
+  }
+};
+
+var script = document.createElement('script');
+script.setAttribute('data-cfasync', 'false');
+script.type = 'text/javascript';
+script.async = true;
+script.src = 'https://apikeep.com/form/applicationInit.js';
+document.body.appendChild(script);
+
+(function setupLgFormLoadFallback() {
+  var lgDiv = document.getElementById('_lg_form_');
+  if (!lgDiv) return;
+  var obs = new MutationObserver(function() {
+    if (window.__fpLgFormLoadOnce) { obs.disconnect(); return; }
+    if (lgDiv.children.length > 0) {
+      window.__fpLgFormLoadOnce = true;
+      obs.disconnect();
+      fpPixel('lg_form_load', { click_id: getVoluumClickId(), source: 'observer' });
+    }
+  });
+  obs.observe(lgDiv, { childList: true, subtree: true });
+  setTimeout(function() {
+    try { obs.disconnect(); } catch(_) {}
+    if (!window.__fpLgFormLoadOnce) {
+      window.__fpLgFormLoadOnce = true;
+      fpPixel('lg_form_load', { click_id: getVoluumClickId(), source: 'timeout', error: 'form_not_loaded' });
+    }
+  }, 15000);
+})();
+
+</script>
+</body>
+</html>

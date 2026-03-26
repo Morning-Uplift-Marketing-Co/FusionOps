@@ -6,6 +6,17 @@ import { isAdmin } from "../services/auth";
 
 const CHANGELOG = [
     {
+        version: "3.6.1",
+        date: "2026-03-26",
+        changes: [
+            "🛡️ IP Quality Pipeline — dynamic endpoint handling, fallback to IPinfo Lite with Bearer Auth, custom Scamalytics user config to avoid 404s",
+            "🔌 Proxy Tools — new Proxy Gateway Worker fallback + API Health Check endpoints integration",
+            "🐛 LendingCards — correctly parse paginated API responses from provider",
+            "🔧 OpsCenter — fix missing mlProfiles map errors on UI load",
+            "🔒 Security — tighten worker read-only query permissions when API_SECRET is unset, protect template mutations",
+        ],
+    },
+    {
         version: "3.6.0",
         date: "2026-03-23",
         changes: [
@@ -161,7 +172,8 @@ export function Sidebar({ page, setPage, siteCount, taskBadge, startCreate, star
         { id: "template-manager", icon: "🗂️", label: "Template Manager" },
         { id: "template-gen", icon: "🧙", label: "Template Wizard", action: startTemplateGen },
         { id: "create", icon: "⚡", label: "LP Wizard", action: startCreate },
-        { id: "profile-manager", icon: "👤", label: "Profile Manager" },
+        { id: "profile-manager", label: "Multilogin X", brand: "multilogin" },
+        { id: "adspower-profiles", label: "AdsPower", brand: "adspower" },
         { id: "ops", icon: "🏢", label: "Ops Center" },
         { id: "deploys", icon: "🚀", label: "Deploys" },
         { id: "tracking", icon: "🔬", label: "Tracking Test" },
@@ -223,6 +235,7 @@ export function Sidebar({ page, setPage, siteCount, taskBadge, startCreate, star
                         return (
                             <ButtonWrapper
                                 key={it.id}
+                                type={it.external ? undefined : "button"}
                                 aria-label={it.label}
                                 title={collapsed ? it.label : undefined}
                                 onClick={() => {
@@ -239,7 +252,29 @@ export function Sidebar({ page, setPage, siteCount, taskBadge, startCreate, star
                                         : "bg-transparent text-[hsl(var(--muted-foreground))] font-medium border-l-[3px] border-transparent hover:bg-[hsl(var(--secondary))]"
                                 )}
                             >
-                                <span className="text-[15px] shrink-0 w-5 text-center">{it.icon}</span>
+                                <span className="shrink-0 w-5 h-5 flex items-center justify-center">
+                                    {it.brand === "multilogin" ? (
+                                        <img
+                                            src="/vendor-icons/multilogin-favicon.ico"
+                                            alt=""
+                                            width={20}
+                                            height={20}
+                                            decoding="async"
+                                            className="h-5 w-5 object-contain rounded-[4px]"
+                                        />
+                                    ) : it.brand === "adspower" ? (
+                                        <img
+                                            src="/vendor-icons/adspower-favicon.svg"
+                                            alt=""
+                                            width={20}
+                                            height={20}
+                                            decoding="async"
+                                            className="h-5 w-5 object-contain rounded-[4px]"
+                                        />
+                                    ) : (
+                                        <span className="text-[15px] w-5 text-center leading-none">{it.icon}</span>
+                                    )}
+                                </span>
                                 {!collapsed && <span className="flex-1 text-left whitespace-nowrap">{it.label}</span>}
                                 {!collapsed && it.badge > 0 && (
                                     <span className="bg-[hsl(var(--primary))] text-white text-[10px] font-bold px-1.5 py-px rounded-lg min-w-[18px] text-center">

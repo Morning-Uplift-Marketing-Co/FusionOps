@@ -1,24 +1,37 @@
 /**
  * ProxyHealthTab — Real-time Proxy Health Monitor
  *
- * Supports two data sources:
- *   1. Linked profiles (from ops.profiles) — uses proxyPreflight.checkOnly()
- *   2. Proxy Pool (from D1 ops_proxy_pool) — uses resolve-ip directly when no profiles
+ * Supports two data sources (both use the same 5-step IP quality pipeline as profile-linker / Settings):
+ *   1. Linked profiles — NodeMaven getProxyConfig + resolveIP, then runQualityPipeline
+ *   2. Proxy Pool (D1) — Worker resolve-ip, then runQualityPipeline with pool geo hints
  */
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
+import { runQualityPipeline } from "../services/ip-quality-pipeline";
+import { postProxyResolveIp } from "../services/nodemaven";
 
 const REFRESH_INTERVAL = 5 * 60 * 1000;
 const SCORE_COLORS = { good: "hsl(142,71%,45%)", ok: "hsl(38,92%,50%)", bad: "hsl(0,84%,60%)" };
 function getScoreColor(s) { return s >= 90 ? SCORE_COLORS.good : s >= 70 ? SCORE_COLORS.ok : SCORE_COLORS.bad; }
 
-function resolveWorkerBase() {
-  const fromWindow = typeof window !== "undefined" ? window.__LP_API__ : "";
-  const fromEnv = typeof import.meta !== "undefined" && import.meta.env ? import.meta.env.VITE_API_BASE : "";
-  const DEFAULT = "https://lp-factory-api.misty-feather-556e.workers.dev/api";
-  const apiBase = String(fromWindow || fromEnv || DEFAULT).replace(/\/+$/, "");
-  return apiBase.endsWith("/api") ? apiBase.slice(0, -4) : apiBase;
+/** Map runQualityPipeline() output to Proxy Health row state */
+function pipelineResultToHealth(quality) {
+  const asnStep = quality.steps?.find((s) => s.name === "asn");
+  return {
+    ip: quality.ip,
+    score: quality.score,
+    verdict: quality.verdict,
+    checks: quality.steps || [],
+    geo: {
+      countryCode: quality.country || "",
+      region: asnStep?.region || "",
+      city: quality.city || "",
+      isp: quality.isp || "",
+      timezone: quality.timezone || "",
+    },
+    timestamp: Date.now(),
+  };
 }
 
 function TrustBadge({ score }) {
@@ -53,8 +66,8 @@ function ProfileRow({ profile, onCheck, onRotate, checking, isProxy }) {
       <div className="w-16 text-center">{h?.score != null ? <TrustBadge score={h.score} /> : <span className="text-[10px] text-[hsl(var(--muted-foreground))]">—</span>}</div>
       <div className="w-16 text-center text-[9px] text-[hsl(var(--muted-foreground))]">{lastCheck}</div>
       <div className="flex gap-1">
-        <button onClick={() => onCheck(profile)} disabled={checking} className="px-2 py-1 text-[9px] rounded border border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] disabled:opacity-40" title="Re-check">{checking ? "⏳" : "🔍"}</button>
-        {!isProxy && <button onClick={() => onRotate(profile)} disabled={checking} className="px-2 py-1 text-[9px] rounded border border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] disabled:opacity-40" title="Rotate IP">🔄</button>}
+        <button type="button" onClick={() => onCheck(profile)} disabled={checking} className="px-2 py-1 text-[9px] rounded border border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] disabled:opacity-40" title="Re-check">{checking ? "⏳" : "🔍"}</button>
+        {!isProxy && <button type="button" onClick={() => onRotate(profile)} disabled={checking} className="px-2 py-1 text-[9px] rounded border border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] disabled:opacity-40" title="Rotate IP">🔄</button>}
       </div>
     </div>
   );
@@ -95,7 +108,7 @@ function AlertBanner({ alerts, onDismiss }) {
         <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] bg-[rgba(239,68,68,0.06)] border border-[rgba(239,68,68,0.12)]">
           <span>⚠️</span><span className="flex-1">{a.message}</span>
           <span className="text-[9px] text-[hsl(var(--muted-foreground))]">{new Date(a.timestamp).toLocaleTimeString()}</span>
-          <button onClick={() => onDismiss(i)} className="text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]">✕</button>
+          <button type="button" onClick={() => onDismiss(i)} className="text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]">✕</button>
         </div>
       ))}
     </div>
@@ -114,6 +127,12 @@ export function ProxyHealthTab({ profiles: rawProfiles = [], settings = {}, stan
   const [poolProxies, setPoolProxies] = useState([]);
   const [loadingPool, setLoadingPool] = useState(false);
   const intervalRef = useRef(null);
+  const scanningRef = useRef(false);
+  /** Avoid putting profileHealth in checkProfile deps (was recreating scanAll every row → stuck “Scanning…”) */
+  const profileHealthRef = useRef({});
+  useEffect(() => {
+    profileHealthRef.current = profileHealth;
+  }, [profileHealth]);
 
   // Use profiles if available, otherwise fall back to Proxy Pool
   const useProxyPool = rawProfiles.length === 0;
@@ -163,47 +182,36 @@ export function ProxyHealthTab({ profiles: rawProfiles = [], settings = {}, stan
     return true;
   });
 
-  // Direct proxy check — calls resolve-ip endpoint directly for Proxy Pool items
+  // Proxy Pool — resolve exit IP via Worker, then same 5-step pipeline as Settings / profile-linker
   const checkProxyDirect = useCallback(async (proxy) => {
-    const workerBase = resolveWorkerBase();
-    const res = await fetch(`${workerBase}/api/proxy/resolve-ip`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const port = parseInt(String(proxy.port), 10) || 8080;
+    const r = await postProxyResolveIp(
+      {
         host: proxy.host,
-        port: parseInt(proxy.port) || 8080,
+        port,
         username: proxy.username,
         password: proxy.password,
-        protocol: "http",
-      }),
-      signal: AbortSignal.timeout(15000),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const ipData = await res.json();
+        protocol: proxy.protocol || "http",
+      },
+      settings
+    );
+    if (!r.ok) throw new Error(r.error);
+    const ipData = r.data;
     if (ipData.error) throw new Error(ipData.error);
 
-    // Simple scoring based on ip-api data
-    let score = 100;
-    const issues = [];
-    if (ipData.proxy) { score -= 30; issues.push("Detected as proxy"); }
-    if (ipData.hosting) { score -= 20; issues.push("Hosting/DC IP"); }
-    // Country match check
-    if (proxy.country && ipData.countryCode && proxy.country.toUpperCase() !== ipData.countryCode.toUpperCase()) {
-      score -= 15;
-      issues.push(`Country mismatch: expected ${proxy.country}, got ${ipData.countryCode}`);
-    }
-    score = Math.max(0, score);
-    const verdict = score >= 90 ? "APPROVE" : score >= 70 ? "WARNING" : "REJECT";
+    const ip = ipData.ip || ipData.query || "";
+    if (!ip) throw new Error("No IP returned from resolve-ip");
 
-    return {
-      ip: ipData.ip,
-      score,
-      verdict,
-      checks: issues.map(msg => ({ name: "Direct Check", pass: false, penalty: 0, issues: [msg] })),
-      geo: { countryCode: ipData.countryCode, region: ipData.region, city: ipData.city, isp: ipData.isp, timezone: ipData.timezone },
-      timestamp: Date.now(),
+    const cc = (proxy.country || "").trim().toUpperCase();
+    const expectedGeo = {
+      country: cc || "",
+      state: (proxy.state || "").trim(),
+      city: (proxy.city || "").replace(/_/g, " ").trim(),
     };
-  }, []);
+
+    const quality = await runQualityPipeline(ip, expectedGeo, { port }, settings);
+    return pipelineResultToHealth(quality);
+  }, [settings]);
 
   const checkProfile = useCallback(async (profile) => {
     const pid = profile.id;
@@ -212,32 +220,33 @@ export function ProxyHealthTab({ profiles: rawProfiles = [], settings = {}, stan
       let healthData;
 
       if (profile._isProxy) {
-        // Direct proxy check from Proxy Pool
         healthData = await checkProxyDirect(profile);
       } else {
-        // Linked profile — use proxyPreflight.checkOnly with correct signature (2 args, not 3)
-        const { proxyPreflight } = await import("../services/proxy-preflight.js");
-        const result = await proxyPreflight.checkOnly(
-          profile.mlProfileId || pid,
-          {
-            country: profile.proxyCountry || settings.defaultProxyCountry || "us",
-            state: profile.proxyState || "",
-            city: profile.proxyCity || "",
-            filter: settings.nmProxyFilter || "medium",
-          }
-        );
-        if (result.error) throw new Error(result.error);
-        healthData = {
-          ip: result.ip,
-          score: result.score,
-          verdict: result.verdict,
-          checks: result.checks || [],
-          geo: result.checks?.find(c => c.name === "Geo Verification")?.data || null,
-          timestamp: Date.now(),
+        const { nodemavenApi } = await import("../services/nodemaven.js");
+        const proxyConfig = nodemavenApi.getProxyConfig({
+          profileId: profile.mlProfileId || pid,
+          country: profile.proxyCountry || settings.defaultProxyCountry || "us",
+          region: profile.proxyState || "",
+          city: profile.proxyCity || "",
+          filter: settings.nmProxyFilter || "medium",
+        });
+        if (proxyConfig.error) throw new Error(proxyConfig.error);
+
+        const ipResult = await nodemavenApi.resolveIP(proxyConfig, settings);
+        if (ipResult.error) throw new Error(ipResult.error);
+        const ip = ipResult.ip || ipResult.query || "";
+        if (!ip) throw new Error("No IP resolved for profile");
+
+        const expectedGeo = {
+          country: (profile.proxyCountry || settings.defaultProxyCountry || "us").toUpperCase(),
+          state: profile.proxyState || "",
+          city: profile.proxyCity || "",
         };
+        const quality = await runQualityPipeline(ip, expectedGeo, { port: proxyConfig.port }, settings);
+        healthData = pipelineResultToHealth(quality);
       }
 
-      const prev = profileHealth[pid];
+      const prev = profileHealthRef.current[pid];
       if (prev?.ip && prev.ip !== healthData.ip) {
         setAlerts(a => [{ message: `IP changed for "${profile.name}": ${prev.ip} → ${healthData.ip}`, timestamp: Date.now(), profileId: pid }, ...a]);
       }
@@ -250,7 +259,7 @@ export function ProxyHealthTab({ profiles: rawProfiles = [], settings = {}, stan
     } finally {
       setChecking(prev => ({ ...prev, [pid]: false }));
     }
-  }, [profileHealth, settings, checkProxyDirect]);
+  }, [settings, checkProxyDirect]);
 
   const rotateProfile = useCallback(async (profile) => {
     const pid = profile.id;
@@ -268,23 +277,39 @@ export function ProxyHealthTab({ profiles: rawProfiles = [], settings = {}, stan
 
   const scanAll = useCallback(async () => {
     if (!profiles.length) return;
+    const list = profiles;
+    const total = list.length;
+    scanningRef.current = true;
     setScanning(true);
-    setScanProgress({ done: 0, total: profiles.length });
-    await Promise.allSettled(
-      profiles.map(p =>
-        checkProfile(p).finally(() =>
-          setScanProgress(prev => ({ ...prev, done: prev.done + 1 }))
-        )
-      )
-    );
-    setLastScan(Date.now());
-    setScanning(false);
-    setScanProgress({ done: 0, total: 0 });
+    setScanProgress({ done: 0, total });
+    let done = 0;
+    const bump = () => {
+      done += 1;
+      setScanProgress({ done, total });
+    };
+    const SCAN_CAP_MS = 240000;
+    try {
+      await Promise.race([
+        Promise.allSettled(list.map((p) => checkProfile(p).finally(bump))),
+        new Promise((r) => setTimeout(r, SCAN_CAP_MS)),
+      ]);
+      setLastScan(Date.now());
+    } finally {
+      scanningRef.current = false;
+      setScanning(false);
+      setScanProgress({ done: 0, total: 0 });
+    }
   }, [profiles, checkProfile]);
 
   useEffect(() => {
-    if (autoRefresh && profiles.length > 0) intervalRef.current = setInterval(scanAll, REFRESH_INTERVAL);
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+    if (!autoRefresh || profiles.length === 0) return undefined;
+    intervalRef.current = setInterval(() => {
+      if (scanningRef.current) return;
+      scanAll();
+    }, REFRESH_INTERVAL);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
   }, [autoRefresh, profiles.length, scanAll]);
 
   useEffect(() => {
@@ -325,7 +350,7 @@ export function ProxyHealthTab({ profiles: rawProfiles = [], settings = {}, stan
       <SummaryCards profiles={profiles} />
       <div className="flex gap-1.5 mb-3">
         {filterBtns.map(f => (
-          <button key={f.id} onClick={() => setFilter(f.id)} className={`px-2.5 py-1 rounded text-[10px] font-medium border transition-colors ${filter === f.id ? "border-[hsl(var(--accent))] bg-[hsl(var(--accent))]/10 text-[hsl(var(--foreground))]" : "border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]"}`}>{f.label} ({f.count})</button>
+          <button type="button" key={f.id} onClick={() => setFilter(f.id)} className={`px-2.5 py-1 rounded text-[10px] font-medium border transition-colors ${filter === f.id ? "border-[hsl(var(--accent))] bg-[hsl(var(--accent))]/10 text-[hsl(var(--foreground))]" : "border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]"}`}>{f.label} ({f.count})</button>
         ))}
       </div>
       <div className="flex items-center gap-3 px-3 py-1.5 text-[9px] text-[hsl(var(--muted-foreground))] uppercase tracking-wider font-medium border-b border-[hsl(var(--border))] mb-1">

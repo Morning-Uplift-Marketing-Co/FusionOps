@@ -169,7 +169,7 @@ async function preflightLaunch(profileId, folderId, opts = {}) {
 
       // 4a. Resolve IP
       emit("check", { name: "Resolving IP", status: "running" });
-      const ipResult = await nodemavenApi.resolveIP(proxyConfig);
+      const ipResult = await nodemavenApi.resolveIP(proxyConfig, getSettings());
 
       if (ipResult.error) {
         emit("check", { name: "Resolving IP", status: "fail", detail: ipResult.error });
@@ -316,7 +316,7 @@ async function checkOnly(profileId, opts = {}) {
 
   if (proxyConfig.error) return { error: proxyConfig.error };
 
-  const ipResult = await nodemavenApi.resolveIP(proxyConfig);
+  const ipResult = await nodemavenApi.resolveIP(proxyConfig, getSettings());
   if (ipResult.error) return { error: ipResult.error };
 
   const ip = ipResult.ip || ipResult.query;

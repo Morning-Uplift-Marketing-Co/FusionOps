@@ -4,7 +4,7 @@
  * Validates proxy IPs before they are used with Multilogin profiles.
  *
  * Steps:
- *   1. Latency Test      — TCP round-trip < 2000ms
+ *   1. Latency Test      — quick ip-api metadata RTT for exit IP (not Worker/proxy hop)
  *   2. ASN/ISP Check     — IPinfo: reject hosting ASNs, accept residential
  *   3. Fraud Reputation  — Scamalytics: fraud score < 40
  *   4. Proxy/VPN Detect  — IP2Location: not proxy, not VPN
@@ -20,7 +20,7 @@
 
 /* ────────────────── Settings ────────────────── */
 
-function getSettings() {
+function readStoredSettings() {
   try {
     const host = typeof window !== "undefined" ? `${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}` : "";
     const namespaced = host ? localStorage.getItem(`lpf2:${host}:settings`) : null;
@@ -32,12 +32,10 @@ function getSettings() {
   }
 }
 
-function resolveWorkerBase() {
-  const fromWindow = typeof window !== "undefined" ? window.__LP_API__ : "";
-  const fromEnv = typeof import.meta !== "undefined" && import.meta.env ? import.meta.env.VITE_API_BASE : "";
-  const DEFAULT = "https://lp-factory-api.misty-feather-556e.workers.dev/api";
-  const apiBase = String(fromWindow || fromEnv || DEFAULT).replace(/\/+$/, "");
-  return apiBase.endsWith("/api") ? apiBase.slice(0, -4) : apiBase;
+/** Merge form / preview keys over persisted settings (Settings page tests before Save). */
+export function effectiveQualitySettings(settingsMerge) {
+  const base = readStoredSettings();
+  return settingsMerge && typeof settingsMerge === "object" ? { ...base, ...settingsMerge } : base;
 }
 
 /* ────────────────── ASN Blacklist (Hosting/DC) ────────────────── */
@@ -113,32 +111,39 @@ export const COUNTRY_TIMEZONES = {
 
 /* ────────────────── Step 1: Latency Test ────────────────── */
 
-async function checkLatency(ip, port) {
+/**
+ * Lightweight RTT to public IP metadata (NOT via residential proxy).
+ * Never call Worker resolve-ip with exit `ip` as host — that was wrong and could stall health flows.
+ */
+async function checkLatency(ip) {
   const start = Date.now();
   try {
-    // Use fetch to a known endpoint through proxy worker
-    const workerBase = resolveWorkerBase();
-
-    const res = await fetch(`${workerBase}/api/proxy/resolve-ip`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ host: ip, port: parseInt(port) || 80, testOnly: true }),
+    const fields = "status,query";
+    const res = await fetch(`http://ip-api.com/json/${encodeURIComponent(ip)}?fields=${fields}`, {
       signal: AbortSignal.timeout(5000),
     });
-
-    const latency = Date.now() - start;
-    return { passed: latency < 2000, latencyMs: latency, warning: latency > 1000 };
+    const latencyMs = Date.now() - start;
+    if (!res.ok) {
+      return { passed: false, latencyMs, error: `ip-api HTTP ${res.status}` };
+    }
+    const data = await res.json();
+    const ok = data?.status === "success";
+    return {
+      passed: ok && latencyMs < 2000,
+      latencyMs,
+      warning: latencyMs > 1000,
+      source: "ip-api",
+    };
   } catch (e) {
-    const latency = Date.now() - start;
-    // If worker isn't available, estimate with direct fetch
-    return { passed: false, latencyMs: latency, error: e.message };
+    const latencyMs = Date.now() - start;
+    return { passed: false, latencyMs, error: e.message };
   }
 }
 
 /* ────────────────── Step 2: ASN/ISP Check (IPinfo) ────────────────── */
 
-async function checkASN(ip) {
-  const token = getSettings().ipinfoToken;
+async function checkASN(ip, cfg) {
+  const token = (cfg || readStoredSettings()).ipinfoToken;
 
   // Fallback to ip-api.com (free, no key needed)
   if (!token) {
@@ -146,31 +151,67 @@ async function checkASN(ip) {
   }
 
   try {
-    const res = await fetch(`https://ipinfo.io/${ip}?token=${token}`, {
+    let url = `https://ipinfo.io/${ip}?token=${token}`;
+    let headers = {};
+    
+    // Check if token looks like a bearer token (no "?token=" query string)
+    // Some ipinfo plans use Authorization headers or /lite/ paths
+    // e.g. "Bearer 952b15f293e618" or just "952b15f293e618"
+    const t = token.trim();
+    if (t.toLowerCase().startsWith('bearer ')) {
+      url = `https://api.ipinfo.io/lite/${ip}`;
+      headers = { "Authorization": t };
+    } else if (t.length > 20) {
+      // Very long tokens might be Bearer tokens without the prefix
+      // Let's stick to standard `?token=` but you can adapt if needed
+    }
+
+    const res = await fetch(url, {
+      headers,
       signal: AbortSignal.timeout(5000),
     });
+    
+    // If standard fails with 404/401 and it's a short token, try Lite API as fallback
+    if (!res.ok && !t.toLowerCase().startsWith('bearer ')) {
+      const fallbackUrl = `https://api.ipinfo.io/lite/${ip}`;
+      const fbRes = await fetch(fallbackUrl, {
+        headers: { "Authorization": `Bearer ${t}` },
+        signal: AbortSignal.timeout(5000),
+      }).catch(() => null);
+      
+      if (fbRes?.ok) {
+        const data = await fbRes.json();
+        return processIpinfoData(data, ip);
+      }
+      return checkASNFallback(ip);
+    }
+
     if (!res.ok) return checkASNFallback(ip);
 
     const data = await res.json();
-    const asn = data.org ? data.org.split(" ")[0] : "";
-    const isp = data.org ? data.org.replace(/^AS\d+\s*/, "") : "";
-    const isHosting = !!HOSTING_ASNS[asn];
-    const country = (data.country || "").toUpperCase();
-
-    return {
-      passed: !isHosting,
-      asn,
-      isp,
-      country,
-      city: data.city || "",
-      region: data.region || "",
-      timezone: data.timezone || "",
-      source: "IPinfo",
-      hostingName: isHosting ? HOSTING_ASNS[asn] : null,
-    };
+    return processIpinfoData(data, ip);
   } catch (e) {
     return checkASNFallback(ip);
   }
+}
+
+function processIpinfoData(data, ip) {
+  const asn = data.org ? data.org.split(" ")[0] : "";
+  const isp = data.org ? data.org.replace(/^AS\d+\s*/, "") : "";
+  const isHosting = !!HOSTING_ASNS[asn];
+  const country = (data.country || "").toUpperCase();
+
+  return {
+    passed: !isHosting,
+    asn,
+    isp,
+    country,
+    city: data.city || "",
+    region: data.region || "",
+    timezone: data.timezone || "",
+    source: "IPinfo",
+    hostingName: isHosting ? HOSTING_ASNS[asn] : null,
+  };
 }
 
 async function checkASNFallback(ip) {
@@ -205,36 +246,60 @@ async function checkASNFallback(ip) {
 
 /* ────────────────── Step 3: Fraud Reputation (Scamalytics) ────────────────── */
 
-async function checkFraud(ip) {
-  const key = getSettings().scamalyticsKey;
+async function checkFraud(ip, cfg) {
+  const key = (cfg || readStoredSettings()).scamalyticsKey;
 
   // Fallback to IPQS if available
   if (!key) {
-    return checkFraudFallback(ip);
+    return checkFraudFallback(ip, cfg);
   }
 
   try {
-    const res = await fetch(`https://api11.scamalytics.com/ip/${ip}?key=${key}`, {
+    // Scamalytics V3 URL structure (based on user config)
+    // Settings fields:
+    //   - scamalyticsKey: e.g. "a30b2f..."
+    //   - scamalyticsUsername: e.g. "api11.scamalytics.com/v3/69b454433fb5e" 
+    //     (or we construct it if they just enter the "69b..." ID)
+    
+    let url = "";
+    if (cfg.scamalyticsUsername && cfg.scamalyticsUsername.includes("/")) {
+      // If user pastes the full prefix e.g. api11.scamalytics.com/v3/69b454433fb5e
+      url = `https://${cfg.scamalyticsUsername.replace(/^https?:\/\//, "").replace(/\/$/, "")}/?key=${key}&ip=${ip}`;
+    } else if (cfg.scamalyticsUsername) {
+      // If user just pasted the ID e.g. 69b454433fb5e
+      url = `https://api11.scamalytics.com/v3/${cfg.scamalyticsUsername}/?key=${key}&ip=${ip}`;
+    } else {
+      // Legacy V2 fallback
+      url = `https://api11.scamalytics.com/ip/${ip}?key=${key}`;
+    }
+
+    const res = await fetch(url, {
       signal: AbortSignal.timeout(5000),
     });
-    if (!res.ok) return checkFraudFallback(ip);
+    if (!res.ok) {
+      console.warn(`[Scamalytics] API failed (${res.status}) on ${url}. Falling back to IPQS.`);
+      return checkFraudFallback(ip, cfg);
+    }
 
     const data = await res.json();
-    const score = data.score != null ? Number(data.score) : -1;
+    
+    // Parse V3 response vs Legacy V2 response
+    const score = data.scamalytics ? Number(data.scamalytics.scamalytics_score) : (data.score != null ? Number(data.score) : -1);
+    const riskLevel = data.scamalytics ? data.scamalytics.scamalytics_risk : (data.risk || "");
 
     return {
       passed: score >= 0 && score < 40,
       fraudScore: score,
-      riskLevel: data.risk || "",
+      riskLevel: riskLevel,
       source: "Scamalytics",
     };
   } catch (e) {
-    return checkFraudFallback(ip);
+    return checkFraudFallback(ip, cfg);
   }
 }
 
-async function checkFraudFallback(ip) {
-  const apiKey = getSettings().ipqsApiKey;
+async function checkFraudFallback(ip, cfg) {
+  const apiKey = (cfg || readStoredSettings()).ipqsApiKey;
   if (!apiKey) return { passed: true, skipped: true, source: "none", fraudScore: -1 };
 
   try {
@@ -259,19 +324,19 @@ async function checkFraudFallback(ip) {
 
 /* ────────────────── Step 4: Proxy/VPN Detection (IP2Location) ────────────────── */
 
-async function checkProxyVPN(ip) {
-  const key = getSettings().ip2locationKey;
+async function checkProxyVPN(ip, cfg) {
+  const key = (cfg || readStoredSettings()).ip2locationKey;
 
   // Fallback to IPQS
   if (!key) {
-    return checkProxyVPNFallback(ip);
+    return checkProxyVPNFallback(ip, cfg);
   }
 
   try {
     const res = await fetch(`https://api.ip2location.io/?key=${key}&ip=${ip}`, {
       signal: AbortSignal.timeout(5000),
     });
-    if (!res.ok) return checkProxyVPNFallback(ip);
+    if (!res.ok) return checkProxyVPNFallback(ip, cfg);
 
     const data = await res.json();
     const isProxy = data.is_proxy === true || data.is_proxy === "true";
@@ -285,12 +350,12 @@ async function checkProxyVPN(ip) {
       source: "IP2Location",
     };
   } catch (e) {
-    return checkProxyVPNFallback(ip);
+    return checkProxyVPNFallback(ip, cfg);
   }
 }
 
-async function checkProxyVPNFallback(ip) {
-  const apiKey = getSettings().ipqsApiKey;
+async function checkProxyVPNFallback(ip, cfg) {
+  const apiKey = (cfg || readStoredSettings()).ipqsApiKey;
   if (!apiKey) return { passed: true, skipped: true, source: "none" };
 
   try {
@@ -381,11 +446,12 @@ function checkTimezoneGeo(asnResult, expectedGeo) {
  * @param {object} [opts] - { port: "8080" }
  * @returns {object} { score, verdict, steps[] }
  */
-export async function runQualityPipeline(ip, expectedGeo = {}, opts = {}) {
+export async function runQualityPipeline(ip, expectedGeo = {}, opts = {}, settingsMerge) {
+  const cfg = effectiveQualitySettings(settingsMerge);
   const steps = [];
 
-  // Step 1: Latency
-  const latencyResult = await checkLatency(ip, opts.port || "80");
+  // Step 1: Latency (direct metadata fetch — proxy path already proved reachability in resolve-ip)
+  const latencyResult = await checkLatency(ip);
   steps.push({
     name: "latency",
     label: "Connectivity Test",
@@ -394,9 +460,9 @@ export async function runQualityPipeline(ip, expectedGeo = {}, opts = {}) {
 
   // Steps 2-4: Run in parallel
   const [asnResult, fraudResult, proxyResult] = await Promise.all([
-    checkASN(ip),
-    checkFraud(ip),
-    checkProxyVPN(ip),
+    checkASN(ip, cfg),
+    checkFraud(ip, cfg),
+    checkProxyVPN(ip, cfg),
   ]);
 
   steps.push({
@@ -509,18 +575,19 @@ function calculateScore(steps) {
 
 /* ────────────────── Quick Single-Check Helpers ────────────────── */
 
-export async function quickASNCheck(ip) {
-  return checkASN(ip);
+export async function quickASNCheck(ip, settingsMerge) {
+  return checkASN(ip, effectiveQualitySettings(settingsMerge));
 }
 
-export async function quickFraudCheck(ip) {
-  return checkFraud(ip);
+export async function quickFraudCheck(ip, settingsMerge) {
+  return checkFraud(ip, effectiveQualitySettings(settingsMerge));
 }
 
 /* ────────────────── Export ────────────────── */
 
 export const ipQualityPipeline = {
   runQualityPipeline,
+  effectiveQualitySettings,
   quickASNCheck,
   quickFraudCheck,
   checkTimezoneGeo,

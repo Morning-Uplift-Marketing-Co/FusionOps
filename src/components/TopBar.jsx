@@ -77,6 +77,7 @@ export function TopBar({ stats, settings, deploys, apiOk, neonOk, onReconnectNeo
                 <StatusIcon icon={DbIcon} ok={neonOk || apiOk} warn={neonWarn} label={neonLabel} />
                 {!neonOk && settings.neonUrl && (
                     <button
+                        type="button"
                         onClick={onReconnectNeon}
                         className="text-[10px] px-1.5 py-0.5 bg-[hsl(var(--primary))] text-white border-none rounded cursor-pointer transition-all hover:opacity-90"
                         title="Reconnect to Neon database"

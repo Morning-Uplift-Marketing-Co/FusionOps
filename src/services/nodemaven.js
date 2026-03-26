@@ -48,12 +48,104 @@ function getCredentials() {
   };
 }
 
-function resolveWorkerBase() {
+/** API Worker origin (no /api suffix) — used by proxy resolve-ip and quality checks. */
+export function resolveWorkerBase() {
   const fromWindow = typeof window !== "undefined" ? window.__LP_API__ : "";
   const fromEnv = typeof import.meta !== "undefined" && import.meta.env ? import.meta.env.VITE_API_BASE : "";
   const DEFAULT = "https://lp-factory-api.misty-feather-556e.workers.dev/api";
   const apiBase = String(fromWindow || fromEnv || DEFAULT).replace(/\/+$/, "");
   return apiBase.endsWith("/api") ? apiBase.slice(0, -4) : apiBase;
+}
+
+function normalizeProxyCheckBase(url) {
+  let b = String(url || "").trim().replace(/\/+$/, "");
+  if (!b) return "";
+  if (b.endsWith("/api")) b = b.slice(0, -4);
+  return b;
+}
+
+/**
+ * Ordered bases for POST /api/proxy/* — relay(s) first when Cloudflare Worker TCP fails (502).
+ * @param {object} [settingsMerge] - merged with localStorage settings (unsaved Settings form)
+ * @returns {string[]}
+ */
+export function collectResolveBases(settingsMerge) {
+  const s =
+    settingsMerge && typeof settingsMerge === "object" ? { ...getSettings(), ...settingsMerge } : getSettings();
+  const out = [];
+  const add = (u) => {
+    const b = normalizeProxyCheckBase(u);
+    if (b && !out.includes(b)) out.push(b);
+  };
+  add(s.proxyResolveRelayUrl);
+  const envRelay =
+    typeof import.meta !== "undefined" && import.meta.env?.VITE_PROXY_RESOLVE_RELAY
+      ? String(import.meta.env.VITE_PROXY_RESOLVE_RELAY)
+      : "";
+  add(envRelay);
+  add(resolveWorkerBase());
+  return out;
+}
+
+/** Prefer relay when set (see collectResolveBases). */
+export function resolveProxyCheckBase(settingsMerge) {
+  const bases = collectResolveBases(settingsMerge);
+  return bases[0] || resolveWorkerBase();
+}
+
+/**
+ * Parse POST /api/proxy/resolve-ip response (one body read).
+ * @returns {{ ok: true, data: object } | { ok: false, error: string }}
+ */
+export async function parseResolveIpWorkerResponse(res) {
+  const text = await res.text();
+  let body = {};
+  try {
+    body = text ? JSON.parse(text) : {};
+  } catch {
+    body = { error: text ? text.slice(0, 500) : `HTTP ${res.status}` };
+  }
+  const errMsg = (b) => {
+    let msg = typeof b.error === "string" ? b.error : `HTTP ${res.status}`;
+    if (b.hint) msg += `\n\n${b.hint}`;
+    if (b.docs) msg += `\n${b.docs}`;
+    if (b.attempted != null && b.attempted.host != null) {
+      msg += `\n(Worker → ${b.attempted.host}:${b.attempted.port})`;
+    }
+    return msg;
+  };
+  if (!res.ok) {
+    return { ok: false, error: errMsg(body) };
+  }
+  if (body.error) {
+    return { ok: false, error: errMsg(body) };
+  }
+  return { ok: true, data: body };
+}
+
+/**
+ * POST /api/proxy/resolve-ip on each base until one succeeds (same JSON contract as Worker).
+ * @param {object} body - { host, port, username, password, protocol? }
+ */
+export async function postProxyResolveIp(body, settingsMerge) {
+  const bases = collectResolveBases(settingsMerge);
+  let lastErr = "";
+  for (const base of bases) {
+    try {
+      const res = await fetch(`${base}/api/proxy/resolve-ip`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(25000),
+      });
+      const parsed = await parseResolveIpWorkerResponse(res);
+      if (parsed.ok) return { ok: true, data: parsed.data };
+      lastErr = parsed.error;
+    } catch (e) {
+      lastErr = e.message || String(e);
+    }
+  }
+  return { ok: false, error: lastErr || "All resolve endpoints failed" };
 }
 
 /* ────────────────── Session ID Generator ────────────────── */
@@ -175,39 +267,27 @@ function rotateProxy(opts = {}) {
 
 /**
  * Resolve the actual IP address assigned by the proxy.
- * Makes a request through the Worker proxy endpoint to avoid CORS.
+ * Tries optional relay (Settings / VITE_PROXY_RESOLVE_RELAY) then Cloudflare Worker.
  *
  * @param {object} proxyConfig - from getProxyConfig()
+ * @param {object} [settingsMerge] - optional unsaved Settings fields
  * @returns {object} { ip, country, city, isp, org, ... } or { error }
  */
-async function resolveIP(proxyConfig) {
+async function resolveIP(proxyConfig, settingsMerge) {
   if (proxyConfig.error) return proxyConfig;
 
-  try {
-    // Route through our Worker which will connect via the proxy
-    const workerBase = resolveWorkerBase();
-
-    const res = await fetch(`${workerBase}/api/proxy/resolve-ip`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        host: proxyConfig.host,
-        port: proxyConfig.port,
-        username: proxyConfig.username,
-        password: proxyConfig.password,
-        protocol: proxyConfig.protocol,
-      }),
-      signal: AbortSignal.timeout(10000),
-    });
-
-    if (!res.ok) {
-      return { error: `Failed to resolve IP: HTTP ${res.status}` };
-    }
-
-    return res.json();
-  } catch (e) {
-    return { error: `IP resolution failed: ${e.message}` };
-  }
+  const r = await postProxyResolveIp(
+    {
+      host: proxyConfig.host,
+      port: proxyConfig.port,
+      username: proxyConfig.username,
+      password: proxyConfig.password,
+      protocol: proxyConfig.protocol,
+    },
+    settingsMerge
+  );
+  if (r.ok) return r.data;
+  return { error: `Failed to resolve IP: ${r.error}` };
 }
 
 /* ────────────────── Format for Multilogin Profile ────────────────── */
@@ -236,8 +316,9 @@ function toMultiloginFormat(proxyConfig) {
 /**
  * Quick test: generate a proxy config and try to resolve IP.
  * Used by Settings UI to verify credentials.
+ * @param {object} [settingsMerge] - e.g. { proxyResolveRelayUrl } before Save
  */
-async function testConnection(opts = {}) {
+async function testConnection(opts = {}, settingsMerge) {
   const config = getProxyConfig({
     profileId: "test",
     country: opts.country || "us",
@@ -246,11 +327,12 @@ async function testConnection(opts = {}) {
 
   if (config.error) return config;
 
-  const ipResult = await resolveIP(config);
+  const ipResult = await resolveIP(config, settingsMerge);
   if (ipResult.error) return { error: ipResult.error, config };
 
   return {
     success: true,
+    ok: true,
     ip: ipResult.ip || ipResult.query,
     country: ipResult.country,
     city: ipResult.city,
@@ -269,6 +351,10 @@ export const nodemavenApi = {
   toMultiloginFormat,
   buildUsername,
   generateSessionId,
+  resolveWorkerBase,
+  collectResolveBases,
+  resolveProxyCheckBase,
+  postProxyResolveIp,
 
   // Network
   resolveIP,
