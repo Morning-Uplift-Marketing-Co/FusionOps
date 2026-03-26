@@ -2162,7 +2162,7 @@ export function OpsCenter({ data, add, del, upd, settings }) {
 
                         {(!Array.isArray(mlProfiles) || mlProfiles.length === 0)
                             ? <div style={S.emptyState}>{mlProfiles?.error || 'No profiles found. Click "Sync from MLX" or create a new profile.'}</div>
-                            : mlProfiles.map(p => {
+                            : (Array.isArray(mlProfiles) ? mlProfiles : []).map(p => {
                                 const pid = p.uuid || p.id;
                                 const isRunning = p.status === "running" || p.status === "started";
                                 const proxyObj = p.parameters?.proxy || (typeof p.proxy === "object" ? p.proxy : null);
