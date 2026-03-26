@@ -7,6 +7,14 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { LS } from "../utils";
 import { generateProxyPoolRowsFromSettings, getAvailableProviders } from "../services/proxy-providers.js";
+import { QUALITY_TRUST_APPROVE_THRESHOLD } from "../services/ip-quality-pipeline.js";
+
+function proxyFailsQualityScore(p) {
+    if (p.status === "rejected") return true;
+    const t = Number(p.trust_score);
+    if (Number.isFinite(t) && t >= 0 && t < QUALITY_TRUST_APPROVE_THRESHOLD) return true;
+    return false;
+}
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Button } from "./ui/button";
@@ -149,6 +157,7 @@ export function ProxyListTab({ accounts = [], profiles = [] }) {
     const [pullFilter, setPullFilter] = useState("medium");
     const [pulling, setPulling] = useState(false);
     const [pullError, setPullError] = useState(null);
+    const [bulkDeletingScore, setBulkDeletingScore] = useState(false);
     const [filter, setFilter] = useState("all");
     const [scanning, setScanning] = useState(null); // null | "all" | proxy_id
     const [scanProgress, setScanProgress] = useState({ done: 0, total: 0 });
@@ -213,6 +222,44 @@ export function ProxyListTab({ accounts = [], profiles = [] }) {
             console.warn("[ProxyPool] deleteProxy failed:", result?.error || "D1 unavailable");
         }
         setProxies(prev => prev.filter(p => p.id !== id));
+    };
+
+    /** Remove proxies that failed quality scan (rejected or trust < threshold). */
+    const purgeFailingByScore = async (includeAssigned) => {
+        const failing = proxies.filter(proxyFailsQualityScore);
+        const targets = includeAssigned ? failing : failing.filter((p) => !p.assigned_to);
+        if (targets.length === 0) return;
+
+        const assignedInTargets = targets.filter((p) => p.assigned_to).length;
+        if (!includeAssigned && failing.length > targets.length) {
+            const skipped = failing.length - targets.length;
+            if (!window.confirm(
+                `ลบ ${targets.length} พร็อกซีที่ไม่ผ่านเกณฑ์ (rejected หรือ Trust < ${QUALITY_TRUST_APPROVE_THRESHOLD}) — เฉพาะที่ยังไม่ assign\n` +
+                `(ข้าม ${skipped} รายการที่ assign อยู่ — ใช้ปุ่ม "รวมที่ assign" ถ้าต้องการลบด้วย)`
+            )) return;
+        } else if (includeAssigned && assignedInTargets > 0) {
+            if (!window.confirm(
+                `ลบ ${targets.length} พร็อกซีที่ไม่ผ่านเกณฑ์ รวม ${assignedInTargets} รายการที่ผูก profile อยู่ — แน่ใจหรือไม่?`
+            )) return;
+        } else if (!window.confirm(
+            `ลบ ${targets.length} พร็อกซีที่ไม่ผ่านเกณฑ์ (rejected หรือ Trust < ${QUALITY_TRUST_APPROVE_THRESHOLD})?`
+        )) return;
+
+        setBulkDeletingScore(true);
+        const removed = [];
+        try {
+            for (const p of targets) {
+                const result = await d1Execute("DELETE FROM ops_proxy_pool WHERE id = ?", [p.id]);
+                if (result?.success) removed.push(p.id);
+            }
+            if (removed.length < targets.length) {
+                console.warn("[ProxyPool] purgeFailingByScore: some D1 deletes failed");
+            }
+            const rm = new Set(removed);
+            setProxies((prev) => prev.filter((p) => !rm.has(p.id)));
+        } finally {
+            setBulkDeletingScore(false);
+        }
     };
 
     /* ── Add / Update ── */
@@ -472,6 +519,10 @@ export function ProxyListTab({ accounts = [], profiles = [] }) {
     const lsSettings = LS.get("settings") || {};
     const pullConfiguredProviders = getAvailableProviders(lsSettings).filter((p) => p.configured);
 
+    const failingProxies = proxies.filter(proxyFailsQualityScore);
+    const failingUnassignedCount = failingProxies.filter((p) => !p.assigned_to).length;
+    const failingAssignedOnlyCount = failingProxies.filter((p) => !!p.assigned_to).length;
+
     return (
         <div className="space-y-4">
             {/* Header */}
@@ -490,6 +541,28 @@ export function ProxyListTab({ accounts = [], profiles = [] }) {
                     ) : (
                         <Button variant="outline" size="sm" onClick={scanAll} disabled={!!scanning || counts.pending === 0} className="text-xs h-7">
                             Scan All ({counts.pending})
+                        </Button>
+                    )}
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => purgeFailingByScore(false)}
+                        disabled={!!scanning || bulkDeletingScore || failingUnassignedCount === 0}
+                        className="text-xs h-7 text-red-400 border-red-500/30 hover:bg-red-500/10"
+                        title={`ลบรายการที่ status=rejected หรือ Trust ต่ำกว่า ${QUALITY_TRUST_APPROVE_THRESHOLD} (ยังไม่ assign)`}
+                    >
+                        {bulkDeletingScore ? "…" : `ลบไม่ผ่าน (${failingUnassignedCount})`}
+                    </Button>
+                    {failingAssignedOnlyCount > 0 && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => purgeFailingByScore(true)}
+                            disabled={!!scanning || bulkDeletingScore}
+                            className="text-xs h-7 text-amber-500/90 border-amber-500/35 hover:bg-amber-500/10"
+                            title="ลบทุกรายการที่ไม่ผ่านเกณฑ์ รวมที่ assign แล้ว"
+                        >
+                            ลบรวม assign ({failingProxies.length})
                         </Button>
                     )}
                     <Button variant="outline" size="sm" onClick={() => { setShowFromSettings((v) => !v); setPullError(null); }} className="text-xs h-7">
