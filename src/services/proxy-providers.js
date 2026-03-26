@@ -295,14 +295,65 @@ export function toMultiloginFormat(proxyConfig) {
 
 /**
  * Get list of available providers (those with configured credentials).
+ * @param {object} [settingsOverride] - merged with persisted settings (e.g. LS.get("settings"))
  */
-export function getAvailableProviders() {
-  return Object.entries(PROVIDERS)
-    .map(([id, p]) => ({
-      id,
-      name: p.name,
-      configured: !!getProviderCredentials(id),
-    }));
+export function getAvailableProviders(settingsOverride) {
+  const s = mergedProxySettings(settingsOverride);
+  return Object.entries(PROVIDERS).map(([id, p]) => ({
+    id,
+    name: p.name,
+    configured: !!getProviderCredentials(id, s),
+  }));
+}
+
+const MAX_POOL_GENERATE = 50;
+
+/**
+ * Build many distinct sticky-session proxy rows from saved provider credentials (no vendor "list" API —
+ * residential gateways use one host:port + rotating username sessions).
+ *
+ * @param {string} providerId
+ * @param {number} count - clamped 1..50
+ * @param {{ country?: string, state?: string, city?: string, filter?: string, protocol?: string }} [geo]
+ * @param {object} [settingsOverride]
+ * @returns {{ rows: Array<{host:string,port:string,username:string,password:string,provider:string,country:string,state:string,city:string}> } | { error: string, rows: [] }}
+ */
+export function generateProxyPoolRowsFromSettings(providerId, count, geo = {}, settingsOverride) {
+  const n = Math.min(MAX_POOL_GENERATE, Math.max(1, parseInt(String(count), 10) || 10));
+  const stored = mergedProxySettings(settingsOverride);
+  const filter = geo.filter || stored.nmProxyFilter || "medium";
+  const rows = [];
+  for (let i = 0; i < n; i++) {
+    const profileKey = `pool_${Date.now()}_${i}_${Math.random().toString(36).slice(2, 9)}`;
+    const cfg = getProxyConfig(
+      providerId,
+      {
+        profileId: profileKey,
+        geo: {
+          country: geo.country || "",
+          state: geo.state || "",
+          city: geo.city || "",
+        },
+        filter,
+        protocol: geo.protocol || "http",
+      },
+      settingsOverride
+    );
+    if (cfg.error) {
+      return { error: cfg.error, rows: [] };
+    }
+    rows.push({
+      host: cfg.host,
+      port: String(cfg.port),
+      username: cfg.username,
+      password: cfg.password,
+      provider: providerId,
+      country: (geo.country || "").toUpperCase(),
+      state: geo.state || "",
+      city: geo.city || "",
+    });
+  }
+  return { rows };
 }
 
 /**
@@ -323,5 +374,6 @@ export const proxyProviders = {
   getAvailableProviders,
   getPrimaryProvider,
   generateSessionId,
+  generateProxyPoolRowsFromSettings,
   PROVIDERS,
 };
