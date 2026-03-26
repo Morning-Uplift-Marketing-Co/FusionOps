@@ -7,8 +7,9 @@
  * Default base: http://127.0.0.1:50325 or http://local.adspower.net:50325/
  * In Vite dev, requests go via same-origin `/adspower-local` → proxy to 50325 (see astro.config.mjs).
  *
- * On HTTPS production (e.g. Pages), the browser calls `POST /api/adspower/proxy` on the Worker; the Worker
- * reads `adspowerLocalBase` + `adspowerApiKey` from D1 and forwards to the user’s HTTPS tunnel (ngrok, etc.).
+ * On HTTPS production (e.g. Pages), or on http://localhost when Base URL is an https:// tunnel, the browser
+ * calls `POST /api/adspower/proxy`; the Worker forwards using `adspowerLocalBase` / `adspowerApiKey` from the
+ * request body (form) when provided, otherwise from D1 — avoids CORS preflight to ngrok (OPTIONS 403).
  *
  * Paid AdsPower + Local API enabled. With security on: Authorization: Bearer <api_key>.
  */
@@ -17,27 +18,37 @@ import { api } from "./api.js";
 
 const FALLBACK_LOCAL = "http://127.0.0.1:50325";
 
-/**
- * When true, AdsPower traffic goes through the API Worker (avoids mixed content + tunnel CORS).
- * Do not rely on import.meta.env.DEV alone — some hosted builds have left DEV true in client chunks;
- * use hostname so https://*.pages.dev always uses the relay.
- */
-export function adspowerUsesWorkerProxy() {
-  if (typeof window === "undefined") return false;
-  if (window.location?.protocol !== "https:") return false;
-  const h = String(window.location.hostname || "").toLowerCase();
+function isLocalDevHost() {
+  const h = String(typeof window !== "undefined" ? window.location?.hostname || "" : "").toLowerCase();
   if (
     h === "localhost" ||
     h === "127.0.0.1" ||
     h === "[::1]" ||
-    h.endsWith(".local")
+    h.endsWith(".local") ||
+    /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(h)
   ) {
-    return false;
+    return true;
   }
-  if (/^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(h)) {
-    return false;
+  return false;
+}
+
+/**
+ * When true, AdsPower traffic goes through the API Worker (avoids mixed content + tunnel CORS).
+ * - Public HTTPS (e.g. *.pages.dev): always relay.
+ * - http://localhost with Base URL https://… (ngrok): relay so browser does not OPTIONS to ngrok.
+ */
+export function adspowerUsesWorkerProxy(settings = {}) {
+  if (typeof window === "undefined") return false;
+  const tunnel = String(settings?.adspowerLocalBase || "").trim();
+  const useHttpsTunnel = /^https:\/\//i.test(tunnel);
+
+  if (window.location?.protocol === "https:" && !isLocalDevHost()) {
+    return true;
   }
-  return true;
+  if (window.location?.protocol === "http:" && isLocalDevHost() && useHttpsTunnel) {
+    return true;
+  }
+  return false;
 }
 
 /**
@@ -71,7 +82,7 @@ function adsPowerHttpsLocalHint(settings, existingMsg = "") {
   return " — แดชบอร์ดเป็น HTTPS จึงเรียก Local API แบบ HTTP ไม่ได้: ตั้ง Base URL เป็น HTTPS tunnel ไปพอร์ต 50325 (Settings → Automation) หรือใช้ `npm run dev` บนเครื่องเดียวกับ AdsPower";
 }
 
-async function adsPowerFetchViaWorker(path, init = {}) {
+async function adsPowerFetchViaWorker(settings, path, init = {}) {
   const p = path.startsWith("/") ? path : `/${path}`;
   const method = String(init.method || "GET").toUpperCase();
   let bodyObj;
@@ -83,6 +94,10 @@ async function adsPowerFetchViaWorker(path, init = {}) {
     }
   }
   const payload = { path: p, method, ...(bodyObj !== undefined ? { body: bodyObj } : {}) };
+  const tb = String(settings?.adspowerLocalBase || "").trim();
+  const tk = String(settings?.adspowerApiKey || "").trim();
+  if (tb) payload.adspowerLocalBase = tb;
+  if (tk) payload.adspowerApiKey = tk;
   const data = await api.post("/api/adspower/proxy", payload);
   if (data && typeof data === "object" && data.error && data.code === undefined) {
     return {
@@ -99,8 +114,8 @@ async function adsPowerFetchViaWorker(path, init = {}) {
  * @param {RequestInit} [init]
  */
 export async function adsPowerFetch(settings, path, init = {}) {
-  if (adspowerUsesWorkerProxy()) {
-    return adsPowerFetchViaWorker(path, init);
+  if (adspowerUsesWorkerProxy(settings)) {
+    return adsPowerFetchViaWorker(settings, path, init);
   }
 
   const base = resolveAdsPowerBaseUrl(settings);
@@ -128,7 +143,9 @@ export async function adsPowerFetch(settings, path, init = {}) {
         code: -1,
         msg:
           msg.includes("Failed to fetch") || msg === "Load failed"
-            ? "เชื่อมต่อ Local API ไม่ได้ (มักเกิดจากหน้า HTTPS ที่บล็อก http://127.0.0.1 — ตั้ง Base URL เป็น HTTPS tunnel ใน Settings → Automation)"
+            ? /^https:\/\//i.test(String(settings?.adspowerLocalBase || "").trim())
+              ? "เชื่อมต่อไม่ได้ — จาก localhost + ngrok ควรใช้ Worker relay อัตโนมัติแล้ว; ตรวจ VITE_API_BASE ชี้ Worker และว่า Worker deploy แล้ว หรือเว้น Base URL ว่างแล้วใช้ /adspower-local บนเครื่องเดียวกับ AdsPower"
+              : "เชื่อมต่อ Local API ไม่ได้ (มักเกิดจากหน้า HTTPS ที่บล็อก http://127.0.0.1 — ตั้ง Base URL เป็น HTTPS tunnel ใน Settings → Automation)"
             : msg,
       },
     };
