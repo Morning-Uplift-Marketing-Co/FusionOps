@@ -34,6 +34,7 @@ import { AccountVerificationBanner } from "./components/ui/AccountVerificationBa
 import { ApiHealthCheck } from "./components/ApiHealthCheck";
 import { ProxyHealthTab } from "./components/ProxyHealthTab";
 import { ProfileManager } from "./components/ProfileManager";
+import { AdsPowerProfileManager } from "./components/AdsPowerProfileManager";
 import { TemplateManager } from "./components/TemplateManager";
 import { LoginPage } from "./components/LoginPage";
 import { KpiDashboard } from "./components/KpiDashboard";
@@ -1082,7 +1083,8 @@ useEffect(() => {
           {page === "account-map" && <AccountMap apiOk={apiOk} neonOk={neonOk} ops={ops} settings={settings} />}
           {page === "sites" && <Sites sites={sites} del={delSite} notify={notify} startCreate={startCreate} startDuplicate={startDuplicate} settings={settings} addDeploy={addDeploy} ops={ops} updateSite={updateSite} />}
           {page === "create" && wizData && <Wizard config={wizData} setConfig={setWizData} addSite={addSite} addDeploy={addDeploy} setPage={setPage} settings={settings} notify={notify} cfAccounts={ops.cfAccounts} registrarAccounts={ops.registrarAccounts} />}
-          {page === "profile-manager" && <ProfileManager settings={settings} ops={ops} />}
+          {page === "profile-manager" && <ProfileManager settings={settings} ops={{ ...ops, notify }} />}
+          {page === "adspower-profiles" && <AdsPowerProfileManager settings={settings} ops={{ ...ops, notify }} />}
           {page === "ops" && <OpsCenter data={ops} add={opsAdd} del={opsDel} upd={opsUpd} settings={settings} />}
           {page === "deploys" && <DeployHistory deploys={deploys} />}
           {page === "tracking" && <TrackingDashboard settings={settings} sites={sites} />}

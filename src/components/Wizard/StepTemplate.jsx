@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Trash2, Camera } from "lucide-react";
 import { THEME as T } from "../../constants";
 import { Field } from "../ui/field";
@@ -6,6 +6,50 @@ import { getTemplateById, DEFAULT_TEMPLATE_ID, getAllTemplates, getTemplateDiagn
 import { getAllTemplatesAsync, deleteTemplate } from "../../utils/template-registry";
 import { api } from "../../services/api";
 import { buildThumbnailPreviewDocument } from "../../utils/template-thumbnail-preview.js";
+import { getTemplateFileContent } from "../../utils/template-analyzer.js";
+
+/** Live card preview from built `dist/index.html` (no PNG / no Gen). */
+function TemplateCardDistPreview({ files, dbId, brand }) {
+    const doc = useMemo(() => {
+        try {
+            if (!files || !dbId || !getTemplateFileContent(files, "dist/index.html")) return "";
+            return buildThumbnailPreviewDocument(files, { dbId, brand: brand || "Preview" });
+        } catch {
+            return "";
+        }
+    }, [files, dbId, brand]);
+
+    if (!doc) return null;
+
+    return (
+        <div
+            style={{
+                position: "absolute",
+                inset: 0,
+                overflow: "hidden",
+                background: "#0f1419",
+            }}
+        >
+            <iframe
+                title=""
+                srcDoc={doc}
+                sandbox="allow-scripts allow-same-origin"
+                style={{
+                    position: "absolute",
+                    top: 0,
+                    left: "50%",
+                    width: 390,
+                    height: 844,
+                    marginLeft: -195,
+                    border: "none",
+                    transform: "scale(0.22)",
+                    transformOrigin: "top center",
+                    pointerEvents: "none",
+                }}
+            />
+        </div>
+    );
+}
 
 const CATEGORIES = [
     { id: "all", label: "All" },
@@ -101,7 +145,15 @@ export function StepTemplate({ c, u, notify }) {
         const res = await api.post(`/templates/${tpl.dbId}/generate-thumb`, { previewHtml });
         setGeneratingThumb(null);
         if (res.error) {
-            notify?.(String(res.error), "warning");
+            const hint = res.detail ? ` ${String(res.detail).slice(0, 160)}` : "";
+            const msg = `${String(res.error)}${hint}`.trim();
+            notify?.(
+                /unauthorized/i.test(msg)
+                    ? `${msg} — ลองเปิดแอปจากโดเมนที่อนุญาต หรือ deploy Worker + ตั้ง API_SECRET`
+                    : msg,
+                "warning",
+            );
+            console.warn("[StepTemplate] generate-thumb failed:", res);
             return;
         }
         notify?.("บันทึก thumbnail แล้ว", "success");
@@ -121,7 +173,15 @@ export function StepTemplate({ c, u, notify }) {
         const res = await api.postForm(`/templates/${tpl.dbId}/upload-thumb`, fd);
         setUploadingThumb(null);
         if (res.error) {
-            notify?.(String(res.error), "warning");
+            const hint = res.detail ? ` ${String(res.detail).slice(0, 160)}` : "";
+            const msg = `${String(res.error)}${hint}`.trim();
+            notify?.(
+                /unauthorized/i.test(msg)
+                    ? `${msg} — ลองเปิดแอปจากโดเมนที่อนุญาต หรือ deploy Worker`
+                    : msg,
+                "warning",
+            );
+            console.warn("[StepTemplate] upload-thumb failed:", res);
             return;
         }
         notify?.("อัปโหลด thumbnail แล้ว", "success");
@@ -160,7 +220,7 @@ export function StepTemplate({ c, u, notify }) {
                 <div style={{ fontSize: 28, marginBottom: 8 }}>🧩</div>
                 <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Template Selection</h2>
                 <p style={{ fontSize: 12, color: T.muted }}>
-                    Choose a template. Custom: <strong>Gen</strong> loads full template from API and screenshots the same preview document as Template Manager; <strong>Up</strong> uploads your own image.
+                    Choose a template. Custom: if the template includes <strong>dist/index.html</strong>, the card shows a <strong>live preview from the build</strong> (no Gen needed). <strong>Gen</strong> saves a PNG thumbnail on the server (Template Manager parity); <strong>Up</strong> uploads your own image.
                 </p>
             </div>
 
@@ -208,6 +268,13 @@ export function StepTemplate({ c, u, notify }) {
                     const previewDark = tpl._cat === 'pet';
                     const previewIcon = tpl._cat === 'pet' ? "🐾" : tpl._cat === 'custom' ? "⚡" : "💰";
                     const thumbSrc = buildTemplateThumbnailUrl(tpl);
+                    const hasDistIndex =
+                        isCustom &&
+                        tpl.dbId &&
+                        tpl.files &&
+                        typeof tpl.files === "object" &&
+                        !!getTemplateFileContent(tpl.files, "dist/index.html");
+                    const showDistLive = hasDistIndex && !thumbSrc;
 
                     return (
                         <div key={tpl.id} style={{ position: 'relative' }}>
@@ -228,7 +295,7 @@ export function StepTemplate({ c, u, notify }) {
                                 {/* Thumbnail Preview */}
                                 <div style={{
                                     height: 90,
-                                    background: thumbSrc ? "#0f1419" : previewBg,
+                                    background: thumbSrc || showDistLive ? "#0f1419" : previewBg,
                                     display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                                     gap: 2, position: "relative", borderBottom: `1px solid ${T.border}`,
                                     overflow: "hidden",
@@ -240,6 +307,8 @@ export function StepTemplate({ c, u, notify }) {
                                             style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }}
                                             onError={(e) => { e.target.style.display = "none"; }}
                                         />
+                                    ) : showDistLive ? (
+                                        <TemplateCardDistPreview files={tpl.files} dbId={tpl.dbId} brand={tpl.name} />
                                     ) : (
                                         <>
                                             <div style={{ fontSize: 22 }}>{previewIcon}</div>

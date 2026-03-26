@@ -33,6 +33,10 @@ invocation_logs = true
 binding = "THUMBS"
 bucket_name = "lp-factory-thumbs"
 
+# When Cloudflare Worker cannot open TCP to residential proxy gateways (502), forward resolve-ip /
+# dns-check / latency-check to an HTTPS relay you run (e.g. `npm run proxy-relay` on a VPS).
+# Example: PROXY_RESOLVE_RELAY_URL = "https://relay.yourdomain.com"  (no trailing /api)
+#
 # Optional Worker var: max bytes for POST /api/templates JSON body (default 41943040 = 40 MiB).
 # Set in dashboard: Workers → lp-factory-api → Settings → Variables, or wrangler secret/vars.
 # TEMPLATE_POST_MAX_BYTES = "52428800"

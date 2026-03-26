@@ -1,0 +1,67 @@
+ทำไงต่อ
+
+merge แบบ PR บน GitHub 
+
+push ขึ้น GitHub ให้แล้ว (feat/goldrush-zip-input → 01d1b12)
+
+เปิด PR แบบ GitHub
+เปิดลิงก์นี้ (จะพาไปหน้าเปรียบเทียบกับ main):
+
+https://github.com/Morning-Uplift-Marketing-Co/FusionOps/compare/main...feat/goldrush-zip-input?expand=1
+กด Create pull request
+
+ตั้งหัวข้อ / คำอธิบายสั้นๆ เช่น
+
+Title: feat: tracking pixel, dashboards, Voluum postback (merge main)
+Body: สรุปว่ามีอะไรบ้าง (pixel /e, LeadsGate hooks, realtime UI, migration D1, merge main แล้ว, OpenClaw skills + scripts/lib)
+รอ CI (ถ้า repo มี) ให้เขียว แล้วกด Merge pull request
+
+เลือก Create a merge commit หรือ Squash ตามมาตรฐานทีม
+หลัง merge แล้ว
+
+บนเครื่องคุณ: git checkout main → git pull origin main
+deploy api-worker / pixel-worker ถ้ายังไม่ได้ deploy จาก main
+GitHub แจ้ง Dependabot บน default branch — เป็นของ repo ทั้งหมด ไม่เกี่ยวกับ PR นี้โดยตรง
+
+ตอนนี้บนเครื่ื่องเหมือน Main หรือยัง 
+
+สรุปสั้นๆ
+ยังไม่เหมือน main บนเครื่อง — ถ้าหมายถึง local branch ชื่อ main
+
+อ้างอิง	commit ล่าสุด
+main บนเครื่อง (ยังไม่ pull)	81041fd — Merge release v3.6.0 (เก่า)
+origin/main บน GitHub	6becd38 — Merge PR #52 (feat/goldrush-zip-input)
+สาขาที่ checkout อยู่	feat/goldrush-zip-input → 01d1b12
+โค้ดใน commit 01d1b12 อยู่ในประวัติของ origin/main แล้ว (merge เข้า main บน GitHub แล้ว)
+
+ให้บนเครื่องตรงกับ main จริงๆ
+cd h:\DEV\projects\ppc_project\ppc-claude-web-V1
+git checkout main
+git pull origin main
+หลัง pull แล้ว local main จะไปที่ 6becd38 (เท่า GitHub)
+
+ถ้าจะเลิกใช้ feature branch หลัง merge แล้ว:
+
+git branch -d feat/goldrush-zip-input
+git fetch origin --prune
+ทำไมบนเครื่องผมกลายเป็น version เก่า
+
+บนเครื่อง “กลายเป็นเวอร์ชันเก่า” เพราะ Git อัปเดต branch บนเครื่องให้เองไม่ได้ — มันจำแค่ว่าแต่ละ branch ชี้ไปที่ commit ไหน ตอนที่คุณ checkout / pull / merge ครั้งล่าสุด
+
+สิ่งที่มักเกิดขึ้นคือ:
+
+main บน GitHub (origin/main) ไปข้างหน้าแล้ว
+เช่น มีคน merge PR #52 → origin/main ไปที่ commit ใหม่ (6becd38 ตอนนั้น)
+
+main บนเครื่องยังไม่ได้ pull
+เลยยังชี้อยู่ที่ commit เก่า (81041fd ฯลฯ) — ไม่ใช่บั๊ก แค่ยังไม่ sync
+
+คุณอาจ checkout อยู่ที่ feat/goldrush-zip-input หรือ branch อื่น
+ไฟล์ที่เปิดใน editor จะเป็นของ branch นั้น ไม่ใช่ main ล่าสุดบน GitHub
+
+หลัง merge PR บน GitHub
+บนเครื่องต้อง git checkout main แล้ว git pull origin main (หรือ git fetch แล้ว merge) ถึงจะได้ main เท่า remote
+
+สรุป: เวอร์ชันบนเครื่องดูเก่าเพราะ ยังไม่ได้ดึง main จาก remote หรือ กำลังอยู่ branch ที่ไม่ใช่ main ล่าสุด — แก้ด้วย checkout ไป main แล้ว git pull ตามที่บอกไว้ก่อนหน้านี้
+
+ถ้าต้องการให้ช่วยเช็คว่าตอนนี้ branch ไหนชี้ที่ commit ไหน (รันคำสั่งใน repo) สลับเป็น Agent mode แล้วให้รัน git status / git log -1 ให้ได้ครับ — ใน Ask mode ผมรันคำสั่งบนเครื่องคุณให้ไม่ได้

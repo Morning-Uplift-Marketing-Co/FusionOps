@@ -5,6 +5,7 @@
  * D1 persistence via ops_proxy_pool, assign to Multilogin profiles.
  */
 import { useState, useEffect, useCallback, useRef } from "react";
+import { LS } from "../utils";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Button } from "./ui/button";
@@ -271,13 +272,17 @@ export function ProxyListTab({ accounts = [], profiles = [] }) {
 
             // First resolve the IP via proxy
             const { nodemavenApi } = await import("../services/nodemaven.js");
-            const ipResult = await nodemavenApi.resolveIP({
-                host: proxy.host,
-                port: Number(proxy.port),
-                username: proxy.username,
-                password: proxy.password,
-                protocol: "http",
-            });
+            const settings = LS.get("settings") || {};
+            const ipResult = await nodemavenApi.resolveIP(
+                {
+                    host: proxy.host,
+                    port: Number(proxy.port),
+                    username: proxy.username,
+                    password: proxy.password,
+                    protocol: "http",
+                },
+                settings
+            );
 
             const ip = ipResult?.ip || ipResult?.query;
             if (!ip) {

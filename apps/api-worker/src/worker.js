@@ -883,6 +883,122 @@ function toBase64(text) {
   return btoa(binary);
 }
 
+/** RFC 7617-style UTF-8 safe Basic auth for HTTP proxies (btoa(user:pass) breaks on non-Latin1). */
+function proxyBasicAuth(username, password) {
+  return toBase64(`${String(username ?? "")}:${String(password ?? "")}`);
+}
+
+/** Extra JSON for 502 when Workers cannot open TCP to the proxy (all providers share this path). */
+function proxyTcpFailurePayload(tcpErr, host, port) {
+  const msg = String(tcpErr?.message ?? tcpErr);
+  const disallowed =
+    /cannot connect to the specified address/i.test(msg) ||
+    /proxy request failed/i.test(msg);
+  const payload = { error: `Proxy connection failed: ${msg}` };
+  if (disallowed) {
+    payload.hint =
+      'ทุกค่ายพร็อกซีในแอปใช้ Worker เส้นทางเดียวกัน: เปิด TCP จาก Cloudflare ไปที่ host:port ของ gateway — ถ้าขั้นนี้ล้ม จะล้มทั้ง Smartproxy / NodeMaven / Bright Data พร้อมกัน แม้รหัสจะถูก (Multilogin บนเครื่องคุณอาจใช้พร็อกซีได้ปกติ). Production: ตั้ง PROXY_RESOLVE_RELAY_URL บน Worker ชี้ไป https://relay ของคุณ (รัน npm run proxy-relay บน VPS + TLS) แล้ว Worker จะส่งต่อ resolve-ip อัตโนมัติเมื่อ TCP ล้ม — แอป HTTPS ไม่ต้องเรียก http://127.0.0.1. ลอง: ยืนยันแผน Cloudflare Workers รองรับ outbound TCP sockets; ใช้ host+พอร์ตมาตรฐานจากเอกสารผู้ให้บริการ (เช่น gate.nodemaven.com:8080, brd.superproxy.io:22225, gate.decodo.com:7000). อ้างอิง: Cloudflare TCP sockets troubleshooting.';
+    payload.docs = 'https://developers.cloudflare.com/workers/runtime-apis/tcp-sockets/#troubleshooting';
+    payload.attempted = { host: String(host), port: Number(port) };
+    payload.fix =
+      'Cloudflare Dashboard → Workers → lp-factory-api → Settings → Variables → add PROXY_RESOLVE_RELAY_URL = https://your-relay.example.com (no /api). Deploy relay with: npm run proxy-relay on a VPS behind HTTPS; then wrangler deploy this worker.';
+  }
+  return payload;
+}
+
+/** Normalize relay origin for Worker → relay fetch (same path contract as scripts/proxy-resolve-relay.mjs). */
+function normalizeProxyRelayBase(env) {
+  let b = String(env?.PROXY_RESOLVE_RELAY_URL ?? '').trim();
+  if (!b) return '';
+  b = b.replace(/\/+$/, '');
+  if (b.endsWith('/api')) b = b.slice(0, -4);
+  if (!/^https?:\/\//i.test(b)) b = `https://${b}`;
+  try {
+    const u = new URL(b);
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return '';
+    const path = u.pathname.replace(/\/$/, '');
+    return `${u.origin}${path}`;
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * When outbound TCP to the residential proxy fails from the Worker, forward the same JSON body to an
+ * operator-run HTTPS relay (Node + undici on a VPS). Browser → Worker stays same-origin enough for CORS;
+ * avoids mixed-content (browser cannot call http://127.0.0.1 from https:// pages).
+ */
+async function forwardToProxyRelay(env, apiPath, jsonBody) {
+  const base = normalizeProxyRelayBase(env);
+  if (!base) return null;
+  const target = `${base}${apiPath}`;
+  const ac = new AbortController();
+  const tid = setTimeout(() => ac.abort(), 28000);
+  try {
+    const res = await fetch(target, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(jsonBody),
+      signal: ac.signal,
+    });
+    const text = await res.text();
+    return new Response(text, {
+      status: res.status,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+    });
+  } catch (e) {
+    return json(
+      {
+        error: `Relay unreachable: ${e.message}`,
+        relay_attempted: base,
+        hint: 'ตรวจสอบว่า VPS relay รันอยู่ เปิด HTTPS ถูกต้อง และ Worker ตั้ง PROXY_RESOLVE_RELAY_URL ตรงกับ public URL',
+      },
+      502
+    );
+  } finally {
+    clearTimeout(tid);
+  }
+}
+
+/**
+ * HTTP GET with absolute URL through an HTTP proxy (RFC 7230).
+ * Cloudflare: await socket.opened before write; await writer.close() after request so the readable stream is not cancelled mid-flight.
+ */
+async function httpGetThroughHttpProxy(proxyHost, proxyPort, proxyAuthB64, absoluteUrl, originHost) {
+  const socket = connect({ hostname: String(proxyHost), port: Number(proxyPort) });
+  await socket.opened;
+  const writer = socket.writable.getWriter();
+  const reader = socket.readable.getReader();
+  const httpReq = [
+    `GET ${absoluteUrl} HTTP/1.1`,
+    `Host: ${originHost}`,
+    `Proxy-Authorization: Basic ${proxyAuthB64}`,
+    `User-Agent: FusionOps-Worker/1.0`,
+    `Connection: close`,
+    ``,
+    ``,
+  ].join('\r\n');
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+  let responseText = '';
+  try {
+    await writer.write(encoder.encode(httpReq));
+    await writer.close();
+    const maxBytes = 524288;
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      if (value && value.byteLength) responseText += decoder.decode(value, { stream: true });
+      if (responseText.length > maxBytes) break;
+    }
+  } finally {
+    try {
+      await socket.close();
+    } catch (_) {}
+  }
+  return responseText;
+}
+
 function isMaskedSecret(value) {
   return /^[•*]+$/.test(String(value || "").trim());
 }
@@ -1030,7 +1146,7 @@ const ALLOWED_COLS = {
 };
 
 // Secret keys that should never be returned in API responses
-const SECRET_KEYS = new Set(['apiKey', 'geminiKey', 'netlifyToken', 'lcToken', 'mlToken', 'mlPassword', 'githubToken']);
+const SECRET_KEYS = new Set(['apiKey', 'geminiKey', 'netlifyToken', 'lcToken', 'mlToken', 'mlPassword', 'githubToken', 'adspowerApiKey']);
 
 function redactSettings(obj) {
   const safe = {};
@@ -1089,7 +1205,7 @@ function mlxCacheSet(key, body, status, headers, ttlMs) {
   mlxCache.set(key, { body, status, headers, expiresAt: Date.now() + ttlMs });
 }
 
-async function handleProxy(request, url) {
+async function handleProxy(request, url, env) {
   let targetBase = null;
   let strippedPath = url.pathname;
 
@@ -1159,49 +1275,24 @@ async function handleProxy(request, url) {
   // Connects through the HTTP proxy to resolve the exit IP via ip-api.com
   if (url.pathname === '/api/proxy/resolve-ip' && request.method === 'POST') {
     try {
-      const { host, port, username, password, protocol } = await request.json();
+      const { host, port, username, password } = await request.json();
       if (!host || !port || !username || !password) {
         return json({ error: 'Missing proxy credentials (host, port, username, password)' }, 400);
       }
 
-      // Build proxy auth header (Base64 of username:password)
-      const proxyAuth = btoa(`${username}:${password}`);
-      const proxyUrl = `${protocol || 'http'}://${host}:${port}`;
+      const proxyAuth = proxyBasicAuth(username, password);
+      const relayCreds = { host, port, username, password };
 
-      // Method 1: Use CF Worker TCP connect() to tunnel through HTTP proxy
-      // CF Workers support connect() for TCP sockets
+      // When PROXY_RESOLVE_RELAY_URL is set, try relay first (TCP from CF to residential gates often fails).
+      if (normalizeProxyRelayBase(env)) {
+        const relayRes = await forwardToProxyRelay(env, '/api/proxy/resolve-ip', relayCreds);
+        if (relayRes?.ok) return relayRes;
+      }
+
       try {
-        const socket = connect({ hostname: host, port: Number(port) });
-        const writer = socket.writable.getWriter();
-        const reader = socket.readable.getReader();
-
-        // Send HTTP CONNECT-style request through HTTP proxy to ip-api.com
-        const httpReq = [
-          `GET http://ip-api.com/json/?fields=status,message,query,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,proxy,hosting HTTP/1.1`,
-          `Host: ip-api.com`,
-          `Proxy-Authorization: Basic ${proxyAuth}`,
-          `Connection: close`,
-          ``,
-          ``
-        ].join('\r\n');
-
-        const encoder = new TextEncoder();
-        await writer.write(encoder.encode(httpReq));
-
-        // Read response
-        const decoder = new TextDecoder();
-        let responseText = '';
-        let attempts = 0;
-        while (attempts < 50) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          responseText += decoder.decode(value, { stream: true });
-          if (responseText.includes('\r\n\r\n') && responseText.includes('}')) break;
-          attempts++;
-        }
-
-        try { writer.close(); } catch (_) {}
-        try { socket.close(); } catch (_) {}
+        const absoluteUrl =
+          'http://ip-api.com/json/?fields=status,message,query,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,proxy,hosting';
+        const responseText = await httpGetThroughHttpProxy(host, port, proxyAuth, absoluteUrl, 'ip-api.com');
 
         // Parse HTTP response — extract JSON body after headers
         const bodyStart = responseText.indexOf('\r\n\r\n');
@@ -1226,11 +1317,27 @@ async function handleProxy(request, url) {
           body = decoded;
         }
 
+        const bodyLower = body.toLowerCase();
+        const head = responseText.slice(0, Math.min(400, responseText.length)).toLowerCase();
+        if (
+          head.includes(' 407 ') ||
+          bodyLower.includes('access denied') ||
+          bodyLower.includes("couldn't log you in") ||
+          bodyLower.includes('could not log you in') ||
+          bodyLower.includes('proxy authentication') ||
+          (bodyLower.includes('confirm') && bodyLower.includes('password'))
+        ) {
+          return json({
+            error: 'Proxy rejected credentials. Check: (1) user+password (UTF-8/special chars OK now), (2) host:port — Decodo gate.decodo.com:7000 or legacy gate.smartproxy.com:10001, (3) username — sub-user only OR full string from dashboard; if full string includes -country- do not duplicate targeting.',
+            raw: body.slice(0, 280),
+          }, 502);
+        }
+
         // Extract JSON from body
         const jsonStart = body.indexOf('{');
         const jsonEnd = body.lastIndexOf('}');
         if (jsonStart === -1 || jsonEnd === -1) {
-          return json({ error: 'Invalid response from ip-api', raw: body.slice(0, 200) }, 502);
+          return json({ error: 'Invalid response from ip-api (non-JSON body — often proxy auth failure or HTML error page)', raw: body.slice(0, 200) }, 502);
         }
         const ipData = JSON.parse(body.slice(jsonStart, jsonEnd + 1));
 
@@ -1256,7 +1363,9 @@ async function handleProxy(request, url) {
           hosting: ipData.hosting,
         });
       } catch (tcpErr) {
-        return json({ error: `Proxy connection failed: ${tcpErr.message}` }, 502);
+        const relayed = await forwardToProxyRelay(env, '/api/proxy/resolve-ip', relayCreds);
+        if (relayed) return relayed;
+        return json(proxyTcpFailurePayload(tcpErr, host, port), 502);
       }
     } catch (e) {
       return json({ error: e.message }, 500);
@@ -1272,40 +1381,22 @@ async function handleProxy(request, url) {
         return json({ error: 'Missing proxy credentials' }, 400);
       }
 
-      const proxyAuth = btoa(`${username}:${password}`);
+      const proxyAuth = proxyBasicAuth(username, password);
+      const relayCreds = { host, port, username, password };
+
+      if (normalizeProxyRelayBase(env)) {
+        const relayRes = await forwardToProxyRelay(env, '/api/proxy/dns-check', relayCreds);
+        if (relayRes?.ok) return relayRes;
+      }
 
       try {
-        const socket = connect({ hostname: host, port: Number(port) });
-        const writer = socket.writable.getWriter();
-        const reader = socket.readable.getReader();
-
-        // Request DNS info through the proxy — use a DNS leak test endpoint
-        // We use ip-api.com which returns the requesting IP's info
-        const httpReq = [
-          `GET http://ip-api.com/json/?fields=query,countryCode,isp HTTP/1.1`,
-          `Host: ip-api.com`,
-          `Proxy-Authorization: Basic ${proxyAuth}`,
-          `Connection: close`,
-          ``,
-          ``
-        ].join('\r\n');
-
-        const encoder = new TextEncoder();
-        await writer.write(encoder.encode(httpReq));
-
-        const decoder = new TextDecoder();
-        let responseText = '';
-        let attempts = 0;
-        while (attempts < 50) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          responseText += decoder.decode(value, { stream: true });
-          if (responseText.includes('}')) break;
-          attempts++;
-        }
-
-        try { writer.close(); } catch (_) {}
-        try { socket.close(); } catch (_) {}
+        await httpGetThroughHttpProxy(
+          host,
+          port,
+          proxyAuth,
+          'http://ip-api.com/json/?fields=query,countryCode,isp',
+          'ip-api.com'
+        );
 
         // For DNS leak: in a real implementation we'd check the DNS resolver IP
         // For now, we return no leak detected (proxy is working = DNS is routed through it)
@@ -1316,7 +1407,9 @@ async function handleProxy(request, url) {
           note: "Basic DNS check — proxy connection confirmed",
         });
       } catch (tcpErr) {
-        return json({ error: `DNS check failed: ${tcpErr.message}` }, 502);
+        const relayed = await forwardToProxyRelay(env, '/api/proxy/dns-check', relayCreds);
+        if (relayed) return relayed;
+        return json(proxyTcpFailurePayload(tcpErr, host, port), 502);
       }
     } catch (e) {
       return json({ error: e.message }, 500);
@@ -1332,47 +1425,34 @@ async function handleProxy(request, url) {
         return json({ error: 'Missing proxy credentials' }, 400);
       }
 
-      const proxyAuth = btoa(`${username}:${password}`);
+      const proxyAuth = proxyBasicAuth(username, password);
+      const relayCreds = { host, port, username, password };
       const start = Date.now();
 
+      if (normalizeProxyRelayBase(env)) {
+        const relayRes = await forwardToProxyRelay(env, '/api/proxy/latency-check', relayCreds);
+        if (relayRes?.ok) return relayRes;
+      }
+
       try {
-        const socket = connect({ hostname: host, port: Number(port) });
-        const writer = socket.writable.getWriter();
-        const reader = socket.readable.getReader();
-
-        // Simple request through proxy to measure latency
-        const httpReq = [
-          `GET http://ip-api.com/json/?fields=query HTTP/1.1`,
-          `Host: ip-api.com`,
-          `Proxy-Authorization: Basic ${proxyAuth}`,
-          `Connection: close`,
-          ``,
-          ``
-        ].join('\r\n');
-
-        const encoder = new TextEncoder();
-        await writer.write(encoder.encode(httpReq));
-
-        const decoder = new TextDecoder();
-        let responseText = '';
-        let attempts = 0;
-        while (attempts < 50) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          responseText += decoder.decode(value, { stream: true });
-          if (responseText.includes('}')) break;
-          attempts++;
-        }
-
+        await httpGetThroughHttpProxy(
+          host,
+          port,
+          proxyAuth,
+          'http://ip-api.com/json/?fields=query',
+          'ip-api.com'
+        );
         const latencyMs = Date.now() - start;
-
-        try { writer.close(); } catch (_) {}
-        try { socket.close(); } catch (_) {}
 
         return json({ latencyMs });
       } catch (tcpErr) {
+        const relayed = await forwardToProxyRelay(env, '/api/proxy/latency-check', relayCreds);
+        if (relayed) return relayed;
         const latencyMs = Date.now() - start;
-        return json({ error: `Latency check failed: ${tcpErr.message}`, latencyMs }, 502);
+        const p = proxyTcpFailurePayload(tcpErr, host, port);
+        p.error = `Latency check failed: ${String(tcpErr?.message ?? tcpErr)}`;
+        p.latencyMs = latencyMs;
+        return json(p, 502);
       }
     } catch (e) {
       return json({ error: e.message }, 500);
@@ -1979,7 +2059,7 @@ export default {
 
     // ═══ PROXY ROUTES (no auth required — proxy forwards auth headers) ═══
     if (path.startsWith('/api/proxy/')) {
-      const proxyRes = await handleProxy(request, url);
+      const proxyRes = await handleProxy(request, url, env);
       if (proxyRes) return proxyRes;
     }
 

@@ -61,6 +61,13 @@ export default defineConfig({
           changeOrigin: true,
           secure: false,
         },
+        // AdsPower Local API (same machine) — avoids browser CORS from LP dev server → :50325
+        '/adspower-local': {
+          target: 'http://127.0.0.1:50325',
+          changeOrigin: true,
+          secure: false,
+          rewrite: (p) => p.replace(/^\/adspower-local/, '') || '/',
+        },
       },
       headers: {
         // Content Security Policy headers for dev server
