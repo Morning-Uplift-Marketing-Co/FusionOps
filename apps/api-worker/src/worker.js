@@ -3661,11 +3661,13 @@ export default {
 
           const baseRow = await db.prepare("SELECT value FROM settings WHERE key = ?").bind("adspowerLocalBase").first();
           const keyRow = await db.prepare("SELECT value FROM settings WHERE key = ?").bind("adspowerApiKey").first();
-          const base = String(baseRow?.value ?? "").trim().replace(/\/+$/, "");
+          const fromBodyBase = String(body.adspowerLocalBase ?? "").trim().replace(/\/+$/, "");
+          const fromD1Base = String(baseRow?.value ?? "").trim().replace(/\/+$/, "");
+          const base = fromBodyBase || fromD1Base;
           if (!base) {
             return json({
               code: -1,
-              msg: "ยังไม่มี Base URL ใน API — ไป Settings → Automation ใส่ HTTPS tunnel แล้วกด Save",
+              msg: "ยังไม่มี Base URL — ใส่ในฟอร์มหรือ Save ใน Settings → Automation (HTTPS tunnel)",
             });
           }
           if (!/^https:\/\//i.test(base)) {
@@ -3675,8 +3677,11 @@ export default {
             });
           }
 
+          const fromBodyKey = String(body.adspowerApiKey ?? "").trim();
+          const fromD1Key = String(keyRow?.value ?? "").trim();
+          const apiKey = fromBodyKey || fromD1Key;
+
           const headers = { Accept: "application/json" };
-          const apiKey = String(keyRow?.value ?? "").trim();
           if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
 
           const targetUrl = `${base}${subPath}`;

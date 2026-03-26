@@ -1036,8 +1036,9 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                             <CardContent className="flex flex-col gap-2">
                                 <p className="text-[10px] text-[hsl(var(--muted-foreground))] -mt-2 leading-relaxed">
                                     โปรแกรม AdsPower รัน Local API ที่พอร์ต <code className="text-[9px] bg-[hsl(var(--muted))/30] px-1 rounded">50325</code>.
-                                    Dev ใช้ proxy <code className="text-[9px] px-1 rounded bg-[hsl(var(--muted))/30]">/adspower-local</code>.
-                                    บน <strong>HTTPS</strong> (Pages) แดชบอร์ดจะเรียกผ่าน <strong>Worker</strong> — ใส่ Base URL แบบ <strong>https://…</strong> (tunnel ไป 50325) แล้วกด Save ให้ sync ไป D1
+                                    Dev เว้น Base URL ว่าง → proxy <code className="text-[9px] px-1 rounded bg-[hsl(var(--muted))/30]">/adspower-local</code>.
+                                    ถ้าใส่ Base URL แบบ <strong>https://…</strong> (ngrok) แม้จาก <strong>localhost</strong> จะเรียกผ่าน <strong>Worker</strong> เพื่อเลี่ยง CORS.
+                                    บน <strong>HTTPS</strong> (Pages) กด <strong>Save</strong> ให้ sync ไป D1
                                 </p>
                                 <p className="text-[9px] text-[hsl(var(--muted-foreground))]">
                                     Docs:{" "}
@@ -1047,7 +1048,7 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                                 </p>
                                 <div><Lbl>API Key (ถ้าเปิด security ใน AdsPower)</Lbl><Inp type="password" value={adspowerApiKey} onChange={setAdspowerApiKey} placeholder="Bearer token จาก Automation → API" /></div>
                                 <div>
-                                    <Lbl>Base URL (Pages/production HTTPS = ต้องเป็น https:// tunnel; dev ว่างได้)</Lbl>
+                                    <Lbl>Base URL (https:// tunnel; dev ว่าง = /adspower-local)</Lbl>
                                     <Inp value={adspowerLocalBase} onChange={setAdspowerLocalBase} placeholder="https://xxx.ngrok-free.app หรือ https://adspower.yourdomain.com" />
                                 </div>
                                 <div className="text-[9px] text-[hsl(var(--muted-foreground))] font-mono break-all">
@@ -1059,7 +1060,7 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                                     </div>
                                 )}
                                 <p className="text-[9px] text-[hsl(var(--muted-foreground))] -mt-1">
-                                    บนแดชบอร์ด HTTPS: กด <strong>Save</strong> ก่อน <strong>Test</strong> — Worker อ่าน Base URL / API Key จาก D1
+                                    แดชบอร์ด HTTPS: กด <strong>Save</strong> ก่อน <strong>Test</strong> (D1). Dev + ngrok: Test ได้จากค่าในฟอร์มผ่าน Worker โดยไม่ต้อง Save
                                 </p>
                                 <div className="flex gap-1.5 mt-1">
                                     <Button variant="ghost" onClick={testAdsPower} disabled={testing === "adspower"} className="px-2 h-7 text-[10px]">
