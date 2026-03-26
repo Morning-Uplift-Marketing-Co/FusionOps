@@ -3633,6 +3633,77 @@ export default {
         return json({ success: true });
       }
 
+      // ═══ ADSPOWER — server relay (HTTPS dashboard → user’s HTTPS tunnel → Local API) ═══
+      if (path === "/api/adspower/proxy" && method === "POST") {
+        try {
+          const body = await request.json();
+          const subPath = String(body.path || "/status");
+          const m = String(body.method || "GET").toUpperCase();
+          if (!subPath.startsWith("/") || subPath.includes("..")) {
+            return json({ code: -1, msg: "Invalid path" }, 400);
+          }
+          const pathOnly = subPath.split("?")[0];
+          const allowed = new Set([
+            "/status",
+            "/api/v2/browser-profile/list",
+            "/api/v2/browser-profile/start",
+            "/api/v2/browser-profile/stop",
+          ]);
+          if (!allowed.has(pathOnly)) {
+            return json({ code: -1, msg: "Path not allowed" }, 400);
+          }
+          if (pathOnly === "/status" && m !== "GET") {
+            return json({ code: -1, msg: "GET only for /status" }, 400);
+          }
+          if (pathOnly !== "/status" && m !== "POST") {
+            return json({ code: -1, msg: "POST required for this endpoint" }, 400);
+          }
+
+          const baseRow = await db.prepare("SELECT value FROM settings WHERE key = ?").bind("adspowerLocalBase").first();
+          const keyRow = await db.prepare("SELECT value FROM settings WHERE key = ?").bind("adspowerApiKey").first();
+          const base = String(baseRow?.value ?? "").trim().replace(/\/+$/, "");
+          if (!base) {
+            return json({
+              code: -1,
+              msg: "ยังไม่มี Base URL ใน API — ไป Settings → Automation ใส่ HTTPS tunnel แล้วกด Save",
+            });
+          }
+          if (!/^https:\/\//i.test(base)) {
+            return json({
+              code: -1,
+              msg: "Base URL ต้องเป็น https:// (Worker เรียกจาก Cloudflare ไม่ถึง http://127.0.0.1)",
+            });
+          }
+
+          const headers = { Accept: "application/json" };
+          const apiKey = String(keyRow?.value ?? "").trim();
+          if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+
+          const targetUrl = `${base}${subPath}`;
+          const init = { method: m, headers, redirect: "manual" };
+          if (m === "POST") {
+            headers["Content-Type"] = "application/json";
+            const payload = body.body != null && typeof body.body === "object" && !Array.isArray(body.body) ? body.body : {};
+            init.body = JSON.stringify(payload);
+          }
+
+          const res = await fetch(targetUrl, init);
+          const text = await res.text();
+          let data;
+          try {
+            data = text ? JSON.parse(text) : {};
+          } catch {
+            data = { code: -1, msg: String(text || "").slice(0, 400) || `HTTP ${res.status}` };
+          }
+          if (!res.ok && (data.code === undefined || data.code === null) && !data.msg) {
+            data = { code: -1, msg: `HTTP ${res.status}` };
+          }
+          return json(data);
+        } catch (e) {
+          return json({ code: -1, msg: `AdsPower relay: ${e.message || String(e)}` });
+        }
+      }
+
       // ═══ AI: GENERATE ASSETS ═══
       if (path === "/api/ai/generate-assets" && method === "POST") {
         const body = await request.json();

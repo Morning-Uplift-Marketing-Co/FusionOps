@@ -5,8 +5,10 @@ import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "./ui/table";
 import {
+  adspowerUsesWorkerProxy,
   getAdsPowerStatus,
   listAdsPowerProfiles,
+  resolveAdsPowerBaseUrl,
   startAdsPowerBrowser,
   stopAdsPowerBrowser,
 } from "../services/adspower";
@@ -39,6 +41,7 @@ export function AdsPowerProfileManager({ settings = {}, ops = {} }) {
   const [page, setPage] = useState(1);
   const limit = 50;
   const [apiOk, setApiOk] = useState(null);
+  const [loadHint, setLoadHint] = useState(null);
   const [flash, setFlash] = useState(null);
   const [rowBusy, setRowBusy] = useState({});
   const [search, setSearch] = useState("");
@@ -68,19 +71,29 @@ export function AdsPowerProfileManager({ settings = {}, ops = {} }) {
       setApiOk(st.ok);
       if (!st.ok) {
         setProfiles([]);
-        showFlash(st.error || "Local API ไม่พร้อม — ตรวจสอบว่าเปิด AdsPower และ Local API (Settings → Automation)", "error");
+        const err =
+          st.error ||
+          "Local API ไม่พร้อม — ตรวจสอบว่าเปิด AdsPower และ Local API (Settings → Automation)";
+        setLoadHint(err);
+        showFlash(err, "error");
         return;
       }
+      setLoadHint(null);
       const r = await listAdsPowerProfiles(settings, { page, limit });
       if (r.ok) {
+        setLoadHint(null);
         setProfiles(Array.isArray(r.profiles) ? r.profiles : []);
       } else {
         setProfiles([]);
-        showFlash(r.error || "โหลดรายการโปรไฟล์ไม่สำเร็จ", "error");
+        const err = r.error || "โหลดรายการโปรไฟล์ไม่สำเร็จ";
+        setLoadHint(err);
+        showFlash(err, "error");
       }
     } catch (e) {
       setProfiles([]);
-      showFlash(e?.message || "คำขอล้มเหลว", "error");
+      const err = e?.message || "คำขอล้มเหลว";
+      setLoadHint(err);
+      showFlash(err, "error");
     } finally {
       setLoading(false);
     }
@@ -153,9 +166,21 @@ export function AdsPowerProfileManager({ settings = {}, ops = {} }) {
   };
 
   const canNext = profiles.length >= limit;
-  const devHint = import.meta.env.DEV ? null : (
+  const effectiveBase = resolveAdsPowerBaseUrl(settings);
+  const mixedContentLikely =
+    !adspowerUsesWorkerProxy() &&
+    typeof window !== "undefined" &&
+    window.location.protocol === "https:" &&
+    /^http:\/\//i.test(effectiveBase) &&
+    /\b127\.0\.0\.1\b|\blocalhost\b|local\.adspower\.net/i.test(effectiveBase);
+  const devHint = import.meta.env.DEV ? null : adspowerUsesWorkerProxy() ? (
+    <p className="text-[10px] text-[hsl(var(--muted-foreground))] mt-2 leading-relaxed">
+      แดชบอร์ด HTTPS เรียก AdsPower ผ่าน <strong>API Worker</strong> — ตั้ง Base URL เป็น <strong>https://…</strong> (tunnel ไปพอร์ต 50325) แล้วกด{" "}
+      <strong>Save</strong> ใน Settings → Automation เพื่อให้ Worker อ่านค่าจาก D1
+    </p>
+  ) : (
     <p className="text-[10px] text-[hsl(var(--muted-foreground))] mt-2">
-      Production: ตั้ง `adspowerLocalBase` เป็น HTTPS tunnel ไปยังเครื่องที่รัน AdsPower (กันบล็อก mixed content)
+      Production: ตั้ง Base URL เป็น HTTPS tunnel ไปยังเครื่องที่รัน AdsPower
     </p>
   );
 
@@ -202,6 +227,19 @@ export function AdsPowerProfileManager({ settings = {}, ops = {} }) {
           }`}
         >
           {flash.msg}
+        </div>
+      )}
+
+      {mixedContentLikely && (
+        <div className="px-3 py-2 rounded-md text-xs font-medium bg-amber-500/10 text-amber-100 border border-amber-500/25 leading-relaxed">
+          หน้าแดชบอร์ดเป็น <strong>HTTPS</strong> แต่ Local API เป็น <strong>HTTP</strong> — เบราว์เซอร์จะบล็อกการเรียกไป{" "}
+          <code className="text-[10px] opacity-90">127.0.0.1:50325</code> โดยเงียบ
+          <br />
+          แก้ไข: <strong>Settings → Automation → AdsPower Local API → Base URL</strong> ใส่ URL แบบ{" "}
+          <strong>HTTPS</strong> จาก tunnel (เช่น Cloudflare Tunnel / ngrok) ไปที่เครื่องที่รัน AdsPower พอร์ต 50325
+          <br />
+          หรือเปิดแดชบอร์ดจาก <strong>dev บนเครื่องเดียวกัน</strong> (<code className="text-[10px]">npm run dev</code> ใช้ proxy{" "}
+          <code className="text-[10px]">/adspower-local</code>)
         </div>
       )}
 
@@ -267,8 +305,14 @@ export function AdsPowerProfileManager({ settings = {}, ops = {} }) {
               <TableBody>
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-xs text-[hsl(var(--muted-foreground))] py-8 text-center">
-                      {loading ? "กำลังโหลด…" : "ไม่มีโปรไฟล์ — ตรวจสอบ API Key / Local API ใน Settings → Automation"}
+                    <TableCell colSpan={8} className="text-xs text-[hsl(var(--muted-foreground))] py-8 text-center max-w-xl mx-auto">
+                      {loading
+                        ? "กำลังโหลด…"
+                        : loadHint
+                          ? loadHint
+                          : profiles.length > 0
+                            ? "ไม่มีรายการตรงตัวกรอง — ล้างช่องค้นหาหรือเลือก “ทุกกลุ่ม”"
+                            : "ไม่มีโปรไฟล์ใน API — ตรวจสอบ API Key (ถ้าเปิด security) และว่า AdsPower รันบนเครื่องเดียวกับที่เรียก Local API"}
                     </TableCell>
                   </TableRow>
                 )}
