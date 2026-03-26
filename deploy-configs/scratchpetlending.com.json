@@ -1,5 +1,5 @@
 {
-  "templateId": "orange-lending-bolt",
+  "templateId": "bluerush-lending-01",
   "cfPagesProject": "lp-scratchpetlending-com",
   "cfZoneId": "",
   "skipDnsUpsert": true,
@@ -7,9 +7,9 @@
   "cfAccountId": "",
   "brand": "Scratchpay",
   "domain": "scratchpetlending.com",
-  "h1": "Quick Pet Funding: $100-$5000 Today",
-  "sub": "Stress-free financing for your beloved companion's health needs.",
-  "cta": "Get Funds Now",
+  "h1": "Get Pet Funding Up To $5000 Fast!",
+  "sub": "Care for your beloved pet without financial worry. Simple, stress-free funding.",
+  "cta": "Apply Now",
   "phone": "1-800-SCRATCH-PETLE",
   "email": "support@scratchpetlending.com",
   "address": "1603 Capitol Ave, Ste 310, Cheyenne, WY 82001",
@@ -38,5 +38,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-26T19:36:41.937Z"
+  "deployedAt": "2026-03-26T19:50:28.565Z"
 }
