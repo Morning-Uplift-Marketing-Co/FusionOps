@@ -1,5 +1,5 @@
 {
-  "templateId": "bluerush-lending-01",
+  "templateId": "pastel-lending-bolt",
   "cfPagesProject": "lp-scratchpaypet-tech",
   "cfZoneId": "",
   "skipDnsUpsert": true,
@@ -40,22 +40,22 @@
   "reviews": [
     {
       "name": "Sarah K.",
-      "text": "My dog had an unexpected emergency and the vet bill was huge. Scratchpay made it possible to get him the care he needed right away without emptying my savings. So grateful for the quick approval!",
+      "location": "Austin, TX",
       "rating": 5,
-      "location": "Austin, TX"
+      "text": "My dog suddenly got sick and needed emergency care. Scratchpay made it so easy to get approved quickly, letting me focus on his recovery instead of the bill. Lifesaver!"
     },
     {
-      "name": "Michael R.",
-      "text": "My cat needed a dental procedure that was more than I could pay upfront. Scratchpay offered a payment plan that fit my budget perfectly, making it stress-free to get her the necessary care.",
+      "name": "Michael P.",
+      "location": "Denver, CO",
       "rating": 5,
-      "location": "Seattle, WA"
+      "text": "My cat needed dental surgery, and the cost was daunting. Scratchpay offered flexible payment options that fit my budget perfectly. The application was straightforward, and I got approval fast."
     },
     {
       "name": "Jessica M.",
-      "text": "With two dogs and a cat, vet visits can add up fast. Scratchpay allowed me to spread out the cost of their annual check-ups and vaccinations, making it much more manageable.",
+      "location": "Seattle, WA",
       "rating": 5,
-      "location": "Miami, FL"
+      "text": "My new puppy wasn't feeling well, and the vet recommended a series of expensive diagnostics. Scratchpay helped me cover the costs, ensuring my little guy got the care he needed without delay. Highly recommend!"
     }
   ],
-  "deployedAt": "2026-03-26T23:13:37.678Z"
+  "deployedAt": "2026-03-26T23:29:44.474Z"
 }
