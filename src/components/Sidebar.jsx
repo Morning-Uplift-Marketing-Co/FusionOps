@@ -6,6 +6,17 @@ import { isAdmin } from "../services/auth";
 
 const CHANGELOG = [
     {
+        version: "3.6.1",
+        date: "2026-03-26",
+        changes: [
+            "🛡️ IP Quality Pipeline — dynamic endpoint handling, fallback to IPinfo Lite with Bearer Auth, custom Scamalytics user config to avoid 404s",
+            "🔌 Proxy Tools — new Proxy Gateway Worker fallback + API Health Check endpoints integration",
+            "🐛 LendingCards — correctly parse paginated API responses from provider",
+            "🔧 OpsCenter — fix missing mlProfiles map errors on UI load",
+            "🔒 Security — tighten worker read-only query permissions when API_SECRET is unset, protect template mutations",
+        ],
+    },
+    {
         version: "3.6.0",
         date: "2026-03-23",
         changes: [
