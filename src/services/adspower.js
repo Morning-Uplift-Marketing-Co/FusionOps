@@ -169,7 +169,7 @@ export async function getAdsPowerStatus(settings) {
  * POST /api/v2/browser-profile/list
  * @see https://localapi-doc-en.adspower.com/docs/Query-Profile-V2
  */
-export async function listAdsPowerProfiles(settings, { page = 1, limit = 30, group_id } = {}) {
+export async function listAdsPowerProfiles(settings, { page = 1, limit = 15, group_id } = {}) {
   const body = { page, limit: Math.min(100, Math.max(1, limit)) };
   if (group_id != null && group_id !== "") body.group_id = String(group_id);
   const { res, json } = await adsPowerFetch(settings, "/api/v2/browser-profile/list", {
