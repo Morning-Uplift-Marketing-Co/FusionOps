@@ -13,6 +13,7 @@ import { createServer } from "node:http";
 import { ProxyAgent, fetch } from "undici";
 
 const PORT = parseInt(process.env.PORT || "8789", 10);
+const BIND_HOST = process.env.BIND_HOST || "0.0.0.0";
 const FIELDS =
   "status,message,query,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,proxy,hosting";
 
@@ -145,6 +146,17 @@ createServer(async (req, res) => {
   }
   const path = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`).pathname;
 
+  if (path === "/api/proxy/ping" && (req.method === "GET" || req.method === "HEAD")) {
+    const body = JSON.stringify({ status: "ok" });
+    res.writeHead(200, {
+      "Content-Type": "application/json",
+      "Content-Length": Buffer.byteLength(body),
+    });
+    if (req.method === "HEAD") res.end();
+    else res.end(body);
+    return;
+  }
+
   if (path === "/api/proxy/resolve-ip" && req.method === "POST") {
     let body;
     try {
@@ -259,8 +271,8 @@ createServer(async (req, res) => {
 
   res.writeHead(404, { "Content-Type": "application/json" });
   res.end(JSON.stringify({ error: "Not found" }));
-}).listen(PORT, () => {
+}).listen(PORT, BIND_HOST, () => {
   console.log(
-    `[proxy-resolve-relay] listening http://127.0.0.1:${PORT}  POST /api/proxy/resolve-ip | dns-check | latency-check`
+    `[proxy-resolve-relay] listening http://${BIND_HOST}:${PORT}  GET /api/proxy/ping | POST /api/proxy/resolve-ip | …`
   );
 });
