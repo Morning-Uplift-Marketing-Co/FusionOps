@@ -5511,7 +5511,8 @@ export default {
             return json(
               {
                 success: false,
-                error: 'Only a single SELECT or WITH statement is allowed',
+                error:
+                  'This endpoint is read-only (SELECT/WITH on the Worker D1 binding). For CREATE/INSERT/UPDATE use Settings D1 credentials: POST /api/automation/d1/execute from the app (FusionOps d1.js).',
                 code: 'D1_DIRECT_READ_ONLY',
               },
               400,

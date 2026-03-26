@@ -274,7 +274,9 @@ export function StepTemplate({ c, u, notify }) {
                         tpl.files &&
                         typeof tpl.files === "object" &&
                         !!getTemplateFileContent(tpl.files, "dist/index.html");
-                    const showDistLive = hasDistIndex && !thumbSrc;
+                    // Prefer live dist over PNG: Gen/Up thumbnails must not hide dist preview (copy promises "no Gen needed" when dist exists).
+                    const showDistLive = hasDistIndex;
+                    const showThumbOnly = Boolean(thumbSrc) && !hasDistIndex;
 
                     return (
                         <div key={tpl.id} style={{ position: 'relative' }}>
@@ -300,16 +302,17 @@ export function StepTemplate({ c, u, notify }) {
                                     gap: 2, position: "relative", borderBottom: `1px solid ${T.border}`,
                                     overflow: "hidden",
                                 }}>
-                                    {thumbSrc ? (
+                                    {showDistLive ? (
+                                        <TemplateCardDistPreview files={tpl.files} dbId={tpl.dbId} brand={tpl.name} />
+                                    ) : null}
+                                    {showThumbOnly ? (
                                         <img
                                             src={thumbSrc}
                                             alt=""
                                             style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }}
                                             onError={(e) => { e.target.style.display = "none"; }}
                                         />
-                                    ) : showDistLive ? (
-                                        <TemplateCardDistPreview files={tpl.files} dbId={tpl.dbId} brand={tpl.name} />
-                                    ) : (
+                                    ) : !showDistLive ? (
                                         <>
                                             <div style={{ fontSize: 22 }}>{previewIcon}</div>
                                             <div style={{
@@ -318,7 +321,7 @@ export function StepTemplate({ c, u, notify }) {
                                                 letterSpacing: "-.3px",
                                             }}>{tpl.name}</div>
                                         </>
-                                    )}
+                                    ) : null}
 
                                     {tpl.badge && (
                                         <div style={{
@@ -350,23 +353,6 @@ export function StepTemplate({ c, u, notify }) {
                                 {/* Info */}
                                 <div style={{ padding: "10px 14px" }}>
                                     <div style={{ fontSize: 13, fontWeight: 700 }}>{tpl.name}</div>
-                                    {tpl.description ? (
-                                        <div
-                                            title={tpl.description}
-                                            style={{
-                                                fontSize: 11,
-                                                color: T.dim,
-                                                marginTop: 3,
-                                                lineHeight: 1.4,
-                                                display: "-webkit-box",
-                                                WebkitLineClamp: 3,
-                                                WebkitBoxOrient: "vertical",
-                                                overflow: "hidden",
-                                            }}
-                                        >
-                                            {tpl.description}
-                                        </div>
-                                    ) : null}
                                 </div>
                             </button>
 
@@ -544,7 +530,6 @@ export function StepTemplate({ c, u, notify }) {
                 }}>🧩</div>
                 <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 700 }}>{selectedTemplate?.name || "Classic LP"}</div>
-                    <div style={{ fontSize: 11, color: T.muted }}>{selectedTemplate?.description || "Default template"}</div>
                 </div>
                 <div style={{
                     fontSize: 10, fontWeight: 700, padding: "5px 12px",

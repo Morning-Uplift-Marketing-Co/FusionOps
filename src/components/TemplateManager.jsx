@@ -108,6 +108,20 @@ const STAT = {
 };
 const statOf = (s) => STAT[s] || STAT.draft;
 
+/** True if a dashboard site is assigned to this template (Neon/My Sites — not D1 site_versions only). */
+function siteUsesTemplate(site, t) {
+  const st = String(site?.templateId ?? "").trim();
+  if (!st) return false;
+  const candidates = [t.template_id, t.templateId, t.id, t.dbId]
+    .filter(Boolean)
+    .map((x) => String(x).trim());
+  return new Set(candidates).has(st);
+}
+
+function countSitesForTemplate(siteList, t) {
+  return (siteList || []).filter((s) => siteUsesTemplate(s, t)).length;
+}
+
 /* ── Main Component ── */
 export function TemplateManager({ sites = [], notify, onDefaultTemplateChange }) {
   const [templates, setTemplates] = useState([]);
@@ -201,22 +215,48 @@ export function TemplateManager({ sites = [], notify, onDefaultTemplateChange })
     }
   };
 
-  const selected = useMemo(() => templates.find((t) => (t.dbId || t.id) === selectedId) || null, [templates, selectedId]);
-
-  useEffect(() => {
-    if (!selected?.dbId) { setUsage({ usageCount: 0, sites: [] }); setVersions([]); return; }
-    Promise.all([api.get(`/templates/${selected.dbId}/usage`), api.get(`/templates/${selected.dbId}/versions`)]).then(([u, v]) => {
-      setUsage({ usageCount: u?.usageCount || 0, sites: u?.sites || [] });
-      setVersions(v?.versions || []);
-    });
-  }, [selected?.dbId]);
-
-  /* ── Derived data ── */
+  /* ── Derived data (usage from My Sites prop — same source as sidebar/site count; API usage_count is D1 site_versions only) ── */
   const mergedTemplates = useMemo(() => (templates || []).map((t) => {
     const id = t.dbId || t.id;
-    const siteUsage = sites.filter((s) => String(s.templateId || "") === String(t.id || t.template_id || "")).length;
-    return { ...t, _id: id, _source: t.source || (t.dbId ? "api" : "module"), _status: t.status || (t.source === "api" ? "draft" : "active"), _usage: Number(t.usage_count || siteUsage || 0) };
+    const siteUsage = countSitesForTemplate(sites, t);
+    return {
+      ...t,
+      _id: id,
+      _source: t.source || (t.dbId ? "api" : "module"),
+      _status: t.status || (t.source === "api" ? "draft" : "active"),
+      _usage: siteUsage,
+    };
   }), [templates, sites]);
+
+  const selected = useMemo(
+    () => mergedTemplates.find((t) => t._id === selectedId) || null,
+    [mergedTemplates, selectedId],
+  );
+
+  useEffect(() => {
+    if (!selected) {
+      setUsage({ usageCount: 0, sites: [] });
+      setVersions([]);
+      return;
+    }
+    const matched = sites.filter((s) => siteUsesTemplate(s, selected));
+    setUsage({
+      usageCount: matched.length,
+      sites: matched.map((s) => ({
+        siteId: s.id,
+        brand: s.brand,
+        domain: s.domain,
+        templateId: s.templateId,
+      })),
+    });
+    if (selected.dbId) {
+      api.get(`/templates/${selected.dbId}/versions`)
+        .then((v) => setVersions(Array.isArray(v?.versions) ? v.versions : []))
+        .catch(() => setVersions([]));
+    } else {
+      setVersions([]);
+    }
+  }, [selected, sites]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -512,7 +552,7 @@ function SidePanel({ tpl, quality, usage, versions, defaultId, publishing, hidde
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-2">
-          <StatCard label="Usage" value={`${usage.usageCount || tpl.usage_count || 0}`} sub="sites" />
+          <StatCard label="Usage" value={`${usage.usageCount ?? 0}`} sub="sites (My Sites)" />
           <StatCard label="Version" value={`v${tpl.current_version || 1}`} />
           <StatCard label="Updated" value={toDate(tpl.updated_at || tpl.created_at)} />
         </div>
@@ -588,11 +628,13 @@ function SidePanel({ tpl, quality, usage, versions, defaultId, publishing, hidde
           ))}
         </div>
 
-        {/* Usage Detail */}
-        {(usage.sites || []).length > 0 && (
-          <div>
-            <div className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider mb-2">Active Sites</div>
-            {usage.sites.map((s) => (
+        {/* Usage Detail — same list as My Sites (Neon + merged), not D1 site_versions */}
+        <div>
+          <div className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider mb-2">Active Sites</div>
+          {(usage.sites || []).length === 0 ? (
+            <div className="text-[10px] text-[hsl(var(--muted-foreground))] py-1">No sites in My Sites use this template.</div>
+          ) : (
+            usage.sites.map((s) => (
               <div key={s.siteId} className="flex items-center gap-2 py-1.5 border-b border-[hsl(var(--border))] last:border-0">
                 <div className="w-6 h-6 rounded bg-[hsl(var(--accent))] flex items-center justify-center text-[10px] font-bold text-[hsl(var(--foreground))]">{String(s.brand || s.siteId || "?")[0].toUpperCase()}</div>
                 <div>
@@ -600,9 +642,9 @@ function SidePanel({ tpl, quality, usage, versions, defaultId, publishing, hidde
                   <div className="text-[10px] text-[hsl(var(--muted-foreground))]">{s.domain || "-"}</div>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

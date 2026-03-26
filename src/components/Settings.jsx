@@ -3,7 +3,13 @@ import { useState, useEffect } from "react";
 import { InputField as Inp, SelectField as Sel } from "./ui/input-field";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
-import { api } from "../services/api";
+import { api, getResolvedApiBase } from "../services/api";
+
+/** Host part of Neon URL for diagnostics (password masked). */
+function neonEndpointHost(conn) {
+    if (!conn || typeof conn !== "string" || !conn.includes("@")) return "";
+    return conn.replace(/:[^:@]+@/, ":****@").split("@")[1]?.split("/")[0] || "";
+}
 import { multiloginApi } from "../services/multilogin";
 import { getCfApiBase } from "../utils/api-proxy";
 import { detectIncompleteSettings } from "../services/account-lock";
@@ -122,9 +128,11 @@ function Hex32IdHint({ value }) {
     );
 }
 
-export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
+export function Settings({ settings, setSettings, stats, apiOk, neonOk, sitesCount = 0 }) {
     const asArray = (v) => Array.isArray(v) ? v : [];
     const [neonUrl, setNeonUrl] = useState(settings.neonUrl || import.meta.env.VITE_NEON_URL || "");
+    /** Same Worker URL as production dashboard — avoids hitting a different D1 than the main site */
+    const [apiBase, setApiBase] = useState(settings.apiBase || import.meta.env.VITE_API_BASE || "");
     const [apiKey, setApiKey] = useState(settings.apiKey || "");
     const [geminiKey, setGeminiKey] = useState(settings.geminiKey || "");
     const [netlifyToken, setNetlifyToken] = useState(settings.netlifyToken || "");
@@ -208,6 +216,40 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
 
     const [hideRevenue, setHideRevenue] = useState(settings.hideRevenue === true);
 
+    useEffect(() => {
+        const envB = import.meta.env.VITE_API_BASE;
+        if (envB && String(envB).trim()) {
+            setApiBase(String(envB).trim().replace(/\/+$/, ""));
+            return;
+        }
+        if (typeof settings?.apiBase === "string") setApiBase(settings.apiBase);
+    }, [settings?.apiBase]);
+
+    useEffect(() => {
+        const envN = import.meta.env.VITE_NEON_URL;
+        if (envN && String(envN).includes("@")) {
+            setNeonUrl(String(envN).trim());
+            return;
+        }
+        if (typeof settings?.neonUrl === "string" && settings.neonUrl) setNeonUrl(settings.neonUrl);
+    }, [settings?.neonUrl]);
+
+    /** Raw `sites` row count from Worker GET /init (D1) — compare to merged in-app list when Neon is on */
+    const [workerInitSiteRows, setWorkerInitSiteRows] = useState(null);
+    useEffect(() => {
+        let cancelled = false;
+        api.get("/init")
+            .then((d) => {
+                if (cancelled || d?.error) return;
+                setWorkerInitSiteRows(Array.isArray(d.sites) ? d.sites.length : null);
+            })
+            .catch(() => {
+                if (!cancelled) setWorkerInitSiteRows(null);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const [testing, setTesting] = useState(null);
     const [testResult, setTestResult] = useState({});
@@ -775,11 +817,74 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                     title="ฐานข้อมูล"
                     desc="Neon Postgres = แหล่งหลัก (sites, settings, deploys) · Cloudflare D1 = edge SQL สำหรับ Worker"
                 >
+                    <Card className="mb-0 border-[hsl(var(--primary))]/25 bg-[hsl(var(--primary))]/5">
+                        <CardHeader><CardTitle>🔗 API Worker (ให้ตรงกับเว็บหลัก)</CardTitle></CardHeader>
+                        <CardContent className="flex flex-col gap-2">
+                            <p className="text-[11px] text-[hsl(var(--muted-foreground))] -mt-2 mb-1 leading-relaxed">
+                                Local dev ค่าเริ่มต้นชี้ไป Worker ตัวเดียวในโค้ด — ถ้าเว็บหลักใช้ Worker / D1 อื่น จำนวนเว็บจะไม่ตรง
+                                ใส่ URL ฐานของ Worker เดียวกับ production (ลงท้าย <code className="text-[10px] font-mono">/api</code>) แล้ว Save
+                                · ว่าง = ใช้ <code className="text-[10px] font-mono">VITE_API_BASE</code> หรือ default
+                            </p>
+                            <div>
+                                <span className="text-[10px] text-[hsl(var(--muted-foreground))] block mb-0.5">Worker base</span>
+                                <Inp value={apiBase} onChange={setApiBase} placeholder="https://your-worker.workers.dev/api" />
+                            </div>
+                            <Button type="button" onClick={() => save({ apiBase: apiBase.trim() })} disabled={saving} className="text-xs self-start">
+                                {saving ? "Saving..." : "💾 Save API base"}
+                            </Button>
+                        </CardContent>
+                    </Card>
+                    <Card className="mb-4 border-[hsl(var(--border))] bg-[hsl(var(--card))]/80">
+                        <CardHeader><CardTitle className="text-sm">ทำไม “ฐานข้อมูล” ถึงไม่ตรงกับที่คาด</CardTitle></CardHeader>
+                        <CardContent className="text-[11px] text-[hsl(var(--muted-foreground))] space-y-2 leading-relaxed">
+                            <p>
+                                แอปนี้ไม่ได้มีตารางเดียว: <strong className="text-[hsl(var(--foreground))]">Neon</strong> เก็บไซต์/settings หลัก
+                                ส่วน <strong className="text-[hsl(var(--foreground))]">Worker (D1)</strong> มีตาราง <code className="text-[10px] font-mono">sites</code> แยก
+                                — ตอน boot จะ <strong className="text-[hsl(var(--foreground))]">merge + dedupe ตามโดเมน</strong> ดังนั้นจำนวนแถวอาจไม่เท่ากับ Neon หรือ D1 ดิบ
+                            </p>
+                            <ul className="list-disc pl-4 space-y-1">
+                                <li>Template Manager เคยนับ usage จาก D1 <code className="text-[10px]">site_versions</code> — ตอนนี้การ์ดใช้รายการเดียวกับ My Sites</li>
+                                <li>ถ้า <code className="text-[10px]">VITE_NEON_URL</code> ใน build มีค่า ระบบจะบังคับใช้ Neon นั้น (override ที่พิมพ์ใน Settings)</li>
+                            </ul>
+                            <div className="rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--muted))]/10 p-2.5 font-mono text-[10px] text-[hsl(var(--foreground))] space-y-1">
+                                <div className="font-sans text-[10px] text-[hsl(var(--muted-foreground))] border-b border-[hsl(var(--border))] pb-1.5 mb-1">
+                                    <strong className="text-[hsl(var(--foreground))]">ให้ตรงเว็บหลัก:</strong> ใส่ใน repo-root <code className="text-[9px]">.env</code> ให้ครบ <code className="text-[9px]">VITE_NEON_URL</code> + <code className="text-[9px]">VITE_API_BASE</code> ชุดเดียวกับที่ build production แล้วรีสตาร์ท <code className="text-[9px]">npm run dev</code>
+                                </div>
+                                <div>Build มี VITE_NEON_URL: {import.meta.env.VITE_NEON_URL ? "ใช่" : "ไม่"} · VITE_API_BASE: {import.meta.env.VITE_API_BASE ? "ใช่" : "ไม่"}</div>
+                                <div>Neon endpoint (จาก settings หลัง merge): {neonEndpointHost(settings?.neonUrl) || "—"}</div>
+                                <div>Worker ที่เรียกจริง: {getResolvedApiBase()}</div>
+                                <div>Neon: {neonOk ? "เชื่อมแล้ว" : "ไม่ได้ใช้ / ล้มเหลว"} · API /init: {apiOk ? "โหลดได้" : "ไม่ได้"}</div>
+                                <div>
+                                    ไซต์ในแอป (หลัง merge): <strong>{sitesCount}</strong>
+                                    {workerInitSiteRows != null && (
+                                        <> · แถว <code className="text-[10px]">sites</code> จาก /init (D1): <strong>{workerInitSiteRows}</strong></>
+                                    )}
+                                </div>
+                                {neonOk && workerInitSiteRows != null && workerInitSiteRows !== sitesCount && (
+                                    <div className="text-[hsl(var(--warning))] font-sans text-[11px] pt-1">
+                                        ตัวเลขต่างกันปกติได้ถ้า Neon เปิดอยู่ (รายการบนจอ = Neon รวม D1 แล้วลบซ้ำโดเมน) — ถ้าคาดว่าควรเท่ากันทุกที่ ให้เช็คว่า Neon กับ Worker เป็นคนละโปรเจกต์หรือไม่
+                                    </div>
+                                )}
+                            </div>
+                            {!!import.meta.env.VITE_NEON_URL && (
+                                <p className="text-[hsl(var(--warning))]">
+                                    โหมด dev: <code className="text-[10px]">VITE_NEON_URL</code> ถูกฝังใน build — ถ้าไม่ใช่โปรเจกต์เดียวกับ production จะเห็นข้อมูลคนละชุดกับเว็บหลัก
+                                </p>
+                            )}
+                        </CardContent>
+                    </Card>
                     <div className="grid md:grid-cols-2 gap-4 items-start">
                         <Card className="mb-0">
                             <CardHeader><CardTitle>Neon Postgres</CardTitle></CardHeader>
                             <CardContent className="flex flex-col gap-2">
                                 <p className="text-[11px] text-[hsl(var(--muted-foreground))] -mt-2 mb-1">Serverless Postgres for persistent storage (settings, sites, deploys)</p>
+                                <div className="rounded-md border border-[hsl(var(--warning))]/40 bg-[hsl(var(--warning))]/10 p-2.5 text-[11px] text-[hsl(var(--foreground))] leading-relaxed">
+                                    <strong className="text-[hsl(var(--warning))]">โปรเจกต์ที่ถูก:</strong> ใน Neon Console ชื่อโปรเจกต์หลักคือ <strong>FusionOps</strong> (ข้อมูล LP จริง) — อย่าสับกับ <code className="text-[10px]">fusionops-production</code> (region อื่น) หรือ <code className="text-[10px]">lp-factory-admin</code>
+                                    <br />
+                                    <span className="text-[hsl(var(--muted-foreground))]">คัด connection string จาก Dashboard → โปรเจกต์ที่ถูก → Connection details เท่านั้น · ถ้ามี <code className="text-[10px]">VITE_NEON_URL</code> ใน build จะบังคับทับค่าด้านล่าง</span>
+                                    <br />
+                                    <span className="text-[hsl(var(--muted-foreground))]">เมื่อเชื่อมสำเร็จ แอปจะส่ง <code className="text-[10px]">neonUrl</code> ไปที่ Worker — ทุกคนที่ใช้ Worker ตัวเดียวกันจะได้ URL ชุดนั้น</span>
+                                </div>
                                 <div><Lbl>Connection String (pooler)</Lbl><Inp type="password" value={neonUrl} onChange={setNeonUrl} placeholder="postgresql://user:pass@ep-xxx.us-west-2.aws.neon.tech/neondb?sslmode=require" /></div>
                                 {neonOk && <div className="text-[11px] text-[hsl(var(--success))]">✓ Connected to Neon</div>}
                                 <Button onClick={() => save({ neonUrl })} disabled={saving || !neonUrl} className="text-xs self-start">{saving ? "Connecting..." : "💾 Save & Connect"}</Button>
