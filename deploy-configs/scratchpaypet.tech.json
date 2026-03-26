@@ -18,8 +18,8 @@
   "amountMax": 5000,
   "aprMin": 5.99,
   "aprMax": 35.99,
-  "primaryColor": "#3b5bdb",
-  "accentColor": "#f97316",
+  "primaryColor": "",
+  "accentColor": "",
   "conversionId": "AW-8888",
   "gtagFormStartLabel": "form_start",
   "gtagFormSubmitLabel": "form_submit",
@@ -40,22 +40,22 @@
   "reviews": [
     {
       "name": "Sarah K.",
-      "location": "Austin, TX",
+      "text": "My dog had an unexpected emergency and the vet bill was huge. Scratchpay made it possible to get him the care he needed right away without emptying my savings. So grateful for the quick approval!",
       "rating": 5,
-      "text": "My dog had an unexpected emergency and the vet bill was huge. Scratchpay made it possible to get him the care he needed right away without emptying my savings. So grateful for the quick approval!"
+      "location": "Austin, TX"
     },
     {
       "name": "Michael R.",
-      "location": "Seattle, WA",
+      "text": "My cat needed a dental procedure that was more than I could pay upfront. Scratchpay offered a payment plan that fit my budget perfectly, making it stress-free to get her the necessary care.",
       "rating": 5,
-      "text": "My cat needed a dental procedure that was more than I could pay upfront. Scratchpay offered a payment plan that fit my budget perfectly, making it stress-free to get her the necessary care."
+      "location": "Seattle, WA"
     },
     {
       "name": "Jessica M.",
-      "location": "Miami, FL",
+      "text": "With two dogs and a cat, vet visits can add up fast. Scratchpay allowed me to spread out the cost of their annual check-ups and vaccinations, making it much more manageable.",
       "rating": 5,
-      "text": "With two dogs and a cat, vet visits can add up fast. Scratchpay allowed me to spread out the cost of their annual check-ups and vaccinations, making it much more manageable."
+      "location": "Miami, FL"
     }
   ],
-  "deployedAt": "2026-03-26T23:01:31.460Z"
+  "deployedAt": "2026-03-26T23:09:05.468Z"
 }
