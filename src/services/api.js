@@ -14,11 +14,16 @@ function resolveApiBase() {
     return String(fromWindow || fromEnv || PROD_API_BASE).replace(/\/+$/, "");
 }
 
-function buildApiUrl(path) {
-    const base = resolveApiBase();
+/**
+ * Build absolute URL to the API Worker. Pass `baseOverride` from settings (e.g. Spend Dashboard)
+ * when it differs from env; empty/null/undefined uses resolveApiBase() (incl. production default).
+ * Prevents duplicated `/api/api/...` when base already ends with `/api`.
+ */
+export function buildApiUrlWithBase(path, baseOverride) {
+    const hasOverride = baseOverride != null && String(baseOverride).trim() !== "";
+    const base = hasOverride ? String(baseOverride).replace(/\/+$/, "") : resolveApiBase();
     const cleanPath = String(path || "");
 
-    // Prevent duplicated "/api/api/..." when API_BASE already contains "/api".
     if (base.endsWith("/api") && cleanPath.startsWith("/api/")) {
         return `${base}${cleanPath.slice(4)}`;
     }
@@ -28,6 +33,10 @@ function buildApiUrl(path) {
     }
 
     return `${base}${cleanPath}`;
+}
+
+function buildApiUrl(path) {
+    return buildApiUrlWithBase(path, null);
 }
 
 // Simple CSRF token management

@@ -39,7 +39,7 @@ export function AdsPowerProfileManager({ settings = {}, ops = {} }) {
   const [loading, setLoading] = useState(false);
   const [profiles, setProfiles] = useState([]);
   const [page, setPage] = useState(1);
-  const limit = 50;
+  const limit = 15;
   const [apiOk, setApiOk] = useState(null);
   const [loadHint, setLoadHint] = useState(null);
   const [flash, setFlash] = useState(null);
