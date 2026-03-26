@@ -13,6 +13,7 @@ import { createServer } from "node:http";
 import { ProxyAgent, fetch } from "undici";
 
 const PORT = parseInt(process.env.PORT || "8789", 10);
+/** Railway/Render/Docker send health checks to the container IP — must bind all interfaces, not loopback-only. */
 const BIND_HOST = process.env.BIND_HOST || "0.0.0.0";
 const FIELDS =
   "status,message,query,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,proxy,hosting";
@@ -146,6 +147,7 @@ createServer(async (req, res) => {
   }
   const path = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`).pathname;
 
+  // Health for Railway / Render / etc. (GET or HEAD)
   if (path === "/api/proxy/ping" && (req.method === "GET" || req.method === "HEAD")) {
     const body = JSON.stringify({ status: "ok" });
     res.writeHead(200, {
@@ -273,6 +275,6 @@ createServer(async (req, res) => {
   res.end(JSON.stringify({ error: "Not found" }));
 }).listen(PORT, BIND_HOST, () => {
   console.log(
-    `[proxy-resolve-relay] listening http://${BIND_HOST}:${PORT}  GET /api/proxy/ping | POST /api/proxy/resolve-ip | …`
+    `[proxy-resolve-relay] listening http://${BIND_HOST}:${PORT}  GET /api/proxy/ping | POST /api/proxy/resolve-ip | dns-check | latency-check`
   );
 });

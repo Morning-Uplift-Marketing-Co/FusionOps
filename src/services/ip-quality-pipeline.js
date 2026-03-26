@@ -18,6 +18,9 @@
  * falls back to IPQS + ip-api.com (from existing proxy-checker.js)
  */
 
+/** Min composite trust score for APPROVE — keep in sync with runQualityPipeline verdict. */
+export const QUALITY_TRUST_APPROVE_THRESHOLD = 70;
+
 /* ────────────────── Settings ────────────────── */
 
 function readStoredSettings() {
@@ -493,7 +496,7 @@ export async function runQualityPipeline(ip, expectedGeo = {}, opts = {}, settin
 
   // Calculate score
   const score = calculateScore(steps);
-  const verdict = score >= 70 ? "APPROVE" : "REJECT";
+  const verdict = score >= QUALITY_TRUST_APPROVE_THRESHOLD ? "APPROVE" : "REJECT";
 
   return {
     ip,
