@@ -1,0 +1,134 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Hero from '../components/Hero.astro';
+import HowItWorks from '../components/HowItWorks.astro';
+import Calculator from '../components/Calculator.astro';
+import APRTable from '../components/APRTable.astro';
+import Testimonials from '../components/Testimonials.astro';
+import Eligibility from '../components/Eligibility.astro';
+import TrustBadges from '../components/TrustBadges.astro';
+import FAQ from '../components/FAQ.astro';
+import Footer from '../components/Footer.astro';
+
+// --- Configuration Injection (Rule #4, #7) ---
+const brand = import.meta.env.PUBLIC_BRAND || 'Pastel Lending';
+const aprMin = import.meta.env.PUBLIC_APRMIN || '5.99';
+const amountMax = import.meta.env.PUBLIC_AMOUNTMAX || '5,000';
+
+const title = `${brand} — Premium Installment Loans Up to $${amountMax}`;
+const description = `Apply for an installment loan in minutes. Fixed monthly payments, competitive APR, no hidden fees. Borrow up to $${amountMax}.`;
+---
+
+<Layout title={title} description={description}>
+  {/* [Thai Comment]: ส่ง title และ description เข้าไปใน Hero 
+    เพื่อให้ User เห็น Message เดียวกับที่คลิกมาจาก Ad ทันที 
+  */}
+  <Hero h1={title} sub={description} />
+  
+  <HowItWorks />
+  <hr class="section-divider" />
+  
+  <Calculator maxAmount={amountMax} />
+  <hr class="section-divider" />
+  
+  <APRTable rate={aprMin} />
+  <hr class="section-divider" />
+
+  <TrustBadges />
+  <hr class="section-divider" />
+
+  <Testimonials />
+  <hr class="section-divider" />
+  
+  <Eligibility />
+  <hr class="section-divider" />
+  
+  <FAQ />
+  
+  <Footer />
+
+  <!-- Sticky CTA Bar: appears after 25% page scroll, CLS-safe via transform -->
+  <div
+    id="sticky-cta-bar"
+    aria-hidden="true"
+    style="position:fixed;bottom:0;left:0;right:0;z-index:60;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);will-change:transform;"
+  >
+    <!-- Desktop bar -->
+    <div class="hidden md:block border-t border-border/60"
+      style="background:hsl(0 0% 100% / 0.97);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);">
+      <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between gap-6">
+        <div class="flex items-center gap-6">
+          <div class="flex items-center gap-2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="hsl(193 46% 44%)" stroke-width="2.5" stroke-linecap="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <span class="text-foreground/55 text-sm font-medium">256-bit SSL</span>
+          </div>
+          <div class="h-4 w-px bg-border"></div>
+          <span class="text-foreground/45 text-sm">Rates from <strong class="text-foreground/75">{aprMin}% APR</strong> · Up to <strong class="text-foreground/75">${amountMax}</strong> · No hard pull to check</span>
+        </div>
+        <a href="/apply" class="btn-primary py-2.5 px-7 text-sm" data-fusionops-cta="sticky-desktop">
+          Check My Rate — Free
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- Mobile bar -->
+    <div class="md:hidden px-4 pb-4 pt-3"
+      style="background:linear-gradient(to top, hsl(28 100% 97% / 0.98) 75%, transparent);">
+      <a href="/apply" class="btn-primary w-full text-base py-4 justify-center" data-fusionops-cta="sticky-mobile">
+        Check My Rate — It's Free
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </a>
+      <p class="text-center text-foreground/35 text-xs mt-2">From {aprMin}% APR &middot; No credit impact to check</p>
+    </div>
+  </div>
+
+  <style is:inline>
+    @media (max-width: 767px) {
+      body { padding-bottom: 96px; }
+    }
+    @media (min-width: 768px) {
+      body.sticky-bar-active { padding-bottom: 61px; }
+    }
+  </style>
+
+  <script is:inline>
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+    (function () {
+      var bar = document.getElementById('sticky-cta-bar');
+      if (!bar) return;
+      var shown = false;
+      function check() {
+        var threshold = document.documentElement.scrollHeight * 0.25;
+        if (window.scrollY >= threshold && !shown) {
+          bar.style.transform = 'translateY(0)';
+          bar.removeAttribute('aria-hidden');
+          document.body.classList.add('sticky-bar-active');
+          shown = true;
+        } else if (window.scrollY < threshold && shown) {
+          bar.style.transform = 'translateY(100%)';
+          bar.setAttribute('aria-hidden', 'true');
+          document.body.classList.remove('sticky-bar-active');
+          shown = false;
+        }
+      }
+      window.addEventListener('scroll', check, { passive: true });
+      check();
+    })();
+  </script>
+</Layout>
