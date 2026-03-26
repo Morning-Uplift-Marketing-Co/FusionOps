@@ -16,13 +16,16 @@ permissions:
   # Note: Pushing tags that include workflow changes might still fail if the GitHub Actions token
   # isn't allowed to bypass workflow restrictions. We'll catch the error so the run doesn't fail.
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   # Auto-tag main before merge so we can always roll back
   auto-backup-tag:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 2
 
@@ -42,7 +45,7 @@ jobs:
     if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -82,7 +85,7 @@ jobs:
     if: github.event.pull_request && github.event.action != 'closed'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Check for worktree artifacts
         run: |
