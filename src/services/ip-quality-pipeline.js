@@ -151,31 +151,67 @@ async function checkASN(ip, cfg) {
   }
 
   try {
-    const res = await fetch(`https://ipinfo.io/${ip}?token=${token}`, {
+    let url = `https://ipinfo.io/${ip}?token=${token}`;
+    let headers = {};
+    
+    // Check if token looks like a bearer token (no "?token=" query string)
+    // Some ipinfo plans use Authorization headers or /lite/ paths
+    // e.g. "Bearer 952b15f293e618" or just "952b15f293e618"
+    const t = token.trim();
+    if (t.toLowerCase().startsWith('bearer ')) {
+      url = `https://api.ipinfo.io/lite/${ip}`;
+      headers = { "Authorization": t };
+    } else if (t.length > 20) {
+      // Very long tokens might be Bearer tokens without the prefix
+      // Let's stick to standard `?token=` but you can adapt if needed
+    }
+
+    const res = await fetch(url, {
+      headers,
       signal: AbortSignal.timeout(5000),
     });
+    
+    // If standard fails with 404/401 and it's a short token, try Lite API as fallback
+    if (!res.ok && !t.toLowerCase().startsWith('bearer ')) {
+      const fallbackUrl = `https://api.ipinfo.io/lite/${ip}`;
+      const fbRes = await fetch(fallbackUrl, {
+        headers: { "Authorization": `Bearer ${t}` },
+        signal: AbortSignal.timeout(5000),
+      }).catch(() => null);
+      
+      if (fbRes?.ok) {
+        const data = await fbRes.json();
+        return processIpinfoData(data, ip);
+      }
+      return checkASNFallback(ip);
+    }
+
     if (!res.ok) return checkASNFallback(ip);
 
     const data = await res.json();
-    const asn = data.org ? data.org.split(" ")[0] : "";
-    const isp = data.org ? data.org.replace(/^AS\d+\s*/, "") : "";
-    const isHosting = !!HOSTING_ASNS[asn];
-    const country = (data.country || "").toUpperCase();
-
-    return {
-      passed: !isHosting,
-      asn,
-      isp,
-      country,
-      city: data.city || "",
-      region: data.region || "",
-      timezone: data.timezone || "",
-      source: "IPinfo",
-      hostingName: isHosting ? HOSTING_ASNS[asn] : null,
-    };
+    return processIpinfoData(data, ip);
   } catch (e) {
     return checkASNFallback(ip);
   }
+}
+
+function processIpinfoData(data, ip) {
+  const asn = data.org ? data.org.split(" ")[0] : "";
+  const isp = data.org ? data.org.replace(/^AS\d+\s*/, "") : "";
+  const isHosting = !!HOSTING_ASNS[asn];
+  const country = (data.country || "").toUpperCase();
+
+  return {
+    passed: !isHosting,
+    asn,
+    isp,
+    country,
+    city: data.city || "",
+    region: data.region || "",
+    timezone: data.timezone || "",
+    source: "IPinfo",
+    hostingName: isHosting ? HOSTING_ASNS[asn] : null,
+  };
 }
 
 async function checkASNFallback(ip) {
