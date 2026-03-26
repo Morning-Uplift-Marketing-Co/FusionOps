@@ -1,6 +1,8 @@
 {
-  "templateId": "bear-funding",
+  "templateId": "bluerush-lending-01",
   "cfPagesProject": "lp-scratchpaypet-tech",
+  "cfZoneId": "",
+  "skipDnsUpsert": true,
   "cfApiToken": "",
   "cfAccountId": "",
   "brand": "Scratchpay",
@@ -16,8 +18,8 @@
   "amountMax": 5000,
   "aprMin": 5.99,
   "aprMax": 35.99,
-  "primaryColor": "",
-  "accentColor": "",
+  "primaryColor": "#3b5bdb",
+  "accentColor": "#f97316",
   "conversionId": "AW-8888",
   "gtagFormStartLabel": "form_start",
   "gtagFormSubmitLabel": "form_submit",
@@ -36,5 +38,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-25T11:01:28.042Z"
+  "deployedAt": "2026-03-26T21:37:44.503Z"
 }
