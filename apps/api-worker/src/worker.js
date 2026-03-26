@@ -100,6 +100,7 @@ function voluumForwardSearchParams(merged) {
 const TRUSTED_PAGES_SUFFIXES = [
   '.fusionops-web.pages.dev',
   '.fusionops.pages.dev',
+  '.up.railway.app',
 ];
 
 function buildAllowedHosts(env, requestHost) {
@@ -121,6 +122,13 @@ function buildAllowedHosts(env, requestHost) {
   ].filter(Boolean));
 }
 
+/** Cloudflare Pages preview/production hosts that include "fusionops" (e.g. multi-fusionops-web.pages.dev). */
+function isFusionopsPagesDevHost(host) {
+  const h = String(host || '').toLowerCase();
+  if (!h.endsWith('.pages.dev')) return false;
+  return h.includes('fusionops');
+}
+
 function isTrustedOriginRequest(request, url, env) {
   const allowed = buildAllowedHosts(env, url?.hostname || '');
   const originHost = extractHost(request.headers.get('Origin') || '');
@@ -128,6 +136,7 @@ function isTrustedOriginRequest(request, url, env) {
   const sourceHost = originHost || refererHost;
   if (!sourceHost) return false;
   if (allowed.has(sourceHost)) return true;
+  if (isFusionopsPagesDevHost(sourceHost)) return true;
   return TRUSTED_PAGES_SUFFIXES.some((suffix) => sourceHost.endsWith(suffix));
 }
 
@@ -947,14 +956,8 @@ async function forwardToProxyRelay(env, apiPath, jsonBody) {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
   } catch (e) {
-    return json(
-      {
-        error: `Relay unreachable: ${e.message}`,
-        relay_attempted: base,
-        hint: 'ตรวจสอบว่า VPS relay รันอยู่ เปิด HTTPS ถูกต้อง และ Worker ตั้ง PROXY_RESOLVE_RELAY_URL ตรงกับ public URL',
-      },
-      502
-    );
+    // Return null so callers can fall back to Worker → proxy TCP (relay fetch failed entirely).
+    return null;
   } finally {
     clearTimeout(tid);
   }
@@ -1284,9 +1287,10 @@ async function handleProxy(request, url, env) {
       const relayCreds = { host, port, username, password };
 
       // When PROXY_RESOLVE_RELAY_URL is set, try relay first (TCP from CF to residential gates often fails).
+      // Pass through any HTTP status from the relay (incl. 4xx/5xx) so ops see real errors; null = fetch failed → try TCP below.
       if (normalizeProxyRelayBase(env)) {
         const relayRes = await forwardToProxyRelay(env, '/api/proxy/resolve-ip', relayCreds);
-        if (relayRes?.ok) return relayRes;
+        if (relayRes != null) return relayRes;
       }
 
       try {
@@ -1386,7 +1390,7 @@ async function handleProxy(request, url, env) {
 
       if (normalizeProxyRelayBase(env)) {
         const relayRes = await forwardToProxyRelay(env, '/api/proxy/dns-check', relayCreds);
-        if (relayRes?.ok) return relayRes;
+        if (relayRes != null) return relayRes;
       }
 
       try {
@@ -1431,7 +1435,7 @@ async function handleProxy(request, url, env) {
 
       if (normalizeProxyRelayBase(env)) {
         const relayRes = await forwardToProxyRelay(env, '/api/proxy/latency-check', relayCreds);
-        if (relayRes?.ok) return relayRes;
+        if (relayRes != null) return relayRes;
       }
 
       try {

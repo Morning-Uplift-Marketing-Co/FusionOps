@@ -12,6 +12,27 @@ import { runQualityPipeline } from "../services/ip-quality-pipeline";
 import { postProxyResolveIp } from "../services/nodemaven";
 
 const REFRESH_INTERVAL = 5 * 60 * 1000;
+/** Max parallel resolve-ip / pipeline runs — avoids overwhelming a single Railway relay (27-at-once → 5xx storms). */
+const SCAN_CONCURRENCY = 4;
+
+/**
+ * @template T
+ * @param {T[]} items
+ * @param {number} limit
+ * @param {(item: T) => Promise<void>} fn
+ */
+async function runPool(items, limit, fn) {
+  let i = 0;
+  const cap = Math.max(1, Math.min(limit, items.length || 1));
+  async function worker() {
+    for (;;) {
+      const cur = i++;
+      if (cur >= items.length) return;
+      await fn(items[cur]);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(cap, items.length) }, () => worker()));
+}
 const SCORE_COLORS = { good: "hsl(142,71%,45%)", ok: "hsl(38,92%,50%)", bad: "hsl(0,84%,60%)" };
 function getScoreColor(s) { return s >= 90 ? SCORE_COLORS.good : s >= 70 ? SCORE_COLORS.ok : SCORE_COLORS.bad; }
 
@@ -290,7 +311,13 @@ export function ProxyHealthTab({ profiles: rawProfiles = [], settings = {}, stan
     const SCAN_CAP_MS = 240000;
     try {
       await Promise.race([
-        Promise.allSettled(list.map((p) => checkProfile(p).finally(bump))),
+        runPool(list, SCAN_CONCURRENCY, async (p) => {
+          try {
+            await checkProfile(p);
+          } finally {
+            bump();
+          }
+        }),
         new Promise((r) => setTimeout(r, SCAN_CAP_MS)),
       ]);
       setLastScan(Date.now());

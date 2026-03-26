@@ -1117,8 +1117,8 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk }) {
                                     เบราว์เซอร์จะบล็อกการเรียก <code className="text-[hsl(var(--foreground))]">http://127.0.0.1</code> — ต้องใช้ relay ที่เป็น{" "}
                                     <code className="text-[hsl(var(--foreground))]">https://</code> (โดเมน + TLS) หรือทดสอบจาก dev บน <code className="text-[hsl(var(--foreground))]">http://localhost</code>
                                     {" "}
-                                    <strong className="text-[hsl(var(--foreground))]">Production:</strong> ตั้งตัวแปร <code className="text-[hsl(var(--foreground))]">PROXY_RESOLVE_RELAY_URL</code> บน Cloudflare Worker (ชี้ไป <code className="text-[hsl(var(--foreground))]">https://relay…</code>)
-                                    แล้ว Worker จะส่งต่อ resolve-ip ให้เมื่อ TCP ล้ม — ผู้ใช้ทุกคนได้สแกนได้โดยไม่ต้องกรอก relay ในเบราว์เซอร์
+                                    <strong className="text-[hsl(var(--foreground))]">Production:</strong> (1) บน <strong>Cloudflare Worker</strong> ที่ <code className="text-[hsl(var(--foreground))]">VITE_API_BASE</code> ชี้ไป — ตั้ง <code className="text-[hsl(var(--foreground))]">PROXY_RESOLVE_RELAY_URL</code> = <code className="text-[hsl(var(--foreground))]">https://…relay…</code> แล้ว deploy Worker
+                                    (2) บน <strong>Cloudflare Pages</strong> (build) ใช้ <code className="text-[hsl(var(--foreground))]">VITE_PROXY_RESOLVE_RELAY</code> หรือ <code className="text-[hsl(var(--foreground))]">PROXY_RESOLVE_RELAY_URL</code> ค่าเดียวกัน แล้ว <strong>redeploy</strong> เพื่อให้เบราว์เซอร์ยิง relay ก่อน Worker
                                 </p>
                                 <Inp value={proxyResolveRelayUrl} onChange={setProxyResolveRelayUrl} placeholder="http://127.0.0.1:8789 (ว่าง = ใช้แค่ Worker)" />
                             </CardContent>
