@@ -18,8 +18,8 @@
   "amountMax": 5000,
   "aprMin": 5.99,
   "aprMax": 35.99,
-  "primaryColor": "#3b5bdb",
-  "accentColor": "#f97316",
+  "primaryColor": "",
+  "accentColor": "",
   "conversionId": "AW-8888",
   "gtagFormStartLabel": "form_start",
   "gtagFormSubmitLabel": "form_submit",
@@ -40,22 +40,23 @@
   "reviews": [
     {
       "name": "Sarah K.",
-      "location": "Austin, TX",
+      "text": "My dog suddenly fell ill, and I was panicking about the emergency vet bill. Scratchpay made it so easy to get approved quickly, letting me focus on my pup's recovery without financial stress.",
       "rating": 5,
-      "text": "My dog suddenly fell ill, and I was panicking about the emergency vet bill. Scratchpay made it so easy to get approved quickly, letting me focus on my pup's recovery without financial stress."
+      "location": "Austin, TX"
     },
     {
       "name": "Mark D.",
-      "location": "Seattle, WA",
+      "text": "My cat needed extensive dental work, and the cost was a bit overwhelming. Scratchpay offered a flexible payment plan that fit my budget perfectly, ensuring my cat got the care she deserved.",
       "rating": 5,
-      "text": "My cat needed extensive dental work, and the cost was a bit overwhelming. Scratchpay offered a flexible payment plan that fit my budget perfectly, ensuring my cat got the care she deserved."
+      "location": "Seattle, WA"
     },
     {
       "name": "Jessica M.",
-      "location": "Miami, FL",
+      "text": "Adopting our new puppy was exciting, but the initial costs for supplies and first vet visits added up fast. Scratchpay provided the financial bridge we needed to welcome our new family member without worry.",
       "rating": 5,
-      "text": "Adopting our new puppy was exciting, but the initial costs for supplies and first vet visits added up fast. Scratchpay provided the financial bridge we needed to welcome our new family member without worry."
+      "location": "Miami, FL"
     }
   ],
-  "deployedAt": "2026-03-26T23:45:05.414Z"
+  "showReviews": true,
+  "deployedAt": "2026-03-27T00:11:44.624Z"
 }
