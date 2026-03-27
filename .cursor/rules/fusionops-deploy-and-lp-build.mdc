@@ -1,0 +1,38 @@
+---
+description: GitHub Actions deploy-lp, inject-tracking, deploy-configs, PUBLIC_* env contract
+globs:
+  - .github/workflows/**/*
+  - deploy-configs/**/*
+  - scripts/inject-tracking.mjs
+  - scripts/validate-template-tracking.mjs
+alwaysApply: false
+---
+
+# Deploy LP pipeline & landing build contract
+
+## Trigger
+
+- **`.github/workflows/deploy-lp.yml`** runs on push to **`deploy-configs/**/*.json`** (one config per domain/site build).
+
+## Flow (simplified)
+
+1. Resolve changed **`deploy-configs/{domain}.json`**.
+2. Check out or prepare the **template** directory (workflow steps — see file).
+3. Node script writes **`.env`** in the template workspace: for each deploy field, emits **`PUBLIC_<KEY>=...`** and parallel **`VITE_<ALIAS>=...`** (see `vars` / `viteMap` in the workflow). Includes **`REVIEWS`** → **`PUBLIC_REVIEWS`** (JSON string).
+4. **`node scripts/inject-tracking.mjs .`** — injects / normalizes Voluum, gtag, and related snippets per project conventions.
+5. **`scripts/validate-template-tracking.mjs`** — sanity-check tracking stack.
+6. Build (often **`astro build`**) and deploy to Pages/host.
+
+## Landing page (Astro) expectations
+
+- **`Layout.astro`** should take **`title`** and **`description`** from **`Astro.props`** (or env-driven meta) for `<title>`, meta description, **Open Graph** — avoid duplicate hardcoded head blocks.
+- **Reviews:** read **`import.meta.env.PUBLIC_REVIEWS`** (stringified JSON); parse safely; if empty, hide section or neutral trust line — see workflow docs under `.windsurf/workflows/convert-astro-template.md`.
+- **Performance:** PPC LPs should stay **HTML/CSS-first**, minimal client JS; do not add heavy third-party widgets unless required.
+
+## Editing `inject-tracking.mjs`
+
+- High-impact: affects **every CI build**. Keep changes **narrow** and **idempotent** where possible; run **`validate-template-tracking.mjs`** locally against a sample template if you can.
+
+## `deploy-configs/*.json`
+
+- Produced/managed by app deploy code (**`src/utils/deployers/github-actions.js`**) from Wizard site objects. New fields must flow from **`SITE_FIELD_KEYS`** → deploy mapper → workflow `vars` if they need to reach the built site.

@@ -1,0 +1,88 @@
+---
+description: FusionOps / LP Factory — full project context for any AI (architecture, flows, hazards)
+alwaysApply: true
+---
+
+# FusionOps (LP Factory) — project brain for AI assistants
+
+## What this repository is
+
+- **Product:** Internal ops + builder for **PPC / affiliate landing pages** (loan/finance verticals common): multi-step **Wizard**, site list, deploy history, Voluum/Google tracking hooks, template library, variant tools, ops dashboards.
+- **Primary UI:** **Astro 6** hosts a thin shell; almost all product UI is **React 19** mounted from `src/AppRoot.jsx` → `src/App.jsx` (islands / `client:only`).
+- **Primary API:** **Cloudflare Worker** monolith in `apps/api-worker/src/worker.js` — path-based `fetch` router, **D1** (`DB`, sometimes `PIXEL_DB`), optional **R2** thumbnails, AI routes (Gemini/Anthropic), template CRUD, proxies, postbacks.
+- **Other Workers:** `apps/worker/` (LeadsGate callbacks, beacons), `apps/pixel-worker/` (first-party `t.{domain}/e` pixel), `apps/cf-proxy/` — **do not assume one Worker handles everything**.
+
+## Top-level map (where to look)
+
+| Area | Path | Notes |
+|------|------|--------|
+| Main app (React) | `src/App.jsx`, `src/components/**` | Wizard, Sites, Settings, Ops, dashboards |
+| Astro pages / shell | `src/pages/*.astro`, `src/layouts/` | Entry, proxy env to client |
+| API client | `src/services/api.js` | `buildApiUrl` dedupes `/api`; CSRF on mutations |
+| Site schema / allowed keys | `src/constants/site-fields.js` | **`SITE_FIELD_KEYS`** — must stay in sync with persistence + deploy JSON |
+| Template routing & preview | `src/utils/template-router.js`, `src/utils/template-registry.js`, `src/utils/lp-generator.js` | Calls `#lp-template-generator` |
+| Packaged generator | `packages/lp-template-generator/` | `generate(templateId, config)` → `{ ok, files, errors }` |
+| Deploy configs (CI input) | `deploy-configs/*.json` | Push triggers `.github/workflows/deploy-lp.yml` |
+| CI inject / validate | `scripts/inject-tracking.mjs`, `scripts/validate-template-tracking.mjs` | Voluum, pixels, env merge |
+| API Worker | `apps/api-worker/src/worker.js` | Huge single file; search `path ===` |
+| Planning / codemaps | `.planning/codebase/ARCHITECTURE.md`, `docs/CODEMAPS/frontend.md`, `docs/template-system-flow.md` | Human-oriented deep dives |
+
+## Critical hazard: duplicated `utils/` trees
+
+- Both **`utils/`** (repo root) and **`src/utils/`** exist and overlap (`template-router.js`, `lp-generator.js`, etc.).
+- The **running app imports from `src/utils/`** (see `src/App.jsx`). Treat **`src/utils/` as canonical** for UI-related changes.
+- If you edit root `utils/` only, the app may **not** pick it up. Prefer one change in `src/utils/`; sync root only if your task explicitly maintains both (some scripts/tests may still import root `utils` — grep before assuming).
+
+## Environment & naming
+
+- **Browser/client:** `import.meta.env.VITE_*` and Astro **`PUBLIC_*`** (defined in `astro.config.mjs` via `vite.define` where needed).
+- **Landing builds (CI):** `deploy-lp.yml` writes **`PUBLIC_<KEY>=...`** and mirrored **`VITE_*`** aliases for Vite/Loveable-style templates (see `viteMap` in workflow).
+- **Local dev API:** `VITE_API_BASE`; dev server proxies `/api` per `astro.config.mjs`. `src/services/api.js` falls back to production Worker URL if unset.
+- **`.env.lock`:** Optional local lockfile read in `astro.config.mjs` (non-CI) to seed `process.env` — do not commit secrets.
+
+## Wizard → site → deploy (mental model)
+
+1. User fills **`src/components/Wizard.jsx`**; steps validated per step; template capabilities from `src/utils/wizard-template-capabilities.js`.
+2. Site objects are sanitized against **`SITE_FIELDS`** (`src/constants/site-fields.js`) in `App.jsx` — **new fields must be added there** and to deploy mapping if they should reach the LP build.
+3. Preview HTML/assets: **`generateHtmlByTemplate`** / **`generateDeployAssetsByTemplate`** in `src/utils/template-router.js`.
+4. Deploy to hosts uses **`src/utils/deployers/github-actions.js`** (and related): produces **`deploy-configs/{domain}.json`**; GitHub Action **`deploy-lp.yml`** checks out template, writes `.env`, runs **`scripts/inject-tracking.mjs`**, builds Astro (or template’s build).
+
+## AI features in the Wizard (API Worker)
+
+- Copy/meta/reviews generation: routes under `/api/ai/*` in `worker.js` (e.g. `generate-copy`, `generate-meta`, `generate-reviews`).
+- **Reviews** stored on site as `reviews` array → deployed as **`PUBLIC_REVIEWS`** JSON string; Astro landers should **`JSON.parse(import.meta.env.PUBLIC_REVIEWS || '[]')`** — see internal workflow docs (`.windsurf/workflows/convert-astro-template.md`).
+
+## Compliance & trust (finance LP)
+
+- Generated testimonials (**Gen Reviews**) are **synthetic** unless the operator replaces them with real substantiated reviews. Do not present as guaranteed outcomes or fake regulatory claims.
+- Tracking (Voluum, gtag, postbacks) is **sensitive** — follow existing patterns in `inject-tracking.mjs`; do not double-fire pixels.
+
+## Commands (repo root `package.json`)
+
+- `npm run dev` — Astro dev (**port 4444**, `strictPort` in `astro.config.mjs`).
+- `npm run build` / `npm run preview` — Astro app.
+- `npm test` — Vitest; E2E: `npm run test:e2e`.
+
+## Editing discipline (for any AI)
+
+- **Minimal diffs:** Change only what the task requires; do not refactor unrelated Worker sections or the whole Wizard.
+- **Security:** Never commit API keys, Wrangler secrets, or live postback URLs; use env/settings placeholders in examples.
+- **Tests:** After behavioral changes in `src/utils` or components, run targeted **`npm test`** or add/update tests under `src/**/*.test.js` / `**/__tests__/**`.
+- **Worker changes:** Editing `apps/api-worker/src/worker.js` requires scanning for **existing** `path ===` handlers to avoid duplicate routes.
+
+## More paths (secondary surfaces)
+
+- **Template authoring UI:** `src/components/TemplateGenerator/**`, `TemplateGeneratorModal.jsx` — saves templates via API Worker to D1.
+- **Standalone lander app:** `apps/lander/` — separate Astro surface; do not confuse with main `src/pages` app.
+- **Callback / pixel Workers:** `apps/worker/src`, `apps/pixel-worker/src` — routing and D1 schemas differ from API Worker; read local `wrangler.toml` before changing hostnames or paths.
+
+## Quality gates
+
+- **ESLint:** `npm run lint` at repo root.
+- **E2E:** Playwright (`npm run test:e2e`); webServer URL must match Astro **`strictPort`** (**4444**).
+
+## Version
+
+- Root `package.json` **`version`** (e.g. 3.x) is the shipping app semver; keep **CHANGELOG.md** in mind for user-facing ops changes.
+
+When in doubt, read **`SITE_FIELD_KEYS`**, **`src/services/api.js`**, and **`.planning/codebase/ARCHITECTURE.md`** before large edits.

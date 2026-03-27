@@ -6,7 +6,7 @@ import * as Sentry from "@sentry/react";
 import App from "./App.jsx";
 import { ErrorBoundary as FallbackErrorBoundary } from "./components/ErrorBoundary.jsx";
 
-const DSN = import.meta.env.VITE_SENTRY_DSN || "";
+const DSN = import.meta.env.PUBLIC_SENTRY_DSN || import.meta.env.VITE_SENTRY_DSN || "";
 
 export default function AppRoot() {
     // If Sentry is configured, use its ErrorBoundary (reports to Sentry + shows fallback)

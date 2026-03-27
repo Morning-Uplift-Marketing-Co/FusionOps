@@ -34,6 +34,16 @@ try {
 } catch (_e) {
 }
 
+// Client bundle only embeds VITE_* / PUBLIC_* from env. CF Pages users often set PROXY_RESOLVE_RELAY_URL — mirror so collectResolveBases sees it.
+if (!process.env.VITE_PROXY_RESOLVE_RELAY) {
+  const relay =
+    process.env.PUBLIC_PROXY_RESOLVE_RELAY_URL ||
+    process.env.PROXY_RESOLVE_RELAY_URL ||
+    process.env.PUBLIC_PROXY_RESOLVE_RELAY ||
+    '';
+  if (relay) process.env.VITE_PROXY_RESOLVE_RELAY = relay;
+}
+
 // Get API base URL from environment or use default
 const API_BASE = process.env.VITE_API_BASE || 'https://lp-factory-api.misty-feather-556e.workers.dev';
 
@@ -41,7 +51,7 @@ export default defineConfig({
   integrations: [react()],
   // Pin dev port so Playwright webServer.url matches (avoid silent fallback to 4322, etc.)
   server: {
-    port: 4323,
+    port: 4444,
     strictPort: true,
   },
   vite: {
@@ -51,7 +61,7 @@ export default defineConfig({
       'import.meta.env.VITE_E2E': JSON.stringify(process.env.VITE_E2E || ''),
     },
     server: {
-      port: 4323,
+      port: 4444,
       strictPort: true,
       host: true,
       fs: { allow: ['../..', '.'] },

@@ -51,6 +51,7 @@ const runtimeVoluumInit =
   JSON.stringify(conversionId) +
   ';window.__VOLUUM_CLICK_URL__=' +
   JSON.stringify(voluumClickUrl) +
+  ';if(!window.__VOLUUM_DOMAIN__&&window.__VOLUUM_CLICK_URL__){try{var __vh=new URL(window.__VOLUUM_CLICK_URL__).hostname;if(__vh)window.__VOLUUM_DOMAIN__=__vh;}catch(e){}}' +
   ';var ns=document.getElementById("vlnoscript");' +
   'if(ns&&window.__VOLUUM_DOMAIN__)ns.href="https://"+window.__VOLUUM_DOMAIN__+"/d/.js?noscript=true&lpurl=";' +
   '})();';
@@ -66,7 +67,13 @@ const runtimeVoluumInit =
 <!-- Voluum Direct Tracking Pixel (v2) -->
 <script is:inline data-cfasync="false">
 (function(){
-  var vd = window.__VOLUUM_DOMAIN__ || 'link.scratchpayeasy.com';
+  var vd = window.__VOLUUM_DOMAIN__ || '';
+  if (!vd) {
+    try {
+      var cw = window.__VOLUUM_CLICK_URL__ || '';
+      if (cw && /^https?:\/\//i.test(String(cw))) vd = new URL(String(cw)).hostname || '';
+    } catch (_e) {}
+  }
   if (!vd) return;
   var s = document.createElement('style');
   s.textContent = '.dtpcnt{opacity:0;}';

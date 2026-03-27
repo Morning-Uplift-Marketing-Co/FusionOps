@@ -1,0 +1,26 @@
+---
+description: Cloudflare API Worker — monolithic router, D1, AI routes, template API
+globs: apps/api-worker/**/*
+alwaysApply: false
+---
+
+# `apps/api-worker` (LP Factory API)
+
+## Structure
+
+- **`src/worker.js`:** Single **`fetch(request, env)`** handler with many **`if (path === '/api/...')`** branches. There is no Express-style router file — **search by pathname string** when adding endpoints.
+- **`wrangler.toml`:** Bindings (**`DB`**, **`PIXEL_DB`**, **`THUMBS`** R2, secrets). Never commit secret values.
+
+## Conventions
+
+- **JSON responses:** Use the Worker’s existing **`json()`** helper pattern (see file) for consistent status codes.
+- **AI routes:** Typically read API keys from **request body**, **`env`**, and/or **D1 `settings`** table (`geminiKey`, `anthropicKey`). New AI endpoints should follow the same fallback order as `generate-reviews` / `generate-meta`.
+- **Templates:** `/api/templates` CRUD and related thumb/MCP routes — coordinate with client `TemplateManager` / `TemplateGeneratorModal` and `fetchCustomTemplates` in template registry.
+- **CORS / auth:** Respect existing origin checks; public docs may expose **`/api/openapi.json`**.
+
+## Safety
+
+- **Rate limits / payload size:** Large POST bodies (e.g. template ZIPs, preview HTML) — follow existing caps and patterns.
+- **Do not** log full API keys or user PII in `console.log`.
+
+When adding a route, grep for an **existing similar route** (e.g. another `POST` under `/api/ai/`) and mirror error handling and key resolution.

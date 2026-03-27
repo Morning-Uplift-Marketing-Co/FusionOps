@@ -10,7 +10,7 @@ services:
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /api/proxy/ping
-    # undici v7+ requires Node >=20.18; pin 20 LTS to avoid default Node 18 images crashing at startup
+    # undici v7+ requires Node >=20.18 (global File); align with Dockerfile / .node-version
     envVars:
       - key: NODE_VERSION
-        value: "20.18.1"
+        value: "22"

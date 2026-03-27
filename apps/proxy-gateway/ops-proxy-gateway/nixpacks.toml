@@ -1,3 +1,4 @@
-# Railway / Nixpacks — undici v7 needs Node 20.18+; v6 works on 18+ but 20 LTS is safer.
+# Railway / Nixpacks — undici v7 (if hoisted from monorepo root) needs Node 20.18+ for global File.
+# Railpack may default to Node 18; pin 22 so relay starts even if root overrides pull undici 7.
 [variables]
-NIXPACKS_NODE_VERSION = "20"
+NIXPACKS_NODE_VERSION = "22"

@@ -147,6 +147,7 @@ jobs:
             RADIUS:          c.radius||'',
             TRUSTBADGES:     c.trustBadges||'',
             REVIEWS:         JSON.stringify(c.reviews||[]),
+            SHOW_REVIEWS:    c.showReviews === false ? false : true,
           };
 
           // Explicit VITE_* key mapping (Loveable convention)
@@ -163,6 +164,7 @@ jobs:
             COLORID:'COLOR_ID', FONTID:'FONT_ID',
             LAYOUT:'LAYOUT', RADIUS:'RADIUS',
             TRUSTBADGES:'TRUSTBADGES', REVIEWS:'REVIEWS',
+            SHOW_REVIEWS:'SHOW_REVIEWS',
           };
 
           const lines = [];
@@ -573,6 +575,8 @@ jobs:
           upsert_cname "$DOMAIN"
           upsert_cname "www.$DOMAIN"
 
+      # Requires API token with Zone → Cache Purge → Purge on this zone (or All zones).
+      # Code 10000 "Authentication error" usually means the token can read DNS but cannot purge.
       - name: Purge Cloudflare Cache (post-deploy)
         if: always()
         env:
@@ -619,4 +623,16 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{"purge_everything":true}')
 
-          PURGE_JSON="$PURGE_RESP" node -e "const r=JSON.parse(process.env.PURGE_JSON||'{}');if(!r.success){console.warn('Cache purge failed (non-blocking):', JSON.stringify(r));process.exit(0)};console.log('Cache purge OK:', JSON.stringify(r));"
+          PURGE_JSON="$PURGE_RESP" CF_PURGE_DOMAIN="$DOMAIN" node -e "\
+          const r=JSON.parse(process.env.PURGE_JSON||'{}');\
+          const d=process.env.CF_PURGE_DOMAIN||'';\
+          if(r.success){console.log('Cache purge OK:',JSON.stringify(r));process.exit(0);}\
+          console.warn('Cache purge failed (non-blocking):',JSON.stringify(r));\
+          const codes=(r.errors||[]).map(e=>Number(e.code));\
+          if(codes.includes(10000)||(r.errors||[]).some(e=>/authentication|not authorized|forbidden/i.test(String(e.message||'')))){\
+            console.log('');\
+            console.log('::warning::CLOUDFLARE_API_TOKEN needs Zone > Cache Purge > Purge on \"'+d+'\" (or All zones). DNS Edit alone is not enough.');\
+            console.log('Cloudflare Dashboard > My Profile > API Tokens > Edit token > Add permission: Zone - Cache Purge - Purge.');\
+          }\
+          process.exit(0);\
+          "

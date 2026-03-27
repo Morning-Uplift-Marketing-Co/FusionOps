@@ -151,6 +151,7 @@ PUBLIC_LAYOUT=""
 PUBLIC_RADIUS=""
 PUBLIC_TRUSTBADGES=""
 PUBLIC_REVIEWS="[]"
+PUBLIC_SHOW_REVIEWS=true
 `.trim();
     writeFileSync(envPath, minimalEnv);
     console.log('   📝 Created test .env file');

@@ -17,7 +17,7 @@ echo.
 echo Step 3: Rebuilding...
 call npm run build
 echo.
-
+call npm run dev
 echo ========================================
 echo REBUILD COMPLETE!
 echo ========================================

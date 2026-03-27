@@ -98,7 +98,12 @@ export async function getOrCreateZone(domain, cfAccountId, cfApiToken) {
     // Route through Worker proxy to avoid browser CORS/network issues.
     const res = await api.post("/automation/cf/zone", { domain, cfAccountId, cfApiToken });
     if (res?.error || res?.success === false) {
-      return { success: false, error: res?.error || "Zone lookup/create failed" };
+      return {
+        success: false,
+        error: res?.error || "Zone lookup/create failed",
+        detail: res?.detail,
+        url: res?.url,
+      };
     }
     const nameservers = res.zone?.name_servers || [];
     if (!Array.isArray(nameservers) || nameservers.length < 2) {
