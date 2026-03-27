@@ -10,26 +10,50 @@ interface Review {
 
 const FALLBACK_REVIEWS: Review[] = [];
 
-function safeParseReviews(raw: string): Review[] {
-  if (!raw || raw.trim() === '' || raw.trim() === '[]') return FALLBACK_REVIEWS;
+function normalizeRating(v: unknown): number {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return 5;
+  return Math.min(5, Math.max(1, Math.round(n)));
+}
+
+function safeParseReviews(raw: unknown): Review[] {
+  let s = '';
+  if (raw == null) s = '';
+  else if (typeof raw === 'string') s = raw;
+  else s = JSON.stringify(raw);
+  if (!s.trim() || s.trim() === '[]') return FALLBACK_REVIEWS;
   try {
-    const parsed = JSON.parse(raw);
+    const parsed = JSON.parse(s);
     if (!Array.isArray(parsed)) return FALLBACK_REVIEWS;
-    return parsed.filter(
-      (r): r is Review =>
-        r !== null &&
-        typeof r === 'object' &&
-        typeof r.name === 'string' &&
-        typeof r.location === 'string' &&
-        typeof r.rating === 'number' &&
-        typeof r.text === 'string'
-    );
+    const out: Review[] = [];
+    for (const r of parsed) {
+      if (r == null || typeof r !== 'object') continue;
+      const o = r as Record<string, unknown>;
+      const name = typeof o.name === 'string' ? o.name : '';
+      const location = typeof o.location === 'string' ? o.location : '';
+      const text =
+        typeof o.text === 'string'
+          ? o.text
+          : typeof o.quote === 'string'
+            ? o.quote
+            : '';
+      if (!text.trim()) continue;
+      out.push({
+        name: name || 'Customer',
+        location,
+        rating: normalizeRating(o.rating),
+        text: text.trim(),
+        amount: typeof o.amount === 'string' ? o.amount : undefined,
+        purpose: typeof o.purpose === 'string' ? o.purpose : undefined,
+      });
+    }
+    return out;
   } catch {
     return FALLBACK_REVIEWS;
   }
 }
 
-const reviews = safeParseReviews(import.meta.env.PUBLIC_REVIEWS || '');
+const reviews = safeParseReviews(import.meta.env.PUBLIC_REVIEWS);
 const hasReviews = reviews.length > 0;
 
 const stats = [
@@ -79,7 +103,7 @@ const avatarColors = [
         {reviews.map((r, i) => {
           const color = avatarColors[i % avatarColors.length];
           const initials = r.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
-          const stars = Math.min(Math.max(Math.round(r.rating), 1), 5);
+          const stars = normalizeRating(r.rating);
           return (
             <div class={`premium-card p-6 flex flex-col gap-5 reveal hover:-translate-y-0.5 transition-transform duration-200${i >= 3 ? ' hidden md:flex' : ''}`}>
               <div class="flex gap-0.5">
@@ -95,7 +119,7 @@ const avatarColors = [
               <div class="flex items-center justify-between border-t border-border pt-4">
                 <div class="flex items-center gap-3">
                   <div class="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0"
-                    style={`background: ${color}18; color: ${color};`}>
+                    style={`background: color-mix(in srgb, ${color} 10%, transparent); color: ${color};`}>
                     {initials}
                   </div>
                   <div>
