@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Step 3 Mockup — Template Selection</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0d1117; color: #e8eef5; font-family: system-ui, sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 32px 16px; }
+
+  .wizard-shell {
+    width: 100%; max-width: 1160px;
+    background: #111827;
+    border: 1px solid #1e2d3d;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  /* Header */
+  .wiz-header {
+    padding: 18px 28px 14px;
+    border-bottom: 1px solid #1e2d3d;
+  }
+  .wiz-title { font-size: 18px; font-weight: 700; }
+  .wiz-sub { font-size: 12px; color: #64748b; margin-top: 2px; }
+  .progress-bar { height: 3px; background: #1e2d3d; border-radius: 2px; margin-top: 12px; }
+  .progress-fill { height: 100%; width: 42%; background: linear-gradient(90deg, #3b82f6, #6366f1); border-radius: 2px; }
+
+  /* Body: 2 columns */
+  .wiz-body {
+    display: grid;
+    grid-template-columns: 1fr 460px;
+    gap: 0;
+    min-height: 680px;
+  }
+
+  /* Left panel */
+  .left-panel {
+    padding: 28px;
+    border-right: 1px solid #1e2d3d;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .panel-title { font-size: 17px; font-weight: 700; }
+  .panel-sub { font-size: 11px; color: #64748b; margin-top: 2px; }
+
+  /* Filter tabs */
+  .filter-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tab {
+    padding: 5px 14px; font-size: 11px; font-weight: 600; border-radius: 8px;
+    border: 1.5px solid #1e2d3d; background: #1a2332; color: #94a3b8;
+    cursor: pointer;
+  }
+  .tab.active { background: #1d4ed8; border-color: #3b82f6; color: #fff; }
+
+  /* Template list */
+  .tpl-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow-y: auto;
+    max-height: 480px;
+    padding-right: 4px;
+  }
+  .tpl-list::-webkit-scrollbar { width: 4px; }
+  .tpl-list::-webkit-scrollbar-track { background: transparent; }
+  .tpl-list::-webkit-scrollbar-thumb { background: #1e2d3d; border-radius: 4px; }
+
+  .tpl-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1.5px solid #1e2d3d;
+    background: #1a2332;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .tpl-row:hover { border-color: #3b82f6; background: #1e2d44; }
+  .tpl-row.selected { border-color: #3b82f6; background: #1d3a6e22; box-shadow: 0 0 0 1px #3b82f640; }
+  .tpl-row.selected::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px; background: #3b82f6; border-radius: 10px 0 0 10px;
+  }
+
+  /* Thumbnail in row */
+  .tpl-thumb {
+    width: 56px; height: 48px; border-radius: 6px;
+    overflow: hidden; flex-shrink: 0;
+    background: #0f1419;
+    border: 1px solid #1e2d3d;
+    position: relative;
+  }
+  .tpl-thumb iframe {
+    position: absolute; top: 0; left: 50%;
+    width: 390px; height: 844px;
+    margin-left: -195px;
+    border: none;
+    transform: scale(0.143);
+    transform-origin: top center;
+    pointer-events: none;
+  }
+  /* fallback icon thumb */
+  .tpl-thumb-icon {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 2px;
+  }
+  .tpl-thumb-icon .icon { font-size: 16px; }
+  .tpl-thumb-icon .lbl { font-size: 7px; font-weight: 700; color: #fff; opacity: 0.7; }
+
+  /* Row info */
+  .tpl-info { flex: 1; min-width: 0; }
+  .tpl-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tpl-meta { display: flex; gap: 4px; margin-top: 3px; align-items: center; flex-wrap: wrap; }
+  .badge {
+    font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px;
+    text-transform: uppercase; letter-spacing: .04em;
+  }
+  .badge-new { background: rgba(99,102,241,.25); color: #a5b4fc; border: 1px solid rgba(99,102,241,.4); }
+  .badge-live { background: rgba(16,185,129,.2); color: #6ee7b7; border: 1px solid rgba(16,185,129,.3); }
+  .badge-loan { background: rgba(59,130,246,.15); color: #93c5fd; border: 1px solid rgba(59,130,246,.3); }
+
+  /* Check icon */
+  .check-icon {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #3b82f6; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; flex-shrink: 0;
+  }
+  .uncheck-icon {
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 1.5px solid #1e2d3d;
+    flex-shrink: 0;
+  }
+
+  /* Right panel: phone */
+  .right-panel {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 32px 20px;
+    background: #0d1117;
+    position: relative;
+  }
+
+  .phone-label {
+    position: absolute; top: 14px; left: 0; right: 0;
+    text-align: center;
+    font-size: 10px; font-weight: 600; color: #475569;
+    letter-spacing: .05em; text-transform: uppercase;
+  }
+
+  /* Phone mockup */
+  .phone {
+    width: 260px; height: 564px;
+    background: #111;
+    border-radius: 36px;
+    padding: 10px;
+    border: 6px solid #222;
+    box-shadow: 0 24px 48px rgba(0,0,0,.5);
+    position: relative;
+    margin-top: 20px;
+  }
+  .phone-notch {
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 80px; height: 16px; background: #222;
+    border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;
+    z-index: 10;
+  }
+  .phone-screen {
+    width: 100%; height: 100%;
+    background: #fff; border-radius: 28px;
+    overflow: hidden; position: relative;
+  }
+  .phone-screen iframe {
+    position: absolute; top: 0; left: 50%;
+    width: 390px; height: 844px;
+    margin-left: -195px;
+    border: none;
+    transform: scale(0.618);
+    transform-origin: top center;
+    pointer-events: none;
+  }
+
+  /* Fake template content for mockup */
+  .fake-lp {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    font-family: system-ui, sans-serif;
+    overflow: hidden;
+  }
+  .fake-nav {
+    padding: 10px 14px; background: #1d4ed8;
+    font-size: 11px; font-weight: 700; color: #fff;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .fake-hero {
+    padding: 20px 14px 16px;
+    background: linear-gradient(160deg, #1e3a8a 0%, #1d4ed8 100%);
+    flex-shrink: 0;
+  }
+  .fake-hero h1 { font-size: 15px; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 6px; }
+  .fake-hero p { font-size: 9px; color: #93c5fd; line-height: 1.4; }
+  .fake-cta {
+    display: inline-block; margin-top: 10px;
+    padding: 7px 14px; background: #f97316; color: #fff;
+    font-size: 10px; font-weight: 700; border-radius: 6px;
+  }
+  .fake-body { padding: 12px 14px; background: #f8fafc; flex: 1; }
+  .fake-label { font-size: 9px; font-weight: 700; color: #374151; margin-bottom: 6px; }
+  .fake-slider { height: 4px; background: #dbeafe; border-radius: 2px; margin-bottom: 10px; position: relative; }
+  .fake-slider::after { content:''; position:absolute; left:0; top:0; width:60%; height:100%; background:#1d4ed8; border-radius:2px; }
+  .fake-amounts { display: flex; gap: 4px; margin-bottom: 10px; }
+  .fake-amt { padding: 4px 6px; font-size: 8px; font-weight: 600; border-radius: 4px; background: #dbeafe; color: #1d4ed8; }
+  .fake-amt.active { background: #1d4ed8; color: #fff; }
+  .fake-input { height: 28px; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 10px; }
+  .fake-btn { width: 100%; padding: 8px; background: #1d4ed8; color: #fff; font-size: 10px; font-weight: 700; border-radius: 6px; text-align: center; }
+  .fake-trust { display: flex; gap: 8px; margin-top: 10px; }
+  .fake-trust-item { font-size: 7px; color: #64748b; display: flex; align-items: center; gap: 2px; }
+
+  /* Variant 2 — GreenRush */
+  .fake-lp2 .fake-nav { background: #16a34a; }
+  .fake-lp2 .fake-hero { background: linear-gradient(160deg, #14532d, #16a34a); }
+  .fake-lp2 .fake-hero p { color: #bbf7d0; }
+  .fake-lp2 .fake-cta { background: #eab308; }
+  .fake-lp2 .fake-slider::after { background: #16a34a; }
+  .fake-lp2 .fake-amt { background: #dcfce7; color: #16a34a; }
+  .fake-lp2 .fake-amt.active { background: #16a34a; color: #fff; }
+  .fake-lp2 .fake-btn { background: #16a34a; }
+
+  /* Wiz footer */
+  .wiz-footer {
+    padding: 16px 28px;
+    border-top: 1px solid #1e2d3d;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .btn { padding: 9px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn-back { background: transparent; border: 1px solid #1e2d3d; color: #94a3b8; }
+  .btn-next { background: #2563eb; border: none; color: #fff; }
+
+  /* Step indicator */
+  .step-badge {
+    font-size: 11px; font-weight: 600; color: #64748b;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .step-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #3b82f6;
+  }
+
+  /* Hover tooltip */
+  .preview-hint {
+    text-align: center;
+    font-size: 10px; color: #475569;
+    margin-top: 8px;
+  }
+  .preview-hint span { color: #3b82f6; }
+</style>
+</head>
+<body>
+
+<div style="margin-bottom:20px; text-align:center;">
+  <div style="font-size:11px; color:#475569; text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px;">Mockup — Step 3 / 7</div>
+  <div style="font-size:22px; font-weight:800;">Template Selection — New Design</div>
+  <div style="font-size:12px; color:#64748b; margin-top:6px;">Compact list + live phone preview on hover/select</div>
+</div>
+
+<div class="wizard-shell">
+  <!-- Header -->
+  <div class="wiz-header">
+    <div class="wiz-title">Create New LP</div>
+    <div class="wiz-sub">Build a PPC-optimized loan landing page</div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+      <div class="step-badge"><div class="step-dot"></div> Step 3/7 &nbsp;·&nbsp; Template</div>
+      <div style="font-size:11px; color:#3b82f6;">Design</div>
+    </div>
+    <div class="progress-bar" style="margin-top:8px;"><div class="progress-fill"></div></div>
+  </div>
+
+  <!-- Body -->
+  <div class="wiz-body">
+
+    <!-- LEFT: list -->
+    <div class="left-panel">
+      <div>
+        <div class="panel-title">Choose Template</div>
+        <div class="panel-sub">Hover to preview · Click to select</div>
+      </div>
+
+      <!-- Filters -->
+      <div class="filter-tabs">
+        <div class="tab active">All <span style="opacity:.5">(10)</span></div>
+        <div class="tab">Loan <span style="opacity:.5">(1)</span></div>
+        <div class="tab">Custom <span style="opacity:.5">(9)</span></div>
+      </div>
+
+      <!-- Template list -->
+      <div class="tpl-list">
+
+        <!-- Selected item -->
+        <div class="tpl-row selected" onmouseenter="previewTpl('pastel')">
+          <div class="tpl-thumb">
+            <div class="tpl-thumb-icon" style="background: linear-gradient(160deg,#1e3a8a,#1d4ed8);">
+              <div class="icon">⚡</div>
+              <div class="lbl">Pastel</div>
+            </div>
+          </div>
+          <div class="tpl-info">
+            <div class="tpl-name">Pastel Lending Bolt</div>
+            <div class="tpl-meta">
+              <span class="badge badge-new">NEW</span>
+              <span class="badge badge-live">Live Preview</span>
+              <span class="badge badge-loan">Loan</span>
+            </div>
+          </div>
+          <div class="check-icon">✓</div>
+        </div>
+
+        <div class="tpl-row" onmouseenter="previewTpl('green')">
+          <div class="tpl-thumb">
+            <div class="tpl-thumb-icon" style="background: linear-gradient(160deg,#14532d,#16a34a);">
+              <div class="icon">💚</div>
+              <div class="lbl">Green</div>
+            </div>
+          </div>
+          <div class="tpl-info">
+            <div class="tpl-name">GreenRush Lending</div>
+            <div class="tpl-meta">
+              <span class="badge badge-new">NEW</span>
+              <span class="badge badge-live">Live Preview</span>
+            </div>
+          </div>
+          <div class="uncheck-icon"></div>
+        </div>
+
+        <div class="tpl-row" onmouseenter="previewTpl('blue')">
+          <div class="tpl-thumb">
+            <div class="tpl-thumb-icon" style="background: linear-gradient(160deg,#1e1b4b,#4f46e5);">
+              <div class="icon">💙</div>
+              <div class="lbl">Blue</div>
+            </div>
+          </div>
+          <div class="tpl-info">
+            <div class="tpl-name">BlueRush Lending</div>
+            <div class="tpl-meta">
+              <span class="badge badge-new">NEW</span>
+              <span class="badge badge-live">Live Preview</span>
+            </div>
+          </div>
+          <div class="uncheck-icon"></div>
+        </div>
+
+        <div class="tpl-row" onmouseenter="previewTpl('orange')">
+          <div class="tpl-thumb">
+            <div class="tpl-thumb-icon" style="background: linear-gradient(160deg,#431407,#ea580c);">
+              <div class="icon">🔥</div>
+              <div class="lbl">Orange</div>
+            </div>
+          </div>
+          <div class="tpl-info">
+            <div class="tpl-name">orange-lending-bolt</div>
+            <div class="tpl-meta">
+              <span class="badge badge-new">NEW</span>
+              <span class="badge badge-live">Live Preview</span>
+            </div>
+          </div>
+          <div class="uncheck-icon"></div>
+        </div>
+
+        <div class="tpl-row" onmouseenter="previewTpl('gold')">
+          <div class="tpl-thumb">
+            <div class="tpl-thumb-icon" style="background: linear-gradient(160deg,#451a03,#d97706);">
+              <div class="icon">⭐</div>
+              <div class="lbl">Gold</div>
+            </div>
+          </div>
+          <div class="tpl-info">
+            <div class="tpl-name">GoldRush-v2</div>
+            <div class="tpl-meta">
+              <span class="badge badge-new">NEW</span>
+              <span class="badge badge-live">Live Preview</span>
+            </div>
+          </div>
+          <div class="uncheck-icon"></div>
+        </div>
+
+        <div class="tpl-row" onmouseenter="previewTpl('pastel')">
+          <div class="tpl-thumb">
+            <div class="tpl-thumb-icon" style="background: linear-gradient(160deg,#312e81,#7c3aed);">
+              <div class="icon">💜</div>
+              <div class="lbl">Pastel</div>
+            </div>
+          </div>
+          <div class="tpl-info">
+            <div class="tpl-name">Pastel Lending</div>
+            <div class="tpl-meta">
+              <span class="badge badge-new">NEW</span>
+              <span class="badge badge-live">Live Preview</span>
+            </div>
+          </div>
+          <div class="uncheck-icon"></div>
+        </div>
+
+        <div class="tpl-row" onmouseenter="previewTpl('pastel')">
+          <div class="tpl-thumb">
+            <div class="tpl-thumb-icon" style="background: linear-gradient(160deg,#1c1917,#44403c);">
+              <div class="icon">🐾</div>
+              <div class="lbl">Pet</div>
+            </div>
+          </div>
+          <div class="tpl-info">
+            <div class="tpl-name">Pet-Orange-White</div>
+            <div class="tpl-meta">
+              <span class="badge badge-new">NEW</span>
+              <span class="badge badge-live">Live Preview</span>
+            </div>
+          </div>
+          <div class="uncheck-icon"></div>
+        </div>
+
+        <div class="tpl-row" onmouseenter="previewTpl('green')">
+          <div class="tpl-thumb">
+            <div class="tpl-thumb-icon" style="background: linear-gradient(160deg,#0c4a6e,#0284c7);">
+              <div class="icon">💰</div>
+              <div class="lbl">Bear</div>
+            </div>
+          </div>
+          <div class="tpl-info">
+            <div class="tpl-name">Bear Funding</div>
+            <div class="tpl-meta">
+              <span class="badge badge-new">NEW</span>
+              <span class="badge badge-live">Live Preview</span>
+            </div>
+          </div>
+          <div class="uncheck-icon"></div>
+        </div>
+
+        <div class="tpl-row" onmouseenter="previewTpl('pastel')">
+          <div class="tpl-thumb">
+            <div class="tpl-thumb-icon" style="background: linear-gradient(160deg,#1e2d3d,#3b4f68);">
+              <div class="icon">📋</div>
+              <div class="lbl">Inst</div>
+            </div>
+          </div>
+          <div class="tpl-info">
+            <div class="tpl-name">installment-001</div>
+            <div class="tpl-meta">
+              <span class="badge badge-new">NEW</span>
+              <span class="badge badge-live">Live Preview</span>
+            </div>
+          </div>
+          <div class="uncheck-icon"></div>
+        </div>
+
+        <div class="tpl-row" onmouseenter="previewTpl('pastel')">
+          <div class="tpl-thumb">
+            <div class="tpl-thumb-icon" style="background: #1e2d3d;">
+              <div class="icon">🔧</div>
+              <div class="lbl">Test</div>
+            </div>
+          </div>
+          <div class="tpl-info">
+            <div class="tpl-name">Astro Test 002</div>
+            <div class="tpl-meta">
+              <span class="badge" style="background:rgba(99,102,241,.15);color:#818cf8;border:1px solid rgba(99,102,241,.3);">CI</span>
+            </div>
+          </div>
+          <div class="uncheck-icon"></div>
+        </div>
+
+      </div><!-- /tpl-list -->
+
+    </div><!-- /left-panel -->
+
+    <!-- RIGHT: phone -->
+    <div class="right-panel">
+      <div style="position:sticky; top:20px; display:flex; flex-direction:column; align-items:center;">
+        <div class="preview-hint">Hovering: <span id="preview-label">Pastel Lending Bolt</span></div>
+
+        <div class="phone" style="margin-top:12px;">
+          <div class="phone-notch"></div>
+          <div class="phone-screen" id="phone-screen">
+            <!-- Pastel (default) -->
+            <div class="fake-lp" id="tpl-pastel">
+              <div class="fake-nav">⚡ Scratchpay</div>
+              <div class="fake-hero">
+                <h1>Get Pet Funding<br>Up To $5,000 Fast!</h1>
+                <p>Care for your beloved pet without financial worry. Simple, stress-free funding.</p>
+                <div class="fake-cta">Apply Now</div>
+              </div>
+              <div class="fake-body">
+                <div class="fake-label">How much do you need?</div>
+                <div class="fake-amounts">
+                  <div class="fake-amt">$500</div>
+                  <div class="fake-amt active">$1K</div>
+                  <div class="fake-amt">$2K</div>
+                  <div class="fake-amt">$3K</div>
+                  <div class="fake-amt">$5K</div>
+                </div>
+                <div class="fake-slider"></div>
+                <div class="fake-label">Enter your ZIP code</div>
+                <div class="fake-input"></div>
+                <div class="fake-btn">Check My Rate →</div>
+                <div class="fake-trust">
+                  <div class="fake-trust-item">✓ 256-bit SSL</div>
+                  <div class="fake-trust-item">✓ No hidden fees</div>
+                  <div class="fake-trust-item">✓ 50,000+ borrowers</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hidden variants for hover demo -->
+        <div id="tpl-green-src" style="display:none;">
+          <div class="fake-lp fake-lp2">
+            <div class="fake-nav">💚 GreenRush Lending</div>
+            <div class="fake-hero">
+              <h1>The Smarter Way to Borrow Without the Hassle</h1>
+              <p>Fixed-rate installment loans from $1,000 to $5,000.</p>
+              <div class="fake-cta">Check Your Rate</div>
+            </div>
+            <div class="fake-body">
+              <div class="fake-label">How much do you need?</div>
+              <div class="fake-amounts">
+                <div class="fake-amt">$500</div>
+                <div class="fake-amt active">$1K</div>
+                <div class="fake-amt">$2K</div>
+                <div class="fake-amt">$5K</div>
+              </div>
+              <div class="fake-slider"></div>
+              <div class="fake-label">Enter your ZIP code</div>
+              <div class="fake-input"></div>
+              <div class="fake-btn">Check Your Rate →</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tpl-blue-src" style="display:none;">
+          <div class="fake-lp" style="--c:#4f46e5;">
+            <div class="fake-nav" style="background:#4f46e5;">💙 BlueLend</div>
+            <div class="fake-hero" style="background: linear-gradient(160deg,#1e1b4b,#4f46e5);">
+              <h1>Fast Loans. Zero Surprises.</h1>
+              <p style="color:#c7d2fe;">Transparent rates, instant decision.</p>
+              <div class="fake-cta" style="background:#6366f1;">Apply Now</div>
+            </div>
+            <div class="fake-body">
+              <div class="fake-label">Loan Amount</div>
+              <div class="fake-slider" style=""></div>
+              <div class="fake-input"></div>
+              <div class="fake-btn" style="background:#4f46e5;">Get My Rate →</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:10px; font-size:10px; color:#334155; text-align:center;">
+          Live dist/index.html<br>scaled to fit
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /wiz-body -->
+
+  <!-- Footer -->
+  <div class="wiz-footer">
+    <button class="btn btn-back">← Back</button>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div style="font-size:11px; color:#3b82f6; font-weight:600;">Pastel Lending Bolt selected</div>
+      <button class="btn btn-next">Next →</button>
+    </div>
+  </div>
+
+</div><!-- /wizard-shell -->
+
+<!-- Comparison label -->
+<div style="margin-top:40px; text-align:center; color:#475569; font-size:11px; text-transform:uppercase; letter-spacing:.08em;">vs. current design</div>
+
+<!-- Current design for comparison -->
+<div style="margin-top:16px; width:100%; max-width:600px;">
+  <div style="background:#111827; border:1px solid #1e2d3d; border-radius:16px; padding:24px;">
+    <div style="font-size:12px; color:#64748b; margin-bottom:14px; font-weight:600;">CURRENT — 2-col card grid, 90px thumb</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+      <div style="border:2px solid #3b82f6; border-radius:10px; overflow:hidden; background:#1d3a6e22;">
+        <div style="height:90px; background:linear-gradient(160deg,#1e3a8a,#1d4ed8); display:flex; align-items:center; justify-content:center; gap:6px; flex-direction:column;">
+          <div style="font-size:18px;">⚡</div>
+          <div style="font-size:11px; font-weight:800; color:#fff;">Pastel Lending Bolt</div>
+          <div style="position:absolute; top:6px; right:8px; font-size:8px; padding:2px 6px; background:rgba(255,255,255,.15); border-radius:4px; color:#fff; font-weight:700;">NEW</div>
+        </div>
+        <div style="padding:8px 12px; font-size:12px; font-weight:700;">Pastel Lending Bolt</div>
+      </div>
+      <div style="border:1.5px solid #1e2d3d; border-radius:10px; overflow:hidden; background:#1a2332;">
+        <div style="height:90px; background:linear-gradient(160deg,#14532d,#16a34a); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:4px;">
+          <div style="font-size:18px;">💚</div>
+          <div style="font-size:11px; font-weight:800; color:#fff;">GreenRush Lending</div>
+        </div>
+        <div style="padding:8px 12px; font-size:12px; font-weight:700;">GreenRush Lending</div>
+      </div>
+      <div style="border:1.5px solid #1e2d3d; border-radius:10px; overflow:hidden; background:#1a2332;">
+        <div style="height:90px; background:linear-gradient(160deg,#1e1b4b,#4f46e5); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:4px;">
+          <div style="font-size:18px;">💙</div>
+          <div style="font-size:11px; font-weight:800; color:#fff;">BlueRush</div>
+        </div>
+        <div style="padding:8px 12px; font-size:12px; font-weight:700;">BlueRush Lending</div>
+      </div>
+      <div style="border:1.5px solid #1e2d3d; border-radius:10px; overflow:hidden; background:#1a2332;">
+        <div style="height:90px; background:linear-gradient(160deg,#451a03,#d97706); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:4px;">
+          <div style="font-size:18px;">⭐</div>
+          <div style="font-size:11px; font-weight:800; color:#fff;">GoldRush</div>
+        </div>
+        <div style="padding:8px 12px; font-size:12px; font-weight:700;">GoldRush-v2</div>
+      </div>
+    </div>
+    <div style="margin-top:10px; font-size:10px; color:#ef4444;">↑ เห็นแค่ icon + ชื่อ — ไม่มี live preview</div>
+  </div>
+</div>
+
+<script>
+const labels = {
+  pastel: 'Pastel Lending Bolt',
+  green: 'GreenRush Lending',
+  blue: 'BlueRush Lending',
+  orange: 'orange-lending-bolt',
+  gold: 'GoldRush-v2',
+};
+
+const templates = {
+  pastel: document.getElementById('tpl-pastel')?.outerHTML,
+  green: document.getElementById('tpl-green-src')?.innerHTML,
+  blue: document.getElementById('tpl-blue-src')?.innerHTML,
+};
+
+function previewTpl(id) {
+  const screen = document.getElementById('phone-screen');
+  const lbl = document.getElementById('preview-label');
+  if (lbl) lbl.textContent = labels[id] || id;
+
+  const src = templates[id] || templates['pastel'];
+  if (screen && src) {
+    screen.innerHTML = src;
+  }
+
+  // Highlight selected row
+  document.querySelectorAll('.tpl-row').forEach(r => {
+    r.addEventListener('click', function() {
+      document.querySelectorAll('.tpl-row').forEach(x => {
+        x.classList.remove('selected');
+        x.querySelector('.check-icon') && (x.querySelector('.check-icon').outerHTML = '<div class="uncheck-icon"></div>');
+      });
+      this.classList.add('selected');
+    });
+  });
+}
+</script>
+</body>
+</html>
