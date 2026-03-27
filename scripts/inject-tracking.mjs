@@ -175,8 +175,8 @@ const GCLID_CAPTURE_SNIPPET = `
   if (cid) SafeStorage.set('clickid', cid);
   p.forEach(function(v, k) {
     if (/^utm_/i.test(k) || /^(gclid|gbraid|wbraid|gclsrc|dclid|msclkid|fbclid|ttclid|epik|yclid)$/i.test(k)
-      || /^(campaignid|adgroupid|creative|keyword|matchtype|network|placement|targetid|device|loc_physical_ms|loc_interest_ms|adposition|adtype)$/i.test(k)
-      || /^(clickid|click_id|cid|cpid|vlcid|icid)$/i.test(k)) {
+      || /^(campaignid|adgroupid|creative|keyword|matchtype|network|placement|targetid|device|loc_physical_ms|loc_physicall_ms|loc_interest_ms|adposition|adtype)$/i.test(k)
+      || /^(clickid|click_id|cid|cpid|vlcid|icic)$/i.test(k)) {
       SafeStorage.set(k, v);
     }
   });
@@ -345,7 +345,7 @@ const PIXEL_BODY_SNIPPET = `
         var v = o[k];
         if (v == null || String(v).length > 1024) continue;
         if (/^utm_/i.test(k) || /^(gclid|gbraid|wbraid|gclsrc|dclid|msclkid|fbclid|ttclid)$/i.test(k)
-          || /^(campaignid|adgroupid|creative|keyword|matchtype|network|placement|targetid|device|loc_physical_ms|loc_interest_ms|loc_physicall_ms|cpid|cid)$/i.test(k)) {
+          || /^(campaignid|adgroupid|creative|keyword|matchtype|network|placement|targetid|device|loc_physical_ms|loc_physicall_ms|loc_interest_ms|adposition|adtype|cpid|cid)$/i.test(k)) {
           SafeStorage.set(k, v);
         }
       }
