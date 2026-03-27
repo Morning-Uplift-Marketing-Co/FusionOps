@@ -1,6 +1,8 @@
 {
-  "templateId": "bear-funding",
+  "templateId": "pastel-lending-bolt",
   "cfPagesProject": "lp-scratchpaypet-tech",
+  "cfZoneId": "",
+  "skipDnsUpsert": true,
   "cfApiToken": "",
   "cfAccountId": "",
   "brand": "Scratchpay",
@@ -35,6 +37,26 @@
   "layout": "hero-left",
   "radius": "rounded",
   "trustBadges": "",
-  "reviews": [],
-  "deployedAt": "2026-03-25T11:01:28.042Z"
+  "reviews": [
+    {
+      "name": "Sarah K.",
+      "text": "My dog suddenly fell ill, and I was panicking about the emergency vet bill. Scratchpay made it so easy to get approved quickly, letting me focus on my pup's recovery without financial stress.",
+      "rating": 5,
+      "location": "Austin, TX"
+    },
+    {
+      "name": "Mark D.",
+      "text": "My cat needed extensive dental work, and the cost was a bit overwhelming. Scratchpay offered a flexible payment plan that fit my budget perfectly, ensuring my cat got the care she deserved.",
+      "rating": 5,
+      "location": "Seattle, WA"
+    },
+    {
+      "name": "Jessica M.",
+      "text": "Adopting our new puppy was exciting, but the initial costs for supplies and first vet visits added up fast. Scratchpay provided the financial bridge we needed to welcome our new family member without worry.",
+      "rating": 5,
+      "location": "Miami, FL"
+    }
+  ],
+  "showReviews": true,
+  "deployedAt": "2026-03-27T00:11:44.624Z"
 }

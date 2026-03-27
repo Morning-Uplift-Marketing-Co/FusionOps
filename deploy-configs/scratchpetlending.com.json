@@ -1,5 +1,5 @@
 {
-  "templateId": "bluerush-lending-01",
+  "templateId": "pastel-lending-bolt",
   "cfPagesProject": "lp-scratchpetlending-com",
   "cfZoneId": "",
   "skipDnsUpsert": true,
@@ -38,5 +38,4 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-26T22:30:00.000Z"
 }
