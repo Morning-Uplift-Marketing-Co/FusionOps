@@ -78,11 +78,15 @@ export function collectResolveBases(settingsMerge) {
     if (b && !out.includes(b)) out.push(b);
   };
   add(s.proxyResolveRelayUrl);
-  const envRelay =
-    typeof import.meta !== "undefined" && import.meta.env?.VITE_PROXY_RESOLVE_RELAY
-      ? String(import.meta.env.VITE_PROXY_RESOLVE_RELAY)
-      : "";
-  add(envRelay);
+  const env = typeof import.meta !== "undefined" && import.meta.env ? import.meta.env : {};
+  for (const key of [
+    "VITE_PROXY_RESOLVE_RELAY",
+    "PUBLIC_PROXY_RESOLVE_RELAY_URL",
+    "PUBLIC_PROXY_RESOLVE_RELAY",
+    "PROXY_RESOLVE_RELAY_URL",
+  ]) {
+    if (env[key]) add(String(env[key]));
+  }
   add(resolveWorkerBase());
   return out;
 }

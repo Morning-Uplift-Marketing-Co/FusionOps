@@ -1,0 +1,22 @@
+---
+description: packages/lp-template-generator — programmatic Astro project generation
+globs: packages/lp-template-generator/**/*
+alwaysApply: false
+---
+
+# `packages/lp-template-generator`
+
+## Role
+
+- Library used by the main app (Vite alias **`#lp-template-generator`**) to **generate full Astro (or hybrid) project files** from a **`templateId`** + normalized config.
+- Entry API: **`generate(templateId, rawConfig)`** in `packages/lp-template-generator/src/core/generator.js` → returns **`{ ok, files, meta, errors }`** where **`files`** is `path → string` source contents.
+
+## Rules
+
+- **Required output:** Valid **`package.json`**, **`astro.config.mjs`**, and buildable **`src/pages/index.astro`** (per package guarantees in `generator.js` comments).
+- **Tokens:** Config is normalized via **`schema.js`** / **`tokens.js`** — extend those when adding new content fields rather than ad-hoc string replace scattered across templates.
+- **New template:** Add under **`src/templates/<id>/`** and register in **`registry.js`**; expose capabilities expected by Wizard if applicable (`wizard-template-capabilities.js` on app side).
+
+## Testing
+
+- Prefer adding tests near the package if present; ensure **`generate()`** never throws — it collects **`errors`** array.

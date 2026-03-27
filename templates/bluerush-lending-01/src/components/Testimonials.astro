@@ -1,5 +1,41 @@
 ---
-const reviews = [
+const REVIEW_COLOR_PALETTE = [
+  'hsl(168 100% 38%)',
+  'hsl(37 91% 55%)',
+  'hsl(204 100% 52%)',
+];
+
+function reviewInitials(name) {
+  if (!name || typeof name !== 'string') return '?';
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+
+function parsePublicReviews() {
+  try {
+    const raw = import.meta.env.PUBLIC_REVIEWS;
+    if (raw == null || raw === '') return null;
+    const arr = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (!Array.isArray(arr) || arr.length === 0) return null;
+    return arr
+      .map((r, i) => ({
+        name: r.name || 'Customer',
+        location: r.location || '',
+        amount: r.amount || '—',
+        purpose: r.purpose || 'Verified borrower',
+        rating: Math.min(5, Math.max(1, Number(r.rating) || 5)),
+        quote: String(r.text || r.quote || '').trim(),
+        avatar: r.avatar || reviewInitials(r.name),
+        color: r.color || REVIEW_COLOR_PALETTE[i % REVIEW_COLOR_PALETTE.length],
+      }))
+      .filter((r) => r.quote);
+  } catch {
+    return null;
+  }
+}
+
+const defaultReviews = [
   {
     name: 'Sarah M.',
     location: 'Austin, TX',
@@ -61,6 +97,16 @@ const reviews = [
     color: 'hsl(204 100% 52%)',
   },
 ];
+
+function showReviewsOnEnv() {
+  const v = import.meta.env.PUBLIC_SHOW_REVIEWS;
+  if (v == null || v === '') return true;
+  const s = String(v).toLowerCase().trim();
+  if (['false', '0', 'no', 'off'].includes(s)) return false;
+  return true;
+}
+
+const reviews = showReviewsOnEnv() ? (parsePublicReviews() ?? defaultReviews) : [];
 
 const stats = [
   { val: '4.8', unit: '/ 5.0', label: 'Average rating across 12,400+ reviews' },
