@@ -11,7 +11,7 @@ import { deployTo, getAvailableTargets } from "../utils/deployers";
 import { MockPhone } from "./ui/mock-phone";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
-import { StepBrand, StepProduct, StepTemplate, StepDesign, StepCopy, StepTracking, StepReview } from "./Wizard/index.js";
+import { StepBrand, StepProduct, StepTemplateDesign, StepCopy, StepTracking, StepReview } from "./Wizard/index.js";
 
 // Domain validation regex
 const DOMAIN_REGEX = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/i;
@@ -55,14 +55,11 @@ function validateStep(stepNum, config, wizardCaps = null) {
 
     if (stepNum === 3) {
         if (!config.templateId) errors.push("Template is required");
-    }
-
-    if (stepNum === 4) {
         const themeOn = wizardCaps?.supportsWizardTheme !== false;
         if (themeOn && !config.colorId) errors.push("Color Scheme is required");
     }
 
-    if (stepNum === 6) {
+    if (stepNum === 5) {
         const gtagId = config.gtagId || config.conversionId || "";
         if (!gtagId.trim()) {
             errors.push("Google Ads Conversion ID is required");
@@ -80,7 +77,7 @@ function validateStep(stepNum, config, wizardCaps = null) {
     return { valid: errors.length === 0, errors };
 }
 
-const steps = ["Brand", "Product", "Template", "Design", "Copy", "Tracking", "Review"];
+const steps = ["Brand", "Product", "Template & Design", "Copy", "Tracking", "Review"];
 
 export function Wizard({ config, setConfig, addSite, addDeploy, setPage, settings, notify, cfAccounts = [], registrarAccounts = [] }) {
     const asArray = (v) => Array.isArray(v) ? v : [];
@@ -95,6 +92,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
     const [nextLoading, setNextLoading] = useState(false);
     const [initialConfig, setInitialConfig] = useState(null);
     const [demoMode, setDemoMode] = useState(false);
+    const [hoverTemplateId, setHoverTemplateId] = useState(null);
     const cardRef = useRef(null);
     const deployTargets = useMemo(() => getAvailableTargets(settings), [settings]);
 
@@ -265,13 +263,13 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
         }
 
         setValidationErrors([]);
-        if (step < 7) setStep(s => s + 1);
+        if (step < 6) setStep(s => s + 1);
     };
 
     const handleDemoJump = () => {
         setDemoMode(true);
         setValidationErrors([]);
-        setStep(4);
+        setStep(3);
     };
 
     const handleBackOrCancel = () => {
@@ -576,32 +574,32 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
         const handleKeyDown = (e) => {
         if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") {
             e.preventDefault();
-            if (step < 7) handleNext();
+            if (step < 6) handleNext();
         }
     };
 
-    // Live preview HTML for steps 4(Design), 5(Copy), 7(Review)
+    // Live preview HTML for steps 3(Template+Design), 4(Copy), 6(Review)
     const [previewHtml, setPreviewHtml] = useState(() => generateHtmlByTemplate(config));
     useEffect(() => {
         let cancelled = false;
         const run = async () => {
-            // Ensure custom template cache is loaded before generating preview
             if (!getCustomTemplatesCache()) await fetchCustomTemplates();
-            if (!cancelled) setPreviewHtml(generateHtmlByTemplate(config));
+            const previewConfig = hoverTemplateId ? { ...config, templateId: hoverTemplateId } : config;
+            if (!cancelled) setPreviewHtml(generateHtmlByTemplate(previewConfig));
         };
         run();
         return () => { cancelled = true; };
-    }, [config.templateId, config.brand, config.domain, config.loanType, config.colorId, config.fontId, config.layout, config.radius, config.h1, config.badge, config.cta, config.sub, config.amountMin, config.amountMax, config.redirectUrl, config.conversionId]);
+    }, [config.templateId, config.brand, config.domain, config.loanType, config.colorId, config.fontId, config.layout, config.radius, config.h1, config.badge, config.cta, config.sub, config.amountMin, config.amountMax, config.redirectUrl, config.conversionId, hoverTemplateId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Two-column layout for steps 4(Design), 5(Copy), 7(Review)
-    const showPreview = step === 4 || step === 5 || step === 7;
+    // Two-column layout for steps 3(Template+Design), 4(Copy), 6(Review)
+    const showPreview = step === 3 || step === 4 || step === 6;
     const mainMaxWidth = showPreview ? 680 : 780;
 
     return (
         <div className="max-w-[1060px] mx-auto animate-[fadeIn_.3s_ease]" onKeyDown={handleKeyDown}>
             <div className="flex items-center justify-between mb-1">
                 <h1 className="text-[20px] font-bold m-0">Create New LP</h1>
-                {step <= 3 && (
+                {step <= 2 && (
                     <button
                         onClick={handleDemoJump}
                         title="Skip to Step 4 Design preview without domain validation"
@@ -615,7 +613,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
 
             <Card className="px-4 py-3.5 mb-4">
                 <div className="flex justify-between text-xs mb-1.5">
-                    <b>Step {step}/7</b>
+                    <b>Step {step}/6</b>
                     <span className="text-[hsl(var(--muted-foreground))]">{steps[step - 1]}</span>
                 </div>
                 {(!supportsCalculator || !supportsSectionReorder) && (
@@ -624,7 +622,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                     </div>
                 )}
                 <div className="h-1 bg-[hsl(var(--border))] rounded-sm">
-                    <div className="h-full bg-[hsl(var(--primary))] rounded-sm transition-[width_.3s]" style={{ width: `${step / 7 * 100}%` }} />
+                    <div className="h-full bg-[hsl(var(--primary))] rounded-sm transition-[width_.3s]" style={{ width: `${step / 6 * 100}%` }} />
                 </div>
             </Card>
 
@@ -643,13 +641,12 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                         <div style={{ zoom: '115%' }}>
                         {step === 1 && <StepBrand c={config} u={upd} settings={settings} cfAccounts={cfAccounts} registrarAccounts={registrarAccounts} capabilities={capabilities} />}
                         {step === 2 && <StepProduct c={config} u={upd} capabilities={capabilities} />}
-                        {step === 3 && <StepTemplate c={config} u={upd} capabilities={capabilities} notify={notify} />}
-                        {step === 4 && <StepDesign c={config} u={upd} notify={notify} designCapabilities={wizardCaps} />}
-                        {step === 5 && <StepCopy c={config} u={upd} onAiGenerate={handleAiGenerate} aiLoading={aiLoading} onAiMeta={handleAiMeta} aiMetaLoading={aiMetaLoading} onAiReviews={handleAiReviews} aiReviewsLoading={aiReviewsLoading} capabilities={capabilities} />}
-                        {step === 6 && <StepTracking c={config} u={upd} capabilities={capabilities} />}
-                        {step === 7 && <StepReview c={config} building={building} capabilities={capabilities} />}
+                        {step === 3 && <StepTemplateDesign c={config} u={upd} notify={notify} onHoverTemplate={setHoverTemplateId} designCapabilities={wizardCaps} />}
+                        {step === 4 && <StepCopy c={config} u={upd} onAiGenerate={handleAiGenerate} aiLoading={aiLoading} onAiMeta={handleAiMeta} aiMetaLoading={aiMetaLoading} onAiReviews={handleAiReviews} aiReviewsLoading={aiReviewsLoading} capabilities={capabilities} />}
+                        {step === 5 && <StepTracking c={config} u={upd} capabilities={capabilities} />}
+                        {step === 6 && <StepReview c={config} building={building} capabilities={capabilities} />}
                         </div>
-                        {step === 7 && trackingGateOpen && (
+                        {step === 6 && trackingGateOpen && (
                             <div className="mt-4 p-4 rounded-lg border border-[rgba(239,68,68,0.35)] bg-[rgba(239,68,68,0.06)]">
                                 <div className="flex items-center gap-2 mb-2">
                                     <span className="text-sm font-bold text-[hsl(0,84%,60%)]">⚠️ Tracking Incomplete</span>
@@ -661,12 +658,12 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                                     ))}
                                 </ul>
                                 <div className="flex gap-2">
-                                    <Button onClick={() => { setStep(6); setTrackingGateOpen(false); }} className="h-7 px-3 text-xs" variant="outline">← Fix Tracking</Button>
+                                    <Button onClick={() => { setStep(5); setTrackingGateOpen(false); }} className="h-7 px-3 text-xs" variant="outline">← Fix Tracking</Button>
                                     <Button onClick={handleBuild} className="h-7 px-3 text-xs bg-[rgba(239,68,68,0.15)] border border-[rgba(239,68,68,0.4)] text-[hsl(0,84%,60%)] hover:bg-[rgba(239,68,68,0.25)]">Build Anyway</Button>
                                 </div>
                             </div>
                         )}
-                        {step === 7 && (
+                        {step === 6 && (
                             <div className="mt-4 p-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))/30]">
                                 <label className="flex items-center gap-2 text-sm font-medium mb-2">
                                     <input
@@ -705,39 +702,8 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                     <div style={{ zoom: '115%' }}>
                     {step === 1 && <StepBrand c={config} u={upd} settings={settings} cfAccounts={cfAccounts} registrarAccounts={registrarAccounts} capabilities={capabilities} />}
                     {step === 2 && <StepProduct c={config} u={upd} capabilities={capabilities} />}
-                    {step === 3 && <StepTemplate c={config} u={upd} capabilities={capabilities} notify={notify} />}
-                    {step === 4 && <StepDesign c={config} u={upd} notify={notify} designCapabilities={wizardCaps} />}
-                    {step === 5 && <StepCopy c={config} u={upd} onAiGenerate={handleAiGenerate} aiLoading={aiLoading} onAiMeta={handleAiMeta} aiMetaLoading={aiMetaLoading} onAiReviews={handleAiReviews} aiReviewsLoading={aiReviewsLoading} capabilities={capabilities} />}
-                    {step === 6 && <StepTracking c={config} u={upd} capabilities={capabilities} />}
-                    {step === 7 && <StepReview c={config} building={building} capabilities={capabilities} />}
+                    {step === 5 && <StepTracking c={config} u={upd} capabilities={capabilities} />}
                     </div>
-                    {step === 7 && (
-                        <div className="mt-4 p-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))/30]">
-                            <label className="flex items-center gap-2 text-sm font-medium mb-2">
-                                <input
-                                    type="checkbox"
-                                    checked={!!config.deployOnBuild}
-                                    onChange={(e) => upd("deployOnBuild", e.target.checked)}
-                                />
-                                Save + Deploy + DNS in one flow
-                            </label>
-                            <div className="flex items-center gap-2">
-                                <span className="text-xs text-[hsl(var(--muted-foreground))]">Deploy target:</span>
-                                <select
-                                    className="text-xs bg-[hsl(var(--input))] border border-[hsl(var(--border))] rounded px-2 py-1"
-                                    value={config.deployTarget || "cf-pages"}
-                                    onChange={(e) => upd("deployTarget", e.target.value)}
-                                    disabled={!config.deployOnBuild}
-                                >
-                                    {deployTargets.map((t) => (
-                                        <option key={t.id} value={t.id}>
-                                            {t.label}{t.configured ? "" : " (not configured)"}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-                    )}
                 </Card>
             )}
 
@@ -745,7 +711,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                 <Button variant="ghost" onClick={handleBackOrCancel}>
                     ← {step === 1 ? "Cancel" : "Back"}
                 </Button>
-                {step < 7 ? (
+                {step < 6 ? (
                     <Button onClick={handleNext} disabled={nextLoading}>
                         {nextLoading ? "⏳ Syncing DNS..." : "Next →"}
                     </Button>
