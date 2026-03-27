@@ -84,13 +84,16 @@ const faqs = [
 </section>
 
 <script>
-  document.querySelectorAll('.faq-trigger').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const item = btn.closest('.faq-item');
+  const faqList = document.getElementById('faq-list');
+  if (faqList) {
+    faqList.addEventListener('click', (e) => {
+      const trigger = (e.target as HTMLElement).closest('.faq-trigger');
+      if (!trigger) return;
+      const item = trigger.closest('.faq-item');
       if (!item) return;
       const isOpen = item.classList.contains('open');
-      document.querySelectorAll('.faq-item').forEach(el => el.classList.remove('open'));
+      faqList.querySelectorAll('.faq-item').forEach(el => el.classList.remove('open'));
       if (!isOpen) item.classList.add('open');
     });
-  });
+  }
 </script>
