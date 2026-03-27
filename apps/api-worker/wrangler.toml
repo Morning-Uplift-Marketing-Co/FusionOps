@@ -4,6 +4,10 @@ compatibility_date = "2024-12-01"
 compatibility_flags = ["nodejs_compat"]
 account_id = "ef771cfd6197dedb36bb3cea22ecf4fc"
 
+# Keep workers.dev URL active — the SPA defaults to https://lp-factory-api.<subdomain>.workers.dev/api.
+# Without this, Wrangler deploy disables the workers.dev route and the browser gets fetch NETWORK_ERROR (DNS sync, etc.).
+workers_dev = true
+
 # D1 Database binding
 # CRITICAL RULE: DO NOT CHANGE THIS DATABASE. MUST USE fusionops-main-new-v2
 [[d1_databases]]
@@ -32,6 +36,37 @@ invocation_logs = true
 [[r2_buckets]]
 binding = "THUMBS"
 bucket_name = "lp-factory-thumbs"
+
+# First-party pixel hostnames: t.{domain}/* → this Worker (see worker.js path === '/e').
+# Keep in sync with Cloudflare Dashboard; duplicate on lp-factory-pixel will fail deploy (route conflict).
+[[routes]]
+pattern = "t.scratchpetlending.com/*"
+zone_name = "scratchpetlending.com"
+
+[[routes]]
+pattern = "t.scratchcareday.com/*"
+zone_name = "scratchcareday.com"
+
+[[routes]]
+pattern = "t.pawvetfund.com/*"
+zone_name = "pawvetfund.com"
+
+[[routes]]
+pattern = "t.scratchpaypet.tech/*"
+zone_name = "scratchpaypet.tech"
+
+[[routes]]
+pattern = "t.scratchpayeasy.com/*"
+zone_name = "scratchpayeasy.com"
+
+[[routes]]
+pattern = "t.joracreditz.com/*"
+zone_name = "joracreditz.com"
+
+[[routes]]
+pattern = "node.sysassets-core-delivery.com"
+zone_name = "sysassets-core-delivery.com"
+custom_domain = true
 
 # When Cloudflare Worker cannot open TCP to residential proxy gateways (502), forward resolve-ip /
 # dns-check / latency-check to an HTTPS relay you run (e.g. `npm run proxy-relay` on a VPS).

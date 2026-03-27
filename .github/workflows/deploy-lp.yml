@@ -147,6 +147,7 @@ jobs:
             RADIUS:          c.radius||'',
             TRUSTBADGES:     c.trustBadges||'',
             REVIEWS:         JSON.stringify(c.reviews||[]),
+            SHOW_REVIEWS:    c.showReviews === false ? false : true,
           };
 
           // Explicit VITE_* key mapping (Loveable convention)
@@ -163,6 +164,7 @@ jobs:
             COLORID:'COLOR_ID', FONTID:'FONT_ID',
             LAYOUT:'LAYOUT', RADIUS:'RADIUS',
             TRUSTBADGES:'TRUSTBADGES', REVIEWS:'REVIEWS',
+            SHOW_REVIEWS:'SHOW_REVIEWS',
           };
 
           const lines = [];

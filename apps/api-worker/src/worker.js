@@ -5541,11 +5541,36 @@ export default {
       }
 
       // ═══ AI HELPERS ═══
+      /** Pull a JSON object or array from model text (markdown fences, prose, etc.). */
       function extractJson(text) {
-        const start = text.indexOf('{');
-        const end = text.lastIndexOf('}');
+        if (!text || typeof text !== 'string') return null;
+        const s = text.trim();
+        // Array first — generate-reviews expects [{...},{...}]. Do not use first `[` alone (e.g. "up to $500 [T&C]").
+        for (let i = 0; i < s.length; i++) {
+          if (s[i] !== '[') continue;
+          let j = i + 1;
+          while (j < s.length && /\s/.test(s[j])) j++;
+          if (j >= s.length || s[j] !== '{') continue;
+          const a1 = s.lastIndexOf(']');
+          if (a1 <= i) continue;
+          const sub = s.slice(i, a1 + 1);
+          try {
+            JSON.parse(sub);
+            return sub;
+          } catch (_e) {
+            /* try next "[" that starts an object array */
+          }
+        }
+        const start = s.indexOf('{');
+        const end = s.lastIndexOf('}');
         if (start === -1 || end === -1 || end < start) return null;
-        return text.slice(start, end + 1);
+        const sub = s.slice(start, end + 1);
+        try {
+          JSON.parse(sub);
+          return sub;
+        } catch (_e) {
+          return null;
+        }
       }
 
       async function callGemini(apiKey, prompt, maxTokens = 512) {
@@ -5728,10 +5753,22 @@ Return this exact JSON shape:
           const { brand = '', loanType = 'personal finance', amountMax = 5000 } = body;
           const prompt = `You are a UX copywriter. Generate 3 short, realistic customer reviews for a ${loanType} landing page. Each review must match the loan category context. Different names, states, situations. Respond ONLY with valid JSON array.\n\nBrand: ${brand}, Amount up to: $${amountMax}\n\n[\n  {"name":"First L.","location":"City, ST","rating":5,"text":"1-2 sentence review"},\n  {...},\n  {...}\n]`;
           const enrichedBody = { ...body, geminiKey: resolvedGeminiKey, anthropicKey: resolvedAnthropicKey };
-          const text = await callAI(env, enrichedBody, prompt, 512);
+          const text = await callAI(env, enrichedBody, prompt, 1024);
           const jsonStr = extractJson(text);
           if (!jsonStr) return json({ error: 'AI returned unexpected format', raw: text.slice(0, 300) }, 500);
-          return json(JSON.parse(jsonStr));
+          let parsed;
+          try {
+            parsed = JSON.parse(jsonStr);
+          } catch (pe) {
+            return json({ error: 'Invalid JSON from AI', detail: pe.message, raw: jsonStr.slice(0, 400) }, 500);
+          }
+          if (!Array.isArray(parsed) && Array.isArray(parsed?.reviews)) {
+            parsed = parsed.reviews;
+          }
+          if (!Array.isArray(parsed)) {
+            return json({ error: 'AI must return a JSON array of reviews', raw: jsonStr.slice(0, 300) }, 500);
+          }
+          return json(parsed);
         } catch (e) {
           return json({ error: e.message }, 500);
         }
