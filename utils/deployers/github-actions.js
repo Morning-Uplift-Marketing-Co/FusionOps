@@ -216,6 +216,7 @@ export async function deploy(assets, site, settings) {
     radius:          site.radius       || '',
     trustBadges:     site.trustBadges  || '',
     reviews:         site.reviews      || [],
+    showReviews:     site.showReviews !== false,
     deployedAt:      new Date().toISOString(),
   };
 

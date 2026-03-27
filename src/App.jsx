@@ -44,6 +44,99 @@ import { TaskManager } from "./components/TaskManager";
 // Neon connection string — stored in settings or hardcoded for now
 const NEON_URL = import.meta.env.VITE_NEON_URL || "";
 
+/** Normalized apex/host for dedupe only. Do not use brand — many LPs share a brand before domain is set. */
+function normalizeSiteDomainKey(site) {
+  const d = String(site?.domain || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/^www\./, "")
+    .split("/")[0]
+    .split(":")[0];
+  return d || "";
+}
+
+/** True if object looks like a Wizard LP site, not a slim ops_domains row */
+function looksLikeWizardSite(row) {
+  if (!row || typeof row !== "object") return false;
+  if (row.templateId != null && String(row.templateId).length > 0) return true;
+  if (row.colorId || row.fontId || row.layout) return true;
+  if (row.voluumCampaignId || row.voluumLanderScript) return true;
+  if (row.gtagId || row.conversionId) return true;
+  return false;
+}
+
+/**
+ * Neon stores full wizard JSON; Worker D1 stores a flat row — same site id may exist in both.
+ * Merge by id (Neon wins), then dedupe same domain + different id so counts match “main” D1 list.
+ */
+function mergeSiteListsFromNeonAndApi(neonList, apiList) {
+  const neon = Array.isArray(neonList) ? neonList : [];
+  const api = Array.isArray(apiList) ? apiList : [];
+  const byId = new Map();
+  for (const s of api) {
+    if (s && s.id) byId.set(s.id, { ...s });
+  }
+  for (const s of neon) {
+    if (!s || !s.id) continue;
+    const prev = byId.get(s.id) || {};
+    byId.set(s.id, { ...prev, ...s });
+  }
+  const ordered = [];
+  const seen = new Set();
+  for (const s of neon) {
+    if (s?.id && !seen.has(s.id)) {
+      ordered.push(byId.get(s.id));
+      seen.add(s.id);
+    }
+  }
+  for (const s of api) {
+    if (s?.id && !seen.has(s.id)) {
+      ordered.push(byId.get(s.id));
+      seen.add(s.id);
+    }
+  }
+  const out = ordered.filter(Boolean);
+  const deduped = dedupeSitesByDomain(out);
+  const neonLen = neon.length;
+  // Neon row count is the business truth; domain dedupe was collapsing distinct LPs that
+  // shared normalizeSiteDomainKey (e.g. empty domain quirks, same placeholder host).
+  if (neonLen > 0 && deduped.length < neonLen) {
+    console.warn("[boot] Skipping domain dedupe — would drop below Neon site count", {
+      neonSites: neonLen,
+      mergeById: out.length,
+      afterDomainDedupe: deduped.length,
+    });
+    return out;
+  }
+  return deduped;
+}
+
+/** Same domain + different id (Neon vs D1) → one row; wizard-shaped row preferred, then shallow merge */
+function dedupeSitesByDomain(sites) {
+  const list = Array.isArray(sites) ? sites.filter(Boolean) : [];
+  const keyFor = (s) => {
+    const d = normalizeSiteDomainKey(s);
+    return d || `__id_${s?.id || ""}`;
+  };
+  const firstIndex = new Map();
+  const groups = new Map();
+  for (let i = 0; i < list.length; i++) {
+    const s = list[i];
+    const k = keyFor(s);
+    if (!firstIndex.has(k)) firstIndex.set(k, i);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(s);
+  }
+  const keysInOrder = [...firstIndex.entries()].sort((a, b) => a[1] - b[1]).map(([k]) => k);
+  return keysInOrder.map((k) => {
+    const grp = groups.get(k);
+    if (grp.length === 1) return grp[0];
+    const seed = grp.find(looksLikeWizardSite) || grp[0];
+    return grp.reduce((acc, o) => ({ ...acc, ...o }), { ...seed });
+  });
+}
+
 async function pushAstroTemplateToGitHub({ token, owner, repo, templateId, files }) {
   const base = `https://api.github.com/repos/${owner}/${repo}/contents`;
   const branch = 'main';
@@ -129,7 +222,16 @@ export default function App() {
   const [sideCollapsed, setSideCollapsed] = useState(false);
   const [deploys, setDeploys] = useState([]);
   const [registry, setRegistry] = useState([]);
-  
+
+  // Keep header stats aligned with the live sites list (e.g. after delete) and cost sum
+  useEffect(() => {
+    setStats((prev) => ({
+      ...prev,
+      builds: sites.length,
+      spend: +sites.reduce((a, s) => a + (Number(s.cost) || 0), 0).toFixed(3),
+    }));
+  }, [sites]);
+
 const [templateGenOpen, setTemplateGenOpen] = useState(false);
 const [savedTemplates, setSavedTemplates] = useState([]);
 
@@ -373,6 +475,13 @@ useEffect(() => {
     }
   }, [sites]);
 
+  // Local browser backup — Wizard "add web" used to only update React state; if Neon/API failed
+  // silently (api.post returns { error } without throwing), refresh wiped the site.
+  useEffect(() => {
+    if (loading) return;
+    LS.set("sites", sites);
+  }, [sites, loading]);
+
   // CRITICAL: Sync Cloudflare profiles from settings to ops.cfAccounts
   // This ensures DeploySection, DnsSection, OpsCenter can see all CF accounts
   useEffect(() => {
@@ -427,6 +536,8 @@ useEffect(() => {
     // 1. Try Neon first (primary data store)
     const neonConnStr = NEON_URL || localSettings.neonUrl || "";
     let neonReady = false;
+    /** Snapshot for Neon↔Worker merge — never use setSites(prev=>merge(prev)) after await; `prev` can still be [] before React applies Neon. */
+    let neonSitesMergeBaseline = [];
 
     // Only attempt Neon if the URL looks like a real connection string
     if (neonConnStr && neonConnStr.includes("@")) {
@@ -439,7 +550,9 @@ useEffect(() => {
             setNeonOk(true);
 
             // *** CRITICAL: Push neonUrl to D1 so other devices can recover it via /api/init ***
-            // This runs in the background and doesn't block the rest of boot.
+            // Overwrites Worker `settings` for everyone using this API — wrong project (e.g. fusionops-production vs FusionOps) affects all users.
+            const neonHostHint = String(neonConnStr).replace(/:[^:@]+@/, ":****@").split("@")[1]?.split("/")[0] || "?";
+            console.warn("[boot] Posting neonUrl to Worker /settings — endpoint host:", neonHostHint, "| Verify in Neon Console this belongs to project **FusionOps** (main), not fusionops-production / lp-factory-admin.");
             api.post("/settings", { neonUrl: neonConnStr }).catch(() => { });
 
             // Load from Neon
@@ -470,32 +583,41 @@ useEffect(() => {
               });
             }
 
-            // Sites from Neon
-            if (neonSites && neonSites.length > 0) {
+            // Sites from Neon (+ snapshot for merge after /init await)
+            if (Array.isArray(neonSites) && neonSites.length > 0) {
               const migratedSites = neonSites.map(s => ({
                 ...s,
                 templateId: s.templateId || "classic"
               }));
+              neonSitesMergeBaseline = migratedSites;
               setSites(migratedSites);
 
-              // CRITICAL: Sync sites to ops.domains for DeploySection
               setOps(prev => ({
                 ...prev,
                 domains: migratedSites
               }));
             } else {
-              // Only sync if Neon is totally empty
-              const localSites = LS.get("sites") || [];
-              if (localSites.length > 0) {
-                setSites(localSites);
+              if (neonSites == null) {
+                console.warn("[boot] Neon loadSites failed (null) — using browser sites cache if any");
+                const localSites = LS.get("sites") || [];
+                if (localSites.length > 0) {
+                  neonSitesMergeBaseline = localSites;
+                  setSites(localSites);
 
-                // CRITICAL: Sync sites to ops.domains for DeploySection
-                setOps(prev => ({
-                  ...prev,
-                  domains: localSites
-                }));
+                  setOps(prev => ({
+                    ...prev,
+                    domains: localSites
+                  }));
 
-                db.syncFromLocal(localSettings, localSites, []);
+                  db.syncFromLocal(localSettings, localSites, []);
+                } else {
+                  neonSitesMergeBaseline = [];
+                }
+              } else {
+                // Neon returned [] — do not seed from localStorage "sites" (often stale 3 rows vs 7 in Neon/Worker).
+                // Merge with GET /init will hydrate; final boot fallback still restores LS if cloud is empty.
+                neonSitesMergeBaseline = [];
+                console.log("[boot] Neon sites list empty — skipping localStorage sites seed pending Worker merge");
               }
             }
             // Deploys from Neon
@@ -546,11 +668,16 @@ useEffect(() => {
         // CRITICAL: Don't overwrite domains that were already synced from sites
         setOps((prev) => {
           const nextOps = (data && typeof data.ops === "object" && data.ops) ? data.ops : {};
+          const apiDomains = asArray(nextOps.domains);
+          const prevDomains = asArray(prev.domains);
+          const prevIsSiteList = prevDomains.some((x) => looksLikeWizardSite(x));
           return {
             ...prev,
             ...nextOps,
-            // CRITICAL: Prefer already-synced domains over empty API data
-            domains: asArray(nextOps.domains).length > 0 ? asArray(nextOps.domains) : asArray(prev.domains),
+            // ops_domains rows are NOT full LP sites — never replace Neon/Wizard site list with them
+            domains: prevIsSiteList && prevDomains.length > 0
+              ? prevDomains
+              : (apiDomains.length > 0 ? apiDomains : prevDomains),
             accounts: asArray(nextOps.accounts).length > 0 ? asArray(nextOps.accounts) : asArray(prev.accounts),
             profiles: asArray(nextOps.profiles).length > 0 ? asArray(nextOps.profiles) : asArray(prev.profiles),
             payments: asArray(nextOps.payments).length > 0 ? asArray(nextOps.payments) : asArray(prev.payments),
@@ -596,7 +723,13 @@ useEffect(() => {
                 setSettings(m);
                 LS.set("settings", m);
               }
-              if (nsi?.length) setSites(nsi);
+              if (Array.isArray(nsi) && nsi.length > 0) {
+                neonSitesMergeBaseline = nsi;
+                setSites(nsi);
+                setOps(prev => ({ ...prev, domains: nsi }));
+              } else if (Array.isArray(nsi)) {
+                neonSitesMergeBaseline = [];
+              }
               if (nde?.length) setDeploys(nde);
               if (Array.isArray(nra) && nra.length > 0) {
                 setOps(prev => ({ ...prev, registrarAccounts: nra }));
@@ -613,8 +746,13 @@ useEffect(() => {
           setStats((prev) => ({
             ...prev,
             ...s,
-            builds: Number.isFinite(Number(s.builds)) ? Number(s.builds) : prev.builds,
-            spend: Number.isFinite(Number(s.spend)) ? Number(s.spend) : prev.spend,
+            // When Neon is primary, Worker row counts can lag merged/deduped list — avoid showing D1 "7" while sites is still 3.
+            builds: neonReady
+              ? prev.builds
+              : (Number.isFinite(Number(s.builds)) ? Number(s.builds) : prev.builds),
+            spend: neonReady
+              ? prev.spend
+              : (Number.isFinite(Number(s.spend)) ? Number(s.spend) : prev.spend),
             revenue: Number.isFinite(Number(s.revenue)) ? Number(s.revenue) : (prev.revenue ?? null),
             revenueSeries: Array.isArray(s.revenueSeries) ? s.revenueSeries : (prev.revenueSeries || []),
           }));
@@ -622,7 +760,16 @@ useEffect(() => {
 
         // Final fallback/merge if Neon still not ready
         if (!neonReady) {
-          if (Array.isArray(data.sites)) setSites(data.sites);
+          if (Array.isArray(data.sites)) {
+            const d = dedupeSitesByDomain(data.sites);
+            setSites(d);
+            setOps((p) => ({ ...p, domains: d }));
+            setStats((st) => ({
+              ...st,
+              builds: d.length,
+              spend: +d.reduce((a, s) => a + (Number(s.cost) || 0), 0).toFixed(3),
+            }));
+          }
           if (data.settings) {
             const merged = { ...localSettings, ...data.settings };
             setSettings(merged);
@@ -630,6 +777,25 @@ useEffect(() => {
           }
           if (data.deploys) setDeploys(data.deploys);
           if (data.variants) setRegistry(data.variants);
+        }
+
+        // Neon + D1: merge + dedupe (use neonSitesMergeBaseline, not setState(prev) — prev is often still [] right after await)
+        if (neonReady && Array.isArray(data.sites)) {
+          const mergedSites = mergeSiteListsFromNeonAndApi(neonSitesMergeBaseline, data.sites);
+          if (mergedSites.length !== neonSitesMergeBaseline.length || data.sites.length > 0) {
+            console.log("[boot] Sites after Neon↔Worker merge", {
+              baseline: neonSitesMergeBaseline.length,
+              workerRows: data.sites.length,
+              after: mergedSites.length,
+            });
+          }
+          setSites(mergedSites);
+          setOps((p) => ({ ...p, domains: mergedSites }));
+          setStats((st) => ({
+            ...st,
+            builds: mergedSites.length,
+            spend: +mergedSites.reduce((a, s) => a + (Number(s.cost) || 0), 0).toFixed(3),
+          }));
         }
 
         setApiOk(true);
@@ -641,6 +807,18 @@ useEffect(() => {
     // Report boot status to Sentry
     setSentryContext({ neonOk: neonReady, apiOk, settingsKeys: Object.keys(LS.get("settings") || {}) });
     addBreadcrumb("boot", `Boot complete — Neon:${neonReady} API:${apiOk}`);
+
+    // If cloud returned no sites, restore last browser copy (same machine) so "add web" survives refresh
+    // when Neon misconfigured or Worker returns 401 — see persistSiteRemote / LS mirror.
+    setSites((prev) => {
+      if (Array.isArray(prev) && prev.length > 0) return prev;
+      const cached = LS.get("sites");
+      if (Array.isArray(cached) && cached.length > 0) {
+        console.warn("[boot] Restoring sites from local cache (cloud list empty)");
+        return cached;
+      }
+      return prev;
+    });
 
     setLoading(false);
   }
@@ -798,6 +976,30 @@ useEffect(() => {
     Object.entries(obj).filter(([k, v]) => SITE_FIELDS.has(k) && typeof v !== "function")
   );
 
+  const isApiFailure = (res) => res && typeof res === "object" && res.error != null && res.error !== "";
+
+  /** Persist to Neon first; if that fails (or Neon off), try Worker D1 API. api.* returns { error } on failure — does not throw. */
+  const persistSiteRemote = async (site, updating) => {
+    if (neonOk) {
+      const ok = await db.saveSite(site);
+      if (ok) return { ok: true };
+      console.warn("[App] Neon saveSite failed, trying API fallback for", site?.id);
+    }
+    if (apiOk) {
+      const res = updating
+        ? await api.put(`/sites/${site.id}`, site)
+        : await api.post("/sites", site);
+      if (!isApiFailure(res)) return { ok: true };
+      const msg = String(res.error || "API rejected save");
+      console.warn("[App] API site save failed:", msg, res.detail || "");
+      return { ok: false, error: msg };
+    }
+    return {
+      ok: false,
+      error: neonOk ? "Neon save failed and API unreachable/disabled" : "Configure Neon or reachable API (Settings) to sync sites to cloud",
+    };
+  };
+
   const addSite = async (site) => {
     if (site._editMode) {
       // Update existing site (redeploy)
@@ -805,23 +1007,27 @@ useEffect(() => {
       const siteData = sanitizeSite(rawData);
       setSites(p => p.map(s => s.id === siteData.id ? { ...s, ...siteData, updatedAt: now() } : s));
 
-      if (neonOk) db.saveSite(siteData).catch(() => {});
-      else if (apiOk) api.put(`/sites/${siteData.id}`, siteData).catch(() => {});
-      saveSiteToD1(siteData).catch(() => {}); // D1 backup — fire and forget
-
-      notify(`${siteData.brand} updated!`);
+      saveSiteToD1(siteData).catch(() => {});
+      const remote = await persistSiteRemote(siteData, true);
+      if (!remote.ok) {
+        notify(`${siteData.brand} updated locally — cloud save failed: ${remote.error}`, "warning");
+      } else {
+        notify(`${siteData.brand} updated!`);
+      }
     } else {
       // New site — await Neon (primary), D1 is fire-and-forget
       const cleanSite = sanitizeSite(site);
       setSites(p => [cleanSite, ...p]);
       setStats(p => ({ ...p, builds: p.builds + 1, spend: +(p.spend + (cleanSite.cost || 0)).toFixed(3) }));
 
-      if (neonOk) await db.saveSite(cleanSite).catch(() => {});
-      else if (apiOk) await api.post("/sites", cleanSite).catch(() => {});
-      saveSiteToD1(cleanSite).catch(() => {}); // D1 backup — fire and forget
-
+      saveSiteToD1(cleanSite).catch(() => {});
+      const remote = await persistSiteRemote(cleanSite, false);
       auditLog(cleanSite.id, "site_created", `Site created: ${cleanSite.brand}`, cleanSite.domain || "");
-      notify(`${cleanSite.brand} created!`);
+      if (!remote.ok) {
+        notify(`${cleanSite.brand} saved in this browser only — cloud save failed: ${remote.error}`, "warning");
+      } else {
+        notify(`${cleanSite.brand} created!`);
+      }
     }
     setPage("sites");
   };
@@ -830,9 +1036,11 @@ useEffect(() => {
     const updatedSite = sanitizeSite({ ...site, updatedAt: now() });
     setSites(p => p.map(s => s.id === site.id ? updatedSite : s));
 
-    if (neonOk) await db.saveSite(updatedSite).catch(() => {});
-    else if (apiOk) await api.put(`/sites/${site.id}`, updatedSite).catch(() => {});
-    saveSiteToD1(updatedSite).catch(() => {}); // D1 backup — fire and forget
+    saveSiteToD1(updatedSite).catch(() => {});
+    const remote = await persistSiteRemote(updatedSite, true);
+    if (!remote.ok) {
+      notify(`Site updated locally — cloud save failed: ${remote.error}`, "warning");
+    }
   };
 
   const delSite = (id) => {
@@ -841,9 +1049,11 @@ useEffect(() => {
 
     setSites(p => p.filter(s => s.id !== id));
 
+    // Neon (primary), Worker-bound D1 (/api/sites), and token-based D1 (Settings) are three stores — remove from all when connected.
+    // Previously only Neon + d1/execute ran when neonOk; Worker rows stayed → /init merge brought deleted sites back after refresh.
     if (neonOk) db.deleteSite(id).catch(() => {});
-    else if (apiOk) api.del(`/sites/${id}`).catch(() => {});
-    deleteSiteFromD1(id).catch(() => {}); // D1 backup — fire and forget
+    if (apiOk) api.del(`/sites/${id}`).catch(() => {});
+    deleteSiteFromD1(id).catch(() => {}); // Cloudflare API via Worker proxy — optional; 404 on stale workers is ignored
 
     // Also remove matching domain from OpsCenter
     if (site) {
@@ -979,19 +1189,18 @@ useEffect(() => {
 
   const handleSaveSettings = async (s) => {
     addBreadcrumb("settings", "Save settings", { keys: Object.keys(s) });
-    // Use functional update to avoid stale closure
-    setSettings(prev => {
-      const merged = { ...(prev || {}), ...s };
-      return merged;
-    });
-    // Always persist to localStorage immediately
-    // Read fresh from state in case other saves happened
-    const fresh = { ...(LS.get("settings") || {}), ...s };
+    const prevStored = LS.get("settings") || {};
+    const fresh = sanitizeSettings({ ...prevStored, ...s });
+
+    setSettings(prev => sanitizeSettings({ ...(prev || {}), ...s }));
     LS.set("settings", fresh);
 
+    // Persist only keys the user saved, but values after env locks (VITE_NEON_URL / VITE_API_BASE / CF lock, etc.)
+    const persistPatch = Object.fromEntries(Object.keys(s).map((k) => [k, fresh[k]]));
+
     // If neonUrl changed, re-init Neon
-    if (s.neonUrl) {
-      const ok = db.initNeon(s.neonUrl);
+    if (s.neonUrl != null && String(s.neonUrl).includes("@")) {
+      const ok = db.initNeon(fresh.neonUrl);
       if (ok) {
         const pong = await db.ping();
         setNeonOk(pong);
@@ -1006,9 +1215,9 @@ useEffect(() => {
     }
 
     // Save to Neon AND D1 (dual-write) — Worker reads from D1, so always sync both
-    const neonSave = neonOk ? db.saveSettings(s) : Promise.resolve(false);
+    const neonSave = neonOk ? db.saveSettings(persistPatch) : Promise.resolve(false);
     const apiSave = apiOk
-      ? api.post("/settings", s).catch((e) => { console.warn("[App] D1 settings sync failed:", e?.message || e); return { error: true }; })
+      ? api.post("/settings", persistPatch).catch((e) => { console.warn("[App] D1 settings sync failed:", e?.message || e); return { error: true }; })
       : Promise.resolve(null);
 
     const [neonResult, apiResult] = await Promise.all([neonSave, apiSave]);
@@ -1046,6 +1255,19 @@ useEffect(() => {
     </div>
   );
 
+  // Boot finished but session check still in flight — do not render dashboard with user=null (hydration crash → white screen).
+  if (!authChecked) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", fontFamily: "'Inter','DM Sans',system-ui,sans-serif", background: T.bg || "#0a0a0a" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 36, marginBottom: 10 }}>⚡</div>
+          <div style={{ fontSize: 16, fontWeight: 600, color: T.text }}>FusionOps 3.0</div>
+          <div style={{ fontSize: 12, color: T.muted, marginTop: 8 }}>Checking session…</div>
+        </div>
+      </div>
+    );
+  }
+
   // ── Auth gate ────────────────────────────────────────────────────
   // Show login page if auth check done and no user session found
   if (authChecked && !user) {
@@ -1081,7 +1303,7 @@ useEffect(() => {
           {page === "spend" && isAdmin(user) && <SpendDashboard apiOk={apiOk} neonOk={neonOk} settings={settings} />}
           {page === "voluum" && <VoluumExplorer settings={settings} />}
           {page === "account-map" && <AccountMap apiOk={apiOk} neonOk={neonOk} ops={ops} settings={settings} />}
-          {page === "sites" && <Sites sites={sites} del={delSite} notify={notify} startCreate={startCreate} startDuplicate={startDuplicate} settings={settings} addDeploy={addDeploy} ops={ops} updateSite={updateSite} />}
+          {page === "sites" && <Sites sites={sites} del={delSite} notify={notify} startCreate={startCreate} startDuplicate={startDuplicate} settings={settings} addDeploy={addDeploy} ops={ops} updateSite={updateSite} deploys={deploys} />}
           {page === "create" && wizData && <Wizard config={wizData} setConfig={setWizData} addSite={addSite} addDeploy={addDeploy} setPage={setPage} settings={settings} notify={notify} cfAccounts={ops.cfAccounts} registrarAccounts={ops.registrarAccounts} />}
           {page === "profile-manager" && <ProfileManager settings={settings} ops={{ ...ops, notify }} />}
           {page === "adspower-profiles" && <AdsPowerProfileManager settings={settings} ops={{ ...ops, notify }} />}
@@ -1105,7 +1327,7 @@ useEffect(() => {
           {page === "proxy-health" && <ProxyHealthTab profiles={ops.profiles} settings={settings} standalone />}
           {page === "error-log" && <ErrorLog />}
           {page === "api-health" && <ApiHealthCheck />}
-          {page === "settings" && <Settings settings={settings} setSettings={handleSaveSettings} stats={stats} apiOk={apiOk} neonOk={neonOk} />}
+          {page === "settings" && <Settings settings={settings} setSettings={handleSaveSettings} stats={stats} apiOk={apiOk} neonOk={neonOk} sitesCount={sites.length} />}
           {page === "kpi" && <KpiDashboard user={user} users={users} />}
           {page === "users" && isAdmin(user) && <UserManager currentUser={user} />}
           {page === "tasks" && <TaskManager tasks={tasks} sites={sites} users={users} addTask={addTask} updateTask={updateTask} deleteTask={deleteTask} user={user} setPage={setPage} auditLog={auditLog} />}

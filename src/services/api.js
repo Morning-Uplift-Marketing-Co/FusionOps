@@ -1,17 +1,27 @@
+import { LS } from "../utils";
+
 // Resolve API base URL from environment variables
 function resolveApiBase() {
     const fromWindow = typeof window !== "undefined" ? window.__LP_API__ : "";
     const fromEnv = typeof import.meta !== "undefined" && import.meta.env ? import.meta.env.VITE_API_BASE : "";
-    const isLocalDev = typeof window !== "undefined" && (
-        /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname) ||
-        /^192\.168\./.test(window.location.hostname) ||
-        /^10\./.test(window.location.hostname) ||
-        /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(window.location.hostname)
-    );
+    let fromSettings = "";
+    try {
+        const s = LS.get("settings");
+        if (s && typeof s === "object") {
+            fromSettings = String(s.apiBase || "").trim().replace(/\/+$/, "");
+        }
+    } catch (_e) {
+        /* ignore */
+    }
 
     // Always fall back to production worker — /api proxy on localhost doesn't have all routes
     const PROD_API_BASE = "https://lp-factory-api.misty-feather-556e.workers.dev/api";
-    return String(fromWindow || fromEnv || PROD_API_BASE).replace(/\/+$/, "");
+    return String(fromWindow || fromEnv || fromSettings || PROD_API_BASE).replace(/\/+$/, "");
+}
+
+/** Effective Worker `/api` base (for Settings diagnostics). */
+export function getResolvedApiBase() {
+    return resolveApiBase();
 }
 
 /**

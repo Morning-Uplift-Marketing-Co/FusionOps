@@ -116,14 +116,23 @@ function normalizeHost(value = "") {
     return String(value || "").trim().replace(/^https?:\/\//i, "").replace(/\/+$/, "");
 }
 
-/** Default tracking hostname prefix when none set (`link.*` is Voluum’s common default; `trk.*` is also typical — user can override in wizard). */
+/** Default hostname in generated lander script / Voluum tracking when none set (`trk.*` is common in Voluum’s embed). */
 export const DEFAULT_VOLUUM_TRACK_SUBDOMAIN = "trk";
+
+/** Default host for CTA `/click` auto-fill when URL + tracking field are empty — do not infer from lander script (often `trk.*`). */
+export const DEFAULT_VOLUUM_CLICK_AUTOFILL_SUBDOMAIN = "link";
 
 export function normalizeTrackingDomain(rawTrackingDomain = "", domain = "") {
     const cleanDomain = normalizeHost(domain);
     const raw = normalizeHost(rawTrackingDomain);
     if (!cleanDomain) return raw;
+    if (!raw) return `${DEFAULT_VOLUUM_TRACK_SUBDOMAIN}.${cleanDomain}`;
+    // Hostname on this lander apex (trk.*, link.*, cdn.*, …)
     if (raw.endsWith(`.${cleanDomain}`) && raw.length > cleanDomain.length + 1) return raw;
+    // Single label → subdomain of this lander (editable prefix, not locked to "trk")
+    if (/^[a-z0-9-]+$/i.test(raw)) return `${raw}.${cleanDomain}`;
+    // Any other FQDN — preserve (different apex, Voluum custom host, etc.)
+    if (raw.includes(".")) return raw;
     return `${DEFAULT_VOLUUM_TRACK_SUBDOMAIN}.${cleanDomain}`;
 }
 

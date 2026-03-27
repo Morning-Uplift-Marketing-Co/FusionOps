@@ -237,7 +237,13 @@ export function Sidebar({ page, setPage, siteCount, taskBadge, startCreate, star
                                 key={it.id}
                                 type={it.external ? undefined : "button"}
                                 aria-label={it.label}
-                                title={collapsed ? it.label : undefined}
+                                title={
+                                    collapsed
+                                        ? it.label
+                                        : it.id === "sites" && it.badge
+                                          ? `Total LP sites: ${it.badge} (search / Only issues / quick filters can show fewer on the list)`
+                                          : undefined
+                                }
                                 onClick={() => {
                                     if (it.external) return;
                                     console.log("Sidebar click:", it.id);

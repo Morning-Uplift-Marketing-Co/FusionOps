@@ -6,6 +6,7 @@
  */
 
 import { api } from "./api";
+import { LS } from "../utils";
 
 const D1_API_BASE = "https://api.cloudflare.com/client/v4";
 
@@ -18,12 +19,14 @@ const D1_API_BASE = "https://api.cloudflare.com/client/v4";
  * Reads from lpf2-settings localStorage key
  */
 async function getCredentials() {
-  // Settings are stored with "lpf2-" prefix
-  const settings = JSON.parse(localStorage.getItem("lpf2-settings") || "{}");
+  const settings = LS.get("settings") || {};
 
   return {
     accountId: settings.d1AccountId || "",
-    databaseId: settings.d1DatabaseId || "",
+    databaseId:
+      (settings.d1DatabaseId && String(settings.d1DatabaseId).trim()) ||
+      (settings.cfD1DatabaseId && String(settings.cfD1DatabaseId).trim()) ||
+      "",
     apiToken: settings.d1ApiToken || "",
   };
 }
@@ -170,29 +173,15 @@ export async function tableExists(tableName) {
 ══════════════════════════════════════════════════════════════════════ */
 
 /**
- * Resolve the Worker API base URL (same logic as voluum.js / api.js)
- */
-function resolveApiBase() {
-  const fromWindow = typeof window !== "undefined" ? window.__LP_API__ : "";
-  const fromEnv = typeof import.meta !== "undefined" && import.meta.env ? import.meta.env.VITE_API_BASE : "";
-  const DEFAULT = "https://lp-factory-api.misty-feather-556e.workers.dev/api";
-  return String(fromWindow || fromEnv || DEFAULT).replace(/\/+$/, "");
-}
-
-/**
- * Direct D1 write via Worker env.DB binding (no API token needed).
- * Uses /api/automation/d1/direct-query which calls env.DB.prepare() internally.
+ * Run DDL/DML on the user's D1 via Worker proxy + Cloudflare API token from Settings.
+ * Do NOT use /api/automation/d1/direct-query here — that route is read-only (SELECT/WITH only).
  */
 async function directExecute(sql, params = []) {
-  const base = resolveApiBase();
-  const res = await fetch(`${base}/automation/d1/direct-query`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sql, params }),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok || !data.success) throw new Error(data.error || `D1 HTTP ${res.status}`);
-  return data;
+  const res = await execute(sql, params);
+  if (!res.success) {
+    throw new Error(res.error || "D1 execute failed");
+  }
+  return res;
 }
 
 let _sitesTableReady = false;

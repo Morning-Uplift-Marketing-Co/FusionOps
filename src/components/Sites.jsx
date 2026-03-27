@@ -6,6 +6,19 @@ import { makeThemeJson, htmlToZip, astroProjectToZip } from "../utils/lp-generat
 import { generateHtmlByTemplate, generateAstroProjectByTemplate, generateApplyPageByTemplate, generateDeployAssetsByTemplate } from "../utils/template-router";
 
 import { deployTo, DEPLOY_TARGETS, getAvailableTargets, checkDeployStatus, deleteProject } from "../utils/deployers";
+
+const KNOWN_DEPLOY_TARGET_IDS = new Set(DEPLOY_TARGETS.map((t) => t.id));
+
+/** Guess Worker target id from URL when D1 row has no `target` column */
+function inferDeployTargetFromUrl(url) {
+    const u = String(url || "").toLowerCase();
+    if (!u) return null;
+    if (u.includes("netlify.app")) return "netlify";
+    if (u.includes(".pages.dev") || u.includes("cloudflarepages.com")) return "cf-pages";
+    if (u.includes(".vercel.app")) return "vercel";
+    if (u.includes(".workers.dev")) return "cf-workers";
+    return null;
+}
 import { buildLanderTrackingUrl } from "../services/voluum";
 import { InputField as Inp } from "./ui/input-field";
 import { Card, CardContent } from "./ui/card";
@@ -14,7 +27,7 @@ import { Badge } from "./ui/badge";
 import { cn } from "../lib/utils";
 import { DeployStatusTracker } from "./OpsCenter/deploy/DeployStatusTracker";
 
-export function Sites({ sites, del, notify, startCreate, startDuplicate, settings, addDeploy, ops, updateSite }) {
+export function Sites({ sites, del, notify, startCreate, startDuplicate, settings, addDeploy, ops, updateSite, deploys = [] }) {
     const [search, setSearch] = useState("");
     const [groupBy, setGroupBy] = useState("google-ads");
     const [onlyIssues, setOnlyIssues] = useState(false);
@@ -84,6 +97,43 @@ export function Sites({ sites, del, notify, startCreate, startDuplicate, setting
     useEffect(() => { LS.set("sitesQuickFilter", quickFilter); }, [quickFilter]);
     useEffect(() => { LS.set("sitesSortBy", sortBy); }, [sortBy]);
 
+    /** Merge local deployUrls with API/Neon deploy history so counts match TopBar / cloud after refresh */
+    const effectiveDeployUrls = useMemo(() => {
+        const base = {};
+        for (const [sid, val] of Object.entries(deployUrls || {})) {
+            base[sid] = typeof val === "object" && val !== null && !Array.isArray(val) ? { ...val } : val;
+        }
+        const mergeEntry = (siteId, targetKey, url, ts) => {
+            if (!siteId || !url) return;
+            const sid = String(siteId);
+            const inferred = inferDeployTargetFromUrl(url);
+            const tgt = String(
+                (targetKey && KNOWN_DEPLOY_TARGET_IDS.has(String(targetKey)) && targetKey)
+                || inferred
+                || "history"
+            );
+            if (!base[sid]) base[sid] = {};
+            const prev = base[sid][tgt];
+            const prevUrl = typeof prev === "string" ? prev : prev?.url;
+            const prevTs = typeof prev === "object" && prev?.ts ? new Date(prev.ts).getTime() : 0;
+            const newTs = ts ? new Date(ts).getTime() : 0;
+            if (!prevUrl || (newTs > 0 && newTs >= prevTs)) {
+                base[sid][tgt] = ts ? { url, ts } : url;
+            }
+        };
+        for (const d of deploys || []) {
+            const sid = d.siteId ?? d.site_id;
+            const url = d.url;
+            if (!sid || !url) continue;
+            const st = d.status != null ? String(d.status).toLowerCase() : "";
+            if (st && /fail|error|cancel/i.test(st)) continue;
+            const rawType = d.type != null ? String(d.type).toLowerCase() : "";
+            const tgtFromType = rawType && !["deploy", "new"].includes(rawType) ? d.type : null;
+            mergeEntry(sid, d.target || tgtFromType, url, d.ts || d.createdAt);
+        }
+        return base;
+    }, [deployUrls, deploys]);
+
     // Close dropdowns on outside click
     useEffect(() => {
         const handler = (e) => {
@@ -112,6 +162,7 @@ export function Sites({ sites, del, notify, startCreate, startDuplicate, setting
                 const deployedTargets = getDeployedTargets(site.id);
 
                 for (const target of deployedTargets) {
+                    if (!KNOWN_DEPLOY_TARGET_IDS.has(target.target)) continue;
                     try {
                         const result = await deleteProject(target.target, site, settings);
                         if (result.success) {
@@ -301,7 +352,7 @@ export function Sites({ sites, del, notify, startCreate, startDuplicate, setting
     };
 
     const getDeployedTargets = (siteId) => {
-        const urls = deployUrls[siteId];
+        const urls = effectiveDeployUrls[siteId];
         if (!urls) return [];
 
         // Legacy storage: direct URL string
@@ -505,8 +556,11 @@ export function Sites({ sites, del, notify, startCreate, startDuplicate, setting
         return matchesSearch && (!onlyIssues || hasIssue(site));
     });
 
+    const scopedVsTotal = sites.length !== baseScopedSites.length;
+
     const quickFilterCounts = useMemo(() => {
         const counts = {
+            /* "All" = sites matching search + only-issues (same list filters apply) */
             all: baseScopedSites.length,
             deployed: 0,
             banned: 0,
@@ -526,7 +580,12 @@ export function Sites({ sites, del, notify, startCreate, startDuplicate, setting
         });
 
         return counts;
-    }, [baseScopedSites]);
+    }, [baseScopedSites, effectiveDeployUrls]);
+
+    const deployedSiteCount = useMemo(
+        () => sites.filter((s) => getDeployedTargets(s.id).length > 0).length,
+        [sites, effectiveDeployUrls],
+    );
 
     const filteredSites = baseScopedSites.filter((site) => {
         return matchesQuickFilter(site);
@@ -573,7 +632,7 @@ export function Sites({ sites, del, notify, startCreate, startDuplicate, setting
                 sites: group.sites.sort(sortGroupSites),
             }))
             .sort((a, b) => a.label.localeCompare(b.label));
-    }, [filteredSites, groupBy, sortBy]);
+    }, [filteredSites, groupBy, sortBy, effectiveDeployUrls]);
 
     return (
         <div className="animate-[fadeIn_.3s_ease]">
@@ -601,7 +660,7 @@ export function Sites({ sites, del, notify, startCreate, startDuplicate, setting
                 {[
                     { l: "Sites", v: sites.length },
                     { l: "Builds", v: sites.length },
-                    { l: "Deployed", v: Object.keys(deployUrls).filter(k => Object.keys(deployUrls[k] || {}).length > 0).length },
+                    { l: "Deployed (sites)", v: deployedSiteCount },
                     { l: "Need Attention", v: sites.filter(s => !s.domain || getDeployedTargets(s.id).length === 0).length },
                 ].map((m, i) => (
                     <Card key={i} className="p-3">
@@ -610,6 +669,17 @@ export function Sites({ sites, del, notify, startCreate, startDuplicate, setting
                     </Card>
                 ))}
             </div>
+
+            {scopedVsTotal && (
+                <div className="text-[11px] text-[hsl(var(--warning))] mb-2 px-1">
+                    Showing <strong>{baseScopedSites.length}</strong> of <strong>{sites.length}</strong> sites (search or &quot;Only issues&quot; is hiding the rest) — sidebar total is all sites.
+                </div>
+            )}
+            {quickFilter !== "all" && !onlyIssues && (
+                <div className="text-[11px] text-[hsl(var(--muted-foreground))] mb-2 px-1">
+                    Quick filter <strong>{quickFilter}</strong> is on — list shows <strong>{filteredSites.length}</strong> of <strong>{sites.length}</strong> sites. Choose <strong>All</strong> to see every site in scope.
+                </div>
+            )}
 
             <div className="flex flex-wrap gap-2.5 items-center mb-3.5">
                 <Inp value={search} onChange={setSearch} placeholder="Search sites..." style={{ width: 240 }} />
@@ -653,7 +723,7 @@ export function Sites({ sites, del, notify, startCreate, startDuplicate, setting
                                         : "border-[hsl(var(--primary))] bg-[hsl(var(--primary))/13] text-[hsl(var(--primary))]"
                                     : "border-[hsl(var(--border))] bg-[hsl(var(--input))] text-[hsl(var(--muted-foreground))]"
                             )}>
-                            {chip.label} ({quickFilterCounts[chip.id] || 0})
+                            {chip.label} ({chip.id === "all" ? `${quickFilterCounts.all}/${sites.length}` : quickFilterCounts[chip.id] || 0})
                         </button>
                     );
                 })}
@@ -700,7 +770,7 @@ export function Sites({ sites, del, notify, startCreate, startDuplicate, setting
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                {group.sites.map(s => {
+                                {group.sites.map((s, idx) => {
                                     const co = COLORS.find(x => x.id === s.colorId);
                                     const deployed = getDeployedTargets(s.id);
                                     const health = getSiteHealth(s, deployed.length);
@@ -719,7 +789,7 @@ export function Sites({ sites, del, notify, startCreate, startDuplicate, setting
                                     });
 
                                     return (
-                                        <Card key={s.id} className="p-4 flex gap-4 relative">
+                                        <Card key={s.id || `${group.key}-${normalizeDomain(s.domain)}-${idx}`} className="p-4 flex gap-4 relative">
                                             <div className="w-11 h-11 rounded-[10px] flex items-center justify-center text-lg text-white font-bold shrink-0"
                                                 style={{ background: co ? hsl(...co.p) : T.primary }}>{s.brand?.[0]}</div>
                                             <div className="flex-1 min-w-0">
@@ -845,7 +915,7 @@ export function Sites({ sites, del, notify, startCreate, startDuplicate, setting
                                                                 {availableTargets.map(t => (
                                                                     <DropdownItem key={t.id} icon={t.icon} label={t.label}
                                                                         desc={t.configured ? t.description : "⚠ Not configured"}
-                                                                        disabled={!t.configured} active={!!deployUrls[s.id]?.[t.id]}
+                                                                        disabled={!t.configured} active={!!effectiveDeployUrls[s.id]?.[t.id]}
                                                                         onClick={() => t.configured && handleDeploy(s, t.id)} />
                                                                 ))}
                                                             </div>
