@@ -138,10 +138,40 @@ export function StepCopy({ c, u, onAiGenerate, aiLoading, onAiMeta, aiMetaLoadin
 
             {/* ─── Reviews ─── */}
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${T.border}` }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
                     <div>
                         <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>⭐ Customer Reviews</div>
                         <div style={{ fontSize: 10, color: T.dim, marginTop: 2 }}>AI-generated, unique per deploy</div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: 10, color: T.muted, fontWeight: 600 }}>On LP</span>
+                        {[
+                            { v: true, label: "On" },
+                            { v: false, label: "Off" },
+                        ].map(({ v, label }) => (
+                            <button
+                                key={label}
+                                type="button"
+                                onClick={() => u("showReviews", v)}
+                                style={{
+                                    padding: "5px 12px",
+                                    borderRadius: 6,
+                                    fontSize: 11,
+                                    fontWeight: 600,
+                                    cursor: "pointer",
+                                    border: `1px solid ${(c.showReviews !== false) === v ? T.primary : T.border}`,
+                                    background: (c.showReviews !== false) === v ? `${T.primary}18` : T.input,
+                                    color: (c.showReviews !== false) === v ? T.primary : T.dim,
+                                }}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                    <div style={{ fontSize: 10, color: T.dim, maxWidth: 280 }}>
+                        Off = deployed page hides review cards (<code style={{ fontSize: 9 }}>PUBLIC_SHOW_REVIEWS</code>).
                     </div>
                     <button onClick={onAiReviews} disabled={aiReviewsLoading} style={{
                         padding: "6px 14px", background: aiReviewsLoading ? T.input : `linear-gradient(135deg, #10b98120, #06b6d420)`,

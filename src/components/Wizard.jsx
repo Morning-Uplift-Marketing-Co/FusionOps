@@ -213,7 +213,13 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                 try {
                     const zone = await getOrCreateZone(domain, cfAccountId, cfApiToken);
                     if (!zone?.success || !Array.isArray(zone.nameservers) || zone.nameservers.length < 2) {
-                        throw new Error(zone?.error || "Cloudflare nameservers not ready yet");
+                        const zErr = zone?.error || "Cloudflare nameservers not ready yet";
+                        if (zErr === "NETWORK_ERROR" || String(zErr).includes("NETWORK_ERROR")) {
+                            throw new Error(
+                                `Cannot reach LP API${zone?.detail ? `: ${zone.detail}` : ""}. Check internet/VPN/firewall, Settings → API base URL, and that the Worker keeps workers.dev enabled (workers_dev = true on lp-factory-api).`
+                            );
+                        }
+                        throw new Error(zone?.detail ? `${zErr} (${zone.detail})` : zErr);
                     }
 
                     const res = await api.put("/automation/registrar/nameservers", {
@@ -224,7 +230,13 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                     });
 
                     if (!res?.success) {
-                        throw new Error(res?.message || res?.error || "Failed to sync nameservers");
+                        const err = res?.error || res?.message || "Failed to sync nameservers";
+                        if (err === "NETWORK_ERROR" || String(err).includes("NETWORK_ERROR")) {
+                            throw new Error(
+                                `Cannot reach LP API${res?.detail ? `: ${res.detail}` : ""}. Check network and Settings → API base URL.`
+                            );
+                        }
+                        throw new Error(res?.message || err);
                     }
 
                     setConfig((p) => ({

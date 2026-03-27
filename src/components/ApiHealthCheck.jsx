@@ -3,7 +3,7 @@
  * Mirrors the API Docs design: grouped endpoints, method badges,
  * per-endpoint test, response viewer, Test All Endpoints.
  *
- * V3-1.3 — matches all Worker routes
+ * V3-1.4 — AI group includes generate-reviews; shared aiHealthBody() for key merge
  */
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Card } from "./ui/card";
@@ -12,6 +12,20 @@ import { Badge } from "./ui/badge";
 import { cn } from "../lib/utils";
 import { api } from "../services/api";
 import { LS } from "../utils";
+
+/** Shared POST body for AI health checks — same keys as Wizard (avoids duplicating gemini/anthropic fields). */
+function aiHealthBody(extra = {}) {
+  const s = LS.get("settings") || {};
+  return {
+    brand: "HealthCheck",
+    loanType: "installment",
+    amountMin: 100,
+    amountMax: 5000,
+    geminiKey: s.geminiKey || "",
+    anthropicKey: s.anthropicKey || "",
+    ...extra,
+  };
+}
 
 // ─── resolve API base for display ───
 function getApiBase() {
@@ -68,11 +82,16 @@ const ENDPOINT_GROUPS = [
     endpoints: [
       {
         id: "ai-copy", method: "POST", name: "Generate Copy", path: "/ai/generate-copy",
-        body: { brand: "HealthCheck", loanType: "installment", amountMin: 100, amountMax: 5000, lang: "English" },
+        getBody: () => aiHealthBody({ lang: "English" }),
       },
       {
         id: "ai-meta", method: "POST", name: "Generate Meta", path: "/ai/generate-meta",
-        body: { brand: "HealthCheck", loanType: "installment", amountMin: 100, amountMax: 5000 },
+        getBody: () => aiHealthBody(),
+      },
+      {
+        id: "ai-reviews", method: "POST", name: "Generate Reviews", path: "/ai/generate-reviews",
+        getBody: () => aiHealthBody(),
+        checkSuccess: (res) => Array.isArray(res) && res.length > 0 && Boolean(res[0]?.text),
       },
       {
         id: "ai-assets", method: "POST", name: "Generate Assets", path: "/ai/generate-assets",

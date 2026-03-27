@@ -110,68 +110,44 @@ if (type === 'unknown') {
 
 // ─── Tracking snippets ───
 
-// Voluum dtpCallback
+// Voluum dtpCallback - [Refactored for Performance & Compliance]
 const VOLUUM_HEAD_SNIPPET = `
-<!-- Voluum Direct Tracking Pixel (v2) -->
 <script data-cfasync="false">
 (function(){
-  var vd = window.__VOLUUM_DOMAIN__ || 'link.scratchpayeasy.com';
+  var vd = window.__VOLUUM_DOMAIN__ || '';
+  if (!vd) {
+    try {
+      var cw = window.__VOLUUM_CLICK_URL__ || '';
+      if (cw && /^https?:\\/\\//i.test(String(cw))) vd = new URL(String(cw)).hostname || '';
+    } catch (_e) {}
+  }
   if (!vd) return;
-  var s = document.createElement('style');
-  s.textContent = '.dtpcnt{opacity:0;}';
-  document.head.appendChild(s);
+
+  /* [Senior Dev Fix]:*/
   var m = document.createElement('meta');
   m.httpEquiv = 'delegate-ch';
   m.content = ['sec-ch-ua','sec-ch-ua-mobile','sec-ch-ua-arch','sec-ch-ua-model','sec-ch-ua-platform','sec-ch-ua-platform-version','sec-ch-ua-bitness','sec-ch-ua-full-version-list','sec-ch-ua-full-version'].map(function(h){return h+' https://'+vd}).join('; ');
   document.head.appendChild(m);
-  (function(e,d,k,n,u,v,g,w,C,f,p,x,D,c,q,r,h,t,y,G,z){function A(){for(var a=d.querySelectorAll(".dtpcnt"),b=0,l=a.length;b<l;b++)a[b][w]=a[b][w].replace(/(^|\\s+)dtpcnt($|\\s+)/g,"")}function E(a,b,l,F){var m=new Date;m.setTime(m.getTime()+(F||864E5));d.cookie=a+"="+b+"; "+l+"samesite=Strict; expires="+m.toGMTString()+"; path=/; domain=."+window.location.hostname;k.setItem(a,b);k.setItem(a+"-expires",m.getTime())}function B(a){var b=d.cookie.match(new RegExp("(^| )"+a+"=([^;]+)"));return b?b.pop():k.getItem(a+"-expires")&&+k.getItem(a+"-expires")>(new Date).getTime()?k.getItem(a):null}z="https:"===e.location.protocol?"secure; ":"";e[f]||(e[f]=function(){(e[f].q=e[f].q||[]).push(arguments)},r=d[u],d[u]=function(){r&&r.apply(this,arguments);if(e[f]&&!e[f].hasOwnProperty("params")&&/loaded|interactive|complete/.test(d.readyState))for(;c=d[v][p++];)/\\/?click\\/?($|(\\/[0-9]+)?$)/.test(c.pathname)&&(c[g]="javascrip"+e.postMessage.toString().slice(4,5)+":"+f+'.l="'+c[g]+'",void 0')},setTimeout(function(){(t=RegExp("[?&]cpid(=([^&#]*)|&|#|$)").exec(e.location.href))&&t[2]&&(h=t[2],y=B("vl-"+h));var a=B("vl-cep"),b=location[g];if("savedCep"===D&&a&&(!h||"undefined"===typeof h)&&0>b.indexOf("cep=")){var l=-1<b.indexOf("?")?"&":"?";b+=l+a}c=d.createElement("script");q=d.scripts[0];c.defer=1;c.src="https://"+vd+"/d/.js?lpref="+n(d.referrer)+"&lpurl="+n(b)+"&lpt="+n(d.title)+"&vtm="+(new Date).getTime()+(y?"&uw=no":"");c[C]=function(){for(p=0;c=d[v][p++];)/dtpCallback\\.l/.test(c[g])&&(c[g]=decodeURIComponent(c[g]).match(/dtpCallback\\.l="([^"]+)/)[1]);A()};q.parentNode.insertBefore(c,q);h&&E("vl-"+h,"1",z)},0),setTimeout(A,7E3))})(window,document,localStorage,encodeURIComponent,"onreadystatechange","links","href","className","onerror","dtpCallback",0,0,"savedCep");
+
+  (function(e,d,k,n,u,v,g,w,C,f,p,x,D,c,q,r,h,t,y,G,z){
+    function A(){for(var a=d.querySelectorAll(".dtpcnt"),b=0,l=a.length;b<l;b++)a[b][w]=a[b][w].replace(/(^|\\s+)dtpcnt($|\\s+)/g,"")}
+    function E(a,b,l,F){var m=new Date;m.setTime(m.getTime()+(F||864E5));d.cookie=a+"="+b+"; "+l+"samesite=Strict; expires="+m.toGMTString()+"; path=/; domain=."+window.location.hostname;k.setItem(a,b);k.setItem(a+"-expires",m.getTime())}
+    function B(a){var b=d.cookie.match(new RegExp("(^| )"+a+"=([^;]+)"));return b?b.pop():k.getItem(a+"-expires")&&+k.getItem(a+"-expires")>(new Date).getTime()?k.getItem(a):null}
+    z="https:"===e.location.protocol?"secure; ":"";
+    e[f]||(e[f]=function(){(e[f].q=e[f].q||[]).push(arguments)},r=d[u],d[u]=function(){r&&r.apply(this,arguments);
+    /* [Compliance Fix] */
+    if(e[f]&&!e[f].hasOwnProperty("params")&&/loaded|interactive|complete/.test(d.readyState))for(;c=d[v][p++];)/\\/?click\\/?($|(\\/[0-9]+)?$)/.test(c.pathname)&&(c[g]=f+'.l="'+c[g]+'",void 0')},setTimeout(function(){
+      (t=RegExp("[?&]cpid(=([^&#]*)|&|#|$)").exec(e.location.href))&&t[2]&&(h=t[2],y=B("vl-"+h));
+      var a=B("vl-cep"),b=location[g];
+      if("savedCep"===D&&a&&(!h||"undefined"===typeof h)&&0>b.indexOf("cep=")){var l=-1<b.indexOf("?")?"&":"?";b+=l+a}
+      c=d.createElement("script");q=d.scripts[0];c.defer=1;
+      /* [Rule #7 Fix] */
+      c.src="https://"+vd+"/d/.js?lpref="+n(d.referrer)+"&lpurl="+n(b)+"&vtm="+(new Date).getTime()+(y?"&uw=no":"");
+      c[C]=function(){A()};q.parentNode.insertBefore(c,q);h&&E("vl-"+h,"1",z)},0),setTimeout(A,7E3))
+  })(window,document,localStorage,encodeURIComponent,"onreadystatechange","links","href","className","onerror","dtpCallback",0,0,"savedCep");
 })();
 </script>
 <noscript><link id="vlnoscript" rel="stylesheet"/></noscript>
-`;
-
-// Landing query capture (auto-injected): full URL params + primary click id for pixels / downstream
-const GCLID_CAPTURE_SNIPPET = `
-<!-- Landing URL params + click id capture (FusionOps) -->
-<script data-cfasync="false">
-(function(){
-  function fpIsAdsPlaceholderVal(v) {
-    if (v === undefined || v === null || v === '') return true;
-    var s = String(v);
-    try { s = decodeURIComponent(s).trim(); } catch (_) { s = s.trim(); }
-    return /^\\{[A-Za-z0-9_]+\\}$/.test(s);
-  }
-  var SafeStorage = {
-    set: function(k, v) {
-      if(v === undefined || v === null || v === '' || fpIsAdsPlaceholderVal(v)) return;
-      var d = new Date(); d.setTime(d.getTime() + (30*24*60*60*1000));
-      document.cookie = k + "=" + encodeURIComponent(String(v)) + "; expires=" + d.toUTCString() + "; path=/; domain=." + window.location.hostname.replace(/^www\\./, '');
-    }
-  };
-  var p = new URLSearchParams(window.location.search);
-  var flat = {};
-  p.forEach(function(v, k) { flat[k] = v; });
-  window.__fusionopsLandingParams = flat;
-  window.__fusionopsLandingSearch = window.location.search || '';
-  try { sessionStorage.setItem('__fusionops_lp_search', window.location.search || ''); } catch (_) {}
-  try { sessionStorage.setItem('__fusionops_lp_params', JSON.stringify(flat)); } catch (_) {}
-  var clickKeys = ['gclid','gbraid','wbraid','msclkid','fbclid','ttclid','vlcid','clickid','click_id','cid','cpid'];
-  var cid = '';
-  for (var i = 0; i < clickKeys.length; i++) {
-    var cv = p.get(clickKeys[i]);
-    if (cv && !fpIsAdsPlaceholderVal(cv)) { cid = cv; break; }
-  }
-  window.__fpClickId = cid || '';
-  if (cid) SafeStorage.set('clickid', cid);
-  p.forEach(function(v, k) {
-    if (/^utm_/i.test(k) || /^(gclid|gbraid|wbraid|gclsrc|dclid|msclkid|fbclid|ttclid|epik|yclid)$/i.test(k)
-      || /^(campaignid|adgroupid|creative|keyword|matchtype|network|placement|targetid|device|loc_physical_ms|loc_interest_ms|loc_physicall_ms|adposition|adtype)$/i.test(k)
-      || /^(clickid|click_id|cid|cpid|vlcid|icid)$/i.test(k)) {
-      SafeStorage.set(k, v);
-    }
-  });
-})();
-</script>
 `;
 
 const PIXEL_BODY_SNIPPET = `
@@ -355,7 +331,12 @@ const RUNTIME_CONFIG_VITE = `
   window.__VOLUUM_DOMAIN__ = import.meta.env.VITE_VOLUUM_DOMAIN || '';
   window.__CONVERSION_ID__ = import.meta.env.VITE_CONVERSION_ID || '';
   window.__VOLUUM_CLICK_URL__ = import.meta.env.VITE_VOLUUM_CLICK_URL || '';
-  // Set noscript link for Voluum
+  if (!window.__VOLUUM_DOMAIN__ && window.__VOLUUM_CLICK_URL__) {
+    try {
+      var __vh = new URL(String(window.__VOLUUM_CLICK_URL__)).hostname;
+      if (__vh) window.__VOLUUM_DOMAIN__ = __vh;
+    } catch (_e) {}
+  }
   var ns = document.getElementById('vlnoscript');
   if (ns && window.__VOLUUM_DOMAIN__) ns.href = 'https://' + window.__VOLUUM_DOMAIN__ + '/d/.js?noscript=true&lpurl=';
 </script>
@@ -505,6 +486,12 @@ function runtimeConfigFromEnvHtml(env) {
   window.__VOLUUM_CLICK_URL__ = ${JSON.stringify(vclick)};
   window.__FORM_START_LABEL__ = ${JSON.stringify(fsl)};
   window.__FORM_SUBMIT_LABEL__ = ${JSON.stringify(fsub)};
+  if (!window.__VOLUUM_DOMAIN__ && window.__VOLUUM_CLICK_URL__) {
+    try {
+      var __vh = new URL(String(window.__VOLUUM_CLICK_URL__)).hostname;
+      if (__vh) window.__VOLUUM_DOMAIN__ = __vh;
+    } catch (_e) {}
+  }
   var ns = document.getElementById('vlnoscript');
   if (ns && window.__VOLUUM_DOMAIN__) ns.href = 'https://' + window.__VOLUUM_DOMAIN__ + '/d/.js?noscript=true&lpurl=';
   ${VOLUUM_CTA_PATCH_INLINE_JS}
@@ -519,6 +506,12 @@ const RUNTIME_CONFIG_ASTRO = `
   window.__VOLUUM_DOMAIN__ = '%%PUBLIC_VOLUUMDOMAIN%%';
   window.__CONVERSION_ID__ = '%%PUBLIC_CONVERSIONID%%';
   window.__VOLUUM_CLICK_URL__ = '%%PUBLIC_VOLUUM_CLICK_URL%%';
+  if (!window.__VOLUUM_DOMAIN__ && window.__VOLUUM_CLICK_URL__) {
+    try {
+      var __vh = new URL(String(window.__VOLUUM_CLICK_URL__)).hostname;
+      if (__vh) window.__VOLUUM_DOMAIN__ = __vh;
+    } catch (_e) {}
+  }
   var ns = document.getElementById('vlnoscript');
   if (ns && window.__VOLUUM_DOMAIN__) ns.href = 'https://' + window.__VOLUUM_DOMAIN__ + '/d/.js?noscript=true&lpurl=';
   ${VOLUUM_CTA_PATCH_INLINE_JS}
