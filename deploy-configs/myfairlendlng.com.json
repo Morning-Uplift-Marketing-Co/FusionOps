@@ -1,5 +1,5 @@
 {
-  "templateId": "pet-orange-white",
+  "templateId": "pastel-lending-bolt",
   "cfPagesProject": "lp-myfairlendlng-com",
   "cfZoneId": "",
   "skipDnsUpsert": true,
@@ -39,5 +39,5 @@
   "trustBadges": "",
   "reviews": [],
   "showReviews": true,
-  "deployedAt": "2026-03-27T11:47:54.278Z"
+  "deployedAt": "2026-03-27T11:49:55.533Z"
 }
