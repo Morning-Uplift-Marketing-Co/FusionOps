@@ -1,6 +1,8 @@
 {
   "templateId": "greenrush-lending",
   "cfPagesProject": "lp-scratchcareday-com",
+  "cfZoneId": "",
+  "skipDnsUpsert": true,
   "cfApiToken": "",
   "cfAccountId": "",
   "brand": "Scratchpay",
@@ -19,9 +21,9 @@
   "primaryColor": "",
   "accentColor": "",
   "conversionId": "AW-16551193759",
-  "gtagFormStartLabel": "SK-rCPiegY8cEJ_ZnNQ9",
+  "gtagFormStartLabel": "WSyRCKeqq7YZEJ_ZnNQ9",
   "gtagFormSubmitLabel": "E0P1CNPoh48cEJ_ZnNQ9",
-  "formStartLabel": "SK-rCPiegY8cEJ_ZnNQ9",
+  "formStartLabel": "WSyRCKeqq7YZEJ_ZnNQ9",
   "formSubmitLabel": "E0P1CNPoh48cEJ_ZnNQ9",
   "voluumId": "52941e86-2385-4370-8e50-511d8737cb1c",
   "voluumDomain": "link.scratchcareday.com",
@@ -36,5 +38,6 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "deployedAt": "2026-03-25T06:40:05.481Z"
+  "showReviews": true,
+  "deployedAt": "2026-03-27T10:55:17.882Z"
 }
