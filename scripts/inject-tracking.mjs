@@ -150,6 +150,40 @@ const VOLUUM_HEAD_SNIPPET = `
 <noscript><link id="vlnoscript" rel="stylesheet"/></noscript>
 `;
 
+/** Early URL capture for pixels / embeds — must run before PIXEL_BODY_SNIPPET (see hasGclIdCapture). */
+const GCLID_CAPTURE_SNIPPET = `
+<!-- GCLID capture (auto-injected) -->
+<script data-cfasync="false">
+(function(){
+  var SafeStorage = {
+    set: function(k, v) {
+      if(v === undefined || v === null || v === '') return;
+      var d = new Date(); d.setTime(d.getTime() + (30*24*60*60*1000));
+      document.cookie = k + "=" + encodeURIComponent(String(v)) + "; expires=" + d.toUTCString() + "; path=/; domain=." + window.location.hostname.replace(/^www\\./, '');
+    }
+  };
+  var p = new URLSearchParams(window.location.search);
+  var flat = {};
+  p.forEach(function(v, k) { flat[k] = v; });
+  window.__fusionopsLandingParams = flat;
+  window.__fusionopsLandingSearch = window.location.search || '';
+  try { sessionStorage.setItem('__fusionops_lp_search', window.location.search || ''); } catch (_) {}
+  try { sessionStorage.setItem('__fusionops_lp_params', JSON.stringify(flat)); } catch (_) {}
+  var cid = p.get('gclid') || p.get('gbraid') || p.get('wbraid') || p.get('msclkid') || p.get('fbclid') || p.get('ttclid')
+    || p.get('vlcid') || p.get('clickid') || p.get('click_id') || p.get('cid') || p.get('cpid') || '';
+  window.__fpClickId = cid || '';
+  if (cid) SafeStorage.set('clickid', cid);
+  p.forEach(function(v, k) {
+    if (/^utm_/i.test(k) || /^(gclid|gbraid|wbraid|gclsrc|dclid|msclkid|fbclid|ttclid|epik|yclid)$/i.test(k)
+      || /^(campaignid|adgroupid|creative|keyword|matchtype|network|placement|targetid|device|loc_physical_ms|loc_interest_ms|adposition|adtype)$/i.test(k)
+      || /^(clickid|click_id|cid|cpid|vlcid|icid)$/i.test(k)) {
+      SafeStorage.set(k, v);
+    }
+  });
+})();
+</script>
+`;
+
 const PIXEL_BODY_SNIPPET = `
 <!-- First-party pixel + Google Ads gtag (auto-injected) -->
 <script data-cfasync="false">
