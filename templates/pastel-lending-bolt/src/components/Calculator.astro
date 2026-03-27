@@ -186,8 +186,15 @@ const aprMax    = Number(import.meta.env.PUBLIC_APRMAX    || 34.99);
       setProgress(aprSlider);
     }
 
-    amountSlider.addEventListener('input', update);
-    aprSlider.addEventListener('input', update);
+    let rafPending = false;
+    function scheduleUpdate() {
+      if (!rafPending) {
+        rafPending = true;
+        requestAnimationFrame(() => { update(); rafPending = false; });
+      }
+    }
+    amountSlider.addEventListener('input', scheduleUpdate);
+    aprSlider.addEventListener('input', scheduleUpdate);
 
     termBtns.forEach(btn => {
       btn.addEventListener('click', () => {
