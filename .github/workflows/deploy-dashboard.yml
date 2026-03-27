@@ -75,7 +75,7 @@ jobs:
       - name: Deploy to Cloudflare Pages
         id: deploy
         run: |
-          OUTPUT=$(npx wrangler pages deploy dist/ --project-name=fusionops-web 2>&1)
+          OUTPUT=$(npx wrangler pages deploy dist/ --project-name=fusionops-web --branch main 2>&1)
           echo "$OUTPUT"
           URL=$(echo "$OUTPUT" | grep -Eo 'https://[A-Za-z0-9.-]+\.pages\.dev' | head -n1 || true)
           echo "url=$URL" >> "$GITHUB_OUTPUT"

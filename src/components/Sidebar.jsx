@@ -6,6 +6,14 @@ import { isAdmin } from "../services/auth";
 
 const CHANGELOG = [
     {
+        version: "3.6.2",
+        date: "2026-03-27",
+        changes: [
+            "🧩 LP Wizard — merge Step 3 (Template) + Step 4 (Design) into single unified step (6 steps total)",
+            "📱 Template Selection — compact list + live phone preview on hover/select",
+        ],
+    },
+    {
         version: "3.6.1",
         date: "2026-03-26",
         changes: [
