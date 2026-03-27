@@ -30,8 +30,9 @@
 │                   │      D1 Databases       │                       │
 │                   │   (Cloudflare SQLite)   │                       │
 │                   │                         │                       │
-│                   │  - lp-factory-db        │                       │
-│                   │  - pixel-events         │                       │
+│                   │  - fusionops-main       │                       │
+│                   │  - fusionops-pixel      │                       │
+│                   │  - fusionops-callback   │                       │
 │                   │                         │                       │
 │                   └─────────────────────────┘                       │
 │                                  ▼                                  │
@@ -47,6 +48,18 @@
 │                                                                      │
 └─────────────────────────────────────────────────────────────────────┘
 ```
+
+### Legacy database / D1 names (pre–FusionOps)
+
+Do **not** create new resources under these names; keep them only for reference when migrating or comparing Cloudflare / wrangler history:
+
+| Legacy name | Notes |
+|-------------|--------|
+| `lp-factory-db` | Early LP Factory D1 (see also `apps/README.md` examples). |
+| `ppc-gen-claude` | Later main D1 name; some `wrangler.toml` / scripts still mention it when replacing IDs. |
+| `lp-factory-beta` | Beta / staging-era naming. |
+
+Current target names are **`fusionops-main`**, **`fusionops-pixel`**, **`fusionops-callback`** (see table below).
 
 ---
 
@@ -175,6 +188,12 @@ cd apps/worker        && wrangler deploy
      ```
      postgresql://user:password@ep-xxx.aws.neon.tech/neondb?sslmode=require
      ```
+
+#### Multiple Neon projects (do not mix them)
+
+If your Neon account has several projects (e.g. **FusionOps**, **fusionops-production**, **lp-factory-admin**), the **production LP dashboard** must use the connection string from the project that actually holds your sites — typically the one named **FusionOps** (not `fusionops-production` in another region). Each project has its own `ep-…` host; compare the hostname in the connection string with **Connection details** on the correct project in the Neon UI.
+
+The app also **writes `neonUrl` to the Worker** (`POST /settings`) after a successful Neon connect, so anyone using the same Worker picks up that URL. Opening a dev build with the wrong `VITE_NEON_URL` can overwrite the shared value — use the FusionOps string for production.
 
 ### 2.2 Create Neon Tables
 

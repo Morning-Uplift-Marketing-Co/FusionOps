@@ -50,6 +50,8 @@ export function buildPreviewHtml(files, site = {}, colors = null, basePath = '')
   if (entry.type === 'astro') {
     html = stripAstroFrontmatter(html);
     html = inlineAstroComponents(html, files);
+    // Wizard Gen Reviews live on site.reviews; cleanAstroSyntax strips `{reviews.map(...)}` — inject static HTML first
+    html = replaceTestimonialsSectionForPreview(html, site);
     html = cleanAstroSyntax(html);
   }
 
@@ -183,6 +185,136 @@ function inlineAstroComponents(html, files) {
   }
 
   return result;
+}
+
+/**
+ * Replace `<section id="testimonials">...</section>` when site.reviews has Gen Reviews data.
+ * Inlined Astro leaves `{reviews.map(...)}` which cleanAstroSyntax removes entirely.
+ */
+function replaceTestimonialsSectionForPreview(html, site) {
+  if (site?.showReviews === false) return html;
+  const reviews = site?.reviews;
+  if (!Array.isArray(reviews) || reviews.length === 0) return html;
+  const start = html.indexOf('<section id="testimonials"');
+  if (start === -1) return html;
+
+  const end = findMatchingSectionEnd(html, start);
+  if (end === -1) return html;
+
+  const sectionHtml = buildTestimonialsPreviewSection(site, reviews);
+  return html.slice(0, start) + sectionHtml + html.slice(end);
+}
+
+function findMatchingSectionEnd(html, sectionStart) {
+  let depth = 0;
+  let pos = sectionStart;
+  while (pos < html.length) {
+    const openAt = html.indexOf('<section', pos);
+    const closeAt = html.indexOf('</section>', pos);
+    if (closeAt === -1) return -1;
+    if (openAt !== -1 && openAt < closeAt) {
+      depth++;
+      pos = openAt + 8;
+    } else {
+      depth--;
+      if (depth === 0) return closeAt + 10;
+      pos = closeAt + 10;
+    }
+  }
+  return -1;
+}
+
+function normalizePreviewReview(r, i, palette) {
+  const quote = String(r.text || r.quote || '').trim();
+  if (!quote) return null;
+  const name = r.name || 'Customer';
+  const initials = (() => {
+    const p = name.trim().split(/\s+/).filter(Boolean);
+    if (p.length >= 2) return (p[0][0] + p[p.length - 1][0]).toUpperCase();
+    return name.slice(0, 2).toUpperCase() || '?';
+  })();
+  const rating = Math.min(5, Math.max(1, Number(r.rating) || 5));
+  return {
+    name,
+    location: r.location || '',
+    amount: r.amount || '—',
+    purpose: r.purpose || 'Verified borrower',
+    rating,
+    quote,
+    avatar: r.avatar || initials,
+    color: r.color || palette[i % palette.length],
+  };
+}
+
+function buildTestimonialsPreviewSection(site, rawReviews) {
+  const palette = ['hsl(38 68% 60%)', 'hsl(204 100% 62%)', 'hsl(142 60% 55%)'];
+  const reviews = rawReviews.map((r, i) => normalizePreviewReview(r, i, palette)).filter(Boolean);
+  if (reviews.length === 0) return '';
+
+  const brand = escHtml(site.brand || 'Us');
+  const star = (fill) =>
+    `<svg width="14" height="14" viewBox="0 0 24 24" fill="${fill}" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+
+  const cards = reviews
+    .map(
+      (r) => `
+        <div class="premium-card p-6 flex flex-col gap-5 reveal hover:-translate-y-0.5 transition-transform duration-200">
+          <div class="flex gap-0.5">${Array(r.rating).fill(0).map(() => star(r.color)).join('')}</div>
+          <blockquote class="text-foreground/65 text-sm leading-relaxed flex-1">&ldquo;${escHtml(r.quote)}&rdquo;</blockquote>
+          <div class="flex items-center justify-between border-t border-border pt-4">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0" style="background:${r.color}18;color:${r.color}">${escHtml(r.avatar)}</div>
+              <div>
+                <div class="text-foreground/80 text-sm font-semibold">${escHtml(r.name)}</div>
+                <div class="text-foreground/35 text-xs">${escHtml(r.location)}</div>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="font-mono font-bold text-sm" style="color:${r.color}">${escHtml(r.amount)}</div>
+              <div class="text-foreground/30 text-xs">${escHtml(r.purpose)}</div>
+            </div>
+          </div>
+        </div>`,
+    )
+    .join('');
+
+  return `<section id="testimonials" class="py-20 md:py-28 px-6 overflow-hidden">
+  <div class="max-w-6xl mx-auto">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-14">
+      <div>
+        <span class="section-label">Customer Stories</span>
+        <h2 class="section-title mb-2">Real People. Real Results.</h2>
+        <p class="text-foreground/50 text-base max-w-md">Borrowers have trusted ${brand} with their financial goals.</p>
+      </div>
+      <div class="glass-card px-6 py-4 flex items-center gap-4 flex-shrink-0">
+        <div class="text-center">
+          <div class="font-display font-bold text-3xl text-foreground mono-num">4.8</div>
+          <div class="flex gap-0.5 justify-center mt-1">${Array(5).fill(0).map(() => star('hsl(38 68% 60%)')).join('')}</div>
+        </div>
+        <div class="h-10 w-px bg-border"></div>
+        <div>
+          <div class="text-foreground/70 text-sm font-semibold">${reviews.length}+ reviews</div>
+          <div class="text-foreground/35 text-xs mt-0.5">From your wizard (preview)</div>
+        </div>
+      </div>
+    </div>
+    <div class="grid md:grid-cols-3 gap-4 mb-10">${cards}</div>
+    <div class="grid grid-cols-3 gap-4">
+      <div class="glass-card p-5 text-center">
+        <div class="font-display font-bold text-2xl text-foreground mono-num mb-1">4.8<span class="text-base text-foreground/40">/ 5.0</span></div>
+        <div class="text-foreground/40 text-xs leading-relaxed">Average from generated reviews</div>
+      </div>
+      <div class="glass-card p-5 text-center">
+        <div class="font-display font-bold text-2xl text-foreground mono-num mb-1">96<span class="text-base text-foreground/40">%</span></div>
+        <div class="text-foreground/40 text-xs leading-relaxed">Customers would recommend us</div>
+      </div>
+      <div class="glass-card p-5 text-center">
+        <div class="font-display font-bold text-2xl text-foreground mono-num mb-1">24h</div>
+        <div class="text-foreground/40 text-xs leading-relaxed">Average time from approval to funding</div>
+      </div>
+    </div>
+  </div>
+</section>`;
 }
 
 function cleanAstroSyntax(html) {

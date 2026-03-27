@@ -1,0 +1,41 @@
+---
+description: React + Astro app layer — Wizard, components, services, utils conventions
+globs: src/**/*
+alwaysApply: false
+---
+
+# Frontend (Astro shell + React app)
+
+## Entry & routing
+
+- **`src/pages/index.astro`** (and related) render the shell; React root is **`src/AppRoot.jsx`** → **`src/App.jsx`**.
+- In-app “pages” are **`page` state** in `App.jsx` (not file-based React Router for the main shell). Sidebar switches views (`Dashboard`, `Sites`, `Wizard`, `Settings`, etc.).
+
+## Imports
+
+- Use **`src/components/`** for UI (not legacy root `components/` unless you confirm bundler resolves it — primary codepath is under `src/`).
+- Use **`src/services/`** for API (`api.js`), auth, Neon/D1 helpers, Cloudflare DNS, Sentry, etc.
+- Use **`src/utils/`** for template routing, preview, fingerprint, wizard capabilities — **see core rule: root `utils/` duplicate hazard**.
+
+## API usage
+
+- Import **`api`** from `src/services/api.js`. Paths are usually like **`/sites`**, **`/ai/generate-reviews`** — the client prepends resolved base and avoids **`/api/api`** duplication via **`buildApiUrlWithBase`**.
+- Mutations may send **`X-CSRF-Token`** (sessionStorage). Do not strip this when adding new POST helpers.
+
+## Site / Wizard data
+
+- Persisted site fields must be members of **`SITE_FIELD_KEYS`** in `src/constants/site-fields.js` and handled in **`sanitizeSite`** (and friends) in `App.jsx` when adding new persisted props.
+- Deploy-related renames: e.g. Wizard **Voluum** fields map to JSON keys (see comments at top of `site-fields.js`).
+
+## UI patterns
+
+- New surfaces often use **`src/components/ui/*`** (Tailwind + Radix-style primitives). Match existing **`THEME` / `constants`** usage before inventing new token systems.
+- **Notifications:** use existing **`notify`** patterns from parent props / toast utilities wired in `App.jsx`.
+
+## Astro LP templates inside repo
+
+- Under **`src/templates/`** or top-level **`templates/`** — different from the **main app**; used as deployable Astro projects. Layouts often read **`import.meta.env.PUBLIC_*`** injected at CI.
+
+## Testing
+
+- Component tests: Vitest + Testing Library in `src/**/__tests__` or `*.test.js` alongside utils.

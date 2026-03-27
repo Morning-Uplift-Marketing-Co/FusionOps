@@ -22,6 +22,9 @@ const rootDir = join(__dirname, '..');
 // ============================================================
 // Configuration - NEW database names for FusionOps
 // ============================================================
+// Legacy D1 / project DB names (do not use for new creates):
+//   lp-factory-db, ppc-gen-claude, lp-factory-beta
+// See INFRASTRUCTURE_SETUP.md → "Legacy database / D1 names".
 
 const NEW_DATABASES = {
   main: 'fusionops-main',

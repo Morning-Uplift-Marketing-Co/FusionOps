@@ -13,6 +13,7 @@ import {
   normalizeTrackingDomain,
   buildLanderTrackingUrl,
   DEFAULT_VOLUUM_TRACK_SUBDOMAIN,
+  DEFAULT_VOLUUM_CLICK_AUTOFILL_SUBDOMAIN,
 } from "../../services/voluum";
 import { LS } from "../../utils";
 import { getOrCreateZone, upsertDnsRecord } from "../../services/cloudflare-dns";
@@ -35,8 +36,60 @@ function voluumDefaultHost(domain) {
   const d = String(domain || "").trim();
   return d ? `${DEFAULT_VOLUUM_TRACK_SUBDOMAIN}.${d}` : "";
 }
+
+function hostnameFromHttpsUrl(raw) {
+  const s = String(raw || "").trim();
+  if (!s) return "";
+  try {
+    const u = new URL(/^https?:\/\//i.test(s) ? s : `https://${s}`);
+    return (u.hostname || "").replace(/\.+$/, "") || "";
+  } catch {
+    return "";
+  }
+}
+
+/** Voluum lander script embeds `https://{host}/d/.js` — recover host when tracking field is empty */
+function hostnameFromVoluumScript(script) {
+  const m = String(script || "").match(/https:\/\/([a-z0-9][a-z0-9.-]*)\/d\/\.js/i);
+  return m ? m[1].replace(/\.+$/, "") : "";
+}
+
+/**
+ * Effective tracking hostname: saved field → CTA URL host → script host → trk.{domain}.
+ * Important: do not treat “empty voluumTrackingDomain” as trk until we’ve checked click URL / script (fixes Auto-fill ignoring link.*).
+ */
 function voluumHost(c) {
-  return c.voluumTrackingDomain || voluumDefaultHost(c.domain);
+  const rawTd = String(c.voluumTrackingDomain || "").trim();
+  if (rawTd) {
+    const n = normalizeTrackingDomain(rawTd, c.domain);
+    return n || rawTd;
+  }
+  const fromClick = hostnameFromHttpsUrl(c.voluumClickUrl);
+  if (fromClick) return fromClick;
+  const fromScript = hostnameFromVoluumScript(c.voluumLanderScript);
+  if (fromScript) return fromScript;
+  return voluumDefaultHost(c.domain);
+}
+
+/** Apex only (no path) for building link.{domain} / defaults */
+function voluumApex(domain) {
+  return String(domain || "").trim().replace(/^https?:\/\//i, "").replace(/\/+$/, "");
+}
+
+/**
+ * Host for CTA Auto-fill / Regen when syncing click URL — never read from lander script (script is usually trk.*).
+ * Order: typed click URL → saved voluumTrackingDomain → link.{apex} (not trk from script).
+ */
+function voluumClickAutoFillHost(c) {
+  const fromExisting = hostnameFromHttpsUrl(c.voluumClickUrl);
+  if (fromExisting) return fromExisting;
+  const rawTd = String(c.voluumTrackingDomain || "").trim();
+  if (rawTd) {
+    const n = normalizeTrackingDomain(rawTd, c.domain);
+    return n || rawTd;
+  }
+  const apex = voluumApex(c.domain);
+  return apex ? `${DEFAULT_VOLUUM_CLICK_AUTOFILL_SUBDOMAIN}.${apex}` : "";
 }
 
 async function voluumProxy(token, method, path, body) {
@@ -158,13 +211,18 @@ export function StepTracking({ c, u }) {
 
   useEffect(() => {
     if (!isVoluum) return;
-    const normalizedTrackingDomain = normalizeTrackingDomain(c.voluumTrackingDomain, c.domain);
-    if (normalizedTrackingDomain && normalizedTrackingDomain !== c.voluumTrackingDomain) {
-      u("voluumTrackingDomain", normalizedTrackingDomain);
+    const rawTd = String(c.voluumTrackingDomain || "").trim();
+    // Never persist trk.{domain} into voluumTrackingDomain when the field is empty — that overwrote
+    // “derive host from CTA / script” and made Auto-fill always use trk.
+    if (rawTd) {
+      const normalizedTrackingDomain = normalizeTrackingDomain(rawTd, c.domain);
+      if (normalizedTrackingDomain && normalizedTrackingDomain !== c.voluumTrackingDomain) {
+        u("voluumTrackingDomain", normalizedTrackingDomain);
+      }
     }
-    // Seed CTA URL only when empty — do not overwrite user-edited or Voluum-provided URLs
-    if (normalizedTrackingDomain && !String(c.voluumClickUrl || "").trim()) {
-      u("voluumClickUrl", `https://${normalizedTrackingDomain}/click`);
+    const seedClickHost = voluumClickAutoFillHost(c);
+    if (seedClickHost && !String(c.voluumClickUrl || "").trim()) {
+      u("voluumClickUrl", `https://${seedClickHost}/click`);
     }
 
     if (c.voluumLanderScript) {
@@ -174,11 +232,12 @@ export function StepTracking({ c, u }) {
       }
       return;
     }
-    const defaultScript = buildVoluumLanderScript((c.domain || "").trim(), c.voluumTrackingDomain);
+    const scriptHost = voluumClickAutoFillHost(c) || voluumHost(c);
+    const defaultScript = buildVoluumLanderScript((c.domain || "").trim(), scriptHost);
     if (defaultScript) {
       u("voluumLanderScript", defaultScript);
     }
-  }, [isVoluum, c.voluumTrackingDomain, c.voluumLanderScript, c.domain, u]);
+  }, [isVoluum, c.voluumTrackingDomain, c.voluumLanderScript, c.voluumClickUrl, c.domain, u]);
 
   // ─── Voluum credentials from settings (stored in localStorage by Settings page) ───
   const getCredentials = useCallback(() => {
@@ -529,16 +588,16 @@ export function StepTracking({ c, u }) {
                           if (!zone.success || !zone.zoneId) throw new Error(zone.error || "Failed to get zone");
 
                           const results = [];
-                          const trkSub = voluumHost(c).split(".")[0];
+                          const trackingFqdn = voluumHost(c);
 
-                          // 1. Tracking CNAME: trk.domain → CloudFront
+                          // 1. Tracking CNAME: {trk|link|…}.domain → CloudFront
                           const r1 = await upsertDnsRecord({
                             zoneId: zone.zoneId, cfAccountId, cfApiToken,
                             domain: c.domain,
-                            type: "CNAME", name: `${trkSub}.${c.domain}`,
+                            type: "CNAME", name: trackingFqdn,
                             content: c.voluumCfCname, proxied: false,
                           });
-                          results.push(r1.success ? `✅ ${trkSub} CNAME → ${c.voluumCfCname.slice(0, 30)}...` : `❌ ${trkSub} CNAME: ${r1.error}`);
+                          results.push(r1.success ? `✅ ${trackingFqdn} CNAME → ${c.voluumCfCname.slice(0, 30)}...` : `❌ ${trackingFqdn} CNAME: ${r1.error}`);
 
                           // 2. ACM Certificate CNAME (if provided)
                           if (c.voluumAcmName && c.voluumAcmValue) {
@@ -822,28 +881,24 @@ export function StepTracking({ c, u }) {
               /* ── Collapsed summary (edit mode, already configured) ── */
               <div className="space-y-2.5">
                 <div className="space-y-1">
-                  <div className="text-[10px] text-[hsl(var(--muted-foreground))] font-medium">Tracking Subdomain</div>
-                  <div className="flex gap-2 items-center">
+                  <div className="text-[10px] text-[hsl(var(--muted-foreground))] font-medium">Tracking hostname</div>
+                  <div className="flex gap-2 items-center flex-wrap">
                     <input
                       type="text"
-                      value={(() => {
-                        const td = voluumHost(c);
-                        // Extract only the subdomain word (e.g. "trk", "link", "cdn")
-                        return td.replace(new RegExp(`\.${c.domain}$`), "").replace(/^https?:\/\//, "");
-                      })()}
+                      value={c.voluumTrackingDomain || ""}
                       onChange={e => {
-                        const sub = e.target.value.trim().replace(/\..+$/, ""); // strip any dot suffix typed
-                        u("voluumTrackingDomain", sub && c.domain ? `${sub}.${c.domain}` : "");
+                        let v = e.target.value.trim().replace(/^https?:\/\//i, "");
+                        const slash = v.indexOf("/");
+                        if (slash >= 0) v = v.slice(0, slash);
+                        u("voluumTrackingDomain", v);
                         setQuickDnsResult(null);
                       }}
-                      style={{ width: "80px", minWidth: 0, flexShrink: 0 }}
-                      className="flex-1 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--input))] px-2.5 py-1.5 text-[11px] font-mono text-[hsl(var(--foreground))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]/50"
-                      placeholder={DEFAULT_VOLUUM_TRACK_SUBDOMAIN}
+                      className="flex-1 min-w-[min(100%,12rem)] rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--input))] px-2.5 py-1.5 text-[11px] font-mono text-[hsl(var(--foreground))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]/50"
+                      placeholder={voluumDefaultHost(c.domain) || `${DEFAULT_VOLUUM_TRACK_SUBDOMAIN}.example.com`}
                     />
-                    <span className="text-[11px] font-mono text-[hsl(var(--muted-foreground))] select-none flex-1 truncate">.{c.domain || "scratchpaypet.tech"}</span>
                     <button
                       type="button"
-                      disabled={quickDnsLoading || !c.voluumTrackingDomain || !c.voluumCfCname}
+                      disabled={quickDnsLoading || !voluumHost(c) || !c.voluumCfCname}
                       onClick={async () => {
                         setQuickDnsLoading(true);
                         setQuickDnsResult(null);
@@ -890,12 +945,12 @@ export function StepTracking({ c, u }) {
                       value={c.voluumClickUrl || ""}
                       onChange={e => u("voluumClickUrl", e.target.value)}
                       className="flex-1 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--input))] px-2.5 py-1.5 text-[11px] font-mono text-[hsl(var(--foreground))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]/50"
-                      placeholder={`https://${voluumHost(c) || `${DEFAULT_VOLUUM_TRACK_SUBDOMAIN}.${c.domain || "domain.com"}`}/click`}
+                      placeholder={`https://${voluumClickAutoFillHost(c) || `${DEFAULT_VOLUUM_CLICK_AUTOFILL_SUBDOMAIN}.${c.domain || "domain.com"}`}/click`}
                     />
                     <button
                       type="button"
                       onClick={() => {
-                        const td = voluumHost(c);
+                        const td = voluumClickAutoFillHost(c);
                         if (!td) return;
                         u("voluumClickUrl", `https://${td}/click`);
                       }}
@@ -906,7 +961,7 @@ export function StepTracking({ c, u }) {
                     <button
                       type="button"
                       onClick={() => {
-                        const td = voluumHost(c);
+                        const td = voluumClickAutoFillHost(c);
                         if (!td) return;
                         u("voluumClickUrl", `https://${td}/click`);
                         u("voluumLanderScript", buildVoluumLanderScript(c.domain, td));
@@ -927,7 +982,8 @@ export function StepTracking({ c, u }) {
                     <button
                       type="button"
                       onClick={() => {
-                        const td = voluumHost(c);
+                        const td = voluumClickAutoFillHost(c);
+                        if (!td) return;
                         u("voluumLanderScript", buildVoluumLanderScript(c.domain, td));
                         u("voluumClickUrl", `https://${td}/click`);
                       }}
@@ -953,13 +1009,14 @@ export function StepTracking({ c, u }) {
                       <Inp
                         value={c.voluumClickUrl || ""}
                         onChange={v => u("voluumClickUrl", v)}
-                        placeholder={`https://${voluumDefaultHost(c.domain) || `${DEFAULT_VOLUUM_TRACK_SUBDOMAIN}.domain.com`}/click`}
+                        placeholder={`https://${voluumClickAutoFillHost(c) || `${DEFAULT_VOLUUM_CLICK_AUTOFILL_SUBDOMAIN}.domain.com`}/click`}
                       />
                       {c.domain && (
                         <button
                           type="button"
                           onClick={() => {
-                            const td = voluumHost(c);
+                            const td = voluumClickAutoFillHost(c);
+                            if (!td) return;
                             u("voluumClickUrl", `https://${td}/click`);
                           }}
                           className="px-3 py-1.5 text-[10px] rounded-lg bg-[hsl(var(--primary))/15] border border-[hsl(var(--primary))/40] text-[hsl(var(--primary))] font-semibold cursor-pointer whitespace-nowrap"

@@ -118,6 +118,8 @@ export const WIZARD_DEFAULTS = {
     deployTarget: "cf-pages",
     aid: "14881", network: "LeadsGate",
     lang: "English",
+    /** Landing page: show customer review cards (PUBLIC_REVIEWS). Set false to hide on deployed LP. */
+    showReviews: true,
 };
 
 export const DNS_RECORD_TYPES = [

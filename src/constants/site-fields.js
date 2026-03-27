@@ -80,6 +80,8 @@ export const SITE_FIELD_KEYS = Object.freeze([
   "updatedAt",
   "cost",
   "reviews",
+  /** When false, LP build sets PUBLIC_SHOW_REVIEWS=false — templates should not show review cards (compliance / A-B). */
+  "showReviews",
   "trustBadges",
   "deployTarget",
   "deployOnBuild",
