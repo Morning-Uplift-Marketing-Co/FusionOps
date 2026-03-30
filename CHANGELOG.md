@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## 3.6.2 (2026-03-27)
+
+### Features
+
+* **wizard:** merge Step 3 (Template) + Step 4 (Design) into single combined step — reduces wizard from 7 to 6 steps
+* **wizard:** new `StepTemplateDesign` component with compact vertical template list, live iframe thumbnails, and niche badges
+* **wizard:** phone preview updates on template hover via `onHoverTemplate` callback before confirming selection
+* **wizard:** progress bar, step counter, validation, and keyboard handler all updated for 6-step flow
+
 ## 3.6.1 (2026-03-26)
 
 ### Bug Fixes & Improvements
