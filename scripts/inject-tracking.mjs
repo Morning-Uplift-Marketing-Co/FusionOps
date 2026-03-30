@@ -141,9 +141,8 @@ const VOLUUM_HEAD_SNIPPET = `
       var a=B("vl-cep"),b=location[g];
       if("savedCep"===D&&a&&(!h||"undefined"===typeof h)&&0>b.indexOf("cep=")){var l=-1<b.indexOf("?")?"&":"?";b+=l+a}
       c=d.createElement("script");q=d.scripts[0];c.defer=1;
-      /* [Rule #7 Fix] */
       c.src="https://"+vd+"/d/.js?lpref="+n(d.referrer)+"&lpurl="+n(b)+"&vtm="+(new Date).getTime()+(y?"&uw=no":"");
-      c[C]=function(){A()};q.parentNode.insertBefore(c,q);h&&E("vl-"+h,"1",z)},0),setTimeout(A,7E3))
+      c[C]=function(){for(p=0;c=d[v][p++];)/dtpCallback\\.l/.test(c[g])&&(c[g]=decodeURIComponent(c[g]).match(/dtpCallback\\.l="([^"]+)/)[1]);A()};q.parentNode.insertBefore(c,q);h&&E("vl-"+h,"1",z)},0),setTimeout(A,7E3))
   })(window,document,localStorage,encodeURIComponent,"onreadystatechange","links","href","className","onerror","dtpCallback",0,0,"savedCep");
 })();
 </script>
