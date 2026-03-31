@@ -1,5 +1,5 @@
 {
-  "templateId": "greenrush-lending",
+  "templateId": "pastel-lending-bolt",
   "cfPagesProject": "lp-scratchpayeasy-com",
   "cfZoneId": "",
   "skipDnsUpsert": true,
@@ -7,9 +7,9 @@
   "cfAccountId": "",
   "brand": "QuickLoan 74",
   "domain": "scratchpayeasy.com",
-  "h1": "Get $500-$10000 Fast for Your Pet",
-  "sub": "Cover unexpected vet bills or pet needs with ease and confidence.",
-  "cta": "Get My Pet Funds",
+  "h1": "Get $500-$10000 for your pet fast.",
+  "sub": "Care for your pet's health with stress-free quick funding.",
+  "cta": "See Your Options",
   "phone": "1-800-SCRATCH-PAYEA",
   "email": "support@scratchpayeasy.com",
   "address": "1007 N Orange St, 4th Fl, Wilmington, DE 19801",
@@ -18,9 +18,9 @@
   "amountMax": 10000,
   "aprMin": 5.99,
   "aprMax": 35.99,
-  "primaryColor": "#3b5bdb",
-  "accentColor": "#f97316",
-  "conversionId": "AW-102123548",
+  "primaryColor": "",
+  "accentColor": "",
+  "conversionId": "AW-12345",
   "gtagFormStartLabel": "form_start ",
   "gtagFormSubmitLabel": "form_submit",
   "formStartLabel": "form_start ",
@@ -38,6 +38,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "showReviews": true,
-  "deployedAt": "2026-03-30T06:00:00.000Z"
+  "deployedAt": "2026-03-31T07:49:42.570Z"
 }
