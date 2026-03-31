@@ -184,23 +184,29 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
                 addLog(`Cloudflare account: ${maskedCf}`);
             }
 
-            // Build the HTML - Returns assets object with both / and /apply.html
-            addLog("Building landing page...");
-            const assets = await buildHtmlForDomain(domain);
-            addLog("HTML built successfully ✓");
+            // GitHub Actions builds the HTML on CI — skip local generation for that target
+            // (assets param is unused by github-actions deployer; Astro templates require CI build)
+            let assets = {};
+            if (selectedTarget !== "github-actions") {
+                addLog("Building landing page...");
+                assets = await buildHtmlForDomain(domain);
+                addLog("HTML built successfully ✓");
 
-            // Add apply page to assets (if not already included)
-            const applyHtml = generateApplyPageByTemplate(domain);
-            if (!assets["/apply.html"]) {
-                assets["/apply.html"] = applyHtml;
+                // Add apply page to assets (if not already included)
+                const applyHtml = generateApplyPageByTemplate(domain);
+                if (!assets["/apply.html"]) {
+                    assets["/apply.html"] = applyHtml;
+                }
+                addLog(`Built apply.html (${applyHtml.length} bytes) ✓`);
+                addLog(`Total files to deploy: ${Object.keys(assets).length}`);
+
+                // Log all files for debugging
+                Object.keys(assets).forEach(key => {
+                    addLog(`  - ${key} (${assets[key].length} bytes)`);
+                });
+            } else {
+                addLog("GitHub Actions target — CI will build the Astro template ✓");
             }
-            addLog(`Built apply.html (${applyHtml.length} bytes) ✓`);
-            addLog(`Total files to deploy: ${Object.keys(assets).length}`);
-
-            // Log all files for debugging
-            Object.keys(assets).forEach(key => {
-                addLog(`  - ${key} (${assets[key].length} bytes)`);
-            });
 
             // Deploy - pass assets directly (deployTo will handle it)
             addLog(`Deploying to ${targetInfo.label}...`);
