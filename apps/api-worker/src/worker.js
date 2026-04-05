@@ -5544,7 +5544,12 @@ export default {
       /** Pull a JSON object or array from model text (markdown fences, prose, etc.). */
       function extractJson(text) {
         if (!text || typeof text !== 'string') return null;
-        const s = text.trim();
+        // Strip markdown code fences (```json ... ``` or ``` ... ```) that
+        // Gemini/Claude sometimes wrap JSON in despite "no markdown" instructions.
+        let s = text.trim()
+          .replace(/^```(?:json|javascript|js)?\s*/i, '')
+          .replace(/```\s*$/i, '')
+          .trim();
         // Array first — generate-reviews expects [{...},{...}]. Do not use first `[` alone (e.g. "up to $500 [T&C]").
         for (let i = 0; i < s.length; i++) {
           if (s[i] !== '[') continue;
@@ -5581,7 +5586,7 @@ export default {
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({
               contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { maxOutputTokens: maxTokens, temperature: 0.7 },
+              generationConfig: { maxOutputTokens: maxTokens, temperature: 0.95 },
             }),
           }
         );
@@ -5684,6 +5689,21 @@ export default {
           const painLead = painHook.split('?')[0];
           const nicheCashLabel = niche === 'pet' ? 'Pet Cash' : niche === 'auto' ? 'Auto Cash' : niche === 'medical' ? 'Care Cash' : 'Cash';
 
+          // ─── Randomization seeds (force variety across generations) ─────
+          const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+          const PATTERNS = ['a', 'b', 'c', 'd', 'e'];
+          const TONES = ['urgent', 'reassuring', 'bold', 'friendly', 'confident', 'direct', 'empathetic'];
+          const ANGLES = ['speed', 'trust', 'ease', 'relief', 'surprise', 'control', 'dignity', 'security'];
+          const CTA_VERBS = ['See', 'Get', 'Check', 'View', 'Claim', 'Unlock', 'Reveal', 'Show'];
+          const NUMBER_STYLES = ['exact-amount', 'time-duration', 'count-of-customers', 'percentage', 'years-in-business'];
+          const seed = {
+            pattern: pick(PATTERNS),
+            tone: pick(TONES),
+            angle: pick(ANGLES),
+            ctaVerb: pick(CTA_VERBS),
+            numberStyle: pick(NUMBER_STYLES),
+          };
+
           const prompt = `You are a senior direct-response copywriter trained in the schools of
 Eugene Schwartz (Unique Mechanism), Gary Halbert (Emotional Hook), David Ogilvy (Authority),
 and Robert Cialdini (Influence). Write MOBILE above-the-fold copy for a ${loanType} landing
@@ -5698,6 +5718,21 @@ Loan type: ${loanType}
 Niche detected: ${niche}
 Amount range: $${amountMin}–$${amountMax}
 Language: ${lang}
+
+═══ THIS GENERATION'S CREATIVE SEED (use these, do not override) ═══
+• H1 Pattern to use: (${seed.pattern})
+• Emotional tone: ${seed.tone}
+• Psychological angle: ${seed.angle}
+• CTA opening verb: "${seed.ctaVerb}" (use this verb, not others)
+• Number style for H1: ${seed.numberStyle}
+
+═══ ANTI-VERBATIM RULE ═══
+The examples below show PATTERN STRUCTURE only — DO NOT copy any example phrase word-for-word.
+Specifically BANNED verbatim phrases (create your own variations):
+  "60-Second Cash", "Soft-Pull Only", "No FICO Drop", "Funded Tomorrow",
+  "12,000+ Funded This Month", "BBB A+ · Since 2012", "No Obligation to Accept",
+  "500K+ Customers Served", "2-minute form. Soft credit check."
+Write fresh copy that follows the framework but uses DIFFERENT words, numbers, and phrasing.
 
 ═══ HARD RULES (violating = fail) ═══
 1. NEVER use the literal phrase "Personal Loans".
@@ -5761,20 +5796,16 @@ Mechanism (Schwartz unique angle, 2–4 words):
   "Soft-Pull Only", "60-Second Form", "Same-Day Funding", "No Paystubs Needed"
 
 ═══ OUTPUT ═══
-Respond ONLY with this exact JSON (no prose, no markdown):
-{
-  "h1": "<headline>",
-  "title2": "<supporting subheadline>",
-  "cta": "<button text>",
-  "sub": "<reassurance line>",
-  "badge": "<trust badge>",
-  "tagline": "<brand tagline>",
-  "mechanism": "<2-4 word unique angle>"
-}`;
+CRITICAL: Respond with ONE valid JSON object. Start your response with { and end with }.
+Do NOT wrap in markdown code fences. Do NOT add any prose before or after the JSON.
+Do NOT use angle brackets like <headline> — replace them with your actual copy.
+
+Required JSON shape (fill every field with real copy, not placeholders):
+{"h1":"","title2":"","cta":"","sub":"","badge":"","tagline":"","mechanism":""}`;
           const enrichedBody = { ...body, geminiKey: resolvedGeminiKey, anthropicKey: resolvedAnthropicKey };
-          const text = await callAI(env, enrichedBody, prompt, 1024);
+          const text = await callAI(env, enrichedBody, prompt, 2048);
           const jsonStr = extractJson(text);
-          if (!jsonStr) return json({ error: 'AI returned unexpected format', raw: text.slice(0, 300) }, 500);
+          if (!jsonStr) return json({ error: 'AI returned unexpected format', raw: text.slice(0, 500) }, 500);
           return json(JSON.parse(jsonStr));
         } catch (e) {
           return json({ error: e.message }, 500);
