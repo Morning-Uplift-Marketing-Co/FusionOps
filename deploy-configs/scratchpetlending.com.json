@@ -1,5 +1,5 @@
 {
-  "templateId": "bolt-loan-pastel-optimized-02",
+  "templateId": "bolt-loan-pastel-optimized-01",
   "cfPagesProject": "lp-scratchpetlending-com",
   "cfZoneId": "",
   "skipDnsUpsert": true,
@@ -18,8 +18,8 @@
   "amountMax": 5000,
   "aprMin": 5.99,
   "aprMax": 35.99,
-  "primaryColor": "",
-  "accentColor": "",
+  "primaryColor": "#3b5bdb",
+  "accentColor": "#f97316",
   "conversionId": "AW-17895823247",
   "gtagFormStartLabel": "eHnTCNDohJAcEI-vstVC",
   "gtagFormSubmitLabel": "TMkoCKaGhZAcEI-vstVC",
@@ -39,5 +39,5 @@
   "trustBadges": "",
   "reviews": [],
   "showReviews": true,
-  "deployedAt": "2026-04-05T04:42:42.596Z"
+  "deployedAt": "2026-04-05T04:44:26.706Z"
 }
