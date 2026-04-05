@@ -4,13 +4,16 @@ interface Props {
   sub?: string;
 }
 
-const brand  = import.meta.env.PUBLIC_BRAND   || 'Pastel Lending';
-const aprMin = import.meta.env.PUBLIC_APRMIN  || '5.99';
-const cta    = import.meta.env.PUBLIC_CTA     || 'Check Your Rate';
+const brand  = import.meta.env.PUBLIC_BRAND   || '${brand}';
+const aprMin = import.meta.env.PUBLIC_APRMIN  || '${aprMin}';
+const cta    = import.meta.env.PUBLIC_CTA     || '${cta}';
+const title2      = import.meta.env.PUBLIC_TITLE2       || '${title2}';
+const redirectUrl = import.meta.env.PUBLIC_REDIRECT_URL || '${redirectUrl}';
+const badge = import.meta.env.PUBLIC_BADGE || 'Instant Approval';
 
 const {
-  h1  = import.meta.env.PUBLIC_H1  || 'The Smarter Way to Borrow',
-  sub = import.meta.env.PUBLIC_SUB || 'Fixed-rate installment loans from $1,000 to $5,000. Transparent terms, no surprises.',
+  h1  = import.meta.env.PUBLIC_H1  || '${h1}',
+  sub = import.meta.env.PUBLIC_SUB || '${sub}',
 } = Astro.props;
 
 const trustItems = [
@@ -40,7 +43,7 @@ const trustItems = [
       <a href="#faq" class="nav-link">FAQ</a>
     </nav>
 
-    <a href="/apply" class="btn-primary py-2.5 px-5 text-sm">Check My Rate</a>
+    <a href={redirectUrl} class="btn-primary py-2.5 px-5 text-sm">{cta}</a>
   </div>
 </header>
 
@@ -60,14 +63,14 @@ const trustItems = [
         <span class="section-label">Rates from {aprMin}% APR</span>
         <span class="badge">
           <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
-          Instant Decision
+          {badge}
         </span>
       </div>
 
       <!-- LCP element: h1 rendered immediately, no deferral -->
       <h1 class="font-display font-bold leading-[1.08] tracking-tight text-4xl sm:text-5xl md:text-5xl lg:text-6xl text-foreground mb-6">
         {h1}<br/>
-        <span class="gradient-text">Without the Hassle</span>
+        <span class="gradient-text">{title2}</span>
       </h1>
 
       <p class="text-foreground/70 text-lg leading-relaxed mb-10 max-w-md">
@@ -202,7 +205,7 @@ const trustItems = [
     </div>
   </div>
 
-  <script>
+  <script define:vars={{ redirectUrl }}>
     const grid = document.getElementById('amount-grid');
     if (grid) {
       grid.addEventListener('click', (e) => {
@@ -250,7 +253,9 @@ const trustItems = [
 
         clearError();
         const params = new URLSearchParams({ zip, amount });
-        window.location.href = `/apply?${params.toString()}`;
+        const base = redirectUrl || '/apply';
+        const sep = base.includes('?') ? '&' : '?';
+        window.location.href = `${base}${sep}${params.toString()}`;
       });
     }
   </script>
