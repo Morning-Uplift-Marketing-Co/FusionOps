@@ -224,11 +224,6 @@ const formStartLabel = import.meta.env.PUBLIC_FORMSTARTLABEL || '';
 const formSubmitLabel = import.meta.env.PUBLIC_FORMSUBMITLABEL || '';
 const voluumDomain = import.meta.env.PUBLIC_VOLUUMDOMAIN || '';
 const voluumClickUrl = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || '';
-const primaryColor = import.meta.env.PUBLIC_PRIMARYCOLOR || '#2563eb';
-const accentColor = import.meta.env.PUBLIC_ACCENTCOLOR || '#f59e0b';
-const colorId = import.meta.env.PUBLIC_COLORID || 'ocean';
-const fontId = import.meta.env.PUBLIC_FONTID || 'inter';
-const radius = import.meta.env.PUBLIC_RADIUS || 'rounded';
 
 interface Props {
   title?: string;
@@ -241,9 +236,6 @@ const {
   description = brand,
   canonicalUrl = \`https://\${domain}\`,
 } = Astro.props;
-
-const radiusValue = radius === 'sharp' ? '0rem' : radius === 'subtle' ? '0.375rem' : radius === 'pill' ? '1.5rem' : '0.75rem';
-const wizardThemeStyle = \`--wizard-primary:\${primaryColor};--wizard-primary-strong:\${primaryColor};--wizard-primary-bright:\${primaryColor};--wizard-primary-deep:\${primaryColor};--wizard-primary-soft:color-mix(in srgb, \${primaryColor} 18%, transparent);--wizard-accent:\${accentColor};--wizard-accent-strong:\${accentColor};--wizard-accent-soft:color-mix(in srgb, \${accentColor} 18%, transparent);--wizard-radius:\${radiusValue};--wizard-font-family:Inter;\`;
 ---
 <!doctype html>
 <html lang="en">
@@ -281,7 +273,7 @@ const wizardThemeStyle = \`--wizard-primary:\${primaryColor};--wizard-primary-st
       })();
     </script>
   </head>
-  <body style={wizardThemeStyle} data-color-id={colorId} data-font-id={fontId} data-radius={radius}>
+  <body>
     <script data-cfasync="false" is:inline define:vars={{ domain }}>
       (function(){
         function fpPixel(eventName, extra) {
