@@ -1,4 +1,6 @@
 ---
+const redirectUrl = import.meta.env.PUBLIC_REDIRECT_URL || '${redirectUrl}';
+
 const steps = [
   {
     num: '01',
@@ -82,7 +84,7 @@ const steps = [
         <p class="font-display font-bold text-foreground text-base">Ready to get started?</p>
         <p class="text-foreground/70 text-sm">Checking your rate takes 3 minutes and won't affect your credit.</p>
       </div>
-      <a href="/apply" class="btn-primary flex-shrink-0">
+      <a href={redirectUrl} class="btn-primary flex-shrink-0">
         Check My Rate — It's Free
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
           <path d="M5 12h14M12 5l7 7-7 7"/>
