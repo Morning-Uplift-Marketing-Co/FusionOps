@@ -428,6 +428,7 @@ function mergeMissingContentEnvIntoFrontmatter(frontmatter) {
     { detect: /\bconst\s+h1\s*=/, line: "const h1        = import.meta.env.PUBLIC_H1        || '';" },
     { detect: /\bconst\s+sub\s*=/, line: "const sub       = import.meta.env.PUBLIC_SUB       || '';" },
     { detect: /\bconst\s+cta\s*=/, line: "const cta       = import.meta.env.PUBLIC_CTA       || 'Apply Now';" },
+    { detect: /\bconst\s+title2\s*=/, line: "const title2    = import.meta.env.PUBLIC_TITLE2    || '';" },
     { detect: /\bconst\s+phone\s*=/, line: "const phone     = import.meta.env.PUBLIC_PHONE     || '';" },
     { detect: /\bconst\s+emailAddr\s*=/, line: "const emailAddr = import.meta.env.PUBLIC_EMAIL     || '';" },
     { detect: /\bconst\s+email\s*=/, line: "const email     = import.meta.env.PUBLIC_EMAIL     || '';" },
@@ -445,6 +446,70 @@ function mergeMissingContentEnvIntoFrontmatter(frontmatter) {
     }
   }
   return { frontmatter: fm, added };
+}
+
+/**
+ * Some imported/Bolt templates use literal placeholders like `${title2}` in Astro body.
+ * Astro does not evaluate these unless they are written as `{title2}`.
+ * Convert known copy placeholders to Astro expressions when matching vars exist.
+ *
+ * IMPORTANT: Only processes the HTML body section (after the closing ---),
+ * never the frontmatter or <script> blocks, to avoid corrupting JS template literals.
+ */
+function normalizeDollarPlaceholdersInAstroBody(indexContent) {
+  if (!indexContent || !indexContent.includes('${')) return { content: indexContent, changed: false };
+
+  // Split out the frontmatter so we never modify JS template literals inside it.
+  const fmRe = /^(---[\s\S]*?---[ \t]*\n?)/;
+  const fmMatch = indexContent.match(fmRe);
+  const frontmatter = fmMatch ? fmMatch[1] : '';
+  let body = fmMatch ? indexContent.slice(frontmatter.length) : indexContent;
+
+  // Only check for declared vars within the frontmatter (not the body).
+  const hasVar = (name) => new RegExp(`\\bconst\\s+${name}\\s*=`).test(frontmatter || indexContent);
+
+  // Protect <script> blocks from substitution.
+  const scriptBlocks = [];
+  body = body.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, (m) => {
+    const token = `\x00SC${scriptBlocks.length}\x00`;
+    scriptBlocks.push(m);
+    return token;
+  });
+
+  let changed = false;
+  const replaceIfVar = (placeholder, varName) => {
+    if (!hasVar(varName)) return;
+    const re = new RegExp(`\\$\\{${placeholder}\\}`, 'g');
+    if (re.test(body)) {
+      body = body.replace(re, `{${varName}}`);
+      changed = true;
+    }
+  };
+
+  // Common copy vars
+  [
+    'brand', 'domain', 'h1', 'sub', 'cta', 'title2',
+    'phone', 'email', 'address',
+    'aprMin', 'aprMax', 'amountMin', 'amountMax',
+  ].forEach((v) => replaceIfVar(v, v));
+
+  // CTA/link placeholders often appear as ${redirectUrl} in imported templates
+  if (hasVar('ctaHref')) {
+    const rr = /\$\{redirectUrl\}/g;
+    if (rr.test(body)) {
+      body = body.replace(rr, '{ctaHref}');
+      changed = true;
+    }
+  } else if (hasVar('redirectUrl')) {
+    replaceIfVar('redirectUrl', 'redirectUrl');
+  } else if (hasVar('voluumClickUrl')) {
+    replaceIfVar('redirectUrl', 'voluumClickUrl');
+  }
+
+  // Restore script blocks.
+  scriptBlocks.forEach((b, i) => { body = body.replace(`\x00SC${i}\x00`, b); });
+
+  return { content: frontmatter + body, changed };
 }
 
 /**
@@ -1060,6 +1125,14 @@ export const GET: APIRoute = () => {
         .replace(/href=["']#apply["']/g, 'href={ctaHref}');
       changed = true;
       console.log('📄 Replaced CTA hrefs with ctaHref');
+    }
+
+    // Convert literal ${var} placeholders in Astro body into {var} expressions.
+    const normalized = normalizeDollarPlaceholdersInAstroBody(indexContent);
+    if (normalized.changed) {
+      indexContent = normalized.content;
+      changed = true;
+      console.log('📄 Normalized ${...} placeholders to Astro expressions in index.astro');
     }
 
     if (changed) {

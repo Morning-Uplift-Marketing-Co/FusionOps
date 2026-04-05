@@ -7,7 +7,7 @@ export function StepCopy({ c, u, onAiGenerate, aiLoading, onAiMeta, aiMetaLoadin
     const applyTemplate = (tpl) => {
         u("h1", tpl.h1);
         u("h1span", tpl.h1span || "");
-        u("badge", tpl.badge);
+        u("title2", tpl.title2);
         u("cta", tpl.cta);
         u("sub", tpl.sub);
         if (!c.tagline) u("tagline", `${tpl.brand}: Fast. Simple. Trusted.`);
@@ -52,7 +52,7 @@ export function StepCopy({ c, u, onAiGenerate, aiLoading, onAiMeta, aiMetaLoadin
 
             <Field label="H1 Headline"><Inp value={c.h1} onChange={v => u("h1", v)} placeholder="Get Cash Fast — Apply In Minutes" /></Field>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                <Field label="Badge Text"><Inp value={c.badge} onChange={v => u("badge", v)} placeholder="No Credit Check Required" /></Field>
+                <Field label="Title 2"><Inp value={c.title2} onChange={v => u("title2", v)} placeholder="No Credit Check Required" /></Field>
                 <Field label="CTA Button"><Inp value={c.cta} onChange={v => u("cta", v)} placeholder="Check Your Rate →" /></Field>
             </div>
             <Field label="Sub-headline"><Inp value={c.sub} onChange={v => u("sub", v)} placeholder="Get approved in minutes. Funds fast." /></Field>

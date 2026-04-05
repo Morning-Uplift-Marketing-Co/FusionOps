@@ -125,6 +125,7 @@ jobs:
             H1:              c.h1||c.brand||'',
             SUB:             c.sub||'',
             CTA:             c.cta||'Apply Now',
+            TITLE2:          c.title2||'',
             PHONE:           c.phone||'',
             EMAIL:           c.email||('support@'+(c.domain||'example.com')),
             ADDRESS:         c.address||'',
@@ -152,7 +153,7 @@ jobs:
 
           // Explicit VITE_* key mapping (Loveable convention)
           const viteMap = {
-            BRAND:'BRAND', DOMAIN:'DOMAIN', H1:'H1', SUB:'SUB', CTA:'CTA',
+            BRAND:'BRAND', DOMAIN:'DOMAIN', H1:'H1', SUB:'SUB', CTA:'CTA', TITLE2:'TITLE2',
             PHONE:'PHONE', EMAIL:'EMAIL', ADDRESS:'ADDRESS', AID:'AID',
             AMOUNTMIN:'AMOUNT_MIN', AMOUNTMAX:'AMOUNT_MAX',
             PRIMARYCOLOR:'PRIMARY_COLOR', ACCENTCOLOR:'ACCENT_COLOR',
@@ -168,10 +169,20 @@ jobs:
           };
 
           const lines = [];
+          // Single-quoted .env values are NOT processed by dotenv-expand, so
+          // dollar signs like "$5000" or "$5,000" are preserved as literals.
+          // We use String.fromCharCode(39) for the single-quote character to
+          // avoid conflicting with bash outer double-quotes in `node -e "..."`.
+          const SQ = String.fromCharCode(39);
+          const toEnvVal = (v) => {
+            const s = String(v == null ? '' : v);
+            if (!s.includes(SQ)) return SQ + s + SQ;
+            return JSON.stringify(s); // fallback for values with embedded single quotes
+          };
           for (const [key, val] of Object.entries(vars)) {
-            lines.push('PUBLIC_' + key + '=' + JSON.stringify(val));
+            lines.push('PUBLIC_' + key + '=' + toEnvVal(val));
             const vk = viteMap[key] || key;
-            lines.push('VITE_' + vk + '=' + JSON.stringify(val));
+            lines.push('VITE_' + vk + '=' + toEnvVal(val));
           }
 
           // Merge with existing .env (preserves template-specific keys)

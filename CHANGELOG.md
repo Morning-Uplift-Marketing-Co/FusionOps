@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## 3.6.3 (2026-04-05)
+
+### Features
+
+* **preview:** add `substituteSiteVariables()` to `buildPreviewHtml()` — Bolt/HTML-static templates using `${brand}`, `${h1}`, `${sub}`, `${cta}`, `${badge}`, `${amountMax}` etc. now update in real-time when Wizard fields change, no Astro wrapper required
+* **preview:** add `stripTypeScriptFromScript()` — strips TypeScript syntax (`as Type`, `querySelector<T>`, non-null assertions `!`, parameter/return type annotations) from `<script>` blocks at preview time so Astro templates with TypeScript scripts render correctly in-browser
+* **preview:** apply TypeScript stripping in both `buildPreviewHtml()` (HTML-static path) and `astroToHtmlPreview()` (Astro path)
+* **template:** add patched `bolt-loan-pastel-optimized-01` component fixes under `src/template-pages/` — resolves Calculator amount display (`${amountMinFmt}`/`${amountMaxFmt}`) and Footer `popupContent` runtime bug (moved from frontmatter to `<script>` block)
+
+### Bug Fixes
+
+* **template:** fix `popupContent` in `Footer.astro` being inaccessible at runtime — Astro frontmatter variables are not available in `<script>` tags without `define:vars`; moved object definition into the script block directly
+
 ## 3.6.2 (2026-03-27)
 
 ### Features
