@@ -199,9 +199,28 @@ if (Object.keys(envVars).length > 0) {
     }
   }
 
-  const merged = { ...existing, ...envVars };
+  // Strip surrounding quotes from existing values (they may already be single-quoted
+  // from a previous CI deploy) so we don't double-quote when re-writing.
+  const unquote = (v) => {
+    const s = String(v);
+    if ((s.startsWith("'") && s.endsWith("'")) || (s.startsWith('"') && s.endsWith('"'))) {
+      return s.slice(1, -1);
+    }
+    return s;
+  };
+  const unquotedExisting = Object.fromEntries(Object.entries(existing).map(([k, v]) => [k, unquote(v)]));
+
+  const merged = { ...unquotedExisting, ...envVars };
+
+  // Wrap values in single quotes so dollar signs (e.g. $500, $5,000 in h1 copy)
+  // are preserved as literals — same approach as deploy-lp.yml CI workflow.
+  const toEnvVal = (v) => {
+    const s = String(v == null ? '' : v);
+    if (!s.includes("'")) return `'${s}'`;
+    return JSON.stringify(s); // fallback: double-quoted with escaping
+  };
   const envContent = Object.entries(merged)
-    .map(([k, v]) => `${k}=${v}`)
+    .map(([k, v]) => `${k}=${toEnvVal(v)}`)
     .join('\n');
 
   if (!dryRun) fs.writeFileSync(envPath, envContent + '\n');
