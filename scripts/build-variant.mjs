@@ -141,7 +141,7 @@ if (theme.font) {
 // ─── 3. Write .env (content + tracking) ──────────────────────────────────────
 const envVars = {};
 
-// Content vars
+// Content vars (support both nested theme.content and top-level fields)
 if (theme.content) {
   if (theme.content.brand)  envVars.PUBLIC_BRAND = theme.content.brand;
   if (theme.content.h1)     envVars.PUBLIC_H1 = theme.content.h1;
@@ -150,15 +150,27 @@ if (theme.content) {
   if (theme.content.phone)  envVars.PUBLIC_PHONE = theme.content.phone;
   if (theme.content.email)  envVars.PUBLIC_EMAIL = theme.content.email;
 }
-if (theme.domain) envVars.PUBLIC_DOMAIN = theme.domain;
+// Also support top-level fields (for deploy configs)
+if (theme.h1)       envVars.PUBLIC_H1 = theme.h1;
+if (theme.sub)      envVars.PUBLIC_SUB = theme.sub;
+if (theme.cta)      envVars.PUBLIC_CTA = theme.cta;
+if (theme.brand)    envVars.PUBLIC_BRAND = theme.brand;
+if (theme.phone)    envVars.PUBLIC_PHONE = theme.phone;
+if (theme.email)    envVars.PUBLIC_EMAIL = theme.email;
+if (theme.domain)   envVars.PUBLIC_DOMAIN = theme.domain;
 
-// Loan params
+// Loan params (support both nested and top-level)
 if (theme.loan) {
   if (theme.loan.amountMin) envVars.PUBLIC_AMOUNTMIN = String(theme.loan.amountMin);
   if (theme.loan.amountMax) envVars.PUBLIC_AMOUNTMAX = String(theme.loan.amountMax);
   if (theme.loan.aprMin)    envVars.PUBLIC_APRMIN = String(theme.loan.aprMin);
   if (theme.loan.aprMax)    envVars.PUBLIC_APRMAX = String(theme.loan.aprMax);
 }
+// Also support top-level fields (for deploy configs)
+if (theme.amountMin) envVars.PUBLIC_AMOUNTMIN = String(theme.amountMin);
+if (theme.amountMax) envVars.PUBLIC_AMOUNTMAX = String(theme.amountMax);
+if (theme.aprMin)    envVars.PUBLIC_APRMIN = String(theme.aprMin);
+if (theme.aprMax)    envVars.PUBLIC_APRMAX = String(theme.aprMax);
 
 // Tracking vars — passed through .env, inject-tracking.mjs handles the scripts
 if (theme.tracking) {
