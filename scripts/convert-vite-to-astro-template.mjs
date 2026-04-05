@@ -143,15 +143,15 @@ const PUBLIC_FORMSUBMITLABEL = import.meta.env.PUBLIC_FORMSUBMITLABEL || 'form_s
     <title>{title}</title>
     {description && <meta name="description" content={description} />}
     <script is:inline>
-      window.__fusionops = window.__fusionops || {};
-      window.__fusionops.PX_ENDPOINT = 'https://t.' + window.location.hostname + '/e';
-      window.__fusionops.PUBLIC_VOLUUMDOMAIN = '{PUBLIC_VOLUUMDOMAIN}';
-      window.__fusionops.PUBLIC_FORMSTARTLABEL = '{PUBLIC_FORMSTARTLABEL}';
-      window.__fusionops.PUBLIC_FORMSUBMITLABEL = '{PUBLIC_FORMSUBMITLABEL}';
-      if (window.__fusionops.PUBLIC_VOLUUMDOMAIN) {
+      window.__lpRuntime = window.__lpRuntime || {};
+      window.__lpRuntime.PX_ENDPOINT = 'https://t.' + window.location.hostname + '/e';
+      window.__lpRuntime.PUBLIC_VOLUUMDOMAIN = '{PUBLIC_VOLUUMDOMAIN}';
+      window.__lpRuntime.PUBLIC_FORMSTARTLABEL = '{PUBLIC_FORMSTARTLABEL}';
+      window.__lpRuntime.PUBLIC_FORMSUBMITLABEL = '{PUBLIC_FORMSUBMITLABEL}';
+      if (window.__lpRuntime.PUBLIC_VOLUUMDOMAIN) {
         var s = document.createElement('script');
         s.async = true;
-        s.src = 'https://' + window.__fusionops.PUBLIC_VOLUUMDOMAIN + '/dtpCallback.js';
+        s.src = 'https://' + window.__lpRuntime.PUBLIC_VOLUUMDOMAIN + '/dtpCallback.js';
         document.head.appendChild(s);
       }
     </script>
@@ -176,7 +176,7 @@ const ctaHref = '/apply';
   <body style="font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin:0; background:#0b1220; color:#f8fafc;">
     <main style="max-width:720px; margin:0 auto; padding:48px 20px; text-align:center;">
       <h1 style="margin:0 0 12px; font-size:32px; line-height:1.2;">${templateName}</h1>
-      <p style="margin:0 0 20px; color:#cbd5e1;">Astro fallback entry for FusionOps deploy compatibility.</p>
+      <p style="margin:0 0 20px; color:#cbd5e1;">Astro fallback entry for deploy compatibility.</p>
       <p style="margin:0 0 24px;"><a href={ctaHref} style="display:inline-block; padding:12px 18px; border-radius:10px; text-decoration:none; background:#2563eb; color:white; font-weight:600;">Apply Now</a></p>
       <p style="font-size:13px; color:#94a3b8;">Generated fallback. Real template HTML was not detected.</p>
     </main>
@@ -205,7 +205,7 @@ const ctaHref = '/apply';
 
   const publicIndex = path.join(outDir, 'public', 'index.html');
   if (fs.existsSync(publicIndex)) {
-    const rawIndex = fs.readFileSync(publicIndex, 'utf8');
+    const rawIndex = sanitizeExpressionLeak(fs.readFileSync(publicIndex, 'utf8'), templateName).html;
     const withMarker = /href=\{ctaHref\}/.test(rawIndex)
       ? rawIndex
       : /<\/body>/i.test(rawIndex)
@@ -219,9 +219,10 @@ ${withMarker}`;
 
   const publicApply = path.join(outDir, 'public', 'apply.html');
   if (fs.existsSync(publicApply)) {
+    const rawApply = sanitizeExpressionLeak(fs.readFileSync(publicApply, 'utf8'), templateName).html;
     apply = `---
 ---
-${fs.readFileSync(publicApply, 'utf8')}`;
+${rawApply}`;
   }
 
   const eTs = `export const prerender = true;
@@ -250,7 +251,7 @@ export default defineConfig({
 `;
 
   const pkg = {
-    name: 'fusionops-astro-converted-template',
+    name: 'astro-converted-template',
     private: true,
     version: '1.0.0',
     type: 'module',
@@ -420,7 +421,7 @@ function ensurePrimaryToken(html) {
   if (/--color-primary|--primary\s*:|--fo-primary|var\(--color-primary\)|var\(--primary\)|var\(--fo-primary\)|hsl\(var\(--primary\)\)/i.test(html)) {
     return { html, changed: false };
   }
-  const tokenStyle = '<style id="fusionops-primary-token">:root{--color-primary:#6d28d9;--fo-primary:#6d28d9;}</style>';
+  const tokenStyle = '<style id="lp-primary-token">:root{--color-primary:#6d28d9;--fo-primary:#6d28d9;}</style>';
   if (/<head[^>]*>/i.test(html)) {
     return {
       html: html.replace(/<head([^>]*)>/i, `<head$1>\n    ${tokenStyle}`),
@@ -448,6 +449,25 @@ function sanitizeExpressionLeak(html, templateName) {
   if (jsxConditional.test(next)) {
     next = next.replace(jsxConditional, '$1');
     changed = true;
+  }
+
+  // Normalize legacy FusionOps tracking markers in imported static HTML.
+  const markerReplacements = [
+    [/\bFusionOps index\.html tracking\b/gi, 'Landing index.html tracking'],
+    [/\b__fusionopsLandingParams\b/g, '__lpLandingParams'],
+    [/\b__fusionopsLandingSearch\b/g, '__lpLandingSearch'],
+    [/\b__fusionops_lp_search\b/g, '__lp_search'],
+    [/\b__fusionops_lp_params\b/g, '__lp_params'],
+    [/\bfusionops-voluum-cta\b/g, 'lp-voluum-cta'],
+    [/\bdata-fusionops-cta\b/gi, 'data-lp-cta'],
+    [/\bdata-fusionops\b/gi, 'data-lp'],
+    [/\bwindow\.__fusionops\b/g, 'window.__lpRuntime'],
+  ];
+  for (const [pattern, replacement] of markerReplacements) {
+    if (pattern.test(next)) {
+      next = next.replace(pattern, replacement);
+      changed = true;
+    }
   }
 
   return { html: next, changed };
