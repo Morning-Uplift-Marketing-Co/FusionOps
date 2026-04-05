@@ -1,0 +1,121 @@
+---
+const aprMin = import.meta.env.PUBLIC_APRMIN || '${aprMin}';
+const aprMax = import.meta.env.PUBLIC_APRMAX || '${aprMax}';
+const phone  = import.meta.env.PUBLIC_PHONE  || '${phone}';
+
+const faqs = [
+  {
+    q: 'Will checking my plan options affect my credit score?',
+    a: 'No. Scratchpay\'s plan check uses a soft inquiry only. Soft inquiries are not reported to credit bureaus as applications and leave no mark on your score. You can see all available payment plan options without any credit impact whatsoever.',
+  },
+  {
+    q: 'What does "0% APR option" mean, and do I qualify?',
+    a: 'Certain Scratchpay plans carry a 0% promotional APR, meaning you repay only the amount financed — no interest, no financing fees. Eligibility depends on your credit profile and the plan term selected. All available plans, including their APR, are shown to you in full before you confirm anything. If a 0% plan is available to you, you will see it in your results.',
+  },
+  {
+    q: 'What can I use Scratchpay financing for?',
+    a: 'Scratchpay is designed specifically for veterinary care. This includes emergency treatment, diagnostics, surgery, dental procedures, specialist consultations, cancer treatment, orthopedic care, and other services performed at a licensed veterinary practice in Scratchpay\'s partner network.',
+  },
+  {
+    q: 'How quickly is the plan confirmed?',
+    a: 'Plan checks return results in 60 seconds. Confirmation is completed at the clinic using Scratchpay\'s integrated system — no printing or paperwork required. Your veterinary practice can proceed with treatment as soon as your plan is confirmed.',
+  },
+  {
+    q: 'What credit profile does Scratchpay require?',
+    a: 'Scratchpay evaluates a range of credit profiles, including applicants with limited or imperfect credit history. Your credit score is one factor — income and overall financial picture also inform the plans you are offered. Checking your options takes 60 seconds and never affects your score.',
+  },
+  {
+    q: `What APR range can I expect?`,
+    a: `Plan APRs available through Scratchpay range from ${aprMin}% to ${aprMax}%. The specific rate on any plan is fixed and disclosed in full before you confirm. It does not change after you sign. Plans are structured so your monthly payment amount stays the same for the entire term.`,
+  },
+  {
+    q: 'Are there application or origination fees?',
+    a: 'Scratchpay does not charge application fees. Any applicable plan fees are disclosed clearly before you confirm your selection — there are no post-acceptance surprises. The total amount you will repay is always shown upfront.',
+  },
+  {
+    q: 'Can I pay off my plan early?',
+    a: 'Yes. There are no prepayment penalties. Paying off your balance early reduces the total interest owed because interest accrues only on the remaining principal. You can pay ahead or pay in full at any time.',
+  },
+  {
+    q: 'What if my vet clinic is not a Scratchpay partner?',
+    a: 'Scratchpay works with over 28,000 veterinary practices across the United States. If your current clinic is not yet a partner, you can contact Scratchpay directly or ask your clinic to apply — enrollment is free for practices. You can also search for Scratchpay partner clinics near you on the Scratchpay website.',
+  },
+  {
+    q: 'How does Scratchpay differ from a standard credit card?',
+    a: 'A credit card carries an open-ended revolving balance at a variable rate — the average APR for new accounts exceeds 27%. Scratchpay offers fixed-term payment plans with a set monthly payment, a disclosed total cost, and 0% APR options. You know exactly what you will pay before you commit, and the cost does not change while you repay.',
+  },
+];
+---
+
+<script type="application/ld+json" set:html={JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": faqs.map(f => ({
+    "@type": "Question",
+    "name": f.q,
+    "acceptedAnswer": { "@type": "Answer", "text": f.a }
+  }))
+})} />
+
+<section id="faq" class="py-20 md:py-28 px-6">
+  <div class="max-w-6xl mx-auto">
+
+    <div class="grid md:grid-cols-[380px_1fr] gap-14 items-start">
+      <!-- Left: sticky -->
+      <div class="md:sticky md:top-24">
+        <span class="section-label">Vet Financing — Plain Answers</span>
+        <h2 class="section-title">Frequently Asked Questions</h2>
+        <p class="text-foreground/70 text-base leading-relaxed mb-8">
+          Straight answers to the questions pet owners ask most before checking their plan options. If something is not covered here, our team is available by phone.
+        </p>
+
+        <div class="glass-card p-5 flex gap-4 items-center">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            style="background: hsl(38 62% 58% / 0.1);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="hsl(38 62% 58%)" stroke-width="2" stroke-linecap="round">
+              <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 11.12 19.79 19.79 0 012 2.44 2 2 0 014 .4h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 8.15a16 16 0 006.29 6.29l1.01-1.01a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+            </svg>
+          </div>
+          <div>
+            <p class="text-foreground/70 text-sm font-semibold">Still have questions?</p>
+            <p class="text-foreground/65 text-xs mt-0.5">{phone} · Mon–Fri 8am–8pm EST</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: accordion -->
+      <div id="faq-list">
+        {faqs.map((faq, i) => (
+          <div class={`faq-item ${i === 0 ? 'open' : ''}`} data-index={i}>
+            <button class="faq-trigger">
+              <span>{faq.q}</span>
+              <span class="faq-icon">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+                  <path d="M12 5v14M5 12h14"/>
+                </svg>
+              </span>
+            </button>
+            <div class="faq-content">
+              {faq.a}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const faqList = document.getElementById('faq-list');
+  if (faqList) {
+    faqList.addEventListener('click', (e) => {
+      const trigger = (e.target as HTMLElement).closest('.faq-trigger');
+      if (!trigger) return;
+      const item = trigger.closest('.faq-item');
+      if (!item) return;
+      const isOpen = item.classList.contains('open');
+      faqList.querySelectorAll('.faq-item').forEach(el => el.classList.remove('open'));
+      if (!isOpen) item.classList.add('open');
+    });
+  }
+</script>
