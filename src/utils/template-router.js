@@ -3,7 +3,7 @@ import { generateAstroProject } from "./astro-generator.jsx";
 import { getTemplateGenerator, resolveTemplateId as resolveId, clearCustomTemplatesCache, fetchCustomTemplates, getCustomTemplatesCache, registry } from "./template-registry.js";
 import { detectTemplateFormat, resolveTemplateEntry } from "./template-standard.js";
 import { getTemplateFileContent, identifyFramework } from "./template-analyzer.js";
-import { buildPreviewHtml, stripTypeScriptFromScript } from "./template-preview-runtime.js";
+import { buildPreviewHtml, stripTypeScriptFromScript, substituteSiteVariables } from "./template-preview-runtime.js";
 import { injectDistPreviewBase } from "./template-thumbnail-preview.js";
 import { generatePhone } from "./phone-gen.js";
 import { generateBusinessAddress } from "./contact-gen.js";
@@ -1042,7 +1042,11 @@ export function generateHtmlByTemplate(site) {
           customTemplate.dbId != null && String(customTemplate.dbId).trim()
             ? injectDistPreviewBase(builtHtml, String(customTemplate.dbId).trim())
             : builtHtml;
-        return ensureTrackingBaselineHtml(withBase, site);
+        // Substitute ${h1}, ${title2}, ${cta}, ${sub}, ${aprMin}, etc. with live wizard values.
+        // Pre-built dist/index.html still contains raw placeholders that would otherwise
+        // render literally in the preview iframe.
+        const substituted = substituteSiteVariables(withBase, site);
+        return ensureTrackingBaselineHtml(substituted, site);
       }
 
       // Use the smart analyzer to choose the right rendering path

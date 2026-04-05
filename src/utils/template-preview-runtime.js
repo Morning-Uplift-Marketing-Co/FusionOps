@@ -201,7 +201,7 @@ export function stripTypeScriptFromScript(content) {
 // Works for ALL template types (HTML-static from Bolt, Astro, etc.).
 // <style> and <script> blocks are protected from substitution.
 
-function substituteSiteVariables(html, site) {
+export function substituteSiteVariables(html, site) {
   if (!site || !html) return html;
 
   const toNum = (v, fallback) =>

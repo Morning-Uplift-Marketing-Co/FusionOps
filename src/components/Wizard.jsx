@@ -344,6 +344,42 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
         }
     };
 
+    const [aiTitle2Loading, setAiTitle2Loading] = useState(false);
+    const handleAiTitle2 = async () => {
+        setAiTitle2Loading(true);
+        try {
+            const p = await api.post("/ai/generate-copy", {
+                brand: config.brand,
+                loanType: config.loanType,
+                amountMin: config.amountMin,
+                amountMax: config.amountMax,
+                lang: config.lang || "English",
+                field: "title2",
+                constraint: "max 40 characters, 3-6 words, concise supporting subheadline, no trailing period",
+                geminiKey: settings?.geminiKey || "",
+                anthropicKey: settings?.anthropicKey || "",
+            });
+            if (p && !p.error) {
+                let v = (p.title2 || p.badge || p.text || "").trim();
+                // Strip wrapping quotes and trailing punctuation, enforce 40-char cap
+                v = v.replace(/^["'“”‘’]+|["'“”‘’]+$/g, "").replace(/[.!]+$/, "").trim();
+                if (v.length > 40) v = v.slice(0, 40).replace(/\s+\S*$/, "").trim() || v.slice(0, 40);
+                if (v) {
+                    upd("title2", v);
+                    notify("Title 2 generated!");
+                } else {
+                    notify("AI returned empty Title 2. Try again.", "warning");
+                }
+            } else {
+                notify(p?.error || "Title 2 generation failed.", "warning");
+            }
+        } catch (e) {
+            notify(e?.message || "Title 2 generation failed. Check your Gemini API Key in Settings.", "warning");
+        } finally {
+            setAiTitle2Loading(false);
+        }
+    };
+
     const handleAiReviews = async () => {
         setAiReviewsLoading(true);
         try {
@@ -644,7 +680,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                         {step === 1 && <StepBrand c={config} u={upd} settings={settings} cfAccounts={cfAccounts} registrarAccounts={registrarAccounts} capabilities={capabilities} />}
                         {step === 2 && <StepProduct c={config} u={upd} capabilities={capabilities} />}
                         {step === 3 && <StepTemplateDesign c={config} u={upd} notify={notify} onHoverTemplate={setHoverTemplateId} designCapabilities={wizardCaps} />}
-                        {step === 4 && <StepCopy c={config} u={upd} onAiGenerate={handleAiGenerate} aiLoading={aiLoading} onAiMeta={handleAiMeta} aiMetaLoading={aiMetaLoading} onAiReviews={handleAiReviews} aiReviewsLoading={aiReviewsLoading} capabilities={capabilities} />}
+                        {step === 4 && <StepCopy c={config} u={upd} onAiGenerate={handleAiGenerate} aiLoading={aiLoading} onAiMeta={handleAiMeta} aiMetaLoading={aiMetaLoading} onAiReviews={handleAiReviews} aiReviewsLoading={aiReviewsLoading} onAiTitle2={handleAiTitle2} aiTitle2Loading={aiTitle2Loading} capabilities={capabilities} />}
                         {step === 5 && <StepTracking c={config} u={upd} capabilities={capabilities} />}
                         {step === 6 && <StepReview c={config} building={building} capabilities={capabilities} />}
                         </div>
