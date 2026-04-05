@@ -7,10 +7,10 @@
   "cfAccountId": "",
   "brand": "scratchpay",
   "domain": "scratchpayeasy.com",
-  "h1": "Quick Funding for Pet Care: $500 - $10,000",
-  "sub": "Easy, stress-free financing for your beloved pet's health and happiness.",
-  "cta": "Apply Now",
-  "title2": "Fast Approval Process",
+  "h1": "Quick Pet Funding: $500 to $5,000",
+  "sub": "Give your pet the care they need without financial stress.",
+  "cta": "Get My Offer",
+  "title2": "Fast Approval",
   "phone": "1-800-SCRATCH-PAYEA",
   "email": "support@scratchpayeasy.com",
   "address": "1007 N Orange St, 4th Fl, Wilmington, DE 19801",
@@ -19,8 +19,8 @@
   "amountMax": 10000,
   "aprMin": 5.99,
   "aprMax": 35.99,
-  "primaryColor": "",
-  "accentColor": "",
+  "primaryColor": "#3b5bdb",
+  "accentColor": "#f97316",
   "conversionId": "AW-12345",
   "gtagFormStartLabel": "form_start ",
   "gtagFormSubmitLabel": "form_submit",
@@ -40,5 +40,5 @@
   "trustBadges": "",
   "reviews": [],
   "showReviews": true,
-  "deployedAt": "2026-04-05T09:23:45.040Z"
+  "deployedAt": "2026-04-05T09:26:03.599Z"
 }
