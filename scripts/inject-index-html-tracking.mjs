@@ -25,7 +25,7 @@ if (html.includes('__fpPixel') || html.includes('inject-index-html-tracking')) {
 }
 
 const TRACKING_SNIPPET = `
-<!-- FusionOps index.html tracking (inject-index-html-tracking.mjs) -->
+<!-- Landing index.html tracking (inject-index-html-tracking.mjs) -->
 <script data-cfasync="false">
 (function(){
   function isLocalHost() {

@@ -163,10 +163,10 @@ const GCLID_CAPTURE_SNIPPET = `
   var p = new URLSearchParams(window.location.search);
   var flat = {};
   p.forEach(function(v, k) { flat[k] = v; });
-  window.__fusionopsLandingParams = flat;
-  window.__fusionopsLandingSearch = window.location.search || '';
-  try { sessionStorage.setItem('__fusionops_lp_search', window.location.search || ''); } catch (_) {}
-  try { sessionStorage.setItem('__fusionops_lp_params', JSON.stringify(flat)); } catch (_) {}
+  window.__lpLandingParams = flat;
+  window.__lpLandingSearch = window.location.search || '';
+  try { sessionStorage.setItem('__lp_search', window.location.search || ''); } catch (_) {}
+  try { sessionStorage.setItem('__lp_params', JSON.stringify(flat)); } catch (_) {}
   var cid = p.get('gclid') || p.get('gbraid') || p.get('wbraid') || p.get('msclkid') || p.get('fbclid') || p.get('ttclid')
     || p.get('vlcid') || p.get('clickid') || p.get('click_id') || p.get('cid') || p.get('cpid') || '';
   window.__fpClickId = cid || '';
@@ -332,7 +332,7 @@ const PIXEL_BODY_SNIPPET = `
     }
   };
   try {
-    var o = window.__fusionopsLandingParams;
+    var o = window.__lpLandingParams;
     if (o && typeof o === 'object') {
       var gclid = o.gclid || o.gbraid || o.wbraid;
       if (gclid && !fpIsAdsPlaceholderVal(gclid)) SafeStorage.set('google_gclid', gclid);
@@ -402,7 +402,7 @@ function voluumClickUrlFromEnv(env) {
 
 function hasVoluumCtaRewriterMarkup(html) {
   return html.includes('voluum-cta-rewriter')
-    || html.includes('fusionops-voluum-cta')
+    || html.includes('lp-voluum-cta')
     || html.includes('__foPatchCta');
 }
 
@@ -484,7 +484,7 @@ const VOLUUM_CTA_PATCH_INLINE_JS = `
   function __foDestBase(){try{var w=window.__VOLUUM_CLICK_URL__||'';return(w&&/^https:\\/\\//i.test(String(w)))?String(w).trim():'';}catch(_){return'';}}
   function __foIsVT(v){try{v=decodeURIComponent(String(v==null?"":v)).trim();return/^\\{[A-Za-z0-9_]+\\}$/.test(v);}catch(_){return/^\\{[A-Za-z0-9_]+\\}$/.test(String(v==null?"":v).trim());}}
   function __foMergeCTA(b){try{var u=new URL(b,window.location.href);var l=new URLSearchParams(window.location.search);l.forEach(function(v,k){if(__foIsVT(v))return;u.searchParams.set(k,v);});return u.toString();}catch(_){return b;}}
-  function __foPatchCta(){var bs=__foDestBase();if(!bs)return;var d=__foMergeCTA(bs);document.querySelectorAll('a[href="/apply"],a[href="#apply"],a[href="/apply/"],a[data-fusionops-cta="1"]').forEach(function(a){var h=a.getAttribute("href")||"";if(h==="/apply"||h==="/apply/"||h==="#apply")a.setAttribute("href",d);});document.querySelectorAll('a[href^="/apply?"]').forEach(function(a){a.setAttribute("href",d);});}
+  function __foPatchCta(){var bs=__foDestBase();if(!bs)return;var d=__foMergeCTA(bs);document.querySelectorAll('a[href="/apply"],a[href="#apply"],a[href="/apply/"],a[data-lp-cta="1"]').forEach(function(a){var h=a.getAttribute("href")||"";if(h==="/apply"||h==="/apply/"||h==="#apply")a.setAttribute("href",d);});document.querySelectorAll('a[href^="/apply?"]').forEach(function(a){a.setAttribute("href",d);});}
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",__foPatchCta);else __foPatchCta();
   try{new MutationObserver(__foPatchCta).observe(document.documentElement,{childList:true,subtree:true});}catch(_){}
   setTimeout(__foPatchCta,0);setTimeout(__foPatchCta,400);setTimeout(__foPatchCta,1500);
@@ -498,8 +498,8 @@ function voluumCtaMarkerAndRewriterSnippet(clickUrlForComment) {
   const hasCommentUrl = clickUrl && /^https?:\/\//i.test(clickUrl);
   const safeComment = clickUrl.replace(/-->/g, '--\\>');
   const comment = hasCommentUrl
-    ? `<!-- fusionops-voluum-cta: ${safeComment} -->`
-    : '<!-- fusionops-voluum-cta: (runtime: window.__VOLUUM_CLICK_URL__) -->';
+    ? `<!-- lp-voluum-cta: ${safeComment} -->`
+    : '<!-- lp-voluum-cta: (runtime: window.__VOLUUM_CLICK_URL__) -->';
   return `\n${comment}\n`;
 }
 
@@ -570,7 +570,7 @@ function cleanExistingTracking(html) {
 }
 
 function hasGclIdCapture(content) {
-  return /window\.__fpClickId|__fusionopsLandingParams|__fusionopsLandingSearch|gclid.*sessionStorage|sessionStorage.*gclid|__fpClickId/.test(content);
+  return /window\.__fpClickId|__lpLandingParams|__lpLandingSearch|gclid.*sessionStorage|sessionStorage.*gclid|__fpClickId/.test(content);
 }
 
 function injectIntoHtmlOrVite(filePath, isVite, templateRoot) {
@@ -712,8 +712,13 @@ function injectIntoAstro(filePath, projectRoot) {
   content = content.replace(/<script data-cfasync="false">/g, '<script is:inline data-cfasync="false">');
   content = content.replace(
     /<script data-cfasync="false" data-fusionops="voluum-cta-rewriter">/gi,
-    '<script is:inline data-cfasync="false" data-fusionops="voluum-cta-rewriter">',
+    '<script is:inline data-cfasync="false" data-lp="voluum-cta-rewriter">',
   );
+  content = content.replace(
+    /<script data-cfasync="false" data-lp="voluum-cta-rewriter">/gi,
+    '<script is:inline data-cfasync="false" data-lp="voluum-cta-rewriter">',
+  );
+  content = content.replace(/\bdata-fusionops-cta=/gi, 'data-lp-cta=');
   content = content.replace(/<script is:inline data-cfasync="false" is:inline>/g, '<script is:inline data-cfasync="false">');
 
   fs.writeFileSync(filePath, content, 'utf8');
@@ -741,10 +746,10 @@ if (type === 'vite' && fs.existsSync(indexHtml)) {
   if (!post.includes('dtpCallback')) {
     console.warn('⚠ Vite index.html still has no Voluum dtpCallback after inject — check index path or permissions.');
   }
-  if (!post.includes('__fusionopsLandingParams') && !post.includes('__fpClickId')) {
+  if (!post.includes('__lpLandingParams') && !post.includes('__fpClickId')) {
     console.warn('⚠ Vite index.html missing landing-param capture block — body inject may have failed.');
   }
-  if (!post.includes('voluum-cta-rewriter') && !post.includes('fusionops-voluum-cta') && !post.includes('__foPatchCta')) {
+  if (!post.includes('voluum-cta-rewriter') && !post.includes('lp-voluum-cta') && !post.includes('__foPatchCta')) {
     console.warn('⚠ Vite index.html missing Voluum CTA rewriter — inject voluumCtaMarker may have failed.');
   }
   enforceRewriterWhenClickUrlInEnv(templateDir, indexHtml, post, 'Vite index.html');
@@ -755,10 +760,10 @@ if (type === 'astro' && layoutAstro && fs.existsSync(layoutAstro)) {
   if (!post.includes('dtpCallback')) {
     console.warn(`⚠ Astro shell ${path.relative(templateDir, layoutAstro)} still has no Voluum dtpCallback after inject.`);
   }
-  if (!post.includes('__fusionopsLandingParams') && !post.includes('__fpClickId')) {
+  if (!post.includes('__lpLandingParams') && !post.includes('__fpClickId')) {
     console.warn(`⚠ Astro shell ${path.relative(templateDir, layoutAstro)} missing landing-param capture — body inject may have failed.`);
   }
-  if (!post.includes('voluum-cta-rewriter') && !post.includes('fusionops-voluum-cta') && !post.includes('__foPatchCta')) {
+  if (!post.includes('voluum-cta-rewriter') && !post.includes('lp-voluum-cta') && !post.includes('__foPatchCta')) {
     console.warn(`⚠ Astro shell ${path.relative(templateDir, layoutAstro)} missing Voluum CTA rewriter — inject voluumCtaMarker may have failed.`);
   }
   enforceRewriterWhenClickUrlInEnv(templateDir, layoutAstro, post, 'Astro shell');
