@@ -1,0 +1,279 @@
+---
+interface Props {
+  h1?: string;
+  sub?: string;
+}
+
+const brand  = import.meta.env.PUBLIC_BRAND   || '${brand}';
+const aprMin = import.meta.env.PUBLIC_APRMIN  || '${aprMin}';
+const cta    = import.meta.env.PUBLIC_CTA     || '${cta}';
+const title2      = import.meta.env.PUBLIC_TITLE2       || '${title2}';
+const redirectUrl = import.meta.env.PUBLIC_REDIRECT_URL || '${redirectUrl}';
+const badge = import.meta.env.PUBLIC_BADGE || 'Instant Approval';
+
+const {
+  h1  = import.meta.env.PUBLIC_H1  || '${h1}',
+  sub = import.meta.env.PUBLIC_SUB || '${sub}',
+} = Astro.props;
+
+const trustItems = [
+  { icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`, label: '256-bit SSL' },
+  { icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>`, label: 'No hidden fees' },
+  { icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>`, label: '50,000+ borrowers' },
+  { icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>`, label: 'NMLS Licensed' },
+];
+---
+
+<!-- NAV -->
+<header class="hero-nav fixed top-0 left-0 right-0 z-50 border-b border-border/50">
+  <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+    <div class="flex items-center gap-2.5">
+      <div class="brand-icon-bg w-7 h-7 rounded-lg flex items-center justify-center">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="hsl(0 0% 100%)" stroke-width="2.5" stroke-linecap="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <span class="font-display font-bold text-foreground text-sm">{brand}</span>
+    </div>
+
+    <nav class="hidden md:flex items-center gap-7">
+      <a href="#how-it-works" class="nav-link">How It Works</a>
+      <a href="#calculator" class="nav-link">Calculator</a>
+      <a href="#rates" class="nav-link">Rates</a>
+      <a href="#faq" class="nav-link">FAQ</a>
+    </nav>
+
+    <a href={redirectUrl} class="btn-primary py-2.5 px-5 text-sm">{cta}</a>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="relative min-h-screen flex items-center pt-16 px-6 overflow-hidden">
+  <!-- Background grid -->
+  <div class="absolute inset-0 grid-bg opacity-30 pointer-events-none" aria-hidden="true"></div>
+
+  <!-- Ambient glow blobs (desktop only — hidden on mobile to save paint cost) -->
+  <div class="hero-blob-blue absolute top-1/4 left-1/3 w-64 h-64 md:w-96 md:h-96 rounded-full pointer-events-none hidden md:block" aria-hidden="true"></div>
+  <div class="hero-blob-rose absolute bottom-1/4 right-1/4 w-56 h-56 md:w-80 md:h-80 rounded-full pointer-events-none hidden md:block" aria-hidden="true"></div>
+
+  <div class="max-w-6xl mx-auto w-full grid md:grid-cols-2 gap-16 items-center py-20">
+    <!-- Left: Copy — LCP text block, no lazy loading -->
+    <div>
+      <div class="flex items-center gap-2 mb-8">
+        <span class="section-label">Rates from {aprMin}% APR</span>
+        <span class="badge">
+          <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+          {badge}
+        </span>
+      </div>
+
+      <!-- LCP element: h1 rendered immediately, no deferral -->
+      <h1 class="font-display font-bold leading-[1.08] tracking-tight text-4xl sm:text-5xl md:text-5xl lg:text-6xl text-foreground mb-6">
+        {h1}<br/>
+        <span class="gradient-text">{title2}</span>
+      </h1>
+
+      <p class="text-foreground/70 text-lg leading-relaxed mb-10 max-w-md">
+        {sub}
+      </p>
+
+      <!-- CTA row -->
+      <div class="flex flex-col gap-3 mb-10 max-w-sm">
+
+        <!-- Amount selection -->
+        <div>
+          <p class="text-foreground/70 text-xs font-semibold uppercase tracking-wider mb-2.5">How much do you need?</p>
+          <div class="grid grid-cols-3 gap-1.5" id="amount-grid">
+            {[
+              { label: '$500',   val: '500'   },
+              { label: '$1,000', val: '1000'  },
+              { label: '$1,500', val: '1500'  },
+              { label: '$2,000', val: '2000'  },
+              { label: '$3,000', val: '3000'  },
+              { label: '$5,000', val: '5000'  },
+            ].map((btn, i) => (
+              <button
+                type="button"
+                data-amount={btn.val}
+                class={`amount-btn h-11 rounded-[calc(var(--radius)-2px)] text-sm font-semibold duration-200 border focus:outline-none focus:ring-2 focus:ring-primary/30 ${i === 2 ? 'amount-btn--active' : ''}`}
+              >
+                {btn.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div class="relative flex items-center">
+          <input
+            type="text"
+            inputmode="numeric"
+            maxlength="5"
+            placeholder="Enter your ZIP code"
+            class="text-base py-4 px-5 pr-12 rounded-[var(--radius)] border border-border bg-surface text-foreground placeholder-foreground/30 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30 w-full duration-200"
+          />
+          <svg class="absolute right-4 pointer-events-none text-foreground/30" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
+          </svg>
+        </div>
+        <div class="relative">
+          <button
+            id="hero-cta"
+            type="button"
+            class="btn-primary text-base py-4 px-8 w-full justify-center"
+          >
+            {cta}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </button>
+          <p id="hero-cta-error" class="text-red-500 text-xs mt-2 hidden" aria-live="polite"></p>
+        </div>
+      </div>
+
+      <!-- Trust bar -->
+      <div class="flex flex-wrap gap-x-5 gap-y-2.5">
+        {trustItems.map(item => (
+          <div class="flex items-center gap-1.5 text-foreground/65 text-xs font-medium">
+            <span class="text-primary/70" set:html={item.icon} />
+            {item.label}
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- Right: Floating cards (decorative, not LCP) -->
+    <div class="relative h-[480px] hidden md:block" aria-hidden="true">
+      <!-- Main card -->
+      <div class="premium-card absolute top-8 left-0 right-8 p-6 animate-float" style="will-change: transform;">
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <p class="text-foreground/40 text-xs font-medium uppercase tracking-widest mb-1">Loan Amount</p>
+            <p class="font-display font-bold text-2xl text-foreground mono-num">$5,000</p>
+          </div>
+          <div class="brand-icon-bg w-10 h-10 rounded-xl flex items-center justify-center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="hsl(0 0% 100%)" stroke-width="2.5" stroke-linecap="round">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="mb-5">
+          <div class="flex justify-between text-xs text-foreground/40 mb-2">
+            <span>3 of 24 payments</span>
+            <span class="text-primary font-semibold">On Track</span>
+          </div>
+          <div class="h-1.5 bg-border rounded-full overflow-hidden">
+            <div class="hero-progress-bar h-full rounded-full w-[12%]"></div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          {[
+            { label: 'Monthly', val: '$231' },
+            { label: 'APR', val: '9.99%' },
+            { label: 'Term', val: '24mo' },
+          ].map(stat => (
+            <div class="hero-stat-chip rounded-xl p-3 text-center">
+              <div class="font-display font-bold text-foreground text-sm mono-num">{stat.val}</div>
+              <div class="text-foreground/50 text-xs mt-0.5">{stat.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <!-- Approval card -->
+      <div class="glass-card absolute bottom-4 right-0 left-12 p-4 animate-float-slow flex items-center gap-4" style="will-change: transform;">
+        <div class="w-10 h-10 rounded-xl bg-green-500/15 flex items-center justify-center flex-shrink-0">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="hsl(142 71% 55%)" stroke-width="2.5" stroke-linecap="round">
+            <path d="M20 6L9 17l-5-5"/>
+          </svg>
+        </div>
+        <div>
+          <p class="text-foreground font-semibold text-sm">Application Approved</p>
+          <p class="text-foreground/40 text-xs">Funds arrive in your account today</p>
+        </div>
+        <div class="ml-auto text-xs font-mono text-green-400 bg-green-500/10 px-2 py-1 rounded-lg">+$5,000</div>
+      </div>
+
+      <!-- Rate badge -->
+      <div class="glass-card absolute top-4 right-0 p-4 w-36 text-center animate-float hero-rate-badge" style="will-change: transform;">
+        <div class="text-foreground/40 text-xs mb-1 uppercase tracking-wider">Your Rate</div>
+        <div class="font-display font-bold text-2xl text-primary mono-num">9.99<span class="text-sm font-semibold">%</span></div>
+        <div class="text-foreground/30 text-xs mt-1">Fixed APR</div>
+      </div>
+    </div>
+  </div>
+
+  <script define:vars={{ redirectUrl }}>
+    const grid = document.getElementById('amount-grid');
+    if (grid) {
+      grid.addEventListener('click', (e) => {
+        const btn = (e.target as HTMLElement).closest('.amount-btn') as HTMLButtonElement | null;
+        if (!btn) return;
+        grid.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('amount-btn--active'));
+        btn.classList.add('amount-btn--active');
+      });
+    }
+
+    const ctaBtn   = document.getElementById('hero-cta') as HTMLButtonElement | null;
+    const ctaError = document.getElementById('hero-cta-error') as HTMLElement | null;
+    const zipInput = document.querySelector<HTMLInputElement>('input[placeholder="Enter your ZIP code"]');
+
+    function showError(msg: string) {
+      if (!ctaError) return;
+      ctaError.textContent = msg;
+      ctaError.classList.remove('hidden');
+    }
+
+    function clearError() {
+      if (!ctaError) return;
+      ctaError.textContent = '';
+      ctaError.classList.add('hidden');
+    }
+
+    if (ctaBtn && zipInput) {
+      zipInput.addEventListener('input', clearError);
+
+      ctaBtn.addEventListener('click', () => {
+        const zip = zipInput.value.trim();
+        const activeAmountBtn = grid?.querySelector<HTMLButtonElement>('.amount-btn--active');
+        const amount = activeAmountBtn?.dataset.amount ?? '';
+
+        if (!/^\d{5}$/.test(zip)) {
+          showError('Please enter a valid 5-digit ZIP code.');
+          zipInput.focus();
+          return;
+        }
+
+        if (!amount) {
+          showError('Please select a loan amount.');
+          return;
+        }
+
+        clearError();
+        const params = new URLSearchParams({ zip, amount });
+        const base = redirectUrl || '/apply';
+        const sep = base.includes('?') ? '&' : '?';
+        window.location.href = `${base}${sep}${params.toString()}`;
+      });
+    }
+  </script>
+
+  <!-- Stats bar -->
+  <div class="hero-stats-bar absolute bottom-0 left-0 right-0 border-t border-border/50">
+    <div class="max-w-6xl mx-auto px-6 py-5 grid grid-cols-2 md:grid-cols-4 gap-4">
+      {[
+        { val: '$2.4B+', label: 'Loans Originated' },
+        { val: '50,000+', label: 'Happy Borrowers' },
+        { val: '4.8 / 5', label: 'Average Rating' },
+        { val: '24hrs', label: 'Avg. Funding Time' },
+      ].map(s => (
+        <div class="text-center">
+          <div class="font-display font-bold text-foreground text-xl md:text-2xl mono-num">{s.val}</div>
+          <div class="text-foreground/60 text-xs mt-0.5">{s.label}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

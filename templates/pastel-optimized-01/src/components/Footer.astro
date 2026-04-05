@@ -1,0 +1,243 @@
+---
+const brand    = import.meta.env.PUBLIC_BRAND   || '${brand}';
+const aprMin   = import.meta.env.PUBLIC_APRMIN  || '${aprMin}';
+const aprMax   = import.meta.env.PUBLIC_APRMAX  || '${aprMax}';
+const amtMin   = import.meta.env.PUBLIC_AMOUNTMIN || '${amountMin}';
+const amtMax   = import.meta.env.PUBLIC_AMOUNTMAX || '${amountMax}';
+const phone    = import.meta.env.PUBLIC_PHONE   || '${phone}';
+const email    = import.meta.env.PUBLIC_EMAIL   || '${email}';
+const redirectUrl = import.meta.env.PUBLIC_REDIRECT_URL || '${redirectUrl}';
+
+const popupContent: Record<string, { title: string; body: string }> = {
+  'Debt Consolidation': {
+    title: 'Debt Consolidation',
+    body: 'Combine multiple high-interest debts into one simple monthly payment. Many borrowers reduce their overall interest cost significantly by consolidating credit cards and other loans.',
+  },
+  'Home Improvement': {
+    title: 'Home Improvement',
+    body: 'Finance repairs, renovations, or upgrades without tapping into your home equity. Fixed monthly payments make it easy to budget for your project from start to finish.',
+  },
+  'Medical Loans': {
+    title: 'Medical Loans',
+    body: 'Cover unexpected medical expenses with a fixed-rate loan. We work with borrowers across a wide credit spectrum and offer same-day funding in most cases.',
+  },
+  'How It Works': {
+    title: 'How It Works',
+    body: '1. Check your rate in minutes with no impact to your credit score.\n2. Review your personalized offers and choose the best fit.\n3. Sign your documents electronically.\n4. Receive funds directly in your bank account — often the same day.',
+  },
+  'Payment Calculator': {
+    title: 'Payment Calculator',
+    body: 'Use our interactive calculator to estimate your monthly payment. Adjust the loan amount, term, and APR to see how different scenarios affect your budget before you apply.',
+  },
+  'APR & Rates': {
+    title: 'APR & Rates',
+    body: `Rates range from ${aprMin}% to ${aprMax}% APR based on creditworthiness and loan term. Rates are fixed for the life of the loan — your payment will never change. No hidden fees or prepayment penalties.`,
+  },
+  'FAQ': {
+    title: 'Frequently Asked Questions',
+    body: 'Q: Will checking my rate hurt my credit?\nA: No. Rate checks use a soft inquiry.\n\nQ: How fast can I receive funds?\nA: As fast as same business day after approval.\n\nQ: Are there prepayment penalties?\nA: Never. Pay off early at no cost.',
+  },
+  'About Us': {
+    title: 'About Us',
+    body: `${brand} connects borrowers with a network of trusted lenders to deliver competitive fixed-rate personal loans. Our mission is to make borrowing transparent, fast, and fair for everyone.`,
+  },
+  'Privacy Policy': {
+    title: 'Privacy Policy',
+    body: 'We collect only the information necessary to process your loan application. Your data is encrypted, never sold to third parties, and stored in compliance with applicable federal and state privacy laws. You may request deletion of your data at any time.',
+  },
+  'Terms of Service': {
+    title: 'Terms of Service',
+    body: `By using ${brand}, you agree to our terms governing loan applications, rate inquiries, and communications. ${brand} operates as a loan marketplace. Loan approval and terms are determined by individual lenders. All loans subject to credit review.`,
+  },
+  'Accessibility': {
+    title: 'Accessibility',
+    body: `${brand} is committed to ensuring digital accessibility for people with disabilities. We continually improve the user experience for everyone and apply relevant accessibility standards. Contact us at ${email} if you encounter barriers.`,
+  },
+};
+---
+
+<!-- Single lazy modal shell — populated by JS on demand -->
+<div
+  id="popup-modal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="popup-modal-title"
+  aria-hidden="true"
+  class="popup-overlay-bg fixed inset-0 z-[200] flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200"
+>
+  <div id="popup-modal-box" inert class="premium-card max-w-md w-full p-8 relative scale-95 transition-transform duration-200">
+    <button
+      id="popup-modal-close"
+      class="absolute top-4 right-4 w-8 h-8 rounded-lg flex items-center justify-center text-foreground/40 hover:text-foreground/80 hover:bg-border/50 transition-colors"
+      aria-label="Close"
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+        <path d="M18 6L6 18M6 6l12 12"/>
+      </svg>
+    </button>
+    <h3 id="popup-modal-title" class="font-display font-bold text-foreground text-lg mb-4"></h3>
+    <p id="popup-modal-body" class="text-foreground/55 text-sm leading-relaxed whitespace-pre-line"></p>
+  </div>
+</div>
+
+<!-- Pre-footer CTA -->
+<section class="py-16 px-6">
+  <div class="max-w-6xl mx-auto">
+    <div class="premium-card p-10 md:p-14 text-center relative overflow-hidden">
+      <div class="absolute inset-0 pointer-events-none prefooter-glow"></div>
+      <span class="section-label relative">Competitive Rates Available</span>
+      <h2 class="font-display font-bold text-3xl md:text-4xl text-foreground relative mb-4">
+        Your Best Rate Is Waiting
+      </h2>
+      <p class="text-foreground/70 text-base max-w-xl mx-auto mb-8 relative">
+        Check your rate in 3 minutes with no impact to your credit score. Join 50,000+ borrowers who chose {brand}.
+      </p>
+      <a href={redirectUrl} class="btn-primary text-base py-4 px-10 relative">
+        Get My Rate Now — It's Free
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </a>
+
+      <!-- Trust row -->
+      <div class="flex flex-wrap justify-center gap-6 mt-8 text-foreground/60 text-xs">
+        {[
+          'No hard credit pull to check rate',
+          'Funds as fast as same day',
+          'Fixed monthly payments',
+          'No prepayment penalties',
+        ].map(item => (
+          <div class="flex items-center gap-1.5">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="hsl(193 46% 50%)" stroke-width="2.5" stroke-linecap="round">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+            {item}
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Regulatory Disclosure -->
+<section id="disclosure" class="px-6 pb-10">
+  <div class="max-w-6xl mx-auto">
+    <div class="glass-card p-6 border-l-2 mb-8 disclosure-border">
+      <h3 class="font-display font-semibold text-foreground/70 text-sm mb-3 flex items-center gap-2">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="hsl(193 46% 44%)" stroke-width="2" stroke-linecap="round">
+          <circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>
+        </svg>
+        Important Regulatory Disclosures
+      </h3>
+      <div class="space-y-2 text-foreground/60 text-xs leading-relaxed">
+        <p><strong class="text-foreground/70">Loan Terms &amp; Amounts:</strong> Loan amounts range from ${amtMin} to ${amtMax}. Minimum repayment term: 61 days. Maximum repayment term: 60 months (5 years). All loan products offered through this platform require repayment in full in 61 days or longer.</p>
+        <p><strong class="text-foreground/70">Maximum APR:</strong> The maximum Annual Percentage Rate (APR) for personal loans available through this platform is {aprMax}%. APR is calculated in accordance with the Truth in Lending Act (TILA), 12 CFR Part 1026, and includes the interest rate plus all applicable fees. Minimum APR: {aprMin}%.</p>
+        <p><strong class="text-foreground/70">Representative Example:</strong> A loan of $5,000 repaid over 36 months at a fixed APR of 14.99% results in 36 monthly payments of $173.17. Total amount repayable: $6,234.12 (including $1,234.12 in interest and fees). Representative APR: 14.99%. Your actual rate will depend on credit score, income, loan amount, loan term, and other factors. Not all applicants will qualify for the lowest rate advertised.</p>
+        <p><strong class="text-foreground/70">No Guarantee of Approval:</strong> Submitting an inquiry or application does not guarantee loan approval or a specific loan offer. All applications are subject to credit review, identity verification, income verification, and lender underwriting criteria. Approval and final loan terms are at the sole discretion of the participating lender.</p>
+        <p><strong class="text-foreground/70">Credit Inquiry:</strong> Checking your rate uses a soft credit pull and will not affect your credit score. Proceeding with a full loan application may result in a hard credit inquiry, which may temporarily affect your credit score. State availability, loan terms, rates, and fees vary by lender and are subject to change without notice. Not available in all states.</p>
+        <p><strong class="text-foreground/70">Marketplace Disclosure:</strong> {brand} is not a direct lender. {brand} operates as a loan referral marketplace connecting consumers with a network of third-party lenders. {brand} does not make credit decisions and is not responsible for lender actions or loan terms. {brand} may receive compensation from lenders for referrals, which does not influence the loan terms offered to you. Please review each lender's terms, rates, and fees carefully before accepting any loan offer.</p>
+        <p><strong class="text-foreground/70">Risk Warning:</strong> Borrowing money involves financial risk. Failure to repay a loan on time may result in additional fees, negative credit reporting, and collections activity. Only borrow what you can comfortably repay. If you are experiencing financial difficulty, consider contacting a nonprofit credit counseling agency such as the NFCC (nfcc.org) for free guidance.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="border-t border-border px-6 py-10">
+  <div class="max-w-6xl mx-auto">
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-8 mb-10">
+      <div class="col-span-2">
+        <div class="flex items-center gap-2.5 mb-4">
+          <div class="w-7 h-7 rounded-lg flex items-center justify-center brand-icon-bg">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="hsl(0 0% 100%)" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <span class="font-display font-bold text-foreground text-sm">{brand}</span>
+        </div>
+        <p class="text-foreground/60 text-xs leading-relaxed max-w-xs mb-4">
+          Installment loans with fixed payments and transparent terms. NMLS #123456.
+        </p>
+        <div class="flex items-center gap-1.5 text-foreground/60 text-xs">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="hsl(193 46% 50%)" stroke-width="2" stroke-linecap="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          256-bit SSL Encrypted
+        </div>
+      </div>
+
+      {[
+        { heading: 'Loans', links: ['Debt Consolidation', 'Home Improvement', 'Medical Loans'] },
+        { heading: 'Learn', links: ['How It Works', 'Payment Calculator', 'APR & Rates', 'FAQ'] },
+        { heading: 'Company', links: ['About Us', 'Privacy Policy', 'Terms of Service', 'Accessibility'] },
+      ].map(col => (
+        <div>
+          <h4 class="font-semibold text-foreground/70 text-xs uppercase tracking-widest mb-4">{col.heading}</h4>
+          <ul class="space-y-2.5">
+            {col.links.map(link => (
+              <li>
+                <button
+                  data-popup={link}
+                  class="text-foreground/60 text-xs hover:text-foreground/85 transition-colors text-left cursor-pointer"
+                >
+                  {link}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+
+    <div class="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
+      <p class="text-foreground/55 text-xs">&copy; {new Date().getFullYear()} {brand}. All rights reserved. NMLS #123456.</p>
+      <p class="text-foreground/55 text-xs">Loans subject to lender approval and applicable state and federal laws. Not available in all states. See <button data-popup="Terms of Service" class="underline hover:text-foreground/75 transition-colors cursor-pointer">Terms</button> and <button data-popup="Privacy Policy" class="underline hover:text-foreground/75 transition-colors cursor-pointer">Privacy Policy</button>.</p>
+    </div>
+  </div>
+</footer>
+
+<script define:vars={{ popupContent }}>
+  const modal    = document.getElementById('popup-modal');
+  const modalBox = document.getElementById('popup-modal-box');
+  const titleEl  = document.getElementById('popup-modal-title');
+  const bodyEl   = document.getElementById('popup-modal-body');
+  const closeBtn = document.getElementById('popup-modal-close');
+
+  let lastFocusedEl = null;
+
+  function openPopup(key, triggerEl) {
+    const entry = popupContent[key];
+    if (!entry || !modal) return;
+    lastFocusedEl = triggerEl || null;
+    titleEl.textContent = entry.title;
+    bodyEl.textContent  = entry.body;
+    modal.removeAttribute('aria-hidden');
+    modalBox.removeAttribute('inert');
+    modal.classList.remove('opacity-0', 'pointer-events-none');
+    modalBox.classList.remove('scale-95');
+    document.body.classList.add('overflow-hidden');
+    closeBtn && closeBtn.focus();
+  }
+
+  function closePopup() {
+    if (!modal) return;
+    modal.setAttribute('aria-hidden', 'true');
+    modalBox.setAttribute('inert', '');
+    modal.classList.add('opacity-0', 'pointer-events-none');
+    modalBox.classList.add('scale-95');
+    document.body.classList.remove('overflow-hidden');
+    if (lastFocusedEl) lastFocusedEl.focus();
+  }
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-popup]');
+    if (btn) { openPopup(btn.dataset.popup, btn); return; }
+    if (e.target === modal) closePopup();
+  });
+
+  closeBtn?.addEventListener('click', closePopup);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closePopup();
+  });
+</script>

@@ -1,0 +1,66 @@
+---
+const redirectUrl = import.meta.env.PUBLIC_REDIRECT_URL || '${redirectUrl}';
+
+const requirements = [
+  { title: 'Age 18 or older',       desc: 'Must be a legal adult to enter a loan agreement.', icon: '01', color: 'hsl(193 46% 50%)' },
+  { title: 'U.S. Residency',        desc: 'U.S. citizen or permanent resident with a valid SSN.', icon: '02', color: 'hsl(338 55% 62%)' },
+  { title: 'Verifiable Income',     desc: 'Employment, self-employment, pension, or other regular income.', icon: '03', color: 'hsl(130 42% 50%)' },
+  { title: 'Active Bank Account',   desc: 'Checking or savings account for direct deposit.', icon: '04', color: 'hsl(193 46% 50%)' },
+  { title: 'Credit Score 560+',     desc: 'We work with a range of credit histories.', icon: '05', color: 'hsl(338 55% 62%)' },
+  { title: 'Valid Contact Info',    desc: 'Working email and phone number for verification.', icon: '06', color: 'hsl(130 42% 50%)' },
+];
+---
+
+<section id="eligibility" class="py-20 md:py-28 px-6">
+  <div class="max-w-6xl mx-auto">
+
+    <div class="grid md:grid-cols-2 gap-14 items-center">
+      <!-- Left -->
+      <div>
+        <span class="section-label">Who Qualifies</span>
+        <h2 class="section-title">Eligibility Requirements</h2>
+        <p class="text-foreground/70 text-base leading-relaxed mb-8">
+          Our criteria are designed to be inclusive. If you have a stable income and a bank account, you likely qualify.
+        </p>
+
+        <div class="premium-card p-6 mb-8">
+          <h3 class="font-display font-bold text-foreground text-base mb-5">Quick Self-Check</h3>
+          <div class="space-y-3">
+            {['Age 18+', 'U.S. resident or citizen', 'Regular, verifiable income', 'Active bank account'].map(item => (
+              <div class="flex items-center gap-3">
+                <div class="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                  style="background: hsl(193 46% 60% / 0.14);">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="hsl(193 46% 44%)" stroke-width="3" stroke-linecap="round">
+                    <path d="M20 6L9 17l-5-5"/>
+                  </svg>
+                </div>
+                <span class="text-foreground/65 text-sm">{item}</span>
+              </div>
+            ))}
+          </div>
+          <div class="mt-5 pt-4 border-t border-border">
+            <p class="text-foreground/60 text-xs">If you checked all four, you're likely eligible. Your exact rate depends on credit profile and income.</p>
+          </div>
+        </div>
+
+        <a href={redirectUrl} class="btn-primary inline-flex">
+          Check My Eligibility — Free
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </div>
+
+      <!-- Right: requirements grid -->
+      <div class="grid grid-cols-2 gap-3">
+        {requirements.map(req => (
+          <div class="glass-card p-5 reveal hover:-translate-y-0.5 transition-transform duration-200">
+            <div class="font-mono text-xs font-bold mb-3" style={`color: ${req.color}; opacity: 0.6;`}>{req.icon}</div>
+            <h4 class="font-display font-bold text-foreground text-sm mb-2">{req.title}</h4>
+            <p class="text-foreground/65 text-xs leading-relaxed">{req.desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
