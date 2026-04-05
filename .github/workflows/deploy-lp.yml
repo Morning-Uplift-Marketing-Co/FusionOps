@@ -169,12 +169,12 @@ jobs:
           };
 
           const lines = [];
-          // Escape $ in values so dotenv-expand does not interpolate them
-          // (e.g. "$5000" must stay literal, not become "000").
+          // Single-quote .env values: dotenv/dotenv-expand treats single-quoted
+          // strings as literals and does NOT expand $ signs inside them.
+          // This preserves values like "$5000" or "5.99%" exactly as written.
           const toEnvVal = (v) => {
             const s = String(v == null ? '' : v);
-            const escaped = s.replace(/\$/g, '\\$');
-            return JSON.stringify(escaped);
+            return "'" + s.replace(/'/g, "'\"'\"'") + "'";
           };
           for (const [key, val] of Object.entries(vars)) {
             lines.push('PUBLIC_' + key + '=' + toEnvVal(val));
