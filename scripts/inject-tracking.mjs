@@ -428,6 +428,7 @@ function mergeMissingContentEnvIntoFrontmatter(frontmatter) {
     { detect: /\bconst\s+h1\s*=/, line: "const h1        = import.meta.env.PUBLIC_H1        || '';" },
     { detect: /\bconst\s+sub\s*=/, line: "const sub       = import.meta.env.PUBLIC_SUB       || '';" },
     { detect: /\bconst\s+cta\s*=/, line: "const cta       = import.meta.env.PUBLIC_CTA       || 'Apply Now';" },
+    { detect: /\bconst\s+title2\s*=/, line: "const title2    = import.meta.env.PUBLIC_TITLE2    || '';" },
     { detect: /\bconst\s+phone\s*=/, line: "const phone     = import.meta.env.PUBLIC_PHONE     || '';" },
     { detect: /\bconst\s+emailAddr\s*=/, line: "const emailAddr = import.meta.env.PUBLIC_EMAIL     || '';" },
     { detect: /\bconst\s+email\s*=/, line: "const email     = import.meta.env.PUBLIC_EMAIL     || '';" },
