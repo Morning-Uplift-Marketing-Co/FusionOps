@@ -1,0 +1,215 @@
+---
+const amountMin = Number(import.meta.env.PUBLIC_AMOUNTMIN || 1000);
+const amountMax = Number(import.meta.env.PUBLIC_AMOUNTMAX || 5000);
+const aprMin = Number(import.meta.env.PUBLIC_APRMIN || 5.99);
+const aprMax = Number(import.meta.env.PUBLIC_APRMAX || 34.99);
+// Pre-format display values so ${amountMinFmt}/${amountMaxFmt} resolve in preview
+const amountMinFmt = amountMin.toLocaleString();
+const amountMaxFmt = amountMax.toLocaleString();
+---
+
+<section id="calculator" class="py-20 bg-gradient-to-b from-background to-secondary/20">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6">
+
+    <div class="text-center mb-12 reveal">
+      <span class="section-label">Loan Estimator</span>
+      <h2 class="section-title">Payment Calculator</h2>
+      <p class="text-foreground/55 max-w-md mx-auto text-sm leading-relaxed">
+        Slide to your desired amount and term — see your fixed monthly payment instantly.
+      </p>
+    </div>
+
+    <div class="glass-card p-6 sm:p-8 reveal reveal-d1">
+
+      <div class="mb-8">
+        <div class="flex justify-between items-baseline mb-3">
+          <span class="text-sm font-semibold text-foreground/70">Loan Amount</span>
+          <span id="amount-display" class="mono-num text-2xl font-bold text-primary">$3,000</span>
+        </div>
+        <input
+          id="amount-slider"
+          type="range"
+          class="range-slider w-full"
+          min="{amountMin}"
+          max="{amountMax}"
+          value="3000"
+          step="100"
+          style="--progress: 50%"
+        />
+        <div class="flex justify-between text-xs text-foreground/35 mt-1.5">
+          <span>${amountMinFmt}</span>
+          <span>${amountMaxFmt}</span>
+        </div>
+      </div>
+
+      <div class="mb-8">
+        <div class="flex justify-between items-baseline mb-3">
+          <span class="text-sm font-semibold text-foreground/70">Loan Term</span>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          {[12, 24, 36, 48, 60].map(t => (
+            <button
+              class="term-btn flex-1 min-w-[3rem] py-2 text-sm font-semibold border rounded-lg transition-colors border-border text-foreground/40"
+              data-term={t}
+            >
+              {t} mo
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div class="mb-8">
+        <div class="flex justify-between items-baseline mb-3">
+          <span class="text-sm font-semibold text-foreground/70">Estimated APR</span>
+          <span id="apr-display" class="mono-num text-lg font-bold text-foreground/80">{aprMin}%</span>
+        </div>
+        <input
+          id="apr-slider"
+          type="range"
+          class="range-slider w-full"
+          min="{aprMin}"
+          max="{aprMax}"
+          value="{aprMin}"
+          step="0.1"
+          style="--progress: 0%"
+        />
+        <div class="flex justify-between text-xs text-foreground/35 mt-1.5">
+          <span>Excellent credit</span>
+          <span>Fair credit</span>
+        </div>
+      </div>
+
+      <p class="text-xs text-foreground/35 leading-relaxed mb-6">
+        This calculator is for illustrative purposes only. Actual rate and payment depend on creditworthiness, income verification, and lender underwriting criteria.
+      </p>
+
+      <div class="glass-card p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <p class="text-xs text-foreground/45 mb-1">Monthly Payment</p>
+            <p id="monthly-payment" class="mono-num text-4xl font-bold text-primary">$294</p>
+            <p class="text-xs text-foreground/35 mt-1">Fixed for the life of the loan</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-border/60">
+          {[
+            { id: 'total-interest', label: 'Interest', color: 'hsl(338 55% 40%)' },
+            { id: 'total-paid', label: 'Total Cost', color: 'hsl(var(--foreground))' },
+            { id: 'term-months', label: 'Term', color: 'hsl(130 42% 32%)' },
+          ].map(({ id, label, color }) => (
+            <div class="text-center">
+              <p id={id} class="mono-num text-sm font-bold" style={`color:${color}`}>—</p>
+              <p class="text-xs text-foreground/40 mt-0.5">{label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div class="mb-4 px-1">
+        <div class="flex justify-between text-xs text-foreground/50 mb-1.5">
+          <span>Principal vs Interest</span>
+        </div>
+        <div class="flex rounded-full overflow-hidden h-2.5 bg-border/40">
+          <div id="amort-principal" class="h-full bg-primary transition-all duration-300" style="width:70%"></div>
+          <div id="amort-interest" class="h-full bg-accent/70 transition-all duration-300" style="width:30%"></div>
+        </div>
+        <div class="flex gap-4 mt-1.5 text-xs text-foreground/40">
+          <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-primary inline-block"></span>Principal</span>
+          <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-accent/70 inline-block"></span>Interest</span>
+        </div>
+      </div>
+
+      <a href="/apply" class="btn-primary w-full justify-center text-center mt-4 block">
+        Apply for This Loan
+      </a>
+    </div>
+  </div>
+</section>
+
+<script>
+  function initCalculator() {
+    const amountSlider = document.getElementById('amount-slider');
+    const aprSlider = document.getElementById('apr-slider');
+    const amountDisplay = document.getElementById('amount-display');
+    const aprDisplay = document.getElementById('apr-display');
+    const monthlyEl = document.getElementById('monthly-payment');
+    const interestEl = document.getElementById('total-interest');
+    const totalEl = document.getElementById('total-paid');
+    const termEl = document.getElementById('term-months');
+    const principalBar = document.getElementById('amort-principal');
+    const interestBar = document.getElementById('amort-interest');
+    const termBtns = document.querySelectorAll('.term-btn');
+
+    if (!amountSlider || !aprSlider) return;
+
+    let selectedTerm = 36;
+
+    function calcMonthly(p, r, n) {
+      if (r === 0) return p / n;
+      const m = r / 100 / 12;
+      return p * (m * Math.pow(1 + m, n)) / (Math.pow(1 + m, n) - 1);
+    }
+
+    function fmt(n) {
+      return '$' + Math.round(n).toLocaleString('en-US');
+    }
+
+    function update() {
+      const amount = +amountSlider.value;
+      const apr = +aprSlider.value;
+      const months = selectedTerm;
+      const aMin = +amountSlider.min;
+      const aMax = +amountSlider.max;
+      const rMin = +aprSlider.min;
+      const rMax = +aprSlider.max;
+
+      const monthly = calcMonthly(amount, apr, months);
+      const total = monthly * months;
+      const interest = total - amount;
+      const pPct = Math.max(0, Math.min(100, (amount / total) * 100)).toFixed(1);
+      const iPct = Math.max(0, Math.min(100, (interest / total) * 100)).toFixed(1);
+      const aPct = ((amount - aMin) / (aMax - aMin) * 100).toFixed(2) + '%';
+      const rPct = ((apr - rMin) / (rMax - rMin) * 100).toFixed(2) + '%';
+
+      amountDisplay.textContent = '$' + amount.toLocaleString('en-US');
+      aprDisplay.textContent = apr.toFixed(2) + '%';
+      monthlyEl.textContent = fmt(monthly);
+      interestEl.textContent = fmt(interest);
+      totalEl.textContent = fmt(total);
+      termEl.textContent = months + 'mo';
+      principalBar.style.width = pPct + '%';
+      interestBar.style.width = iPct + '%';
+      amountSlider.style.setProperty('--progress', aPct);
+      aprSlider.style.setProperty('--progress', rPct);
+    }
+
+    let rafPending = false;
+    function scheduleUpdate() {
+      if (!rafPending) {
+        rafPending = true;
+        requestAnimationFrame(() => { update(); rafPending = false; });
+      }
+    }
+    amountSlider.addEventListener('input', scheduleUpdate);
+    aprSlider.addEventListener('input', scheduleUpdate);
+
+    termBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedTerm = Number(btn.dataset.term);
+        termBtns.forEach(b => {
+          b.classList.remove('border-primary/40', 'text-primary', 'bg-primary/10');
+          b.classList.add('border-border', 'text-foreground/40');
+        });
+        btn.classList.add('border-primary/40', 'text-primary', 'bg-primary/10');
+        btn.classList.remove('border-border', 'text-foreground/40');
+        update();
+      });
+    });
+
+    update();
+  }
+
+  initCalculator();
+  document.addEventListener('astro:page-load', initCalculator);
+</script>

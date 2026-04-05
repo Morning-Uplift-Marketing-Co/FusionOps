@@ -1024,7 +1024,7 @@ export function generatePDLLoansV1(site) {
   const h1 = site.h1 || "A Smarter Way";
   const h1span = site.h1span || "to Borrow";
   const sub = site.sub || "Get approved in minutes. Funds as fast as next business day.";
-  const badge = site.badge || "4,200+ funded this month";
+  const badge = site.title2 || "4,200+ funded this month";
   const cta = site.cta || "Check My Rate";
   const companyName = brand;
   const domain = site.domain || "example.com";
@@ -2389,7 +2389,7 @@ export function generateLanderCore(site) {
   const h1span = site.h1span || "Get funded today.";
   const sub = site.sub || "Compare offers from top lenders in seconds. No impact to your credit score.";
   const cta = site.cta || "Check My Rate";
-  const badge = site.badge || "Trusted by 15,000+ borrowers";
+  const badge = site.title2 || "Trusted by 15,000+ borrowers";
   const amountMin = site.amountMin || 100;
   const amountMax = site.amountMax || 5000;
   const aprMin = site.aprMin || 5.99;

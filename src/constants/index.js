@@ -60,12 +60,12 @@ export const NETWORKS_AFF = ["LeadsGate", "ZeroParallel", "LeadStack", "ClickDea
 export const REGISTRARS = ["Namecheap", "GoDaddy", "Cloudflare", "Porkbun", "Internet.bs", "Other"];
 
 export const COPY_SETS = [
-    { id: "smart", brand: "ElasticCredits", h1: "A Smarter Way", h1span: "to Borrow", sub: "Get approved in minutes. Funds as fast as next business day.", cta: "Check My Rate", badge: "4,200+ funded this month" },
-    { id: "fast", brand: "QuickFund", h1: "Fast Cash", h1span: "When You Need It", sub: "Simple application. Quick decisions. Direct deposit.", cta: "Get Started Now", badge: "3,800+ approved this week" },
-    { id: "simple", brand: "ClearPath Loans", h1: "Simple Loans,", h1span: "Clear Terms", sub: "No hidden fees. No surprises. Straightforward loans.", cta: "See Your Rate", badge: "5,000+ happy borrowers" },
-    { id: "trust", brand: "LoanBridge", h1: "Trusted by", h1span: "Thousands", sub: "Join thousands who found better rates with our lender network.", cta: "Find My Rate", badge: "12,000+ loans funded" },
-    { id: "easy", brand: "EasyLend", h1: "Borrowing", h1span: "Made Easy", sub: "2-minute application. All credit types welcome.", cta: "Apply Now Free", badge: "2,900+ served nationwide" },
-    { id: "flex", brand: "FlexCredit", h1: "Flexible Loans", h1span: "on Your Terms", sub: "Choose your amount. Pick your timeline. Get funded fast.", cta: "Check Eligibility", badge: "6,100+ customers served" },
+    { id: "smart", brand: "ElasticCredits", h1: "A Smarter Way", h1span: "to Borrow", sub: "Get approved in minutes. Funds as fast as next business day.", cta: "Check My Rate", title2: "4,200+ funded this month" },
+    { id: "fast", brand: "QuickFund", h1: "Fast Cash", h1span: "When You Need It", sub: "Simple application. Quick decisions. Direct deposit.", cta: "Get Started Now", title2: "3,800+ approved this week" },
+    { id: "simple", brand: "ClearPath Loans", h1: "Simple Loans,", h1span: "Clear Terms", sub: "No hidden fees. No surprises. Straightforward loans.", cta: "See Your Rate", title2: "5,000+ happy borrowers" },
+    { id: "trust", brand: "LoanBridge", h1: "Trusted by", h1span: "Thousands", sub: "Join thousands who found better rates with our lender network.", cta: "Find My Rate", title2: "12,000+ loans funded" },
+    { id: "easy", brand: "EasyLend", h1: "Borrowing", h1span: "Made Easy", sub: "2-minute application. All credit types welcome.", cta: "Apply Now Free", title2: "2,900+ served nationwide" },
+    { id: "flex", brand: "FlexCredit", h1: "Flexible Loans", h1span: "on Your Terms", sub: "Choose your amount. Pick your timeline. Get funded fast.", cta: "Check Eligibility", title2: "6,100+ customers served" },
 ];
 
 /**
@@ -107,7 +107,7 @@ export const WIZARD_DEFAULTS = {
     colorId: "ocean", primaryColor: "#3b5bdb", accentColor: "#f97316", fontId: "dm-sans", layout: "hero-left", radius: "rounded",
     trustBadgeStyle: "both",
     trustBadgeIconTone: "primary",
-    h1: "", badge: "", cta: "", sub: "",
+    h1: "", title2: "", cta: "", sub: "",
     conversionId: "", formStartLabel: "", formSubmitLabel: "",
     gtagId: "", gtagFormStartLabel: "", gtagFormSubmitLabel: "",
     domainProvider: "", domainProviderAccountId: "",

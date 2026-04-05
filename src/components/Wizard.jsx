@@ -297,7 +297,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
 
             if (p && !p.error) {
                 if (p.h1) upd("h1", p.h1);
-                if (p.badge) upd("badge", p.badge);
+                if (p.title2 || p.badge) upd("title2", p.title2 || p.badge);
                 if (p.cta) upd("cta", p.cta);
                 if (p.sub) upd("sub", p.sub);
                 if (p.tagline) upd("tagline", p.tagline);
@@ -394,11 +394,13 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
         setTrackingGateOpen(false);
         setBuilding(true);
         let finalConfig = { ...config };
+        // Backward compatibility: older saved sites used `badge` for this copy slot.
+        if (!finalConfig.title2 && finalConfig.badge) finalConfig.title2 = finalConfig.badge;
         console.log("[Wizard] handleBuild - finalConfig.templateId:", finalConfig.templateId);
         console.log("[Wizard] handleBuild - finalConfig keys:", Object.keys(finalConfig));
 
         // Only generate AI copy if fields are empty
-        const needsAiCopy = !finalConfig.h1 || !finalConfig.badge || !finalConfig.cta || !finalConfig.sub;
+        const needsAiCopy = !finalConfig.h1 || !finalConfig.title2 || !finalConfig.cta || !finalConfig.sub;
         if (needsAiCopy) {
             try {
                 const p = await api.post("/ai/generate-copy", {
@@ -411,7 +413,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
 
                 if (p && !p.error) {
                     if (!finalConfig.h1 && p.h1) finalConfig.h1 = p.h1;
-                    if (!finalConfig.badge && p.badge) finalConfig.badge = p.badge;
+                    if (!finalConfig.title2 && (p.title2 || p.badge)) finalConfig.title2 = p.title2 || p.badge;
                     if (!finalConfig.cta && p.cta) finalConfig.cta = p.cta;
                     if (!finalConfig.sub && p.sub) finalConfig.sub = p.sub;
                     if (!finalConfig.tagline && p.tagline) finalConfig.tagline = p.tagline;
@@ -589,7 +591,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
         };
         run();
         return () => { cancelled = true; };
-    }, [config.templateId, config.brand, config.domain, config.loanType, config.colorId, config.fontId, config.layout, config.radius, config.h1, config.badge, config.cta, config.sub, config.amountMin, config.amountMax, config.redirectUrl, config.conversionId, hoverTemplateId]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [config.templateId, config.brand, config.domain, config.loanType, config.colorId, config.fontId, config.layout, config.radius, config.h1, config.title2, config.cta, config.sub, config.amountMin, config.amountMax, config.redirectUrl, config.conversionId, hoverTemplateId]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Two-column layout for steps 3(Template+Design), 4(Copy), 6(Review)
     const showPreview = step === 3 || step === 4 || step === 6;

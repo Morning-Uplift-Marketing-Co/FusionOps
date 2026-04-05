@@ -125,7 +125,7 @@ export function generateWorkerSafeLoanPreview(site) {
   const h1 = esc(site.h1 || "A Smarter Way to Borrow");
   const sub = esc(site.sub || "Get approved in minutes. Funds as fast as next business day. Direct deposit to your bank account.");
   const cta = esc(site.cta || "Check My Rate");
-  const badge = esc(site.badge || "4,200+ funded this month");
+  const badge = esc(site.title2 || "4,200+ funded this month");
   const amountMin = Number(site.amountMin || 100);
   const amountMax = Number(site.amountMax || 5000);
   const mid = Math.round((amountMin + amountMax) / 2);
@@ -263,7 +263,7 @@ export function generateAstrodeckLoanPreview(site) {
   const h1 = esc(site.h1 || `Get up to $${(site.amountMax || 5000).toLocaleString()}`);
 
   const sub = esc(site.sub || "Compare lender offers in minutes with no impact to your credit score.");
-  const badge = esc(site.badge || "No Credit Impact");
+  const badge = esc(site.title2 || "No Credit Impact");
   const cta = esc(site.cta || "See My Options");
   const amountMin = Number(site.amountMin || 100);
   const amountMax = Number(site.amountMax || 5000);
@@ -810,7 +810,7 @@ export function generateLanderCorePreview(site) {
   const h1span = esc(site.h1span || "Get funded today.");
   const sub = esc(site.sub || "Compare offers from top lenders in seconds. No impact to your credit score.");
   const cta = esc(site.cta || "Check My Rate");
-  const badge = esc(site.badge || "Trusted by 15,000+ borrowers");
+  const badge = esc(site.title2 || "Trusted by 15,000+ borrowers");
   const amountMin = site.amountMin || 100;
   const amountMax = site.amountMax || 5000;
 
@@ -907,7 +907,7 @@ export async function generateLP(site) {
   const brand = esc(site.brand || "LoanBridge");
   const loanLabel = LOAN_TYPES.find(l => l.id === site.loanType)?.label || "Personal Finance";
   const h1 = esc(site.h1 || `Fast ${loanLabel} Up To $${(site.amountMax || 5000).toLocaleString()}`);
-  const badge = esc(site.badge || "Trusted by 15,000+ borrowers");
+  const badge = esc(site.title2 || "Trusted by 15,000+ borrowers");
   const cta = esc(site.cta || "Check Your Rate");
   const sub = esc(site.sub || "Get approved in minutes. Funds as fast as next business day.");
   const midAmount = Math.round(((site.amountMin || 100) + (site.amountMax || 5000)) / 2);
@@ -1242,7 +1242,7 @@ export function makeThemeJson(site) {
     layout: { hero: site.layout === "hero-left" ? "form-right" : site.layout === "hero-center" ? "form-below" : "form-overlap" },
     copy: {
       brand: site.brand, tagline: site.tagline || "", h1: site.h1 || "",
-      h1span: "", badge: site.badge || "", cta: site.cta || "",
+      h1span: "", badge: site.title2 || "", cta: site.cta || "",
       sub: site.sub || "", complianceEmail: site.email || "",
     },
     loanProduct: { type: site.loanType, amountMin: site.amountMin, amountMax: site.amountMax, aprMin: site.aprMin, aprMax: site.aprMax },

@@ -3,7 +3,7 @@ import { generateAstroProject } from "./astro-generator.jsx";
 import { getTemplateGenerator, resolveTemplateId as resolveId, clearCustomTemplatesCache, fetchCustomTemplates, getCustomTemplatesCache, registry } from "./template-registry.js";
 import { detectTemplateFormat, resolveTemplateEntry } from "./template-standard.js";
 import { getTemplateFileContent, identifyFramework } from "./template-analyzer.js";
-import { buildPreviewHtml } from "./template-preview-runtime.js";
+import { buildPreviewHtml, stripTypeScriptFromScript } from "./template-preview-runtime.js";
 import { injectDistPreviewBase } from "./template-thumbnail-preview.js";
 import { generatePhone } from "./phone-gen.js";
 import { generateBusinessAddress } from "./contact-gen.js";
@@ -276,7 +276,7 @@ function astroToHtmlPreview(files, site, options = {}) {
     h1span: site.h1span || 'Get Started',
     sub: site.sub || 'Your subheadline here',
     cta: site.cta || 'Get Started',
-    badge: site.badge || 'Featured',
+    title2: site.title2 || 'Featured',
     email: site.email || `support@${site.domain || 'example.com'}`,
     phone: site.phone || autoPhone,
     conversionId: site.conversionId || '',
@@ -323,7 +323,7 @@ function astroToHtmlPreview(files, site, options = {}) {
     PUBLIC_H1:             'h1',
     PUBLIC_SUB:            'sub',
     PUBLIC_CTA:            'cta',
-    PUBLIC_BADGE:          'badge',
+    PUBLIC_TITLE2:         'title2',
     PUBLIC_PHONE:          'phone',
     PUBLIC_EMAIL:          'email',
     PUBLIC_ADDRESS:        'address',
@@ -460,15 +460,23 @@ function astroToHtmlPreview(files, site, options = {}) {
   });
 
   // Protect script blocks (except JSON-LD) from our string transforms
+  // Also strip TypeScript syntax so Astro templates with TS scripts run in the browser.
   const scriptBlocks = [];
-  html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, (m) => {
+  html = html.replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi, (m, attrs, body) => {
     // Keep JSON-LD scripts editable so ${...} interpolation can be resolved.
     // If left untouched, JSON-LD may contain template syntax and break parsing.
-    if (/type\s*=\s*["']application\/ld\+json["']/i.test(m)) {
+    if (/type\s*=\s*["']application\/ld\+json["']/i.test(attrs)) {
       return m;
     }
+    // Skip external scripts — nothing to strip
+    if (/\bsrc\s*=/.test(attrs)) {
+      const token = `__LP_SCRIPT_BLOCK_${scriptBlocks.length}__`;
+      scriptBlocks.push(m);
+      return token;
+    }
+    const strippedBody = stripTypeScriptFromScript(body);
     const token = `__LP_SCRIPT_BLOCK_${scriptBlocks.length}__`;
-    scriptBlocks.push(m);
+    scriptBlocks.push(`<script${attrs}>${strippedBody}</script>`);
     return token;
   });
 
@@ -521,8 +529,8 @@ function astroToHtmlPreview(files, site, options = {}) {
     const cta = evaluateSiteProp('cta', 'Get Started');
     if (cta !== null) return cta;
 
-    const badge = evaluateSiteProp('badge', 'Featured');
-    if (badge !== null) return badge;
+    const title2 = evaluateSiteProp('title2', 'Featured');
+    if (title2 !== null) return title2;
 
     const domain = evaluateSiteProp('domain', 'example.com');
     if (domain !== null) return domain;
