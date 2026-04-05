@@ -1,0 +1,103 @@
+---
+const aprMin = import.meta.env.PUBLIC_APRMIN || '${aprMin}';
+const aprMax = import.meta.env.PUBLIC_APRMAX || '${aprMax}';
+const phone  = import.meta.env.PUBLIC_PHONE  || '${phone}';
+
+const faqs = [
+  {
+    q: 'Will checking my rate affect my credit score?',
+    a: 'No. When you check your rate, we perform a soft credit inquiry that has zero impact on your credit score. Only when you accept a loan offer and proceed to final approval do we conduct a hard inquiry, which may temporarily affect your score by a few points.',
+  },
+  {
+    q: 'How long does it take to receive funds?',
+    a: 'Most borrowers receive their funds within 1 business day of signing their loan agreement. Some lenders in our network offer same-day funding depending on your bank\'s processing times. Applications submitted and approved before 2pm EST are typically funded the next business morning.',
+  },
+  {
+    q: 'What can I use the loan for?',
+    a: 'Our installment loans can be used for virtually any legitimate purpose: debt consolidation, medical expenses, home improvement, car repairs, weddings, vacations, education expenses, or any personal financial need. Funds cannot be used for illegal activities or business start-up costs on certain products.',
+  },
+  {
+    q: 'Are there prepayment penalties?',
+    a: 'No. You can pay off your loan early at any time without penalty. Early payoff reduces the total interest you pay since interest accrues on your outstanding principal balance. Many borrowers choose to make extra payments to save on interest costs.',
+  },
+  {
+    q: 'What credit score do I need to qualify?',
+    a: 'We work with credit scores as low as 560. While a higher credit score typically results in a lower APR, we evaluate your full financial picture — including income, employment history, and debt-to-income ratio. Applicants with limited credit history are also welcome to apply.',
+  },
+  {
+    q: 'What APR will I receive?',
+    a: `Your APR is personalised based on your credit profile, income, requested loan amount, and term. Rates range from ${aprMin}% to ${aprMax}% APR. The rate you see during the application process is the rate you'll receive — we don't change it after approval.`,
+  },
+  {
+    q: 'Is there an origination fee?',
+    a: 'Many loans in our network have no origination fee. For loans where a fee applies, it will be clearly disclosed in your loan agreement before you sign. We never add hidden fees after you accept an offer.',
+  },
+  {
+    q: 'How do monthly payments work?',
+    a: 'Payments are fixed for the entire loan term — the same amount every month, on the same date. Payments are automatically debited from your bank account, so you never miss a due date. You\'ll receive a full amortization schedule at closing showing exactly how each payment is applied.',
+  },
+];
+---
+
+<section id="faq" class="py-20 md:py-28 px-6">
+  <div class="max-w-6xl mx-auto">
+
+    <div class="grid md:grid-cols-[380px_1fr] gap-14 items-start">
+      <!-- Left: sticky -->
+      <div class="md:sticky md:top-24">
+        <span class="section-label">Got Questions?</span>
+        <h2 class="section-title">Frequently Asked Questions</h2>
+        <p class="text-foreground/70 text-base leading-relaxed mb-8">
+          Everything you need to know before you apply. Still have questions? Our team is here to help.
+        </p>
+
+        <div class="glass-card p-5 flex gap-4 items-center">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            style="background: hsl(38 62% 58% / 0.1);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="hsl(38 62% 58%)" stroke-width="2" stroke-linecap="round">
+              <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 11.12 19.79 19.79 0 012 2.44 2 2 0 014 .4h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 8.15a16 16 0 006.29 6.29l1.01-1.01a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+            </svg>
+          </div>
+          <div>
+            <p class="text-foreground/70 text-sm font-semibold">Still have questions?</p>
+            <p class="text-foreground/65 text-xs mt-0.5">{phone} · Mon–Fri 8am–8pm EST</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: accordion -->
+      <div id="faq-list">
+        {faqs.map((faq, i) => (
+          <div class={`faq-item ${i === 0 ? 'open' : ''}`} data-index={i}>
+            <button class="faq-trigger">
+              <span>{faq.q}</span>
+              <span class="faq-icon">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+                  <path d="M12 5v14M5 12h14"/>
+                </svg>
+              </span>
+            </button>
+            <div class="faq-content">
+              {faq.a}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const faqList = document.getElementById('faq-list');
+  if (faqList) {
+    faqList.addEventListener('click', (e) => {
+      const trigger = (e.target as HTMLElement).closest('.faq-trigger');
+      if (!trigger) return;
+      const item = trigger.closest('.faq-item');
+      if (!item) return;
+      const isOpen = item.classList.contains('open');
+      faqList.querySelectorAll('.faq-item').forEach(el => el.classList.remove('open'));
+      if (!isOpen) item.classList.add('open');
+    });
+  }
+</script>
