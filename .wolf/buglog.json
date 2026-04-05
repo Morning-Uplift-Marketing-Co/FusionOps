@@ -1,4 +1,117 @@
 {
   "version": 1,
-  "bugs": []
+  "bugs": [
+    {
+      "id": "bug-001",
+      "timestamp": "2026-04-05T09:44:50.603Z",
+      "error_message": "Incorrect value in code",
+      "file": "deploy-configs/scratchpayeasy.com.json",
+      "root_cause": "Had \"2026-04-05T09:26:03.599Z\"",
+      "fix": "Changed to \"2026-04-05T09:55:00.000Z\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-05T09:44:50.603Z"
+    },
+    {
+      "id": "bug-002",
+      "timestamp": "2026-04-05T09:52:14.717Z",
+      "error_message": "Incorrect value in code",
+      "file": ".github/workflows/deploy-lp.yml",
+      "root_cause": "Had '),\n            COLORID:         c.colorId||'",
+      "fix": "Changed to '),\n            REDIRECT_URL:    c.voluumClickUrl ",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "yml"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-05T09:52:27.015Z"
+    },
+    {
+      "id": "bug-003",
+      "timestamp": "2026-04-05T09:55:39.756Z",
+      "error_message": "Incorrect value in code",
+      "file": "deploy-configs/scratchpayeasy.com.json",
+      "root_cause": "Had \"2026-04-05T09:55:00.000Z\"",
+      "fix": "Changed to \"2026-04-05T10:30:00.000Z\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-05T09:55:39.756Z"
+    },
+    {
+      "id": "bug-004",
+      "timestamp": "2026-04-05T10:00:47.939Z",
+      "error_message": "Significant refactor of ",
+      "file": ".github/workflows/deploy-lp.yml",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 6→12 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "yml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-05T10:00:47.939Z"
+    },
+    {
+      "id": "bug-005",
+      "timestamp": "2026-04-05T10:03:17.369Z",
+      "error_message": "Incorrect value in code",
+      "file": "deploy-configs/scratchpayeasy.com.json",
+      "root_cause": "Had \"2026-04-05T10:30:00.000Z\"",
+      "fix": "Changed to \"2026-04-05T11:15:00.000Z\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-05T10:03:17.369Z"
+    },
+    {
+      "id": "bug-006",
+      "timestamp": "2026-04-05T10:09:40.833Z",
+      "error_message": "Significant refactor of ",
+      "file": ".github/workflows/deploy-lp.yml",
+      "root_cause": "8 lines replaced/restructured",
+      "fix": "Rewrote 12→9 lines (8 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "yml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-05T10:09:40.833Z"
+    },
+    {
+      "id": "bug-007",
+      "timestamp": "2026-04-05T10:09:45.324Z",
+      "error_message": "Incorrect value in code",
+      "file": "deploy-configs/scratchpayeasy.com.json",
+      "root_cause": "Had \"2026-04-05T11:15:00.000Z\"",
+      "fix": "Changed to \"2026-04-05T11:30:00.000Z\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-05T10:09:45.324Z"
+    }
+  ]
 }

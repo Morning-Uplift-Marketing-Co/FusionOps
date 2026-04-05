@@ -214,8 +214,12 @@ if (Object.keys(envVars).length > 0) {
 
   // dotenv-expand regex [\w.]+ matches digits, so $500 → env var "500" = empty.
   // Escape every $ as \$ so dotenv-expand keeps it as a literal dollar sign.
+  // NOTE: JS .replace(/\$/g, '\\$') does NOT work — the replacement string's `$`
+  // is special (backref/escape) and the backslash gets stripped. Use split/join.
+  const DOLLAR = String.fromCharCode(36);
+  const BACKSLASH = String.fromCharCode(92);
   const toEnvVal = (v) => {
-    const s = String(v == null ? '' : v).replace(/\$/g, '\\$');
+    const s = String(v == null ? '' : v).split(DOLLAR).join(BACKSLASH + DOLLAR);
     if (!s.includes("'")) return `'${s}'`;
     return JSON.stringify(s); // fallback: double-quoted with escaping
   };
