@@ -1,0 +1,149 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Hero from '../components/Hero.astro';
+import HowItWorks from '../components/HowItWorks.astro';
+import Calculator from '../components/Calculator.astro';
+import APRTable from '../components/APRTable.astro';
+import Testimonials from '../components/Testimonials.astro';
+import Eligibility from '../components/Eligibility.astro';
+import TrustBadges from '../components/TrustBadges.astro';
+import FAQ from '../components/FAQ.astro';
+import Footer from '../components/Footer.astro';
+
+const brand      = import.meta.env.PUBLIC_BRAND      || '${brand}';
+const aprMin     = import.meta.env.PUBLIC_APRMIN     || '${aprMin}';
+const amountMax  = import.meta.env.PUBLIC_AMOUNTMAX  || '${amountMax}';
+const h1         = import.meta.env.PUBLIC_H1         || '${h1}';
+const sub        = import.meta.env.PUBLIC_SUB        || '${sub}';
+const cta        = import.meta.env.PUBLIC_CTA        || '${cta}';
+const redirectUrl = import.meta.env.PUBLIC_REDIRECT_URL || '${redirectUrl}';
+
+const title       = import.meta.env.PUBLIC_META_TITLE       || `${brand}`;
+const description = import.meta.env.PUBLIC_META_DESCRIPTION || `${h1}`;
+---
+
+<Layout title={title} description={description}>
+  <Hero h1={h1} sub={sub} />
+
+  <HowItWorks />
+  <hr class="section-divider" />
+  
+  <Calculator maxAmount={amountMax} />
+  <hr class="section-divider" />
+  
+  <APRTable rate={aprMin} />
+  <hr class="section-divider" />
+
+  <TrustBadges />
+  <hr class="section-divider" />
+
+  <Testimonials />
+  <hr class="section-divider" />
+  
+  <Eligibility />
+  <hr class="section-divider" />
+  
+  <FAQ />
+  
+  <Footer />
+
+  <!-- Sticky CTA Bar: appears after 25% page scroll, CLS-safe via transform -->
+  <div id="sticky-cta-bar" aria-hidden="true" class="sticky-bar">
+    <!-- Desktop bar -->
+    <div class="hidden md:block border-t border-border/60 sticky-bar-bg-desktop">
+      <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between gap-6">
+        <div class="flex items-center gap-6">
+          <div class="flex items-center gap-2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="hsl(193 46% 44%)" stroke-width="2.5" stroke-linecap="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <span class="text-foreground/55 text-sm font-medium">256-bit SSL</span>
+          </div>
+          <div class="h-4 w-px bg-border"></div>
+          <span class="text-foreground/45 text-sm">Rates from <strong class="text-foreground/75">{aprMin}% APR</strong> · Up to <strong class="text-foreground/75">${amountMax}</strong> · No hard pull to check</span>
+        </div>
+        <a href={redirectUrl} class="btn-primary py-2.5 px-7 text-sm" data-fusionops-cta="sticky-desktop" tabindex="-1">
+          {cta}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- Mobile bar -->
+    <div class="md:hidden px-4 pb-4 pt-3 sticky-bar-bg-mobile">
+      <a href={redirectUrl} class="btn-primary w-full text-base py-4 justify-center" data-fusionops-cta="sticky-mobile" tabindex="-1">
+        {cta}
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </a>
+      <p class="text-center text-foreground/35 text-xs mt-2">From {aprMin}% APR &middot; No credit impact to check</p>
+    </div>
+  </div>
+
+  <script>
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          revealObserver.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    const scheduleReveal = () =>
+      document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(scheduleReveal);
+    } else {
+      scheduleReveal();
+    }
+
+    (function () {
+      const bar = document.getElementById('sticky-cta-bar');
+      if (!bar) return;
+
+      let shown = false;
+      let ticking = false;
+      let cachedThreshold = 0;
+
+      const ro = new ResizeObserver(() => {
+        cachedThreshold = document.documentElement.scrollHeight * 0.25;
+      });
+      ro.observe(document.documentElement);
+      cachedThreshold = document.documentElement.scrollHeight * 0.25;
+
+      const barLinks = bar.querySelectorAll('a');
+
+      function check() {
+        const threshold = cachedThreshold;
+        if (window.scrollY >= threshold && !shown) {
+          bar.style.transform = 'translateY(0)';
+          bar.removeAttribute('aria-hidden');
+          barLinks.forEach(a => a.removeAttribute('tabindex'));
+          document.body.classList.add('sticky-bar-active');
+          shown = true;
+        } else if (window.scrollY < threshold && shown) {
+          bar.style.transform = 'translateY(100%)';
+          bar.setAttribute('aria-hidden', 'true');
+          barLinks.forEach(a => a.setAttribute('tabindex', '-1'));
+          document.body.classList.remove('sticky-bar-active');
+          shown = false;
+        }
+        ticking = false;
+      }
+
+      window.addEventListener('scroll', function () {
+        if (!ticking) {
+          requestAnimationFrame(check);
+          ticking = true;
+        }
+      }, { passive: true });
+
+      check();
+    })();
+  </script>
+</Layout>
