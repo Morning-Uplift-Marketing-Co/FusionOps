@@ -452,18 +452,36 @@ function mergeMissingContentEnvIntoFrontmatter(frontmatter) {
  * Some imported/Bolt templates use literal placeholders like `${title2}` in Astro body.
  * Astro does not evaluate these unless they are written as `{title2}`.
  * Convert known copy placeholders to Astro expressions when matching vars exist.
+ *
+ * IMPORTANT: Only processes the HTML body section (after the closing ---),
+ * never the frontmatter or <script> blocks, to avoid corrupting JS template literals.
  */
 function normalizeDollarPlaceholdersInAstroBody(indexContent) {
   if (!indexContent || !indexContent.includes('${')) return { content: indexContent, changed: false };
-  let out = indexContent;
-  let changed = false;
 
-  const hasVar = (name) => new RegExp(`\\bconst\\s+${name}\\s*=`).test(out);
+  // Split out the frontmatter so we never modify JS template literals inside it.
+  const fmRe = /^(---[\s\S]*?---[ \t]*\n?)/;
+  const fmMatch = indexContent.match(fmRe);
+  const frontmatter = fmMatch ? fmMatch[1] : '';
+  let body = fmMatch ? indexContent.slice(frontmatter.length) : indexContent;
+
+  // Only check for declared vars within the frontmatter (not the body).
+  const hasVar = (name) => new RegExp(`\\bconst\\s+${name}\\s*=`).test(frontmatter || indexContent);
+
+  // Protect <script> blocks from substitution.
+  const scriptBlocks = [];
+  body = body.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, (m) => {
+    const token = `\x00SC${scriptBlocks.length}\x00`;
+    scriptBlocks.push(m);
+    return token;
+  });
+
+  let changed = false;
   const replaceIfVar = (placeholder, varName) => {
     if (!hasVar(varName)) return;
     const re = new RegExp(`\\$\\{${placeholder}\\}`, 'g');
-    if (re.test(out)) {
-      out = out.replace(re, `{${varName}}`);
+    if (re.test(body)) {
+      body = body.replace(re, `{${varName}}`);
       changed = true;
     }
   };
@@ -478,8 +496,8 @@ function normalizeDollarPlaceholdersInAstroBody(indexContent) {
   // CTA/link placeholders often appear as ${redirectUrl} in imported templates
   if (hasVar('ctaHref')) {
     const rr = /\$\{redirectUrl\}/g;
-    if (rr.test(out)) {
-      out = out.replace(rr, '{ctaHref}');
+    if (rr.test(body)) {
+      body = body.replace(rr, '{ctaHref}');
       changed = true;
     }
   } else if (hasVar('redirectUrl')) {
@@ -488,7 +506,10 @@ function normalizeDollarPlaceholdersInAstroBody(indexContent) {
     replaceIfVar('redirectUrl', 'voluumClickUrl');
   }
 
-  return { content: out, changed };
+  // Restore script blocks.
+  scriptBlocks.forEach((b, i) => { body = body.replace(`\x00SC${i}\x00`, b); });
+
+  return { content: frontmatter + body, changed };
 }
 
 /**
