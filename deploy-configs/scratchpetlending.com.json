@@ -1,5 +1,5 @@
 {
-  "templateId": "bolt-loan-pastel-optimized-01",
+  "templateId": "bolt-loan-pastel-optimized-02",
   "cfPagesProject": "lp-scratchpetlending-com",
   "cfZoneId": "",
   "skipDnsUpsert": true,
@@ -7,9 +7,10 @@
   "cfAccountId": "",
   "brand": "Scratchpay",
   "domain": "scratchpetlending.com",
-  "h1": "Get $100-$5000 Fast for Your Pet",
-  "sub": "Unexpected vet bills? Get quick funding for your beloved pet's care.",
-  "cta": "Apply for Pet Funding",
+  "h1": "Get Up To $5000 Fast for Your Pet",
+  "sub": "Unexpected pet expenses? We offer simple, stress-free funding solutions for your beloved companion.",
+  "cta": "Check Your Rate",
+  "badge": "No Hard Credit Inquiry",
   "phone": "1-800-SCRATCH-PETLE",
   "email": "support@scratchpetlending.com",
   "address": "1603 Capitol Ave, Ste 310, Cheyenne, WY 82001",
@@ -39,5 +40,5 @@
   "trustBadges": "",
   "reviews": [],
   "showReviews": true,
-  "deployedAt": "2026-04-05T04:49:43.384Z"
+  "deployedAt": "2026-04-05T04:55:19.264Z"
 }
