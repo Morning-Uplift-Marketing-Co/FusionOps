@@ -1,9 +1,10 @@
 ---
 import '../styles/global.css';
 
-const brand = import.meta.env.PUBLIC_BRAND || '${brand}';
-const conversionId = import.meta.env.PUBLIC_CONVERSION_ID || '${conversionId}';
-const siteUrl = import.meta.env.PUBLIC_SITE_URL || '${siteUrl}';
+const brand = import.meta.env.PUBLIC_BRAND || '';
+const conversionId = import.meta.env.PUBLIC_CONVERSION_ID || '';
+const domain = import.meta.env.PUBLIC_DOMAIN || 'example.com';
+const siteUrl = import.meta.env.PUBLIC_SITE_URL || ('https://' + domain);
 
 interface Props {
   title?: string;
@@ -13,7 +14,7 @@ interface Props {
 
 const {
   title = import.meta.env.PUBLIC_META_TITLE || `${brand}`,
-  description = import.meta.env.PUBLIC_META_DESCRIPTION || '${h1}',
+  description = import.meta.env.PUBLIC_META_DESCRIPTION || import.meta.env.PUBLIC_H1 || import.meta.env.PUBLIC_SUB || brand,
   ogImage = import.meta.env.PUBLIC_OG_IMAGE || `${siteUrl}/og.png`,
 } = Astro.props;
 
