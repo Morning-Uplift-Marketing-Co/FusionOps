@@ -1,5 +1,5 @@
 {
-  "templateId": "pastel-lending-bolt",
+  "templateId": "bolt-loan-pastel-optimized-01",
   "cfPagesProject": "lp-scratchpaypet-tech",
   "cfZoneId": "",
   "skipDnsUpsert": true,
@@ -7,9 +7,9 @@
   "cfAccountId": "",
   "brand": "Scratchpay",
   "domain": "scratchpaypet.tech",
-  "h1": "Get $100-$5000 Fast Funding Today!",
-  "sub": "Simple online application. Get the quick funding you need stress-free.",
-  "cta": "Apply For Cash",
+  "h1": "Quick $100-$5000 for Your Pet's Care.",
+  "sub": "Stress-free financing for unexpected pet expenses. Get the care your furry friend deserves.",
+  "cta": "Apply for Pet Funding",
   "phone": "1-800-SCRATCH-PAYPE",
   "email": "support@scratchpaypet.tech",
   "address": "108 West 13th St, Wilmington, DE 19801",
@@ -18,8 +18,8 @@
   "amountMax": 5000,
   "aprMin": 5.99,
   "aprMax": 35.99,
-  "primaryColor": "",
-  "accentColor": "",
+  "primaryColor": "#3b5bdb",
+  "accentColor": "#f97316",
   "conversionId": "AW-8888",
   "gtagFormStartLabel": "form_start",
   "gtagFormSubmitLabel": "form_submit",
@@ -32,7 +32,7 @@
   "voluumAcmName": "_657744123d78ab6c3bc48da28a8f2234.cdn.scratchpaypet.tech.",
   "voluumAcmValue": "_f79d56765f72ddc0ec25d39ab4bcefbf.jkddzztszm.acm-validations.aws.",
   "voluumLanderScript": "<meta http-equiv=\"delegate-ch\" content=\"sec-ch-ua https://cdn.scratchpaypet.tech; sec-ch-ua-mobile https://cdn.scratchpaypet.tech; sec-ch-ua-arch https://cdn.scratchpaypet.tech; sec-ch-ua-model https://cdn.scratchpaypet.tech; sec-ch-ua-platform https://cdn.scratchpaypet.tech; sec-ch-ua-platform-version https://cdn.scratchpaypet.tech; sec-ch-ua-bitness https://cdn.scratchpaypet.tech; sec-ch-ua-full-version-list https://cdn.scratchpaypet.tech; sec-ch-ua-full-version https://cdn.scratchpaypet.tech\"><style>.dtpcnt{opacity: 0;}</style>\n<script>\n    (function(e,d,k,n,u,v,g,w,C,f,p,x,D,c,q,r,h,t,y,G,z){function A(){for(var a=d.querySelectorAll(\".dtpcnt\"),b=0,l=a.length;b<l;b++)a[b][w]=a[b][w].replace(/(^|\\s+)dtpcnt($|\\s+)/g,\"\")}function E(a,b,l,F){var m=new Date;m.setTime(m.getTime()+(F||864E5));d.cookie=a+\"=\"+b+\"; \"+l+\"samesite=Strict; expires=\"+m.toGMTString()+\"; path=/\";k.setItem(a,b);k.setItem(a+\"-expires\",m.getTime())}function B(a){var b=d.cookie.match(new RegExp(\"(^| )\"+a+\"=([^;]+)\"));return b?b.pop():k.getItem(a+\"-expires\")&&+k.getItem(a+\"-expires\")>(new Date).getTime()?k.getItem(a):null}z=\"https:\"===e.location.protocol?\"secure; \":\"\";e[f]||(e[f]=function(){(e[f].q=e[f].q||[]).push(arguments)},r=d[u],d[u]=function(){r&&r.apply(this,arguments);if(e[f]&&!e[f].hasOwnProperty(\"params\")&&/loaded|interactive|complete/.test(d.readyState))for(;c=d[v][p++];)/\\/?click\\/?($|(\\/[0-9]+)?$)/.test(c.pathname)&&(c[g]=\"javascrip\"+e.postMessage.toString().slice(4,5)+\":\"+f+'.l=\"'+c[g]+'\",void 0')},setTimeout(function(){(t=RegExp(\"[?&]cpid(=([^&#]*)|&|#|$)\").exec(e.location.href))&&t[2]&&(h=t[2],y=B(\"vl-\"+h));var a=B(\"vl-cep\"),b=location[g];if(\"savedCep\"===D&&a&&(!h||\"undefined\"===typeof h)&&0>b.indexOf(\"cep=\")){var l=-1<b.indexOf(\"?\")?\"&\":\"?\";b+=l+a}c=d.createElement(\"script\");q=d.scripts[0];c.defer=1;c.src=x+(-1===x.indexOf(\"?\")?\"?\":\"&\")+\"lpref=\"+n(d.referrer)+\"&lpurl=\"+n(b)+\"&lpt=\"+n(d.title)+\"&vtm=\"+(new Date).getTime()+(y?\"&uw=no\":\"\");c[C]=function(){for(p=0;c=d[v][p++];)/dtpCallback\\.l/.test(c[g])&&(c[g]=decodeURIComponent(c[g]).match(/dtpCallback\\.l=\"([^\"]+)/)[1]);A()};q.parentNode.insertBefore(c,q);h&&E(\"vl-\"+h,\"1\",z)},0),setTimeout(A,7E3))})(window,document,localStorage,encodeURIComponent,\"onreadystatechange\",\"links\",\"href\",\"className\",\"onerror\",\"dtpCallback\",0,\"https://cdn.scratchpaypet.tech/d/.js\",\"savedCep\");\n</script>\n<noscript><link href=\"https://cdn.scratchpaypet.tech/d/.js?noscript=true&lpurl=\" rel=\"stylesheet\"/></noscript>",
-  "colorId": "ocean",
+  "colorId": "ruby",
   "fontId": "dm-sans",
   "layout": "hero-left",
   "radius": "rounded",
@@ -40,23 +40,23 @@
   "reviews": [
     {
       "name": "Sarah K.",
-      "text": "My dog suddenly fell ill, and I was panicking about the emergency vet bill. Scratchpay made it so easy to get approved quickly, letting me focus on my pup's recovery without financial stress.",
+      "text": "My dog had an unexpected emergency, and the vet bill was intimidating. Scratchpay made it incredibly easy to get the funds we needed quickly, easing so much stress.",
       "rating": 5,
       "location": "Austin, TX"
     },
     {
       "name": "Mark D.",
-      "text": "My cat needed extensive dental work, and the cost was a bit overwhelming. Scratchpay offered a flexible payment plan that fit my budget perfectly, ensuring my cat got the care she deserved.",
+      "text": "Getting our cat the dental care she desperately needed was simple thanks to Scratchpay. The application was fast, and the payment options were a huge help.",
       "rating": 5,
-      "location": "Seattle, WA"
+      "location": "Portland, OR"
     },
     {
       "name": "Jessica M.",
-      "text": "Adopting our new puppy was exciting, but the initial costs for supplies and first vet visits added up fast. Scratchpay provided the financial bridge we needed to welcome our new family member without worry.",
+      "text": "Our new puppy needed urgent vaccinations, and Scratchpay came through instantly. It was such a relief to handle the cost without any hassle.",
       "rating": 5,
       "location": "Miami, FL"
     }
   ],
   "showReviews": true,
-  "deployedAt": "2026-03-27T00:11:44.624Z"
+  "deployedAt": "2026-04-05T04:18:46.567Z"
 }

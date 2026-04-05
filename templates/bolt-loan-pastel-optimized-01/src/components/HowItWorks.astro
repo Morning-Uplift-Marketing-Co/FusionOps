@@ -1,0 +1,95 @@
+---
+const redirectUrl = import.meta.env.PUBLIC_REDIRECT_URL || '${redirectUrl}';
+
+const steps = [
+  {
+    num: '01',
+    title: 'Tell us about yourself',
+    desc: 'Fill out a simple 3-minute form. Checking your rate uses a soft pull — it will never affect your credit score.',
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
+    accent: 'hsl(193 46% 44%)',
+    accentBg: 'hsl(193 46% 60% / 0.12)',
+  },
+  {
+    num: '02',
+    title: 'Compare your offers',
+    desc: 'Receive personalized rate options in seconds. Pick the loan amount and term that fits your budget perfectly.',
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
+    accent: 'hsl(338 55% 60%)',
+    accentBg: 'hsl(338 70% 91% / 0.5)',
+  },
+  {
+    num: '03',
+    title: 'Sign securely online',
+    desc: 'Review every detail before you sign. Our documents are crystal-clear — no jargon, no hidden clauses.',
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+    accent: 'hsl(130 42% 48%)',
+    accentBg: 'hsl(130 42% 82% / 0.3)',
+  },
+  {
+    num: '04',
+    title: 'Funds in 24 hours',
+    desc: 'Money lands directly in your bank account — often the same business day. Start using it right away.',
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+    accent: 'hsl(193 46% 44%)',
+    accentBg: 'hsl(193 46% 60% / 0.12)',
+  },
+];
+---
+
+<section id="how-it-works" class="py-20 md:py-28 px-6">
+  <div class="max-w-6xl mx-auto">
+
+    <div class="text-center mb-16">
+      <span class="section-label">Simple Process</span>
+      <h2 class="section-title max-w-xl mx-auto">How It Works</h2>
+      <p class="text-foreground/70 text-base max-w-lg mx-auto">
+        From application to funded — faster than you'd expect.
+      </p>
+    </div>
+
+    <!-- Steps grid -->
+    <div class="grid md:grid-cols-4 gap-4 relative">
+      <!-- Connecting line (desktop) -->
+      <div class="hidden md:block absolute top-[2.75rem] left-[12.5%] right-[12.5%] h-px pointer-events-none"
+        style="background: linear-gradient(90deg, transparent, hsl(var(--border)), hsl(var(--border)), transparent);"></div>
+
+      {steps.map((step, i) => (
+        <div class={`premium-card p-6 flex flex-col gap-5 relative reveal${i === 1 ? ' reveal-d1' : i === 2 ? ' reveal-d2' : i === 3 ? ' reveal-d3' : ''}`}>
+          <!-- Step number -->
+          <div class="flex items-center justify-between">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={`background: ${step.accentBg}; color: ${step.accent};`}
+              set:html={step.icon}
+            />
+            <span class="font-mono text-xs font-semibold tracking-widest"
+              style={`color: ${step.accent}; opacity: 0.5;`}>{step.num}</span>
+          </div>
+
+          <div>
+            <h3 class="font-display font-bold text-foreground text-base mb-2">{step.title}</h3>
+            <p class="text-foreground/70 text-sm leading-relaxed">{step.desc}</p>
+          </div>
+
+          {i < 3 && (
+            <div class="md:hidden h-px -mx-6 mt-auto" style="background: hsl(var(--border));"></div>
+          )}
+        </div>
+      ))}
+    </div>
+
+    <!-- Bottom CTA strip -->
+    <div class="mt-10 glass-card p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div>
+        <p class="font-display font-bold text-foreground text-base">Ready to get started?</p>
+        <p class="text-foreground/70 text-sm">Checking your rate takes 3 minutes and won't affect your credit.</p>
+      </div>
+      <a href={redirectUrl} class="btn-primary flex-shrink-0">
+        Check My Rate — It's Free
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+</section>
