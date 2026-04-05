@@ -291,18 +291,9 @@ function astroToHtmlPreview(files, site, options = {}) {
     aprMin: site.aprMin || 5.99,
     aprMax: site.aprMax || 35.99,
     loanLabel: site.loanLabel || site.loanType || 'Personal Finance',
-    // Theme tokens — required so PUBLIC_COLORID / PUBLIC_FONTID / PUBLIC_RADIUS in Astro
-    // frontmatter resolve to wizard values (see frontmatterVarMap + BaseLayout.astro).
-    colorId: site.colorId || 'ocean',
-    fontId: site.fontId || 'plus-jakarta',
-    radius: site.radius || 'rounded',
     address: site.address || generateBusinessAddress(site.domain || '', site.brand || ''),
     network: site.network || 'LeadsGate',
     redirectUrl: site.voluumClickUrl || site.redirectUrl || '#',
-    primaryColor: colorObj.p ? `hsl(${colorObj.p[0]}, ${colorObj.p[1]}%, ${colorObj.p[2]}%)` : '#3b82f6',
-    accentColor: colorObj.a ? `hsl(${colorObj.a[0]}, ${colorObj.a[1]}%, ${colorObj.a[2]}%)` : '#f97316',
-    bgColor: colorObj.bg || '#ffffff',
-    textColor: colorObj.text || '#1a1a1a',
   };
 
   const localVars = {
@@ -332,16 +323,11 @@ function astroToHtmlPreview(files, site, options = {}) {
     PUBLIC_AMOUNTMAX:      'amountMax',
     PUBLIC_APRMIN:         'aprMin',
     PUBLIC_APRMAX:         'aprMax',
-    PUBLIC_PRIMARYCOLOR:   'primaryColor',
-    PUBLIC_ACCENTCOLOR:    'accentColor',
     PUBLIC_VOLUUMDOMAIN:   'voluumDomain',
     PUBLIC_VOLUUM_CLICK_URL: 'redirectUrl',
     PUBLIC_CONVERSIONID:   'conversionId',
     PUBLIC_FORMSTARTLABEL: 'formStartLabel',
     PUBLIC_FORMSUBMITLABEL:'formSubmitLabel',
-    PUBLIC_COLORID:        'colorId',
-    PUBLIC_FONTID:         'fontId',
-    PUBLIC_RADIUS:         'radius',
   };
 
   // Collect all frontmatter blocks from all .astro files

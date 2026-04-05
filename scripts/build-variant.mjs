@@ -170,11 +170,6 @@ if (theme.tracking) {
   if (theme.tracking.voluumClickUrl) envVars.PUBLIC_VOLUUM_CLICK_URL = theme.tracking.voluumClickUrl;
 }
 
-// Color/font IDs for Astro frontmatter (COLOR_MAP lookup)
-if (theme.colorId) envVars.PUBLIC_COLORID = theme.colorId;
-if (theme.fontId)  envVars.PUBLIC_FONTID = theme.fontId;
-if (theme.radiusId) envVars.PUBLIC_RADIUS = theme.radiusId;
-
 if (Object.keys(envVars).length > 0) {
   const envPath = path.join(templateDir, '.env');
 
