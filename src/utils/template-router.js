@@ -276,7 +276,7 @@ function astroToHtmlPreview(files, site, options = {}) {
     h1span: site.h1span || 'Get Started',
     sub: site.sub || 'Your subheadline here',
     cta: site.cta || 'Get Started',
-    badge: site.badge || 'Featured',
+    title2: site.title2 || 'Featured',
     email: site.email || `support@${site.domain || 'example.com'}`,
     phone: site.phone || autoPhone,
     conversionId: site.conversionId || '',
@@ -323,7 +323,7 @@ function astroToHtmlPreview(files, site, options = {}) {
     PUBLIC_H1:             'h1',
     PUBLIC_SUB:            'sub',
     PUBLIC_CTA:            'cta',
-    PUBLIC_BADGE:          'badge',
+    PUBLIC_TITLE2:         'title2',
     PUBLIC_PHONE:          'phone',
     PUBLIC_EMAIL:          'email',
     PUBLIC_ADDRESS:        'address',
@@ -529,8 +529,8 @@ function astroToHtmlPreview(files, site, options = {}) {
     const cta = evaluateSiteProp('cta', 'Get Started');
     if (cta !== null) return cta;
 
-    const badge = evaluateSiteProp('badge', 'Featured');
-    if (badge !== null) return badge;
+    const title2 = evaluateSiteProp('title2', 'Featured');
+    if (title2 !== null) return title2;
 
     const domain = evaluateSiteProp('domain', 'example.com');
     if (domain !== null) return domain;
