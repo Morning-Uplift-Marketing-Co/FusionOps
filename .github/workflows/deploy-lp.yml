@@ -169,17 +169,10 @@ jobs:
           };
 
           const lines = [];
-          // Single-quote .env values: dotenv/dotenv-expand treats single-quoted
-          // strings as literals and does NOT expand $ signs inside them.
-          // This preserves values like "$5000" or "5.99%" exactly as written.
-          const toEnvVal = (v) => {
-            const s = String(v == null ? '' : v);
-            return "'" + s.replace(/'/g, "'\"'\"'") + "'";
-          };
           for (const [key, val] of Object.entries(vars)) {
-            lines.push('PUBLIC_' + key + '=' + toEnvVal(val));
+            lines.push('PUBLIC_' + key + '=' + JSON.stringify(val));
             const vk = viteMap[key] || key;
-            lines.push('VITE_' + vk + '=' + toEnvVal(val));
+            lines.push('VITE_' + vk + '=' + JSON.stringify(val));
           }
 
           // Merge with existing .env (preserves template-specific keys)
