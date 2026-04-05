@@ -1,5 +1,5 @@
 {
-  "templateId": "bolt-loan-pastel-optimized-01",
+  "templateId": "pastel-optimized-01",
   "cfPagesProject": "lp-scratchpetlending-com",
   "cfZoneId": "",
   "skipDnsUpsert": true,
@@ -40,5 +40,5 @@
   "trustBadges": "",
   "reviews": [],
   "showReviews": true,
-  "deployedAt": "2026-04-05T05:32:14.879Z"
+  "deployedAt": "2026-04-05T05:39:51.730Z"
 }
