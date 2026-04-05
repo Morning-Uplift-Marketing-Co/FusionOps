@@ -1,5 +1,5 @@
 {
-  "templateId": "bolt-loan-pastel-optimized-01",
+  "templateId": "loan-template-pages-v1",
   "cfPagesProject": "lp-scratchpaypet-tech",
   "cfZoneId": "",
   "skipDnsUpsert": true,
@@ -40,23 +40,23 @@
   "reviews": [
     {
       "name": "Sarah K.",
-      "location": "Austin, TX",
+      "text": "My dog had an unexpected emergency, and the vet bill was intimidating. Scratchpay made it incredibly easy to get the funds we needed quickly, easing so much stress.",
       "rating": 5,
-      "text": "My dog had an unexpected emergency, and the vet bill was intimidating. Scratchpay made it incredibly easy to get the funds we needed quickly, easing so much stress."
+      "location": "Austin, TX"
     },
     {
       "name": "Mark D.",
-      "location": "Portland, OR",
+      "text": "Getting our cat the dental care she desperately needed was simple thanks to Scratchpay. The application was fast, and the payment options were a huge help.",
       "rating": 5,
-      "text": "Getting our cat the dental care she desperately needed was simple thanks to Scratchpay. The application was fast, and the payment options were a huge help."
+      "location": "Portland, OR"
     },
     {
       "name": "Jessica M.",
-      "location": "Miami, FL",
+      "text": "Our new puppy needed urgent vaccinations, and Scratchpay came through instantly. It was such a relief to handle the cost without any hassle.",
       "rating": 5,
-      "text": "Our new puppy needed urgent vaccinations, and Scratchpay came through instantly. It was such a relief to handle the cost without any hassle."
+      "location": "Miami, FL"
     }
   ],
   "showReviews": true,
-  "deployedAt": "2026-04-05T04:06:50.427Z"
+  "deployedAt": "2026-04-05T04:14:52.900Z"
 }
