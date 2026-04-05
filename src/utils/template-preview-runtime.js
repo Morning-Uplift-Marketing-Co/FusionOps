@@ -55,6 +55,11 @@ export function buildPreviewHtml(files, site = {}, colors = null, basePath = '')
     html = cleanAstroSyntax(html);
   }
 
+  // ─── 2b. Substitute ${varName} placeholders ─────────
+  // Replaces ${brand}, ${h1}, ${sub}, ${cta}, ${badge}, ${amountMax}, etc.
+  // with live wizard values so Bolt/HTML-static templates update in preview.
+  html = substituteSiteVariables(html, site);
+
   // ─── 3. Build injection blocks ──────────────────────
   const headInjections = [];
   const bodyInjections = [];
@@ -145,6 +150,65 @@ function extractRawHtml(files, entry, framework) {
   }
 
   return content;
+}
+
+
+// ─── Site Variable Substitution ──────────────────────────────────────────────
+// Replaces ${varName} template-literal-style placeholders with live wizard values.
+// Works for ALL template types (HTML-static from Bolt, Astro, etc.).
+// <style> and <script> blocks are protected from substitution.
+
+function substituteSiteVariables(html, site) {
+  if (!site || !html) return html;
+
+  const toNum = (v, fallback) =>
+    String(Math.round(Number(String(v || fallback).replace(/[^0-9.]/g, '')) || fallback));
+
+  const vars = {
+    brand:        String(site.brand        || ''),
+    h1:           String(site.h1           || ''),
+    sub:          String(site.sub          || ''),
+    cta:          String(site.cta          || ''),
+    badge:        String(site.badge        || ''),
+    phone:        String(site.phone        || ''),
+    email:        String(site.email        || ''),
+    address:      String(site.address      || ''),
+    amountMax:    String(site.amountMax    || '5,000'),
+    amountMin:    String(site.amountMin    || '100'),
+    amountMaxRaw: toNum(site.amountMax, 5000),
+    amountMinRaw: toNum(site.amountMin, 100),
+    aprMin:       String(site.aprMin       || '5.99'),
+    aprMax:       String(site.aprMax       || '35.99'),
+    loanLabel:    String(site.loanLabel    || site.loanType || ''),
+    redirectUrl:  String(site.voluumClickUrl || site.redirectUrl || '#apply'),
+    network:      String(site.network      || ''),
+  };
+
+  // Protect <style> and <script> blocks — only substitute text/attribute content
+  const styleBlocks = [];
+  const scriptBlocks = [];
+  let safe = html
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, (m) => {
+      const token = `\x00STYLE${styleBlocks.length}\x00`;
+      styleBlocks.push(m);
+      return token;
+    })
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, (m) => {
+      const token = `\x00SCRIPT${scriptBlocks.length}\x00`;
+      scriptBlocks.push(m);
+      return token;
+    });
+
+  for (const [key, val] of Object.entries(vars)) {
+    if (!val) continue;
+    safe = safe.replace(new RegExp('\\$\\{' + key + '\\}', 'g'), val);
+  }
+
+  // Restore protected blocks
+  styleBlocks.forEach((b, i) => { safe = safe.replace(`\x00STYLE${i}\x00`, b); });
+  scriptBlocks.forEach((b, i) => { safe = safe.replace(`\x00SCRIPT${i}\x00`, b); });
+
+  return safe;
 }
 
 
