@@ -1,5 +1,5 @@
 {
-  "templateId": "installment-001",
+  "templateId": "pastel-lending-bolt",
   "cfPagesProject": "lp-scratchpaypet-tech",
   "cfZoneId": "",
   "skipDnsUpsert": true,
@@ -7,9 +7,9 @@
   "cfAccountId": "",
   "brand": "Scratchpay",
   "domain": "scratchpaypet.tech",
-  "h1": "Get $100-$5000 Fast Funding Today!",
-  "sub": "Simple online application. Get the quick funding you need stress-free.",
-  "cta": "Apply For Cash",
+  "h1": "Fast Pet Funding: Get Up To $5000",
+  "sub": "Unexpected vet bill? Get stress-free pet care funding today.",
+  "cta": "Get My Pet Funding",
   "phone": "1-800-SCRATCH-PAYPE",
   "email": "support@scratchpaypet.tech",
   "address": "108 West 13th St, Wilmington, DE 19801",
@@ -58,5 +58,5 @@
     }
   ],
   "showReviews": true,
-  "deployedAt": "2026-04-05T03:18:11.925Z"
+  "deployedAt": "2026-04-05T04:00:40.265Z"
 }
