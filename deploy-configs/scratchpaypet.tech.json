@@ -1,5 +1,5 @@
 {
-  "templateId": "loan-template-pages-v1",
+  "templateId": "bolt-loan-pastel-optimized-01",
   "cfPagesProject": "lp-scratchpaypet-tech",
   "cfZoneId": "",
   "skipDnsUpsert": true,
@@ -58,5 +58,5 @@
     }
   ],
   "showReviews": true,
-  "deployedAt": "2026-04-05T04:14:52.900Z"
+  "deployedAt": "2026-04-05T04:18:46.567Z"
 }
