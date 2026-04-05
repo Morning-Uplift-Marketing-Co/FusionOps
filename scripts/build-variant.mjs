@@ -212,10 +212,10 @@ if (Object.keys(envVars).length > 0) {
 
   const merged = { ...unquotedExisting, ...envVars };
 
-  // Wrap values in single quotes so dollar signs (e.g. $500, $5,000 in h1 copy)
-  // are preserved as literals — same approach as deploy-lp.yml CI workflow.
+  // dotenv-expand regex [\w.]+ matches digits, so $500 → env var "500" = empty.
+  // Escape every $ as \$ so dotenv-expand keeps it as a literal dollar sign.
   const toEnvVal = (v) => {
-    const s = String(v == null ? '' : v);
+    const s = String(v == null ? '' : v).replace(/\$/g, '\\$');
     if (!s.includes("'")) return `'${s}'`;
     return JSON.stringify(s); // fallback: double-quoted with escaping
   };

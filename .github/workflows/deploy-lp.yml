@@ -142,6 +142,7 @@ jobs:
             VOLUUMID:        c.voluumId||'',
             VOLUUMDOMAIN:    c.voluumDomain||'',
             VOLUUM_CLICK_URL:c.voluumClickUrl || (c.voluumDomain ? 'https://' + c.voluumDomain + '/click' : ''),
+            REDIRECT_URL:    c.voluumClickUrl || (c.voluumDomain ? 'https://' + c.voluumDomain + '/click' : '') || '/apply',
             COLORID:         c.colorId||'',
             FONTID:          c.fontId||'',
             LAYOUT:          c.layout||'',
@@ -162,6 +163,7 @@ jobs:
             FORMSTARTLABEL:'FORM_START_LABEL', FORMSUBMITLABEL:'FORM_SUBMIT_LABEL',
             VOLUUMID:'VOLUUM_ID', VOLUUMDOMAIN:'VOLUUM_DOMAIN',
             VOLUUM_CLICK_URL:'VOLUUM_CLICK_URL',
+            REDIRECT_URL:'REDIRECT_URL',
             COLORID:'COLOR_ID', FONTID:'FONT_ID',
             LAYOUT:'LAYOUT', RADIUS:'RADIUS',
             TRUSTBADGES:'TRUSTBADGES', REVIEWS:'REVIEWS',
@@ -169,13 +171,14 @@ jobs:
           };
 
           const lines = [];
-          // Single-quoted .env values are NOT processed by dotenv-expand, so
-          // dollar signs like "$5000" or "$5,000" are preserved as literals.
-          // We use String.fromCharCode(39) for the single-quote character to
-          // avoid conflicting with bash outer double-quotes in `node -e "..."`.
+          // dotenv-expand's regex [\w.]+ matches digits, so $500 expands to env var "500" (empty).
+          // Fix: escape every $ as \$ so dotenv-expand treats them as literal dollar signs.
+          // dotenv-expand strips the leading backslash, so the app sees the original $ character.
+          // We use String.fromCharCode(39) for the single-quote character to avoid conflicting
+          // with bash outer double-quotes in `node -e "..."`.
           const SQ = String.fromCharCode(39);
           const toEnvVal = (v) => {
-            const s = String(v == null ? '' : v);
+            const s = String(v == null ? '' : v).replace(/\$/g, '\\$');
             if (!s.includes(SQ)) return SQ + s + SQ;
             return JSON.stringify(s); // fallback for values with embedded single quotes
           };
