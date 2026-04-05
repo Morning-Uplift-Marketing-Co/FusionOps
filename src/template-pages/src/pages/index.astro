@@ -1,0 +1,37 @@
+---
+import LandingPage from "../../landing-page.astro";
+
+const brand        = import.meta.env.PUBLIC_BRAND        || "LoanBridge";
+const h1           = import.meta.env.PUBLIC_H1           || "Get Fast Approval";
+const sub          = import.meta.env.PUBLIC_SUB          || "Flexible payment plans for your needs";
+const cta          = import.meta.env.PUBLIC_CTA          || "Get Started";
+const phone        = import.meta.env.PUBLIC_PHONE        || "1-800-555-0123";
+const email        = import.meta.env.PUBLIC_EMAIL        || "support@example.com";
+const primaryColor = import.meta.env.PUBLIC_PRIMARYCOLOR || "#3b5bdb";
+const accentColor  = import.meta.env.PUBLIC_ACCENTCOLOR  || "#00b894";
+const amountMin    = import.meta.env.PUBLIC_AMOUNTMIN    || "500";
+const amountMax    = import.meta.env.PUBLIC_AMOUNTMAX    || "10,000";
+const amountMinRaw = import.meta.env.PUBLIC_AMOUNTMINRAW || "500";
+const amountMaxRaw = import.meta.env.PUBLIC_AMOUNTMAXRAW || "10000";
+const aprMin       = import.meta.env.PUBLIC_APRMIN       || "5.99";
+const aprMax       = import.meta.env.PUBLIC_APRMAX       || "35.99";
+const conversionId = import.meta.env.PUBLIC_CONVERSIONID || "G-XXXXXXXXXX";
+---
+
+<LandingPage
+  brand={brand}
+  h1={h1}
+  sub={sub}
+  cta={cta}
+  phone={phone}
+  email={email}
+  primaryColor={primaryColor}
+  accentColor={accentColor}
+  amountMin={amountMin}
+  amountMax={amountMax}
+  amountMinRaw={amountMinRaw}
+  amountMaxRaw={amountMaxRaw}
+  aprMin={aprMin}
+  aprMax={aprMax}
+  conversionId={conversionId}
+/>
