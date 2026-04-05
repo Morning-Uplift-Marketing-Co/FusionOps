@@ -125,6 +125,7 @@ jobs:
             H1:              c.h1||c.brand||'',
             SUB:             c.sub||'',
             CTA:             c.cta||'Apply Now',
+            BADGE:           c.badge||'',
             PHONE:           c.phone||'',
             EMAIL:           c.email||('support@'+(c.domain||'example.com')),
             ADDRESS:         c.address||'',
@@ -152,7 +153,7 @@ jobs:
 
           // Explicit VITE_* key mapping (Loveable convention)
           const viteMap = {
-            BRAND:'BRAND', DOMAIN:'DOMAIN', H1:'H1', SUB:'SUB', CTA:'CTA',
+            BRAND:'BRAND', DOMAIN:'DOMAIN', H1:'H1', SUB:'SUB', CTA:'CTA', BADGE:'BADGE',
             PHONE:'PHONE', EMAIL:'EMAIL', ADDRESS:'ADDRESS', AID:'AID',
             AMOUNTMIN:'AMOUNT_MIN', AMOUNTMAX:'AMOUNT_MAX',
             PRIMARYCOLOR:'PRIMARY_COLOR', ACCENTCOLOR:'ACCENT_COLOR',

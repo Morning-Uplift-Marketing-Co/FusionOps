@@ -202,6 +202,7 @@ export async function deploy(assets, site, settings) {
     h1:              site.h1           || '',
     sub:             site.sub          || '',
     cta:             site.cta          || 'Apply Now',
+    badge:           site.badge        || '',
     phone:           site.phone        || '',
     email:           site.email        || '',
     address:         site.address      || '',
