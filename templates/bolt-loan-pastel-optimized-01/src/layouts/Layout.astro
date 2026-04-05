@@ -1,9 +1,10 @@
 ---
 import '../styles/global.css';
 
-const brand = import.meta.env.PUBLIC_BRAND || 'Pastel Lending';
-const conversionId = import.meta.env.PUBLIC_CONVERSION_ID || 'AW-16551193759';
-const siteUrl = import.meta.env.PUBLIC_SITE_URL || 'https://example.com';
+const brand = import.meta.env.PUBLIC_BRAND || '${brand}';
+const conversionId = import.meta.env.PUBLIC_CONVERSION_ID || '${conversionId}';
+const siteUrl = import.meta.env.PUBLIC_SITE_URL || '${siteUrl}';
+const primaryColor = import.meta.env.PUBLIC_PRIMARY_COLOR || '${primaryColor}';
 
 interface Props {
   title?: string;
@@ -12,8 +13,8 @@ interface Props {
 }
 
 const {
-  title = import.meta.env.PUBLIC_META_TITLE || `${brand} — Premium Installment Loans`,
-  description = import.meta.env.PUBLIC_META_DESCRIPTION || 'Fast, flexible installment loans with fixed monthly payments. Apply in minutes, funds in 24 hours.',
+  title = import.meta.env.PUBLIC_META_TITLE || `${brand}`,
+  description = import.meta.env.PUBLIC_META_DESCRIPTION || '${h1}',
   ogImage = import.meta.env.PUBLIC_OG_IMAGE || `${siteUrl}/og.png`,
 } = Astro.props;
 
@@ -44,7 +45,7 @@ const canonicalUrl = siteUrl;
 
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="apple-touch-icon" href="/favicon.svg" />
-  <meta name="theme-color" content="hsl(193,46%,52%)" />
+  <meta name="theme-color" content={primaryColor} />
 
   <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
   <link rel="dns-prefetch" href="https://bolt.new" />
