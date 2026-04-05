@@ -60,7 +60,7 @@ const description = import.meta.env.PUBLIC_META_DESCRIPTION || `${h1}`;
             <span class="text-foreground/55 text-sm font-medium">256-bit SSL</span>
           </div>
           <div class="h-4 w-px bg-border"></div>
-          <span class="text-foreground/45 text-sm">Rates from <strong class="text-foreground/75">{aprMin}% APR</strong> · Up to <strong class="text-foreground/75">${amountMax}</strong> · No hard pull to check</span>
+          <span class="text-foreground/45 text-sm">Rates from <strong class="text-foreground/75">{aprMin}% APR</strong> · Up to <strong class="text-foreground/75">{'$'}{amountMax}</strong> · No hard pull to check</span>
         </div>
         <a href={redirectUrl} class="btn-primary py-2.5 px-7 text-sm" data-fusionops-cta="sticky-desktop" tabindex="-1">
           {cta}
