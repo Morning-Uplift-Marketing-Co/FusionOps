@@ -5649,22 +5649,71 @@ export default {
             return json({ error: 'No AI API key configured. Add Gemini API Key in Settings.' }, 400);
           }
           const { brand = '', loanType = 'personal loan', amountMin = 100, amountMax = 5000, lang = 'English' } = body;
-          const prompt = `You are a direct-response copywriter specializing in loan landing pages.
-Generate copy for a loan landing page. Respond ONLY with valid JSON, no explanation.
-IMPORTANT: Never use the exact phrase "Personal Loans" in your output. Use alternatives like "personal finance", "quick funding", or "fast cash" instead.
+          const prompt = `You are a senior direct-response copywriter (Eugene Schwartz / Gary Halbert school)
+writing MOBILE above-the-fold copy for a ${loanType} landing page that must convert PPC traffic.
 
+The user's eyes scan H1 → Title 2 → CTA Button → Sub-headline in <2 seconds on a phone.
+Every word must earn its place. Write for a tired, skeptical buyer on their phone at 10pm.
+
+CONTEXT:
 Brand: ${brand}
 Loan type: ${loanType}
-Amount range: $${amountMin} – $${amountMax}
+Amount range: $${amountMin}–$${amountMax}
 Language: ${lang}
 
-Return this exact JSON shape:
+═══ HARD RULES (violating = fail) ═══
+1. NEVER use the literal phrase "Personal Loans" — use "fast cash", "quick funding", "personal finance"
+2. NO jargon: APR, FICO, origination, underwriting, amortization, unsecured
+3. NO weasel words: "best", "leading", "premium", "top-rated", "world-class"
+4. NO generic verbs in CTA: avoid "Learn More", "Click Here", "Submit"
+5. Mobile-safe: H1 must fit 2 lines on 375px viewport (≤48 chars total)
+6. Respect Language: ${lang}
+
+═══ FIELD-SPECIFIC FRAMEWORKS ═══
+
+H1 (hero headline, 4–7 words, ≤48 chars):
+  Use ONE of these proven patterns:
+  a) Amount + Speed: "Get $${amountMax} Cash in 24 Hours"
+  b) Problem + Solution: "Unexpected Bill? Get Cash Fast."
+  c) Benefit + Specificity: "$${amountMin}–$${amountMax} Funded Tomorrow"
+  Rule: must contain a NUMBER (amount OR time) and a CONCRETE benefit.
+
+Title 2 (supporting subheadline, 3–6 words, ≤40 chars):
+  Purpose = kill the #1 objection. Pick ONE pattern:
+  a) Objection Killer: "Bad Credit? No Problem"
+  b) Risk Reversal: "No Hard Credit Check"
+  c) Social Proof: "12,000+ Funded This Month"
+  d) Trust Badge: "BBB A+ · Since 2012"
+  Rule: must NOT repeat any word from H1. No CTA verbs.
+
+CTA (button text, 2–4 words, ≤24 chars):
+  Use first-person benefit framing (proven +90% CTR vs "Apply Now"):
+  Good: "See My Rate", "Check My Offer", "Get My Cash"
+  Bad: "Apply Now", "Submit", "Click Here", "Learn More"
+  Rule: must start with an action verb + possessive pronoun (my/your).
+
+Sub-headline (reassurance line, 8–14 words, ≤90 chars):
+  Formula: [Speed/Simplicity] + [Risk Removal] + [Outcome]
+  Example: "2-minute form. Soft credit check. Funds by next business day."
+  Rule: must contain at least 2 of: speed, no-credit-impact, simple-form, funding-time.
+
+Trust Badge (tiny chip shown near hero, 3–5 words, ≤28 chars):
+  Factual, specific, verifiable-sounding:
+  Good: "Soft Pull · No FICO Drop", "500K+ Customers Served"
+  Bad: "Trusted Lender", "Award Winning"
+
+Tagline (brand promise, 3–5 words, ≤28 chars):
+  ${brand}'s one-line identity — e.g. "Fast. Simple. Trusted."
+
+═══ OUTPUT ═══
+Respond ONLY with this exact JSON (no prose, no markdown):
 {
-  "h1": "hero headline (max 8 words, mention amount or speed)",
-  "sub": "sub-headline (max 15 words, reassuring, no jargon)",
-  "cta": "CTA button text (2-4 words, action verb)",
-  "badge": "trust badge text (e.g. 'No Hard Credit Check')",
-  "tagline": "short tagline (max 6 words)"
+  "h1": "<headline>",
+  "title2": "<supporting subheadline>",
+  "cta": "<button text>",
+  "sub": "<reassurance line>",
+  "badge": "<trust badge>",
+  "tagline": "<brand tagline>"
 }`;
           const enrichedBody = { ...body, geminiKey: resolvedGeminiKey, anthropicKey: resolvedAnthropicKey };
           const text = await callAI(env, enrichedBody, prompt, 1024);
