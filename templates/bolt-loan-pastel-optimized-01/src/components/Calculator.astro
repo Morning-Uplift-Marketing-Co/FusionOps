@@ -1,8 +1,11 @@
 ---
-const amountMin = Number(import.meta.env.PUBLIC_AMOUNTMIN || 1000);
-const amountMax = Number(import.meta.env.PUBLIC_AMOUNTMAX || 5000);
-const aprMin    = Number(import.meta.env.PUBLIC_APRMIN    || 5.99);
-const aprMax    = Number(import.meta.env.PUBLIC_APRMAX    || 34.99);
+const amountMinRaw = import.meta.env.PUBLIC_AMOUNTMIN || '${amountMinRaw}';
+const amountMaxRaw = import.meta.env.PUBLIC_AMOUNTMAX || '${amountMaxRaw}';
+const amountMin = Number(amountMinRaw) || 1000;
+const amountMax = Number(amountMaxRaw) || 5000;
+const aprMin    = Number(import.meta.env.PUBLIC_APRMIN    || '${aprMin}') || 5.99;
+const aprMax    = Number(import.meta.env.PUBLIC_APRMAX    || '${aprMax}') || 34.99;
+const redirectUrl = import.meta.env.PUBLIC_REDIRECT_URL || '${redirectUrl}';
 ---
 
 <section id="calculator" class="py-20 md:py-28 px-6">
@@ -118,7 +121,7 @@ const aprMax    = Number(import.meta.env.PUBLIC_APRMAX    || 34.99);
         </div>
 
         <!-- CTA -->
-        <a href="/apply" class="btn-primary w-full text-base py-4">
+        <a href={redirectUrl} class="btn-primary w-full text-base py-4">
           Apply for This Loan
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
             <path d="M5 12h14M12 5l7 7-7 7"/>
