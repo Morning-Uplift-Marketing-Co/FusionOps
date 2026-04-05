@@ -1,0 +1,124 @@
+---
+const redirectUrl = import.meta.env.PUBLIC_REDIRECT_URL || '${redirectUrl}';
+
+const badges = [
+  {
+    id: 'bbb',
+    label: 'BBB Accredited',
+    sub: 'A+ Rating',
+    color: 'hsl(193 46% 48%)',
+    bg: 'hsl(193 46% 48% / 0.08)',
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      <path d="M9 12l2 2 4-4"/>
+    </svg>`,
+  },
+  {
+    id: 'ssl',
+    label: '256-bit SSL',
+    sub: 'Bank-level encryption',
+    color: 'hsl(130 42% 44%)',
+    bg: 'hsl(130 42% 44% / 0.08)',
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2"/>
+      <path d="M7 11V7a5 5 0 0110 0v4"/>
+    </svg>`,
+  },
+  {
+    id: 'glba',
+    label: 'GLBA Compliant',
+    sub: 'Your data is protected',
+    color: 'hsl(338 55% 56%)',
+    bg: 'hsl(338 55% 56% / 0.08)',
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+      <path d="M12 8v4l3 3"/>
+    </svg>`,
+  },
+  {
+    id: 'nmls',
+    label: 'NMLS Licensed',
+    sub: 'Registered #123456',
+    color: 'hsl(193 46% 48%)',
+    bg: 'hsl(193 46% 48% / 0.08)',
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="7" width="20" height="14" rx="2"/>
+      <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/>
+    </svg>`,
+  },
+  {
+    id: 'tila',
+    label: 'TILA Disclosure',
+    sub: 'Full cost transparency',
+    color: 'hsl(130 42% 44%)',
+    bg: 'hsl(130 42% 44% / 0.08)',
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M12 8v4"/><path d="M12 16h.01"/>
+    </svg>`,
+  },
+  {
+    id: 'nocredit',
+    label: 'No Hard Pull',
+    sub: 'Rate check is soft inquiry',
+    color: 'hsl(338 55% 56%)',
+    bg: 'hsl(338 55% 56% / 0.08)',
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/>
+      <path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/>
+      <path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/>
+    </svg>`,
+  },
+];
+---
+
+<section id="trust" class="py-16 md:py-20 px-6 overflow-hidden">
+  <div class="max-w-6xl mx-auto">
+
+    <div class="text-center mb-12">
+      <span class="section-label">Why Borrowers Trust Us</span>
+      <h2 class="section-title mb-3">Built on Compliance. Backed by Security.</h2>
+      <p class="text-foreground/70 text-base max-w-xl mx-auto">
+        Every loan on our platform meets strict federal and state standards — so you can apply with confidence.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-10">
+      {badges.map(b => (
+        <div class="glass-card p-5 flex items-center gap-4 reveal hover:-translate-y-0.5 transition-transform duration-200">
+          <div class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={`background: ${b.bg}; color: ${b.color};`}
+            set:html={b.icon}
+          />
+          <div>
+            <div class="font-display font-bold text-foreground text-sm">{b.label}</div>
+            <div class="text-foreground/65 text-xs mt-0.5">{b.sub}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <!-- Data safety banner -->
+    <div class="premium-card p-6 flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
+      <div class="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 mx-auto md:mx-0"
+        style="background: hsl(193 46% 48% / 0.1);">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="hsl(193 46% 44%)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="M9 12l2 2 4-4"/>
+        </svg>
+      </div>
+      <div class="flex-1">
+        <h3 class="font-display font-bold text-foreground text-base mb-1">Your Data Is Never Sold</h3>
+        <p class="text-foreground/70 text-sm leading-relaxed">
+          We collect only what is required to process your application. Your information is encrypted at rest and in transit, and is never shared with unauthorized third parties. You can request deletion of your data at any time.
+        </p>
+      </div>
+      <a href={redirectUrl} class="btn-primary flex-shrink-0 py-3 px-7 text-sm">
+        Apply Securely
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+</section>
