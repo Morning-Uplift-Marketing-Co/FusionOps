@@ -64,7 +64,7 @@ export function getPixelHeadScript() {
         ...(data || {})
       };
 
-      const endpoint = 'https://t.' + location.hostname + '/e';
+      const endpoint = 'https://t.' + location.hostname.replace(/^www\./, '') + '/e';
 
       navigator.sendBeacon?.(
         endpoint,
@@ -151,7 +151,7 @@ export function getApplyPageScript(aid) {
   function pixel(e,data){
     try {
       navigator.sendBeacon(
-        'https://t.' + location.hostname + '/e',
+        'https://t.' + location.hostname.replace(/^www\./, '') + '/e',
         new Blob([JSON.stringify({
           e,
           cid:getClickId(),

@@ -211,7 +211,8 @@ const PIXEL_BODY_SNIPPET = `
       return fpIsAdsPlaceholderVal(g) ? '' : g;
     } catch (_) { return ''; }
   }
-  var PX_ENDPOINT = 'https://t.' + window.location.hostname + '/e';
+  var PX_HOST = window.location.hostname.replace(/^www\./, '');
+  var PX_ENDPOINT = 'https://t.' + PX_HOST + '/e';
   function sendPixelBeacon(payload) {
     try {
       var q = new URLSearchParams();
@@ -226,7 +227,7 @@ const PIXEL_BODY_SNIPPET = `
   function fpPixel(eventName, extra) {
     var cid = resolveClickId();
     var gid = resolveGclid();
-    var base = { e: eventName, d: window.location.hostname, ts: Date.now() };
+    var base = { e: eventName, d: PX_HOST, ts: Date.now() };
     if (cid) { base.cid = cid; base.cpid = cid; base.click_id = cid; }
     if (gid) base.gclid = gid;
     var payload = Object.assign(base, extra || {});
@@ -891,9 +892,10 @@ if (conversionId) { gtag('js', new Date()); gtag('config', conversionId); }
 // Same transport as index: GET image pixel — shows in Network as /e, avoids sendBeacon JSON being dropped or hidden.
 function fpPixel(eventName, extra) {
   try {
-    var endpoint = 'https://t.' + window.location.hostname + '/e';
+    var pxHost = window.location.hostname.replace(/^www\./, '');
+    var endpoint = 'https://t.' + pxHost + '/e';
     var cid = getVoluumClickId();
-    var payload = { e: eventName, d: window.location.hostname, ts: Date.now() };
+    var payload = { e: eventName, d: pxHost, ts: Date.now() };
     if (cid) { payload.cid = cid; payload.cpid = cid; payload.click_id = cid; }
     if (extra && typeof extra === 'object') {
       for (var k in extra) {
