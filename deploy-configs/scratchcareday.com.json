@@ -1,5 +1,5 @@
 {
-  "templateId": "pastel-optimized-01",
+  "templateId": "pet-loans-01b",
   "cfPagesProject": "lp-scratchcareday-com",
   "cfZoneId": "",
   "skipDnsUpsert": true,
@@ -7,10 +7,10 @@
   "cfAccountId": "",
   "brand": "Scratchpay",
   "domain": "scratchcareday.com",
-  "h1": "Quick Funding for Pet Care",
+  "h1": "Your Pet's Care Shouldn't Wait",
   "sub": "We make pet care affordable and stress-free. Apply in minutes.",
   "cta": "Check Your Eligibility",
-  "title2": "No Hard Credit Check",
+  "title2": "for Your Bank's Approval",
   "phone": "1-800-SCRATCH-CARED",
   "email": "support@scratchcareday.com",
   "address": "30 N Gould St, Ste R, Sheridan, WY 82801",
@@ -39,6 +39,6 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "showReviews": true,
-  "deployedAt": "2026-04-05T11:16:31.931Z"
+  "showReviews": false,
+  "deployedAt": "2026-04-05T23:53:41.461Z"
 }
