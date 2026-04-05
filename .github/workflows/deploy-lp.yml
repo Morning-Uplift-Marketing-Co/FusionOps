@@ -169,10 +169,17 @@ jobs:
           };
 
           const lines = [];
+          // Escape $ in values so dotenv-expand does not interpolate them
+          // (e.g. "$5000" must stay literal, not become "000").
+          const toEnvVal = (v) => {
+            const s = String(v == null ? '' : v);
+            const escaped = s.replace(/\$/g, '\\$');
+            return JSON.stringify(escaped);
+          };
           for (const [key, val] of Object.entries(vars)) {
-            lines.push('PUBLIC_' + key + '=' + JSON.stringify(val));
+            lines.push('PUBLIC_' + key + '=' + toEnvVal(val));
             const vk = viteMap[key] || key;
-            lines.push('VITE_' + vk + '=' + JSON.stringify(val));
+            lines.push('VITE_' + vk + '=' + toEnvVal(val));
           }
 
           // Merge with existing .env (preserves template-specific keys)
