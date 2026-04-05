@@ -1,5 +1,5 @@
 {
-  "templateId": "pastel-lending-bolt",
+  "templateId": "pastel-optimized-01",
   "cfPagesProject": "lp-myfairlendlng-com",
   "cfZoneId": "",
   "skipDnsUpsert": true,
@@ -10,6 +10,7 @@
   "h1": "Get Quick Funding Up To $5000 Instantly.",
   "sub": "Access the funds you need with a simple, secure, and transparent process.",
   "cta": "Apply Now",
+  "title2": "No Hard Credit Check",
   "phone": "1-800-MYFAIRL-ENDLN",
   "email": "support@myfairlendlng.com",
   "address": "30 N Gould St, Ste R, Sheridan, WY 82801",
@@ -18,8 +19,8 @@
   "amountMax": 5000,
   "aprMin": 5.99,
   "aprMax": 35.99,
-  "primaryColor": "",
-  "accentColor": "",
+  "primaryColor": "#3b5bdb",
+  "accentColor": "#f97316",
   "conversionId": "AW-17956791431",
   "gtagFormStartLabel": "j06zCInuw5AcEIfJu_JC",
   "gtagFormSubmitLabel": "1IybCIzuw5AcEIfJu_JC",
@@ -39,5 +40,5 @@
   "trustBadges": "",
   "reviews": [],
   "showReviews": true,
-  "deployedAt": "2026-04-05T02:26:03.200Z"
+  "deployedAt": "2026-04-05T10:48:31.716Z"
 }
