@@ -7,7 +7,7 @@
   "cfAccountId": "",
   "brand": "Scratchpay",
   "domain": "scratchcareday.com",
-  "h1": "Quick Funding for Pet Care: Up to $5000",
+  "h1": "Quick Funding for Pet Care",
   "sub": "We make pet care affordable and stress-free. Apply in minutes.",
   "cta": "Check Your Eligibility",
   "title2": "No Hard Credit Check",
@@ -40,5 +40,5 @@
   "trustBadges": "",
   "reviews": [],
   "showReviews": true,
-  "deployedAt": "2026-04-05T11:07:15.736Z"
+  "deployedAt": "2026-04-05T11:16:31.931Z"
 }
