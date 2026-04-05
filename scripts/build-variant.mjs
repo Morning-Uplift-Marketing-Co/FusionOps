@@ -141,7 +141,7 @@ if (theme.font) {
 // ─── 3. Write .env (content + tracking) ──────────────────────────────────────
 const envVars = {};
 
-// Content vars
+// Content vars (support both nested theme.content and top-level fields)
 if (theme.content) {
   if (theme.content.brand)  envVars.PUBLIC_BRAND = theme.content.brand;
   if (theme.content.h1)     envVars.PUBLIC_H1 = theme.content.h1;
@@ -150,15 +150,27 @@ if (theme.content) {
   if (theme.content.phone)  envVars.PUBLIC_PHONE = theme.content.phone;
   if (theme.content.email)  envVars.PUBLIC_EMAIL = theme.content.email;
 }
-if (theme.domain) envVars.PUBLIC_DOMAIN = theme.domain;
+// Also support top-level fields (for deploy configs)
+if (theme.h1)       envVars.PUBLIC_H1 = theme.h1;
+if (theme.sub)      envVars.PUBLIC_SUB = theme.sub;
+if (theme.cta)      envVars.PUBLIC_CTA = theme.cta;
+if (theme.brand)    envVars.PUBLIC_BRAND = theme.brand;
+if (theme.phone)    envVars.PUBLIC_PHONE = theme.phone;
+if (theme.email)    envVars.PUBLIC_EMAIL = theme.email;
+if (theme.domain)   envVars.PUBLIC_DOMAIN = theme.domain;
 
-// Loan params
+// Loan params (support both nested and top-level)
 if (theme.loan) {
   if (theme.loan.amountMin) envVars.PUBLIC_AMOUNTMIN = String(theme.loan.amountMin);
   if (theme.loan.amountMax) envVars.PUBLIC_AMOUNTMAX = String(theme.loan.amountMax);
   if (theme.loan.aprMin)    envVars.PUBLIC_APRMIN = String(theme.loan.aprMin);
   if (theme.loan.aprMax)    envVars.PUBLIC_APRMAX = String(theme.loan.aprMax);
 }
+// Also support top-level fields (for deploy configs)
+if (theme.amountMin) envVars.PUBLIC_AMOUNTMIN = String(theme.amountMin);
+if (theme.amountMax) envVars.PUBLIC_AMOUNTMAX = String(theme.amountMax);
+if (theme.aprMin)    envVars.PUBLIC_APRMIN = String(theme.aprMin);
+if (theme.aprMax)    envVars.PUBLIC_APRMAX = String(theme.aprMax);
 
 // Tracking vars — passed through .env, inject-tracking.mjs handles the scripts
 if (theme.tracking) {
@@ -169,11 +181,6 @@ if (theme.tracking) {
   if (theme.tracking.voluumDomain)  envVars.PUBLIC_VOLUUMDOMAIN = theme.tracking.voluumDomain;
   if (theme.tracking.voluumClickUrl) envVars.PUBLIC_VOLUUM_CLICK_URL = theme.tracking.voluumClickUrl;
 }
-
-// Color/font IDs for Astro frontmatter (COLOR_MAP lookup)
-if (theme.colorId) envVars.PUBLIC_COLORID = theme.colorId;
-if (theme.fontId)  envVars.PUBLIC_FONTID = theme.fontId;
-if (theme.radiusId) envVars.PUBLIC_RADIUS = theme.radiusId;
 
 if (Object.keys(envVars).length > 0) {
   const envPath = path.join(templateDir, '.env');
@@ -192,9 +199,28 @@ if (Object.keys(envVars).length > 0) {
     }
   }
 
-  const merged = { ...existing, ...envVars };
+  // Strip surrounding quotes from existing values (they may already be single-quoted
+  // from a previous CI deploy) so we don't double-quote when re-writing.
+  const unquote = (v) => {
+    const s = String(v);
+    if ((s.startsWith("'") && s.endsWith("'")) || (s.startsWith('"') && s.endsWith('"'))) {
+      return s.slice(1, -1);
+    }
+    return s;
+  };
+  const unquotedExisting = Object.fromEntries(Object.entries(existing).map(([k, v]) => [k, unquote(v)]));
+
+  const merged = { ...unquotedExisting, ...envVars };
+
+  // dotenv-expand regex [\w.]+ matches digits, so $500 → env var "500" = empty.
+  // Escape every $ as \$ so dotenv-expand keeps it as a literal dollar sign.
+  const toEnvVal = (v) => {
+    const s = String(v == null ? '' : v).replace(/\$/g, '\\$');
+    if (!s.includes("'")) return `'${s}'`;
+    return JSON.stringify(s); // fallback: double-quoted with escaping
+  };
   const envContent = Object.entries(merged)
-    .map(([k, v]) => `${k}=${v}`)
+    .map(([k, v]) => `${k}=${toEnvVal(v)}`)
     .join('\n');
 
   if (!dryRun) fs.writeFileSync(envPath, envContent + '\n');
