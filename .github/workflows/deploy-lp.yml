@@ -176,9 +176,15 @@ jobs:
           // dotenv-expand strips the leading backslash, so the app sees the original $ character.
           // We use String.fromCharCode(39) for the single-quote character to avoid conflicting
           // with bash outer double-quotes in `node -e "..."`.
-          const SQ = String.fromCharCode(39);
+          // NOTE: \$ inside a bash double-quoted node -e "..." collapses to $, which would
+          // turn /\$/g into /$/g (end-of-string) and append a literal $ to every value.
+          // Using charCodes avoids all bash-escaping pitfalls.
+          const SQ = String.fromCharCode(39);         // '
+          const DOLLAR = String.fromCharCode(36);     // $
+          const BACKSLASH = String.fromCharCode(92);  // \
           const toEnvVal = (v) => {
-            const s = String(v == null ? '' : v).replace(/\$/g, '\\$');
+            // Escape every $ as \$ (split/join avoids regex + replace-string pitfalls)
+            const s = String(v == null ? '' : v).split(DOLLAR).join(BACKSLASH + DOLLAR);
             if (!s.includes(SQ)) return SQ + s + SQ;
             return JSON.stringify(s); // fallback for values with embedded single quotes
           };
