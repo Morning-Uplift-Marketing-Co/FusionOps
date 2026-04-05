@@ -1,44 +1,21 @@
 import React from "react";
-import { THEME as T, COPY_SETS } from "../../constants";
+import { THEME as T } from "../../constants";
 import { Field } from "../ui/field";
 import { InputField as Inp } from "../ui/input-field";
 
-export function StepCopy({ c, u, onAiGenerate, aiLoading, onAiMeta, aiMetaLoading, onAiReviews, aiReviewsLoading }) {
-    const applyTemplate = (tpl) => {
-        u("h1", tpl.h1);
-        u("h1span", tpl.h1span || "");
-        u("title2", tpl.title2);
-        u("cta", tpl.cta);
-        u("sub", tpl.sub);
-        if (!c.tagline) u("tagline", `${tpl.brand}: Fast. Simple. Trusted.`);
-    };
+const TITLE2_MAX = 40;
 
+export function StepCopy({ c, u, onAiGenerate, aiLoading, onAiMeta, aiMetaLoading, onAiReviews, aiReviewsLoading, onAiTitle2, aiTitle2Loading }) {
     const metaTitleLen = (c.metaTitle || "").length;
     const metaDescLen = (c.metaDesc || "").length;
+    const title2Len = (c.title2 || "").length;
+    const title2Over = title2Len > TITLE2_MAX;
 
     return (
         <>
             <div style={{ textAlign: "center", marginBottom: 20 }}>
                 <div style={{ fontSize: 24 }}>✍️</div>
                 <h2 style={{ fontSize: 17, fontWeight: 700 }}>Copy & CTA</h2>
-            </div>
-
-            {/* Quick-Start Templates */}
-            <div style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: T.muted, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 }}>Quick-Start Templates</div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
-                    {COPY_SETS.map(t => (
-                        <button key={t.id} onClick={() => applyTemplate(t)} style={{
-                            padding: "10px 12px", background: T.input, border: `1px solid ${T.border}`,
-                            borderRadius: 8, cursor: "pointer", textAlign: "left",
-                            transition: "all 0.15s",
-                        }} onMouseEnter={(e) => e.currentTarget.style.borderColor = T.primary}
-                           onMouseLeave={(e) => e.currentTarget.style.borderColor = T.border}>
-                            <div style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{t.brand}</div>
-                            <div style={{ fontSize: 10, color: T.dim, marginTop: 2 }}>"{t.h1} {t.h1span}"</div>
-                        </button>
-                    ))}
-                </div>
             </div>
 
             {/* AI Generate LP Copy — 23 Pillars */}
@@ -52,7 +29,44 @@ export function StepCopy({ c, u, onAiGenerate, aiLoading, onAiMeta, aiMetaLoadin
 
             <Field label="H1 Headline"><Inp value={c.h1} onChange={v => u("h1", v)} placeholder="Get Cash Fast — Apply In Minutes" /></Field>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                <Field label="Title 2"><Inp value={c.title2} onChange={v => u("title2", v)} placeholder="No Credit Check Required" /></Field>
+                <Field label={
+                    <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", gap: 8 }}>
+                        <span>
+                            Title 2{" "}
+                            <span style={{ color: title2Over ? "#ef4444" : title2Len > 32 ? "#f59e0b" : T.dim, fontSize: 10, fontWeight: 400 }}>
+                                ({title2Len}/{TITLE2_MAX})
+                            </span>
+                        </span>
+                        {onAiTitle2 && (
+                            <button
+                                type="button"
+                                onClick={onAiTitle2}
+                                disabled={aiTitle2Loading}
+                                title="AI-generate a concise Title 2 (≤40 chars)"
+                                style={{
+                                    padding: "3px 10px",
+                                    background: aiTitle2Loading ? T.input : `linear-gradient(135deg, #8b5cf620, #6366f120)`,
+                                    border: `1px dashed #8b5cf680`,
+                                    borderRadius: 5,
+                                    cursor: aiTitle2Loading ? "not-allowed" : "pointer",
+                                    color: "#8b5cf6",
+                                    fontSize: 10,
+                                    fontWeight: 600,
+                                    lineHeight: 1.2,
+                                }}
+                            >
+                                {aiTitle2Loading ? "⏳" : "✨ AI Gen"}
+                            </button>
+                        )}
+                    </span>
+                }>
+                    <Inp
+                        value={c.title2}
+                        onChange={v => u("title2", v.slice(0, TITLE2_MAX))}
+                        placeholder="No Credit Check Required"
+                        maxLength={TITLE2_MAX}
+                    />
+                </Field>
                 <Field label="CTA Button"><Inp value={c.cta} onChange={v => u("cta", v)} placeholder="Check Your Rate →" /></Field>
             </div>
             <Field label="Sub-headline"><Inp value={c.sub} onChange={v => u("sub", v)} placeholder="Get approved in minutes. Funds fast." /></Field>
