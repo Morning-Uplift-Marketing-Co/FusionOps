@@ -65,7 +65,7 @@ export function buildPreviewHtml(files, site = {}, colors = null, basePath = '')
   });
 
   // ─── 2c. Substitute ${varName} placeholders ─────────
-  // Replaces ${brand}, ${h1}, ${sub}, ${cta}, ${badge}, ${amountMax}, etc.
+  // Replaces ${brand}, ${h1}, ${sub}, ${cta}, ${title2}, ${amountMax}, etc.
   // with live wizard values so Bolt/HTML-static templates update in preview.
   html = substituteSiteVariables(html, site);
 
@@ -212,7 +212,7 @@ function substituteSiteVariables(html, site) {
     h1:           String(site.h1           || ''),
     sub:          String(site.sub          || ''),
     cta:          String(site.cta          || ''),
-    badge:        String(site.badge        || ''),
+    title2:       String(site.title2       || ''),
     phone:        String(site.phone        || ''),
     email:        String(site.email        || ''),
     address:      String(site.address      || ''),

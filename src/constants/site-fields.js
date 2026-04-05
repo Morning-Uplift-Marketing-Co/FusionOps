@@ -33,7 +33,7 @@ export const SITE_FIELD_KEYS = Object.freeze([
   "trustBadgeIconTone",
   "h1",
   "h1span",
-  "badge",
+  "title2",
   "cta",
   "sub",
   "metaTitle",
