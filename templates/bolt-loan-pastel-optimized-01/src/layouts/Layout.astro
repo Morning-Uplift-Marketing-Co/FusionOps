@@ -4,7 +4,6 @@ import '../styles/global.css';
 const brand = import.meta.env.PUBLIC_BRAND || '${brand}';
 const conversionId = import.meta.env.PUBLIC_CONVERSION_ID || '${conversionId}';
 const siteUrl = import.meta.env.PUBLIC_SITE_URL || '${siteUrl}';
-const primaryColor = import.meta.env.PUBLIC_PRIMARY_COLOR || '${primaryColor}';
 
 interface Props {
   title?: string;
@@ -45,7 +44,6 @@ const canonicalUrl = siteUrl;
 
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="apple-touch-icon" href="/favicon.svg" />
-  <meta name="theme-color" content={primaryColor} />
 
   <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
   <link rel="dns-prefetch" href="https://bolt.new" />
