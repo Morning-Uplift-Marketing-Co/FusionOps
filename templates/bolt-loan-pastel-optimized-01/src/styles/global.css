@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── FusionOps Live-Preview Variables ─────────────────────────────────────── */
+:root {
+  --color-primary: ${primaryColor};
+  --color-accent: ${accentColor};
+}
+
 /* ─── Pastel Dreamscape Palette ────────────────────────────────────────────── */
 :root {
   /* Baby Blue — calm, trustworthy, fresh */
