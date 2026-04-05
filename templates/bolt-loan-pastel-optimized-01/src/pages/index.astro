@@ -10,22 +10,21 @@ import TrustBadges from '../components/TrustBadges.astro';
 import FAQ from '../components/FAQ.astro';
 import Footer from '../components/Footer.astro';
 
-const brand      = import.meta.env.PUBLIC_BRAND      || 'Pastel Lending';
-const aprMin     = import.meta.env.PUBLIC_APRMIN     || '5.99';
-const amountMax  = import.meta.env.PUBLIC_AMOUNTMAX  || '5,000';
-const h1         = import.meta.env.PUBLIC_H1         || 'The Smarter Way to Borrow';
-const sub        = import.meta.env.PUBLIC_SUB        || `Fixed-rate installment loans from $1,000 to $${amountMax}. Transparent terms, no surprises.`;
+const brand      = import.meta.env.PUBLIC_BRAND      || '${brand}';
+const aprMin     = import.meta.env.PUBLIC_APRMIN     || '${aprMin}';
+const amountMax  = import.meta.env.PUBLIC_AMOUNTMAX  || '${amountMax}';
+const h1         = import.meta.env.PUBLIC_H1         || '${h1}';
+const sub        = import.meta.env.PUBLIC_SUB        || '${sub}';
+const cta        = import.meta.env.PUBLIC_CTA        || '${cta}';
+const redirectUrl = import.meta.env.PUBLIC_REDIRECT_URL || '${redirectUrl}';
 
-const title       = import.meta.env.PUBLIC_META_TITLE       || `${brand} — Installment Loans Up to $${amountMax}`;
-const description = import.meta.env.PUBLIC_META_DESCRIPTION || `Apply for an installment loan in minutes. Fixed monthly payments from ${aprMin}% APR, no hidden fees. Borrow up to $${amountMax}.`;
+const title       = import.meta.env.PUBLIC_META_TITLE       || `${brand}`;
+const description = import.meta.env.PUBLIC_META_DESCRIPTION || `${h1}`;
 ---
 
 <Layout title={title} description={description}>
-  {/* [Thai Comment]: ส่ง title และ description เข้าไปใน Hero 
-    เพื่อให้ User เห็น Message เดียวกับที่คลิกมาจาก Ad ทันที 
-  */}
   <Hero h1={h1} sub={sub} />
-  
+
   <HowItWorks />
   <hr class="section-divider" />
   
@@ -63,8 +62,8 @@ const description = import.meta.env.PUBLIC_META_DESCRIPTION || `Apply for an ins
           <div class="h-4 w-px bg-border"></div>
           <span class="text-foreground/45 text-sm">Rates from <strong class="text-foreground/75">{aprMin}% APR</strong> · Up to <strong class="text-foreground/75">${amountMax}</strong> · No hard pull to check</span>
         </div>
-        <a href="/apply" class="btn-primary py-2.5 px-7 text-sm" data-fusionops-cta="sticky-desktop" tabindex="-1">
-          Check My Rate — Free
+        <a href={redirectUrl} class="btn-primary py-2.5 px-7 text-sm" data-fusionops-cta="sticky-desktop" tabindex="-1">
+          {cta}
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
             <path d="M5 12h14M12 5l7 7-7 7"/>
           </svg>
@@ -74,8 +73,8 @@ const description = import.meta.env.PUBLIC_META_DESCRIPTION || `Apply for an ins
 
     <!-- Mobile bar -->
     <div class="md:hidden px-4 pb-4 pt-3 sticky-bar-bg-mobile">
-      <a href="/apply" class="btn-primary w-full text-base py-4 justify-center" data-fusionops-cta="sticky-mobile" tabindex="-1">
-        Check My Rate — It's Free
+      <a href={redirectUrl} class="btn-primary w-full text-base py-4 justify-center" data-fusionops-cta="sticky-mobile" tabindex="-1">
+        {cta}
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
           <path d="M5 12h14M12 5l7 7-7 7"/>
         </svg>
