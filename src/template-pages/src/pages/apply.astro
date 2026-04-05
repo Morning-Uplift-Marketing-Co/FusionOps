@@ -1,0 +1,25 @@
+---
+import ApplyPage from "../../apply-page.astro";
+
+const brand           = import.meta.env.PUBLIC_BRAND        || "LoanBridge";
+const amountMax       = import.meta.env.PUBLIC_AMOUNTMAX    || "10,000";
+const phone           = import.meta.env.PUBLIC_PHONE        || "1-800-555-0123";
+const email           = import.meta.env.PUBLIC_EMAIL        || "support@example.com";
+const leadsGateFormId = import.meta.env.PUBLIC_AID          || "YOUR_FORM_ID";
+const aprMin          = import.meta.env.PUBLIC_APRMIN        || "5.99";
+const aprMax          = import.meta.env.PUBLIC_APRMAX        || "35.99";
+const primaryColor    = import.meta.env.PUBLIC_PRIMARYCOLOR  || "#3b5bdb";
+const conversionId    = import.meta.env.PUBLIC_CONVERSIONID  || "G-XXXXXXXXXX";
+---
+
+<ApplyPage
+  brand={brand}
+  amountMax={amountMax}
+  phone={phone}
+  email={email}
+  leadsGateFormId={leadsGateFormId}
+  aprMin={aprMin}
+  aprMax={aprMax}
+  primaryColor={primaryColor}
+  conversionId={conversionId}
+/>

@@ -1,0 +1,171 @@
+---
+/// Application Form Landing Page Template
+/// Variables (configure these via Astro props or integration):
+/// - brand: Company name
+/// - amountMax: Maximum loan amount
+/// - phone: Contact phone number
+/// - email: Contact email
+/// - leadsGateFormId: Form ID from leads gate provider
+/// - aprMin: Minimum APR
+/// - aprMax: Maximum APR
+
+interface Props {
+  brand: string;
+  amountMax: string;
+  phone: string;
+  email: string;
+  leadsGateFormId: string;
+  aprMin: string;
+  aprMax: string;
+  primaryColor: string;
+  conversionId: string;
+}
+
+const {
+  brand = "LoanBridge",
+  amountMax = "10,000",
+  phone = "1-800-555-0123",
+  email = "support@example.com",
+  leadsGateFormId = "YOUR_FORM_ID",
+  aprMin = "5.99",
+  aprMax = "35.99",
+  primaryColor = "#3b5bdb",
+  conversionId = "G-XXXXXXXXXX"
+} = Astro.props as Props;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Apply — {brand}</title>
+  <script async src={`https://www.googletagmanager.com/gtag/js?id=${conversionId}`}></script>
+  <script is:inline define:vars={{ conversionId }}>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { window.dataLayer.push(arguments); }
+    window.gtag = window.gtag || gtag;
+    window.gtag('js', new Date());
+    window.gtag('config', conversionId);
+  </script>
+  <link rel="dns-prefetch" href="//apikeep.com" />
+  <style define:vars={{ colorPrimary: primaryColor }}>
+    :root {
+      --primary: var(--colorPrimary);
+      --color-primary: var(--colorPrimary);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: #f0f4ff; min-height: 100vh; display: flex; flex-direction: column; -webkit-font-smoothing: antialiased; }
+    nav { background: #fff; border-bottom: 1px solid #e8eaf0; height: 64px; display: flex; align-items: center; padding: 0 20px; }
+    .nav-logo { font-size: 1.1rem; font-weight: 800; color: #1a1a2e; display: flex; align-items: center; gap: 8px; }
+    .nav-logo span { color: var(--primary); }
+    main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 40px 20px; }
+    .apply-header { text-align: center; margin-bottom: 32px; max-width: 540px; }
+    .apply-header h1 { font-size: 1.75rem; font-weight: 800; color: #1a1a2e; margin-bottom: 10px; }
+    .apply-header p { color: #6b7280; font-size: 0.9375rem; }
+    .trust-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 20px; margin-bottom: 28px; }
+    .trust-pill { display: flex; align-items: center; gap: 6px; font-size: 0.8125rem; font-weight: 500; color: #374151; background: #fff; border: 1px solid #e8eaf0; border-radius: 99px; padding: 5px 14px; }
+    #_lg_form_ { width: 100%; max-width: 600px; }
+    footer { text-align: center; padding: 24px 20px; font-size: 0.75rem; color: #9ca3af; line-height: 1.6; max-width: 640px; margin: 0 auto; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">💰 {brand}</div>
+</nav>
+
+<main>
+  <div class="apply-header">
+    <h1>Complete Your Application</h1>
+    <p>You're one step away from getting up to ${amountMax}. Fill out the form below — it takes less than 2 minutes.</p>
+  </div>
+  <div class="trust-row">
+    <span class="trust-pill">🔒 256-bit SSL</span>
+    <span class="trust-pill">✓ No Hard Credit Check</span>
+    <span class="trust-pill">⚡ Instant Decision</span>
+  </div>
+  <div id="_lg_form_"></div>
+</main>
+
+<footer>
+  {brand} is a loan matching service, not a direct lender. Submitting this form does not guarantee loan approval. APR ranges from {aprMin}%–{aprMax}%. Loan terms from 61 days to 72 months. Not all applicants will qualify.
+</footer>
+
+<script is:inline define:vars={{brand, leadsGateFormId, aprMin, aprMax}}>
+window.dataLayer = window.dataLayer || [];
+var currentGclid = '';
+
+var SafeStorage = {
+  _mem: {},
+  set: function(k, v) { try { sessionStorage.setItem(k, v); } catch(e) { this._mem[k] = v; } },
+  get: function(k) { try { return sessionStorage.getItem(k); } catch(e) { return this._mem[k] || null; } }
+};
+
+function getVoluumClickId() {
+  var p = new URLSearchParams(window.location.search);
+  currentGclid = p.get('gclid') || p.get('GCLID') || '';
+  var cid = p.get('cid') || p.get('click_id');
+  return SafeStorage.get('voluum_cid') || cid || '';
+}
+
+function firePixel(eventName) {
+  var qs = new URLSearchParams();
+  qs.set('event', eventName);
+  if (currentGclid) qs.set('gclid', currentGclid);
+  var endpoint = 'https://t.' + window.location.hostname + '/e?' + qs.toString();
+  if (navigator.sendBeacon) {
+    navigator.sendBeacon(endpoint);
+  } else {
+    fetch(endpoint, { method: 'GET', keepalive: true }).catch(function () {});
+  }
+}
+
+var _lg_form_init_ = {
+  aid: leadsGateFormId,
+  template: "fresh",
+  ref: window.location.hostname,
+  click_id: getVoluumClickId(),
+  onFormLoad: function() {
+    firePixel('leadsgate_form_start');
+    window.dataLayer.push({ event: 'leadsgate_form_start' });
+    if (window.gtag) {
+      window.gtag('event', 'leadsgate_form_start', { gclid: currentGclid || undefined });
+    }
+  },
+  onStepChange: function(step) {
+    window.dataLayer.push({ event: 'leadsgate_form_progress', step: step });
+  },
+  onSubmit: function() {
+    firePixel('leadsgate_form_submit');
+    window.dataLayer.push({ event: 'leadsgate_form_submit' });
+  },
+  onSuccess: function(data) {
+    firePixel('lead_conversion_all');
+    window.dataLayer.push({ event: 'lead_conversion_all', lead_type: data.type });
+    if (window.gtag) {
+      window.gtag('event', 'conversion', {
+        send_to: 'AW-CONVERSION_ID/default',
+        gclid: currentGclid || undefined
+      });
+    }
+    if (data.type === 'soldLead') {
+      window.dataLayer.push({ event: 'lead_conversion_approved' });
+    } else if (data.type === 'rejectLead') {
+      window.dataLayer.push({ event: 'lead_declined' });
+    } else if (data.type === 'newLead') {
+      window.dataLayer.push({ event: 'lead_pending' });
+    }
+  }
+};
+
+var script = document.createElement('script');
+script.type = 'text/javascript';
+script.async = true;
+script.src = 'https://apikeep.com/form/applicationInit.js';
+document.body.appendChild(script);
+</script>
+
+</body>
+</html>
