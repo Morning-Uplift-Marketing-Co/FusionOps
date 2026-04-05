@@ -1,0 +1,66 @@
+---
+const redirectUrl = import.meta.env.PUBLIC_REDIRECT_URL || '${redirectUrl}';
+
+const requirements = [
+  { title: 'Age 18 or older',        desc: 'You must be a legal adult to enter into a payment plan agreement in any U.S. state.', icon: '01', color: 'hsl(193 46% 50%)' },
+  { title: 'U.S. Residency',         desc: 'Must be a U.S. citizen or permanent resident with a valid Social Security Number.', icon: '02', color: 'hsl(338 55% 62%)' },
+  { title: 'Verifiable Income',      desc: 'Regular income from employment, self-employment, pension, disability, or other documented sources.', icon: '03', color: 'hsl(130 42% 50%)' },
+  { title: 'Active Bank Account',    desc: 'A checking or savings account at a U.S. bank or credit union for payment processing.', icon: '04', color: 'hsl(193 46% 50%)' },
+  { title: 'Diverse Credit Profiles Welcome', desc: 'Scratchpay evaluates a range of credit histories. Your score is one factor — income and overall profile also matter.', icon: '05', color: 'hsl(338 55% 62%)' },
+  { title: 'Reachable Contact Info', desc: 'A working email address and phone number for identity verification and plan confirmation.', icon: '06', color: 'hsl(130 42% 50%)' },
+];
+---
+
+<section id="eligibility" class="py-20 md:py-28 px-6">
+  <div class="max-w-6xl mx-auto">
+
+    <div class="grid md:grid-cols-2 gap-14 items-center">
+      <!-- Left -->
+      <div>
+        <span class="section-label">Do You Qualify?</span>
+        <h2 class="section-title">Plan Eligibility</h2>
+        <p class="text-foreground/70 text-base leading-relaxed mb-8">
+          Scratchpay serves a broad range of credit profiles. If you have consistent income and a bank account, checking your plan options takes 60 seconds and never affects your score.
+        </p>
+
+        <div class="premium-card p-6 mb-8">
+          <h3 class="font-display font-bold text-foreground text-base mb-5">60-Second Self-Check</h3>
+          <div class="space-y-3">
+            {['18 years of age or older', 'U.S. citizen or permanent resident', 'Consistent, documentable income', 'Open checking or savings account'].map(item => (
+              <div class="flex items-center gap-3">
+                <div class="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                  style="background: hsl(193 46% 60% / 0.14);">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="hsl(193 46% 44%)" stroke-width="3" stroke-linecap="round">
+                    <path d="M20 6L9 17l-5-5"/>
+                  </svg>
+                </div>
+                <span class="text-foreground/65 text-sm">{item}</span>
+              </div>
+            ))}
+          </div>
+          <div class="mt-5 pt-4 border-t border-border">
+            <p class="text-foreground/60 text-xs">Tick all four and you meet the baseline criteria. Your available plan options and rate depend on your credit profile and the plan amount selected. Checking takes 60 seconds and uses a soft inquiry only.</p>
+          </div>
+        </div>
+
+        <a href={redirectUrl} class="btn-primary inline-flex">
+          View Payment Plans for My Pet's Care
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </div>
+
+      <!-- Right: requirements grid -->
+      <div class="grid grid-cols-2 gap-3">
+        {requirements.map(req => (
+          <div class="glass-card p-5 reveal hover:-translate-y-0.5 transition-transform duration-200">
+            <div class="font-mono text-xs font-bold mb-3" style={`color: ${req.color}; opacity: 0.6;`}>{req.icon}</div>
+            <h4 class="font-display font-bold text-foreground text-sm mb-2">{req.title}</h4>
+            <p class="text-foreground/65 text-xs leading-relaxed">{req.desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
