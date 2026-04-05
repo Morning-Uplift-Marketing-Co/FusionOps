@@ -1,9 +1,12 @@
 ---
-const brand    = import.meta.env.PUBLIC_BRAND   || 'GreenRush Lending';
-const aprMin   = import.meta.env.PUBLIC_APRMIN  || '5.99';
-const aprMax   = import.meta.env.PUBLIC_APRMAX  || '34.99';
-const amtMin   = import.meta.env.PUBLIC_AMOUNTMIN || '1,000';
-const amtMax   = import.meta.env.PUBLIC_AMOUNTMAX || '5,000';
+const brand    = import.meta.env.PUBLIC_BRAND   || '${brand}';
+const aprMin   = import.meta.env.PUBLIC_APRMIN  || '${aprMin}';
+const aprMax   = import.meta.env.PUBLIC_APRMAX  || '${aprMax}';
+const amtMin   = import.meta.env.PUBLIC_AMOUNTMIN || '${amountMin}';
+const amtMax   = import.meta.env.PUBLIC_AMOUNTMAX || '${amountMax}';
+const phone    = import.meta.env.PUBLIC_PHONE   || '${phone}';
+const email    = import.meta.env.PUBLIC_EMAIL   || '${email}';
+const redirectUrl = import.meta.env.PUBLIC_REDIRECT_URL || '${redirectUrl}';
 
 const popupContent: Record<string, { title: string; body: string }> = {
   'Debt Consolidation': {
@@ -48,7 +51,7 @@ const popupContent: Record<string, { title: string; body: string }> = {
   },
   'Accessibility': {
     title: 'Accessibility',
-    body: `${brand} is committed to ensuring digital accessibility for people with disabilities. We continually improve the user experience for everyone and apply relevant accessibility standards. Contact us at accessibility@greenrushlending.com if you encounter barriers.`,
+    body: `${brand} is committed to ensuring digital accessibility for people with disabilities. We continually improve the user experience for everyone and apply relevant accessibility standards. Contact us at ${email} if you encounter barriers.`,
   },
 };
 ---
@@ -89,7 +92,7 @@ const popupContent: Record<string, { title: string; body: string }> = {
       <p class="text-foreground/70 text-base max-w-xl mx-auto mb-8 relative">
         Check your rate in 3 minutes with no impact to your credit score. Join 50,000+ borrowers who chose {brand}.
       </p>
-      <a href="/apply" class="btn-primary text-base py-4 px-10 relative">
+      <a href={redirectUrl} class="btn-primary text-base py-4 px-10 relative">
         Get My Rate Now — It's Free
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
           <path d="M5 12h14M12 5l7 7-7 7"/>
@@ -153,7 +156,7 @@ const popupContent: Record<string, { title: string; body: string }> = {
           <span class="font-display font-bold text-foreground text-sm">{brand}</span>
         </div>
         <p class="text-foreground/60 text-xs leading-relaxed max-w-xs mb-4">
-          Premium installment loans with fixed payments and transparent terms. NMLS #123456.
+          Installment loans with fixed payments and transparent terms. NMLS #123456.
         </p>
         <div class="flex items-center gap-1.5 text-foreground/60 text-xs">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="hsl(193 46% 50%)" stroke-width="2" stroke-linecap="round">
