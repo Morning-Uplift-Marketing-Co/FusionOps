@@ -1,4 +1,8 @@
 ---
+const aprMin = import.meta.env.PUBLIC_APRMIN || '${aprMin}';
+const aprMax = import.meta.env.PUBLIC_APRMAX || '${aprMax}';
+const phone  = import.meta.env.PUBLIC_PHONE  || '${phone}';
+
 const faqs = [
   {
     q: 'Will checking my rate affect my credit score?',
@@ -22,7 +26,7 @@ const faqs = [
   },
   {
     q: 'What APR will I receive?',
-    a: `Your APR is personalised based on your credit profile, income, requested loan amount, and term. Rates range from 5.99% to 34.99% APR. The rate you see during the application process is the rate you'll receive — we don't change it after approval.`,
+    a: `Your APR is personalised based on your credit profile, income, requested loan amount, and term. Rates range from ${aprMin}% to ${aprMax}% APR. The rate you see during the application process is the rate you'll receive — we don't change it after approval.`,
   },
   {
     q: 'Is there an origination fee?',
@@ -56,7 +60,7 @@ const faqs = [
           </div>
           <div>
             <p class="text-foreground/70 text-sm font-semibold">Still have questions?</p>
-            <p class="text-foreground/65 text-xs mt-0.5">Call us Mon–Fri 8am–8pm EST</p>
+            <p class="text-foreground/65 text-xs mt-0.5">{phone} · Mon–Fri 8am–8pm EST</p>
           </div>
         </div>
       </div>
