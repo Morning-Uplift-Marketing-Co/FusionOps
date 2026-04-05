@@ -1,4 +1,6 @@
 ---
+const redirectUrl = import.meta.env.PUBLIC_REDIRECT_URL || '${redirectUrl}';
+
 const requirements = [
   { title: 'Age 18 or older',       desc: 'Must be a legal adult to enter a loan agreement.', icon: '01', color: 'hsl(193 46% 50%)' },
   { title: 'U.S. Residency',        desc: 'U.S. citizen or permanent resident with a valid SSN.', icon: '02', color: 'hsl(338 55% 62%)' },
@@ -41,7 +43,7 @@ const requirements = [
           </div>
         </div>
 
-        <a href="/apply" class="btn-primary inline-flex">
+        <a href={redirectUrl} class="btn-primary inline-flex">
           Check My Eligibility — Free
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
             <path d="M5 12h14M12 5l7 7-7 7"/>
