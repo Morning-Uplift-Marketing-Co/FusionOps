@@ -1,5 +1,5 @@
 {
-  "templateId": "pastel-lending-bolt",
+  "templateId": "bolt-loan-pastel-optimized-01",
   "cfPagesProject": "lp-scratchpaypet-tech",
   "cfZoneId": "",
   "skipDnsUpsert": true,
@@ -7,9 +7,9 @@
   "cfAccountId": "",
   "brand": "Scratchpay",
   "domain": "scratchpaypet.tech",
-  "h1": "Fast Pet Funding: Get Up To $5000",
-  "sub": "Unexpected vet bill? Get stress-free pet care funding today.",
-  "cta": "Get My Pet Funding",
+  "h1": "Quick $100-$5000 for Your Pet's Care.",
+  "sub": "Stress-free financing for unexpected pet expenses. Get the care your furry friend deserves.",
+  "cta": "Apply for Pet Funding",
   "phone": "1-800-SCRATCH-PAYPE",
   "email": "support@scratchpaypet.tech",
   "address": "108 West 13th St, Wilmington, DE 19801",
@@ -40,23 +40,23 @@
   "reviews": [
     {
       "name": "Sarah K.",
-      "text": "My dog suddenly fell ill, and I was panicking about the emergency vet bill. Scratchpay made it so easy to get approved quickly, letting me focus on my pup's recovery without financial stress.",
+      "location": "Austin, TX",
       "rating": 5,
-      "location": "Austin, TX"
+      "text": "My dog had an unexpected emergency, and the vet bill was intimidating. Scratchpay made it incredibly easy to get the funds we needed quickly, easing so much stress."
     },
     {
       "name": "Mark D.",
-      "text": "My cat needed extensive dental work, and the cost was a bit overwhelming. Scratchpay offered a flexible payment plan that fit my budget perfectly, ensuring my cat got the care she deserved.",
+      "location": "Portland, OR",
       "rating": 5,
-      "location": "Seattle, WA"
+      "text": "Getting our cat the dental care she desperately needed was simple thanks to Scratchpay. The application was fast, and the payment options were a huge help."
     },
     {
       "name": "Jessica M.",
-      "text": "Adopting our new puppy was exciting, but the initial costs for supplies and first vet visits added up fast. Scratchpay provided the financial bridge we needed to welcome our new family member without worry.",
+      "location": "Miami, FL",
       "rating": 5,
-      "location": "Miami, FL"
+      "text": "Our new puppy needed urgent vaccinations, and Scratchpay came through instantly. It was such a relief to handle the cost without any hassle."
     }
   ],
   "showReviews": true,
-  "deployedAt": "2026-04-05T04:00:40.265Z"
+  "deployedAt": "2026-04-05T04:06:50.427Z"
 }
