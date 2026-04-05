@@ -18,16 +18,13 @@ const sub        = import.meta.env.PUBLIC_SUB        || '${sub}';
 const cta        = import.meta.env.PUBLIC_CTA        || '${cta}';
 const redirectUrl = import.meta.env.PUBLIC_REDIRECT_URL || '${redirectUrl}';
 
-const title       = import.meta.env.PUBLIC_META_TITLE       || `${brand} — Installment Loans Up to $${amountMax}`;
-const description = import.meta.env.PUBLIC_META_DESCRIPTION || `Apply for an installment loan in minutes. Fixed monthly payments from ${aprMin}% APR, no hidden fees. Borrow up to $${amountMax}.`;
+const title       = import.meta.env.PUBLIC_META_TITLE       || `${brand}`;
+const description = import.meta.env.PUBLIC_META_DESCRIPTION || `${h1}`;
 ---
 
 <Layout title={title} description={description}>
-  {/* [Thai Comment]: ส่ง title และ description เข้าไปใน Hero 
-    เพื่อให้ User เห็น Message เดียวกับที่คลิกมาจาก Ad ทันที 
-  */}
   <Hero h1={h1} sub={sub} />
-  
+
   <HowItWorks />
   <hr class="section-divider" />
   
