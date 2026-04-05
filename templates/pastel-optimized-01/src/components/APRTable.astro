@@ -1,0 +1,113 @@
+---
+const aprMin = import.meta.env.PUBLIC_APRMIN || '${aprMin}';
+const aprMax = import.meta.env.PUBLIC_APRMAX || '${aprMax}';
+const redirectUrl = import.meta.env.PUBLIC_REDIRECT_URL || '${redirectUrl}';
+
+const rows = [
+  { credit: 'Excellent', score: '750+',    apr: '5.99–9.99%',   example: '$10,000 / 60mo = $188/mo', total: '$11,283',  highlight: true  },
+  { credit: 'Good',      score: '700–749', apr: '10.99–14.99%', example: '$10,000 / 60mo = $217/mo', total: '$13,028',  highlight: false },
+  { credit: 'Fair',      score: '660–699', apr: '15.99–19.99%', example: '$10,000 / 60mo = $243/mo', total: '$14,580',  highlight: false },
+  { credit: 'Average',   score: '620–659', apr: '20.99–24.99%', example: '$10,000 / 60mo = $269/mo', total: '$16,132',  highlight: false },
+  { credit: 'Poor',      score: '560–619', apr: '25.99–34.99%', example: '$10,000 / 60mo = $304/mo', total: '$18,247',  highlight: false },
+];
+---
+
+<section id="rates" class="py-20 md:py-28 px-6">
+  <div class="max-w-6xl mx-auto">
+
+    <div class="grid md:grid-cols-2 gap-14 items-start">
+
+      <!-- Left: description -->
+      <div>
+        <span class="section-label">Transparent Pricing</span>
+        <h2 class="section-title">Representative APR<br/>Comparison Table</h2>
+        <p class="text-foreground/70 text-base leading-relaxed mb-6">
+          Our rates are determined by your credit profile and loan details. The table shows representative rates across all credit tiers — no hidden costs, ever.
+        </p>
+
+        <div class="space-y-3 mb-8">
+          {[
+            'Fixed rate for the entire loan duration',
+            'No prepayment penalties — pay off early for free',
+            'No origination fee on qualifying loans',
+            'Rate lock from application to funding',
+          ].map(item => (
+            <div class="flex items-start gap-3">
+              <div class="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                style="background: hsl(193 46% 60% / 0.15);">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="hsl(193 46% 44%)" stroke-width="3" stroke-linecap="round">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+              </div>
+              <span class="text-foreground/75 text-sm">{item}</span>
+            </div>
+          ))}
+        </div>
+
+        <!-- Disclosure callout -->
+        <div class="glass-card p-4 border-l-2 flex gap-3" style="border-left-color: hsl(193 46% 60% / 0.55);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="hsl(193 46% 44%)" stroke-width="2" stroke-linecap="round" class="flex-shrink-0 mt-0.5">
+            <circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>
+          </svg>
+          <p class="text-foreground/70 text-xs leading-relaxed">
+            <strong class="text-foreground/70">Representative APR {aprMin}%–{aprMax}%.</strong> The Representative APR is based on a loan of $10,000 over 60 months. Not all applicants will receive the representative rate; your actual rate depends on individual circumstances.
+          </p>
+        </div>
+      </div>
+
+      <!-- Right: table -->
+      <div class="reveal">
+        <div class="premium-card overflow-hidden">
+          <table class="w-full text-left">
+            <thead>
+              <tr style="background: hsl(193 30% 93%);">
+                <th class="py-3.5 px-5 text-xs font-semibold text-foreground/65 uppercase tracking-wider">Credit</th>
+                <th class="py-3.5 px-5 text-xs font-semibold text-foreground/65 uppercase tracking-wider">Score</th>
+                <th class="py-3.5 px-5 text-xs font-semibold text-foreground/65 uppercase tracking-wider">APR Range</th>
+                <th class="py-3.5 px-5 text-xs font-semibold text-foreground/65 uppercase tracking-wider hidden sm:table-cell">Total Cost</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(row => (
+                <tr class={`apr-row transition-colors ${row.highlight ? 'bg-primary/5' : ''}`}>
+                  <td class="py-4 px-5 border-b border-border">
+                    <div class="flex items-center gap-2">
+                      {row.highlight && (
+                        <span class="w-1.5 h-1.5 rounded-full" style="background: hsl(193 46% 50%);"></span>
+                      )}
+                      <span class={`text-sm font-semibold ${row.highlight ? 'text-primary' : 'text-foreground/75'}`}>
+                        {row.credit}
+                      </span>
+                    </div>
+                  </td>
+                  <td class="py-4 px-5 border-b border-border">
+                    <span class="text-xs font-mono text-foreground/70">{row.score}</span>
+                  </td>
+                  <td class="py-4 px-5 border-b border-border">
+                    <span class={`text-sm font-bold mono-num ${row.highlight ? 'text-primary' : 'text-foreground/70'}`}>
+                      {row.apr}
+                    </span>
+                  </td>
+                  <td class="py-4 px-5 border-b border-border hidden sm:table-cell">
+                    <span class="text-sm mono-num text-foreground/70">{row.total}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div class="px-5 py-4" style="background: hsl(193 30% 93%);">
+            <p class="text-foreground/60 text-xs">Example based on $10,000 loan over 60 months. Representative APR {aprMin}%. Total amount repayable varies by rate.</p>
+          </div>
+        </div>
+
+        <a href={redirectUrl} class="btn-primary w-full text-center mt-5 py-4">
+          Check Your Personalised Rate
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
