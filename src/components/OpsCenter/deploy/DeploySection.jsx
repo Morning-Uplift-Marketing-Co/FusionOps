@@ -229,6 +229,14 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
                     addLog(`URL: ${result.url}`);
                 }
 
+                // Log custom domain + pixel provisioning results from cf-pages deployer
+                if (result.customDomainAdded) addLog("Custom domain added to CF Pages ✓");
+                if (result.customDomainError) addLog(`Custom domain warning: ${result.customDomainError}`);
+                if (result.dnsUpdated) addLog("DNS records created ✓ (@, www, t., link.)");
+                if (result.dnsError) addLog(`DNS error: ${result.dnsError}`);
+                if (result.pixelProvisioned) addLog(`Pixel subdomain provisioned: t.${domain.domain} ✓`);
+                if (result.pixelError) addLog(`Pixel error: ${result.pixelError}`);
+
                 // Update DNS if requested
                 if (updateDns && domain.domain && effectiveSettings.cfAccountId && effectiveSettings.cfApiToken) {
                     addLog("Updating DNS records...");
