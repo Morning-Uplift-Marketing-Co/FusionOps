@@ -246,6 +246,8 @@ export async function fetchCustomTemplates(force = false) {
             createdAt: t.created_at,
             thumbnailUrl: t.thumbnail_url || null,
             thumbnailGeneratedAt: t.thumbnail_generated_at || null,
+            familyId: t.family_id || null,
+            variantLabel: t.variant_label || null,
           }, {
             sourceHint: 'api',
             registryPath: 'api-custom',
