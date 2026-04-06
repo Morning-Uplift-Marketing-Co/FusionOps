@@ -2063,6 +2063,133 @@ export default {
       return handleVoluumPostbacksApiGet(env, url);
     }
 
+    // ═══ PROVISION DOMAIN DNS — called by deploy-lp.yml when GitHub token can't reach zone ═══
+    // Uses CF credentials stored in D1 (cf_accounts + ops_domains) to create DNS records.
+    if (path === '/api/provision-domain-dns' && method === 'POST') {
+      try {
+        const body = await request.json();
+        const { domain, pagesHost } = body;
+        if (!domain || !pagesHost) return json({ error: 'domain and pagesHost required' }, 400);
+
+        const cleanDomain = String(domain).trim().toLowerCase().replace(/^www\./, '');
+
+        // Look up domain → cf_account_id from ops_domains
+        const domainRow = await db.prepare(
+          "SELECT cf_account_id, zone_id FROM ops_domains WHERE domain = ? OR domain = ? LIMIT 1"
+        ).bind(cleanDomain, `www.${cleanDomain}`).first().catch(() => null);
+
+        const cfAccountRef = domainRow?.cf_account_id || '';
+        if (!cfAccountRef) {
+          return json({ error: `No CF account linked to ${cleanDomain} in ops_domains`, code: 'NO_CF_ACCOUNT' }, 404);
+        }
+
+        const cfRow = await resolveCloudflareAccount(db, cfAccountRef);
+        if (!cfRow?.api_token || !cfRow?.account_id) {
+          return json({ error: `CF account ${cfAccountRef} has no api_token in cf_accounts`, code: 'NO_CF_TOKEN' }, 404);
+        }
+
+        const cfToken = cfRow.api_token;
+        const cfAccountId = cfRow.account_id;
+        const cfHeaders = { Authorization: `Bearer ${cfToken}`, 'Content-Type': 'application/json' };
+
+        // Get or create zone
+        let zoneId = domainRow?.zone_id || '';
+        if (!zoneId) {
+          const zoneRes = await fetch(
+            `https://api.cloudflare.com/client/v4/zones?name=${encodeURIComponent(cleanDomain)}&account.id=${encodeURIComponent(cfAccountId)}`,
+            { headers: cfHeaders }
+          );
+          const zoneData = await zoneRes.json().catch(() => ({}));
+          zoneId = zoneData?.result?.[0]?.id || '';
+        }
+        if (!zoneId) {
+          return json({ error: `Zone not found for ${cleanDomain}`, code: 'NO_ZONE' }, 404);
+        }
+
+        // Upsert DNS records: @, www → pagesHost (CNAME), t., link. → 192.0.2.1 (A)
+        const records = [
+          { type: 'CNAME', name: cleanDomain, content: pagesHost, proxied: true },
+          { type: 'CNAME', name: `www.${cleanDomain}`, content: pagesHost, proxied: true },
+          { type: 'A', name: `t.${cleanDomain}`, content: '192.0.2.1', proxied: true },
+          { type: 'A', name: `link.${cleanDomain}`, content: '192.0.2.1', proxied: true },
+        ];
+
+        const results = [];
+        for (const rec of records) {
+          try {
+            // Check existing
+            const listRes = await fetch(
+              `https://api.cloudflare.com/client/v4/zones/${zoneId}/dns_records?name=${encodeURIComponent(rec.name)}&type=${rec.type}`,
+              { headers: cfHeaders }
+            );
+            const listData = await listRes.json().catch(() => ({}));
+            const existing = (listData?.result || [])[0];
+
+            if (existing && existing.content === rec.content) {
+              results.push({ name: rec.name, status: 'exists' });
+              continue;
+            }
+
+            // Delete conflicting records (A/AAAA/CNAME)
+            const allRecs = await fetch(
+              `https://api.cloudflare.com/client/v4/zones/${zoneId}/dns_records?name=${encodeURIComponent(rec.name)}`,
+              { headers: cfHeaders }
+            );
+            const allData = await allRecs.json().catch(() => ({}));
+            for (const old of (allData?.result || []).filter(r => ['A', 'AAAA', 'CNAME'].includes(r.type))) {
+              await fetch(`https://api.cloudflare.com/client/v4/zones/${zoneId}/dns_records/${old.id}`, {
+                method: 'DELETE', headers: cfHeaders,
+              });
+            }
+
+            // Create
+            const createRes = await fetch(
+              `https://api.cloudflare.com/client/v4/zones/${zoneId}/dns_records`,
+              {
+                method: 'POST', headers: cfHeaders,
+                body: JSON.stringify({ type: rec.type, name: rec.name, content: rec.content, proxied: rec.proxied, ttl: 1 }),
+              }
+            );
+            const createData = await createRes.json().catch(() => ({}));
+            results.push({ name: rec.name, status: createData?.success ? 'created' : 'error', error: createData?.errors?.[0]?.message });
+          } catch (e) {
+            results.push({ name: rec.name, status: 'error', error: e.message });
+          }
+        }
+
+        // Also set up Workers Route for t.{domain}/* → lp-factory-api
+        let routeStatus = 'skipped';
+        try {
+          const routeListRes = await fetch(
+            `https://api.cloudflare.com/client/v4/zones/${zoneId}/workers/routes`,
+            { headers: cfHeaders }
+          );
+          const routeListData = await routeListRes.json().catch(() => ({}));
+          const pattern = `t.${cleanDomain}/*`;
+          const existingRoute = (routeListData?.result || []).find(r => r.pattern === pattern);
+          if (existingRoute) {
+            routeStatus = 'exists';
+          } else {
+            const routeRes = await fetch(
+              `https://api.cloudflare.com/client/v4/zones/${zoneId}/workers/routes`,
+              {
+                method: 'POST', headers: cfHeaders,
+                body: JSON.stringify({ pattern, script: 'lp-factory-api' }),
+              }
+            );
+            const routeData = await routeRes.json().catch(() => ({}));
+            routeStatus = routeData?.success ? 'created' : `error: ${routeData?.errors?.[0]?.message || 'unknown'}`;
+          }
+        } catch (e) {
+          routeStatus = `error: ${e.message}`;
+        }
+
+        return json({ success: true, domain: cleanDomain, zoneId, records: results, workerRoute: routeStatus });
+      } catch (e) {
+        return json({ error: e.message }, 500);
+      }
+    }
+
     // ═══ PROXY ROUTES (no auth required — proxy forwards auth headers) ═══
     if (path.startsWith('/api/proxy/')) {
       const proxyRes = await handleProxy(request, url, env);

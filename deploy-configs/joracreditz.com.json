@@ -2,7 +2,6 @@
   "templateId": "lendpath_bolt",
   "cfPagesProject": "lp-jora-creditz-main",
   "cfZoneId": "",
-  "skipDnsUpsert": true,
   "cfApiToken": "",
   "cfAccountId": "",
   "brand": "Jora Credit",

@@ -2,7 +2,6 @@
   "templateId": "bolt-loan-pastel-optimized-01",
   "cfPagesProject": "lp-scratchpaypet-tech",
   "cfZoneId": "",
-  "skipDnsUpsert": true,
   "cfApiToken": "",
   "cfAccountId": "",
   "brand": "Scratchpay",
