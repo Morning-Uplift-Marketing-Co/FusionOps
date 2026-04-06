@@ -207,6 +207,7 @@ export function substituteSiteVariables(html, site) {
   const toNum = (v, fallback) =>
     String(Math.round(Number(String(v || fallback).replace(/[^0-9.]/g, '')) || fallback));
 
+  const domain = String(site.domain || 'example.com');
   const vars = {
     brand:        String(site.brand        || ''),
     h1:           String(site.h1           || ''),
@@ -225,21 +226,28 @@ export function substituteSiteVariables(html, site) {
     loanLabel:    String(site.loanLabel    || site.loanType || ''),
     redirectUrl:  String(site.voluumClickUrl || site.redirectUrl || '#apply'),
     network:      String(site.network      || ''),
+    // Tracking / SEO vars — prevent literal ${conversionId} / ${siteUrl} in deployed HTML
+    conversionId: String(site.conversionId || ''),
+    siteUrl:      String(site.siteUrl      || ('https://' + domain)),
+    primaryColor: String(site.primaryColor || '#3b5bdb'),
+    accentColor:  String(site.accentColor  || '#f97316'),
   };
 
-  // Protect <style> and <script> blocks — only substitute text/attribute content
+  // Protect <style> blocks entirely and <script> BODIES (not attributes like src=)
+  // so that ${conversionId} in <script src="...?id=${conversionId}"> still gets substituted,
+  // but JS code inside <script> blocks isn't accidentally broken by ${varName} replacement.
   const styleBlocks = [];
-  const scriptBlocks = [];
+  const scriptBodies = [];
   let safe = html
     .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, (m) => {
       const token = `\x00STYLE${styleBlocks.length}\x00`;
       styleBlocks.push(m);
       return token;
     })
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, (m) => {
-      const token = `\x00SCRIPT${scriptBlocks.length}\x00`;
-      scriptBlocks.push(m);
-      return token;
+    .replace(/(<script\b[^>]*>)([\s\S]*?)(<\/script>)/gi, (_m, open, body, close) => {
+      const token = `\x00SCRIPTBODY${scriptBodies.length}\x00`;
+      scriptBodies.push(body);
+      return open + token + close;
     });
 
   for (const [key, val] of Object.entries(vars)) {
@@ -249,7 +257,7 @@ export function substituteSiteVariables(html, site) {
 
   // Restore protected blocks
   styleBlocks.forEach((b, i) => { safe = safe.replace(`\x00STYLE${i}\x00`, b); });
-  scriptBlocks.forEach((b, i) => { safe = safe.replace(`\x00SCRIPT${i}\x00`, b); });
+  scriptBodies.forEach((b, i) => { safe = safe.replace(`\x00SCRIPTBODY${i}\x00`, b); });
 
   return safe;
 }
