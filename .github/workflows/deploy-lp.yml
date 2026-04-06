@@ -598,6 +598,41 @@ jobs:
           upsert_cname "$DOMAIN"
           upsert_cname "www.$DOMAIN"
 
+      - name: Provision DNS via API Worker (fallback for multi-account)
+        if: always()
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          CONFIG_FILE="${{ steps.config.outputs.file }}"
+          DOMAIN=$(node -e "const c=require('./$CONFIG_FILE');const d=String(c.domain||'').trim().toLowerCase().replace(/^https?:\/\//,'').replace(/^\/\//,'').replace(/[/?#].*$/,'').replace(/\.+$/,'').replace(/^www\./,'');console.log(d)")
+          DEPLOY_URL="${{ steps.deploy.outputs.url }}"
+
+          if [ -z "$DOMAIN" ] || [ -z "$DEPLOY_URL" ]; then
+            echo "Skipping API Worker DNS provision: missing domain or deploy URL"
+            exit 0
+          fi
+
+          PAGES_HOST=$(node -e "console.log(new URL(process.argv[1]).hostname)" "$DEPLOY_URL")
+          API_URL="https://lp-factory-api.misty-feather-556e.workers.dev/api/provision-domain-dns"
+
+          echo "Provisioning DNS via API Worker for $DOMAIN → $PAGES_HOST"
+          RESP=$(curl -s -X POST "$API_URL" \
+            -H "Content-Type: application/json" \
+            -H "Origin: https://fusionops-web.pages.dev" \
+            -H "Referer: https://fusionops-web.pages.dev/" \
+            -d "{\"domain\":\"$DOMAIN\",\"pagesHost\":\"$PAGES_HOST\"}")
+
+          echo "$RESP" | node -e "
+            const r=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            if(r.success){
+              console.log('DNS provisioned via API Worker:');
+              (r.records||[]).forEach(rec=>console.log('  '+rec.name+': '+rec.status+(rec.error?' ('+rec.error+')':'')));
+              console.log('  Workers Route: '+r.workerRoute);
+            } else {
+              console.warn('API Worker DNS provision failed:', r.error||r.code||JSON.stringify(r));
+            }
+          " 2>/dev/null || echo "API Worker response: $RESP"
+
       # Requires API token with Zone → Cache Purge → Purge on this zone (or All zones).
       # Code 10000 "Authentication error" usually means the token can read DNS but cannot purge.
       - name: Purge Cloudflare Cache (post-deploy)

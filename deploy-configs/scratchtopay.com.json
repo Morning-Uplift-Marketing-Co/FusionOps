@@ -2,7 +2,6 @@
   "templateId": "pet-loans-02b",
   "cfPagesProject": "lp-scratchtopay-com",
   "cfZoneId": "",
-  "skipDnsUpsert": true,
   "cfApiToken": "",
   "cfAccountId": "",
   "brand": "ScratchPay",
