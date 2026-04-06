@@ -337,6 +337,49 @@ export async function deploy(content, site, settings) {
     const url = deployData.result?.url || `https://${projectName}.pages.dev`;
 
     // ═════════════════════════════════════════════════════════════════════
+    // Step 7b: Add custom domain to CF Pages project (if not already)
+    // Without this, CF Pages won't serve content for the domain even
+    // if DNS CNAME is correctly pointing to the pages.dev project.
+    // ═════════════════════════════════════════════════════════════════════
+    let customDomainAdded = false;
+    let customDomainError = null;
+
+    if (site.domain && cfAccountId && cfApiToken) {
+      const domainsToAdd = [site.domain];
+      // Also add www variant
+      if (!site.domain.startsWith("www.")) {
+        domainsToAdd.push(`www.${site.domain}`);
+      }
+
+      for (const domainName of domainsToAdd) {
+        try {
+          const addDomainRes = await fetchWithRateLimitRetry(
+            `${projectsUrl}/${projectName}/domains`,
+            {
+              method: "POST",
+              headers: { ...apiAuth, "Content-Type": "application/json" },
+              body: JSON.stringify({ name: domainName }),
+            }
+          );
+          if (addDomainRes.ok) {
+            customDomainAdded = true;
+          } else {
+            const errData = await addDomainRes.json().catch(() => ({}));
+            const errMsg = errData.errors?.[0]?.message || "";
+            // 409 = domain already exists on the project — that's fine
+            if (addDomainRes.status === 409 || errMsg.includes("already")) {
+              customDomainAdded = true;
+            } else {
+              customDomainError = `${domainName}: ${errMsg || addDomainRes.status}`;
+            }
+          }
+        } catch (e) {
+          customDomainError = `${domainName}: ${e.message}`;
+        }
+      }
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
     // Step 8: Update DNS records if custom domain is configured
     // ═════════════════════════════════════════════════════════════════════
     let dnsUpdated = false;
@@ -438,6 +481,8 @@ export async function deploy(content, site, settings) {
       url,
       deployId,
       target: "cf-pages",
+      customDomainAdded,
+      customDomainError,
       dnsUpdated,
       dnsError,
       pixelProvisioned,

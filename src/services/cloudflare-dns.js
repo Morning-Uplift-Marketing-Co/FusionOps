@@ -342,6 +342,34 @@ export async function updateDnsAfterDeploy({
           proxied,
         });
         trackResult(wwwResult, "www CNAME");
+
+        // Add t. subdomain for pixel/postback worker (A record, proxied → Workers Route)
+        const pixelDnsResult = await upsertDnsRecord({
+          zoneId,
+          cfAccountId,
+          cfApiToken,
+          domain,
+          type: "A",
+          name: "t",
+          content: "192.0.2.1", // dummy IP, CF proxy intercepts via Workers Route
+          proxied: true,
+          ttl: 1,
+        });
+        trackResult(pixelDnsResult, "t. pixel A");
+
+        // Add link. subdomain for Voluum tracker (A record, proxied)
+        const linkDnsResult = await upsertDnsRecord({
+          zoneId,
+          cfAccountId,
+          cfApiToken,
+          domain,
+          type: "A",
+          name: "link",
+          content: "192.0.2.1",
+          proxied: true,
+          ttl: 1,
+        });
+        trackResult(linkDnsResult, "link. voluum A");
         break;
 
       case "netlify":
