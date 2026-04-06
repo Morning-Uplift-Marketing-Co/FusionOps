@@ -41,12 +41,7 @@ function validateStep(stepNum, config, wizardCaps = null) {
         if (config._cfProfilesExist && !config.cfProfileId) {
             errors.push("Cloudflare Profile is required for DNS & deploy");
         }
-        if (config.domainProvider && !(config.domainProviderAccountId || config.internetbsAccountId)) {
-            errors.push("Provider account is required when Domain Provider is selected");
-        }
-        if (config.domainProvider && !config.cfAccountId) {
-            errors.push("Cloudflare Account is required when Domain Provider is selected");
-        }
+        // Domain provider + account are optional — user may register domains externally
     }
 
     if (stepNum === 2) {
