@@ -593,6 +593,8 @@ async function ensureTemplateManagerSchema(db) {
   try { await db.prepare('ALTER TABLE templates ADD COLUMN updated_at TEXT').run(); } catch (_e) {}
   try { await db.prepare('ALTER TABLE templates ADD COLUMN current_version INTEGER DEFAULT 1').run(); } catch (_e) {}
   try { await db.prepare('ALTER TABLE templates ADD COLUMN archived_at TEXT').run(); } catch (_e) {}
+  try { await db.prepare('ALTER TABLE templates ADD COLUMN family_id TEXT').run(); } catch (_e) {}
+  try { await db.prepare('ALTER TABLE templates ADD COLUMN variant_label TEXT').run(); } catch (_e) {}
 
   await db.prepare(`
     CREATE TABLE IF NOT EXISTS template_versions (
@@ -3106,9 +3108,10 @@ export default {
             await db.prepare(`
             INSERT INTO templates (
               id, template_id, name, description, category, badge,
-              source_code, files, created_at, updated_at, is_deleted, status, current_version, archived_at
+              source_code, files, created_at, updated_at, is_deleted, status, current_version, archived_at,
+              family_id, variant_label
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, 1, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, 1, ?, ?, ?)
           `).bind(
               id,
               templateId,
@@ -3121,7 +3124,9 @@ export default {
               now,
               now,
               normalizedStatus,
-              normalizedStatus === 'archived' ? now : null
+              normalizedStatus === 'archived' ? now : null,
+              body.familyId || null,
+              body.variantLabel || null
             ).run();
           } catch (insertErr) {
             const im = String(insertErr?.message || '');
@@ -3190,6 +3195,8 @@ export default {
           fields.push('category = ?'); values.push(putCat);
         }
         if (Object.prototype.hasOwnProperty.call(body, 'badge')) { fields.push('badge = ?'); values.push(body.badge || 'New'); }
+        if (Object.prototype.hasOwnProperty.call(body, 'familyId')) { fields.push('family_id = ?'); values.push(body.familyId || null); }
+        if (Object.prototype.hasOwnProperty.call(body, 'variantLabel')) { fields.push('variant_label = ?'); values.push(body.variantLabel || null); }
         if (Object.prototype.hasOwnProperty.call(body, 'sourceCode')) { fields.push('source_code = ?'); values.push(body.sourceCode || ''); }
         if (Object.prototype.hasOwnProperty.call(body, 'files')) { fields.push('files = ?'); values.push(JSON.stringify(body.files || {})); }
         if (status && ['draft', 'active', 'deprecated', 'archived'].includes(status)) {
