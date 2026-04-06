@@ -121,11 +121,14 @@ const description = import.meta.env.PUBLIC_META_DESCRIPTION || `Compare fixed-ra
       let cachedThreshold = 0;
 
       function updateThreshold() {
-        const vh = window.innerHeight;
-        cachedThreshold = vh * 0.25;
+        // Read innerHeight inside RAF to avoid forced synchronous reflow.
+        // CSS dvh would be ideal but Safari <15.4 doesn't support it.
+        requestAnimationFrame(function () {
+          cachedThreshold = window.innerHeight * 0.25;
+        });
       }
 
-      const ro = new ResizeObserver(updateThreshold);
+      var ro = new ResizeObserver(updateThreshold);
       ro.observe(document.documentElement);
       updateThreshold();
 
