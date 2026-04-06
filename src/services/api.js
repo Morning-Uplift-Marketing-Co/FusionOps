@@ -90,7 +90,8 @@ async function request(path, opts = {}) {
         url.includes('/cloudflare/') ||
         url.includes('/generate-thumb') ||
         url.includes('/upload-thumb') ||
-        url.includes('/adspower/proxy');
+        url.includes('/adspower/proxy') ||
+        url.includes('/ai/generate');
     const timeoutMs = opts.timeout || (isSlowEndpoint ? (url.includes('/generate-thumb') ? 90000 : 45000) : 10000);
 
     // Add timeout to prevent hanging requests
