@@ -2,7 +2,6 @@
   "templateId": "pastel-lending-bolt",
   "cfPagesProject": "lp-scratchpayeasy-com",
   "cfZoneId": "",
-  "skipDnsUpsert": true,
   "cfApiToken": "",
   "cfAccountId": "",
   "brand": "scratchpay",

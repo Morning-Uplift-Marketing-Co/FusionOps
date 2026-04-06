@@ -2,7 +2,6 @@
   "templateId": "pet-loans-02b",
   "cfPagesProject": "lp-scratchtopay-com",
   "cfZoneId": "",
-  "skipDnsUpsert": true,
   "cfApiToken": "",
   "cfAccountId": "",
   "brand": "ScratchPay",
@@ -19,8 +18,8 @@
   "amountMax": 5000,
   "aprMin": 5.99,
   "aprMax": 35.99,
-  "primaryColor": "",
-  "accentColor": "",
+  "primaryColor": "#3b5bdb",
+  "accentColor": "#f97316",
   "conversionId": "AW-16550993349",
   "gtagFormStartLabel": "CZW0CK7A3JYcEMW7kNQ9",
   "gtagFormSubmitLabel": "CZW0CK7A3JYcEMW7kNQ9",
@@ -40,5 +39,5 @@
   "trustBadges": "",
   "reviews": [],
   "showReviews": true,
-  "deployedAt": "2026-04-06T13:48:14.386Z"
+  "deployedAt": "2026-04-06T13:28:49.886Z"
 }

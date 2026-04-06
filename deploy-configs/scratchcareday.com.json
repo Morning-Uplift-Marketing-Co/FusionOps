@@ -2,7 +2,6 @@
   "templateId": "pet-loans-01b",
   "cfPagesProject": "lp-scratchcareday-com",
   "cfZoneId": "",
-  "skipDnsUpsert": true,
   "cfApiToken": "",
   "cfAccountId": "",
   "brand": "Scratchpay",
@@ -40,6 +39,5 @@
   "trustBadges": "",
   "reviews": [],
   "showReviews": false,
-
-  "deployedAt": "2026-04-06T01:30:00.000Z"
   "deployedAt": "2026-04-06T04:57:51.858Z"
+}
