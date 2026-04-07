@@ -266,6 +266,28 @@ const trustItems = [
       }
     }
 
+    // Initialize form from URL parameters
+    (function() {
+      var urlParams = new URLSearchParams(window.location.search);
+      var urlZip = urlParams.get('zip');
+      var urlAmount = urlParams.get('amount');
+
+      if (urlZip && zipInput) {
+        zipInput.value = urlZip;
+        updateCityHint(urlZip);
+      }
+
+      if (urlAmount && grid) {
+        var targetBtn = grid.querySelector('[data-amount="' + urlAmount + '"]');
+        if (targetBtn) {
+          grid.querySelectorAll('.amount-btn').forEach(function(b) {
+            b.classList.remove('amount-btn--active');
+          });
+          targetBtn.classList.add('amount-btn--active');
+        }
+      }
+    })();
+
     if (grid) {
       grid.addEventListener('click', function(e) {
         var btn = e.target.closest('.amount-btn');
@@ -290,16 +312,11 @@ const trustItems = [
       ctaBtn.addEventListener('click', function() {
         var zip = zipInput ? zipInput.value.trim() : '';
         var activeAmountBtn = grid ? grid.querySelector('.amount-btn--active') : null;
-        var amount = activeAmountBtn ? activeAmountBtn.dataset.amount : '';
+        var amount = activeAmountBtn ? activeAmountBtn.dataset.amount : '1500'; // Default: $1,500
 
         if (!isValidZip(zip)) {
           showError('Please enter a valid 5-digit ZIP code.');
           if (zipInput) zipInput.focus();
-          return;
-        }
-
-        if (!amount) {
-          showError('Please select a care plan amount.');
           return;
         }
 
