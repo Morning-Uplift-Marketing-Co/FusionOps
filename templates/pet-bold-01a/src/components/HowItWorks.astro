@@ -1,0 +1,95 @@
+---
+const redirectUrl = import.meta.env.PUBLIC_REDIRECT_URL || '${redirectUrl}';
+
+const steps = [
+  {
+    num: '01',
+    title: 'Get approved in 60 seconds—no credit damage',
+    desc: 'Enter basic details and our proprietary approval technology returns your payment plan options instantly. Soft inquiry only—your credit score stays untouched.',
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+    accent: 'hsl(170 51% 40%)',
+    accentBg: 'hsl(170 51% 50% / 0.12)',
+  },
+  {
+    num: '02',
+    title: 'Review transparent options—choose your plan',
+    desc: 'Compare plans side by side with full transparency. Monthly payment, total cost, and APR shown upfront—including 0% APR options for qualified pet owners.',
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
+    accent: 'hsl(346 54% 58%)',
+    accentBg: 'hsl(346 54% 90% / 0.5)',
+  },
+  {
+    num: '03',
+    title: 'Confirm digitally—no paperwork',
+    desc: 'Direct integration with your vet clinic\'s system. No printing, no faxing, no branch visits. Confirm your plan from any device—even from the waiting room.',
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>`,
+    accent: 'hsl(170 51% 40%)',
+    accentBg: 'hsl(170 51% 80% / 0.3)',
+  },
+  {
+    num: '04',
+    title: 'Focus on what matters—your pet\'s recovery',
+    desc: 'The financial decision is complete. Fixed monthly payment, clear timeline, known cost. Your budget stays predictable while your pet gets the care they need today.',
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+    accent: 'hsl(170 51% 40%)',
+    accentBg: 'hsl(170 51% 50% / 0.12)',
+  },
+];
+---
+
+<section id="how-it-works" class="py-20 md:py-28 px-6">
+  <div class="max-w-6xl mx-auto">
+
+    <div class="text-center mb-16">
+      <span class="section-label">The Intelligent Way to Finance Veterinary Care</span>
+      <h2 class="section-title max-w-xl mx-auto">How It Works</h2>
+      <p class="text-foreground/70 text-base max-w-lg mx-auto">
+        Payment plans built for veterinary emergencies—fast, transparent, and designed around your budget, not a credit committee's calendar.
+      </p>
+    </div>
+
+    <!-- Steps grid -->
+    <div class="grid md:grid-cols-4 gap-4 relative">
+      <!-- Connecting line (desktop) -->
+      <div class="hidden md:block absolute top-[2.75rem] left-[12.5%] right-[12.5%] h-px pointer-events-none"
+        style="background: linear-gradient(90deg, transparent, hsl(var(--border)), hsl(var(--border)), transparent);"></div>
+
+      {steps.map((step, i) => (
+        <div class={`premium-card p-6 flex flex-col gap-5 relative reveal${i === 1 ? ' reveal-d1' : i === 2 ? ' reveal-d2' : i === 3 ? ' reveal-d3' : ''}`}>
+          <!-- Step number -->
+          <div class="flex items-center justify-between">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={`background: ${step.accentBg}; color: ${step.accent};`}
+              set:html={step.icon}
+            />
+            <span class="font-mono text-xs font-semibold tracking-widest"
+              style={`color: ${step.accent}; opacity: 0.5;`}>{step.num}</span>
+          </div>
+
+          <div>
+            <h3 class="font-display font-bold text-foreground text-base mb-2">{step.title}</h3>
+            <p class="text-foreground/70 text-sm leading-relaxed">{step.desc}</p>
+          </div>
+
+          {i < 3 && (
+            <div class="md:hidden h-px -mx-6 mt-auto" style="background: hsl(var(--border));"></div>
+          )}
+        </div>
+      ))}
+    </div>
+
+    <!-- Bottom CTA strip -->
+    <div class="mt-10 glass-card p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div>
+        <p class="font-display font-bold text-foreground text-base">See your payment options before you commit to anything</p>
+        <p class="text-foreground/70 text-sm">60-second approval check. Soft inquiry only—no credit score impact.</p>
+      </div>
+      <a href={redirectUrl} class="btn-primary flex-shrink-0">
+        Get Your Payment Plan Now →
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+</section>
