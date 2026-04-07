@@ -1,53 +1,37 @@
 {
-  "session_id": "session-2026-04-05-1657",
-  "started": "2026-04-05T09:57:46.283Z",
+  "session_id": "session-2026-04-07-2244",
+  "started": "2026-04-07T15:44:56.813Z",
   "files_read": {
-    "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/bold-jennings/.github/workflows/deploy-lp.yml": {
-      "count": 4,
-      "tokens": 10836,
-      "first_read": "2026-04-05T09:58:43.287Z"
+    "H:/DEV/projects/ppc_project/ppc-claude-web-V1/deploy-configs/monneykey.com.json": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-07T15:45:00.693Z"
+    },
+    "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/goofy-mestorf/deploy-configs/monneykey.com.json": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-07T15:45:10.696Z"
+    },
+    "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/goofy-mestorf/templates/pet-bold-02a/src/components/Hero.astro": {
+      "count": 2,
+      "tokens": 3999,
+      "first_read": "2026-04-07T15:45:51.909Z"
     }
   },
   "files_written": [
     {
-      "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/bold-jennings/.github/workflows/deploy-lp.yml",
+      "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/goofy-mestorf/templates/pet-bold-02a/src/components/Hero.astro",
       "action": "edit",
-      "tokens": 226,
-      "at": "2026-04-05T10:00:47.938Z"
-    },
-    {
-      "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/bold-jennings/scripts/build-variant.mjs",
-      "action": "edit",
-      "tokens": 182,
-      "at": "2026-04-05T10:03:12.302Z"
-    },
-    {
-      "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/bold-jennings/deploy-configs/scratchpayeasy.com.json",
-      "action": "edit",
-      "tokens": 12,
-      "at": "2026-04-05T10:03:17.367Z"
-    },
-    {
-      "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/bold-jennings/.github/workflows/deploy-lp.yml",
-      "action": "edit",
-      "tokens": 135,
-      "at": "2026-04-05T10:09:40.832Z"
-    },
-    {
-      "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/bold-jennings/deploy-configs/scratchpayeasy.com.json",
-      "action": "edit",
-      "tokens": 12,
-      "at": "2026-04-05T10:09:45.323Z"
+      "tokens": 144,
+      "at": "2026-04-07T15:46:40.474Z"
     }
   ],
   "edit_counts": {
-    ".github/workflows/deploy-lp.yml": 2,
-    "scripts/build-variant.mjs": 1,
-    "deploy-configs/scratchpayeasy.com.json": 2
+    "templates/pet-bold-02a/src/components/Hero.astro": 1
   },
   "anatomy_hits": 0,
-  "anatomy_misses": 1,
-  "repeated_reads_warned": 3,
+  "anatomy_misses": 3,
+  "repeated_reads_warned": 1,
   "cerebrum_warnings": 0,
   "stop_count": 0
 }
