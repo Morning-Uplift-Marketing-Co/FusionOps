@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-07T15:46:40.473Z
-> Files: 1 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-07T17:56:20.771Z
+> Files: 2 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../
 
@@ -300,6 +300,10 @@
 ## scripts/
 
 
+## templates/pet-bold-01a/src/components/
+
+- `Hero.astro` — Astro: Hero (~4162 tok)
+
 ## templates/pet-bold-02a/src/components/
 
-- `Hero.astro` — Astro: Hero (~3999 tok)
+- `Hero.astro` — Astro: Hero (~4162 tok)
