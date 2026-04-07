@@ -112,6 +112,86 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-05T10:09:45.324Z"
+    },
+    {
+      "id": "bug-008",
+      "timestamp": "2026-04-07T01:37:36.178Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../../deploy-configs/scratchcareday.com.json",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 7→7 lines (6 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-07T01:37:36.178Z"
+    },
+    {
+      "id": "bug-009",
+      "timestamp": "2026-04-07T03:54:02.207Z",
+      "error_message": "Significant refactor of ",
+      "file": "deploy-configs/scratchtopay.com.json",
+      "root_cause": "4 lines replaced/restructured",
+      "fix": "Rewrote 7→7 lines (4 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-07T03:54:02.207Z"
+    },
+    {
+      "id": "bug-010",
+      "timestamp": "2026-04-07T15:01:16.645Z",
+      "error_message": "Significant refactor of ",
+      "file": "scripts/validate-voluum-dns.mjs",
+      "root_cause": "4 lines replaced/restructured",
+      "fix": "Rewrote 16→25 lines (4 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "mjs"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-07T15:01:16.645Z"
+    },
+    {
+      "id": "bug-011",
+      "timestamp": "2026-04-07T15:13:50.452Z",
+      "error_message": "Significant refactor of ",
+      "file": "scripts/validate-voluum-dns.mjs",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 4→4 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "mjs"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-07T15:13:50.452Z"
+    },
+    {
+      "id": "bug-012",
+      "timestamp": "2026-04-07T15:30:36.724Z",
+      "error_message": "Missing import: ./${{ steps.config.outputs.file }}",
+      "file": ".github/workflows/deploy-lp.yml",
+      "root_cause": "Module(s) not imported: ./${{ steps.config.outputs.file }}",
+      "fix": "Added import(s) for ./${{ steps.config.outputs.file }}",
+      "tags": [
+        "auto-detected",
+        "missing-import",
+        "yml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-07T15:30:36.724Z"
     }
   ]
 }
