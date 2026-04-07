@@ -604,6 +604,8 @@ const RUNTIME_CONFIG_ASTRO = `
   window.__VOLUUM_DOMAIN__ = '%%PUBLIC_VOLUUMDOMAIN%%';
   window.__CONVERSION_ID__ = '%%PUBLIC_CONVERSIONID%%';
   window.__VOLUUM_CLICK_URL__ = '%%PUBLIC_VOLUUM_CLICK_URL%%';
+  window.__FORM_START_LABEL__ = '%%PUBLIC_FORMSTARTLABEL%%';
+  window.__FORM_SUBMIT_LABEL__ = '%%PUBLIC_FORMSUBMITLABEL%%';
   if (!window.__VOLUUM_DOMAIN__ && window.__VOLUUM_CLICK_URL__) {
     try {
       var __vh = new URL(String(window.__VOLUUM_CLICK_URL__)).hostname;
@@ -717,7 +719,9 @@ function injectIntoAstro(filePath, projectRoot) {
     if (fmMatch) {
       const additions = '\nconst __voluumDomain = import.meta.env.PUBLIC_VOLUUMDOMAIN || \'\';\n'
         + 'const __conversionId = import.meta.env.PUBLIC_CONVERSIONID || \'\';\n'
-        + 'const __voluumClickUrl = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || \'\';';
+        + 'const __voluumClickUrl = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || \'\';\n'
+        + 'const __formStartLabel = import.meta.env.PUBLIC_FORMSTARTLABEL || \'\';\n'
+        + 'const __formSubmitLabel = import.meta.env.PUBLIC_FORMSUBMITLABEL || \'\';';
       const newFm = fmMatch[0].replace(/\r?\n---\s*$/, `${additions}\n---`);
       content = content.replace(fmMatch[0], newFm);
     }
@@ -728,12 +732,14 @@ function injectIntoAstro(filePath, projectRoot) {
     .replace("'%%PUBLIC_VOLUUMDOMAIN%%'", hasVoluumVar ? 'voluumDomain' : '__voluumDomain')
     .replace("'%%PUBLIC_CONVERSIONID%%'", hasVoluumVar ? 'conversionId || ""' : '__conversionId')
     .replace("'%%PUBLIC_VOLUUM_CLICK_URL%%'", hasVoluumVar ? 'voluumClickUrl || ""' : '__voluumClickUrl')
+    .replace("'%%PUBLIC_FORMSTARTLABEL%%'", '__formStartLabel')
+    .replace("'%%PUBLIC_FORMSUBMITLABEL%%'", '__formSubmitLabel')
     // For Astro, use define:vars or template literals
     .replace('<script is:inline>', () => {
       const varName = hasVoluumVar ? 'voluumDomain' : '__voluumDomain';
       const cidName = hasVoluumVar ? 'conversionId' : '__conversionId';
       const clickName = hasVoluumVar ? 'voluumClickUrl' : '__voluumClickUrl';
-      return `<script is:inline define:vars={{ ${varName}, ${cidName}, ${clickName} }}>`;
+      return `<script is:inline define:vars={{ ${varName}, ${cidName}, ${clickName}, __formStartLabel, __formSubmitLabel }}>`;
     })
     .replace("= '%%PUBLIC_VOLUUMDOMAIN%%'", () => {
       const varName = hasVoluumVar ? 'voluumDomain' : '__voluumDomain';
@@ -746,7 +752,9 @@ function injectIntoAstro(filePath, projectRoot) {
     .replace("= '%%PUBLIC_VOLUUM_CLICK_URL%%'", () => {
       const clickName = hasVoluumVar ? 'voluumClickUrl' : '__voluumClickUrl';
       return `= ${clickName}`;
-    });
+    })
+    .replace("= '%%PUBLIC_FORMSTARTLABEL%%'", '= __formStartLabel')
+    .replace("= '%%PUBLIC_FORMSUBMITLABEL%%'", '= __formSubmitLabel');
 
   // Idempotently clean old tracking to prevent duplicates
  // content = cleanExistingTracking(content);
