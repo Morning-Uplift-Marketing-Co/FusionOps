@@ -266,6 +266,31 @@ const trustItems = [
       }
     }
 
+    // Initialize form from URL parameters & auto-focus ZIP
+    (function() {
+      var urlParams = new URLSearchParams(window.location.search);
+      var urlZip = urlParams.get('zip');
+      var urlAmount = urlParams.get('amount');
+
+      if (urlZip && zipInput) {
+        zipInput.value = urlZip;
+        updateCityHint(urlZip);
+      } else if (zipInput) {
+        // Auto-focus ZIP input if no URL parameter (helps users understand they need to enter it)
+        setTimeout(function() { zipInput.focus(); }, 500);
+      }
+
+      if (urlAmount && grid) {
+        var targetBtn = grid.querySelector('[data-amount="' + urlAmount + '"]');
+        if (targetBtn) {
+          grid.querySelectorAll('.amount-btn').forEach(function(b) {
+            b.classList.remove('amount-btn--active');
+          });
+          targetBtn.classList.add('amount-btn--active');
+        }
+      }
+    })();
+
     if (grid) {
       grid.addEventListener('click', function(e) {
         var btn = e.target.closest('.amount-btn');
