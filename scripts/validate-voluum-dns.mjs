@@ -166,17 +166,18 @@ async function main() {
   // Fetch Voluum domain map (for auto-fix)
   const voluumMap = autoFix ? await getVoluumDomains() : null;
 
-  let issues = 0;
+  let issues = 0;    // hard errors (DNS dead, bad CNAME) → exit 1
+  let warnings = 0;  // soft warnings (missing config field) → exit 0
   let fixed = 0;
 
   for (const cfg of configs) {
     const { voluumDomain, voluumCfCname, domain, file } = cfg;
     process.stdout.write(`  ${voluumDomain.padEnd(40)}`);
 
-    // 1. Check config has CloudFront CNAME
+    // 1. Check config has CloudFront CNAME (warning only, not a deploy blocker)
     if (!voluumCfCname) {
-      console.log('⚠ missing voluumCfCname in config');
-      issues++;
+      console.log('⚠ missing voluumCfCname in config (warning)');
+      warnings++;
 
       if (autoFix && voluumMap?.[voluumDomain]) {
         // Update config file
@@ -225,7 +226,19 @@ async function main() {
     console.log('✓ OK');
   }
 
-  console.log(`\n${issues === 0 ? '✅ All good!' : `⚠ ${issues} issue(s) found${autoFix ? `, ${fixed} fixed` : ' — run with --fix to auto-repair'}`}\n`);
+  const summary = [];
+  if (issues > 0) summary.push(`${issues} error(s)`);
+  if (warnings > 0) summary.push(`${warnings} warning(s)`);
+  if (fixed > 0) summary.push(`${fixed} fixed`);
+
+  if (issues === 0 && warnings === 0) {
+    console.log('\n✅ All good!\n');
+  } else if (issues === 0) {
+    console.log(`\n✅ OK with ${summary.join(', ')}\n`);
+  } else {
+    console.log(`\n❌ ${summary.join(', ')}${autoFix ? '' : ' — run with --fix to auto-repair'}\n`);
+  }
+  // Only fail on hard errors (DNS dead, bad CNAME), not warnings
   process.exit(issues > fixed ? 1 : 0);
 }
 
