@@ -2,14 +2,14 @@
   "version": 1,
   "created_at": "2026-04-05T01:06:32.811Z",
   "lifetime": {
-    "total_tokens_estimated": 46041,
-    "total_reads": 422,
-    "total_writes": 85,
-    "total_sessions": 17,
-    "anatomy_hits": 9,
-    "anatomy_misses": 335,
-    "repeated_reads_blocked": 45,
-    "estimated_savings_vs_bare_cli": 20259
+    "total_tokens_estimated": 54911,
+    "total_reads": 429,
+    "total_writes": 89,
+    "total_sessions": 20,
+    "anatomy_hits": 10,
+    "anatomy_misses": 341,
+    "repeated_reads_blocked": 46,
+    "estimated_savings_vs_bare_cli": 24458
   },
   "sessions": [
     {
@@ -3486,6 +3486,118 @@
         "reads_count": 7,
         "writes_count": 12,
         "repeated_reads_blocked": 3,
+        "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-04-07-2244",
+      "started": "2026-04-07T15:44:56.813Z",
+      "ended": "2026-04-07T15:49:48.158Z",
+      "reads": [
+        {
+          "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/deploy-configs/monneykey.com.json",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/goofy-mestorf/deploy-configs/monneykey.com.json",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/goofy-mestorf/templates/pet-bold-02a/src/components/Hero.astro",
+          "tokens_estimated": 3999,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/goofy-mestorf/templates/pet-bold-01a/src/components/Hero.astro",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/goofy-mestorf/.github/workflows/deploy-lp.yml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/goofy-mestorf/templates/pet-bold-02a/src/components/Hero.astro",
+          "tokens_estimated": 144,
+          "action": "edit"
+        },
+        {
+          "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/goofy-mestorf/templates/pet-bold-01a/src/components/Hero.astro",
+          "tokens_estimated": 144,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 3999,
+        "output_tokens_estimated": 288,
+        "reads_count": 5,
+        "writes_count": 2,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-04-07-2347",
+      "started": "2026-04-07T16:47:58.026Z",
+      "ended": "2026-04-07T16:52:40.015Z",
+      "reads": [
+        {
+          "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/goofy-mestorf/deploy-configs/monneykey.com.json",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 0,
+        "reads_count": 1,
+        "writes_count": 0,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-04-07-0018",
+      "started": "2026-04-07T17:18:59.092Z",
+      "ended": "2026-04-07T17:23:15.914Z",
+      "reads": [
+        {
+          "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/goofy-mestorf/templates/pet-bold-02a/src/components/Hero.astro",
+          "tokens_estimated": 3999,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/goofy-mestorf/templates/pet-bold-02a/src/components/Hero.astro",
+          "tokens_estimated": 292,
+          "action": "edit"
+        },
+        {
+          "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/goofy-mestorf/templates/pet-bold-01a/src/components/Hero.astro",
+          "tokens_estimated": 292,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 3999,
+        "output_tokens_estimated": 584,
+        "reads_count": 1,
+        "writes_count": 2,
+        "repeated_reads_blocked": 0,
         "anatomy_lookups": 1
       }
     }
