@@ -1,7 +1,13 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-05T10:09:45.320Z
-> Files: 3 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-07T15:46:40.473Z
+> Files: 1 tracked | Anatomy hits: 0 | Misses: 0
+
+## ../../
+
+
+## ../../../deploy-configs/
+
 
 ## ./
 
@@ -182,7 +188,6 @@
 
 ## .github/workflows/
 
-- `deploy-lp.yml` — .json" (~10744 tok)
 
 ## apps/
 
@@ -291,8 +296,10 @@
 
 ## deploy-configs/
 
-- `scratchpayeasy.com.json` — A: E, B (~1168 tok)
 
 ## scripts/
 
-- `build-variant.mjs` — Build Variant — Theme + Content + Tracking replacement for templates (~2670 tok)
+
+## templates/pet-bold-02a/src/components/
+
+- `Hero.astro` — Astro: Hero (~3999 tok)
