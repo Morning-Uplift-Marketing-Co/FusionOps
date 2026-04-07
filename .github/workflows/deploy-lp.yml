@@ -219,6 +219,13 @@ jobs:
         working-directory: ${{ steps.template.outputs.dir }}
         run: node $GITHUB_WORKSPACE/scripts/validate-template-tracking.mjs .
 
+      - name: Validate Voluum DNS (pre-deploy)
+        run: node scripts/validate-voluum-dns.mjs --domain ${{ steps.config.outputs.domain }}
+        env:
+          VOLUUM_ACCESS_KEY_ID: ${{ secrets.VOLUUM_ACCESS_KEY_ID }}
+          VOLUUM_ACCESS_KEY: ${{ secrets.VOLUUM_ACCESS_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
       - name: Patch build script for CI
         working-directory: ${{ steps.template.outputs.dir }}
         run: |
