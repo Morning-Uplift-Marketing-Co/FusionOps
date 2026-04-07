@@ -322,16 +322,11 @@ const trustItems = [
       ctaBtn.addEventListener('click', function() {
         var zip = zipInput ? zipInput.value.trim() : '';
         var activeAmountBtn = grid ? grid.querySelector('.amount-btn--active') : null;
-        var amount = activeAmountBtn ? activeAmountBtn.dataset.amount : '';
+        var amount = activeAmountBtn ? activeAmountBtn.dataset.amount : '1500'; // Default: $1,500
 
         if (!isValidZip(zip)) {
           showError('Please enter a valid 5-digit ZIP code.');
           if (zipInput) zipInput.focus();
-          return;
-        }
-
-        if (!amount) {
-          showError('Please select a care plan amount.');
           return;
         }
 
