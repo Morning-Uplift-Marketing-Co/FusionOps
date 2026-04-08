@@ -266,7 +266,7 @@ const trustItems = [
       }
     }
 
-    // Initialize form from URL parameters
+    // Initialize form from URL parameters & auto-focus ZIP
     (function() {
       var urlParams = new URLSearchParams(window.location.search);
       var urlZip = urlParams.get('zip');
@@ -275,6 +275,9 @@ const trustItems = [
       if (urlZip && zipInput) {
         zipInput.value = urlZip;
         updateCityHint(urlZip);
+      } else if (zipInput) {
+        // Auto-focus ZIP input if no URL parameter (helps users understand they need to enter it)
+        setTimeout(function() { zipInput.focus(); }, 500);
       }
 
       if (urlAmount && grid) {
