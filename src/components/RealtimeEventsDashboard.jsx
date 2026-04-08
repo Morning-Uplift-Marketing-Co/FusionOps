@@ -107,6 +107,8 @@ export function RealtimeEventsDashboard({ sites = [], embedded = false }) {
   const [windowMinutes, setWindowMinutes] = useState(15);
   const [pollSeconds, setPollSeconds] = useState(3);
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
+  const [crawlerHealth, setCrawlerHealth] = useState(null);
+  const [crawlerError, setCrawlerError] = useState("");
 
   const domainOptions = useMemo(() => {
     const fromSites = (sites || []).map((s) => s.domain).filter(Boolean);
@@ -119,6 +121,7 @@ export function RealtimeEventsDashboard({ sites = [], embedded = false }) {
     setLoading(true);
     setError("");
     setPostbackError("");
+    setCrawlerError("");
     const since = Math.floor(Date.now() / 1000) - Math.max(1, Number(windowMinutes || 15)) * 60;
     const pixelParams = new URLSearchParams({ limit: "400", since: String(since) });
     if (selectedDomain) pixelParams.set("domain", selectedDomain);
@@ -132,6 +135,18 @@ export function RealtimeEventsDashboard({ sites = [], embedded = false }) {
       else setEvents(normalizeRows(res.events || []));
     } catch (e) {
       setError(e?.message || "Failed to load pixel events");
+    }
+
+    try {
+      const chParams = new URLSearchParams({ since: String(since) });
+      if (selectedDomain) chParams.set("domain", selectedDomain);
+      const ch = await api.get(`/api/pixel/crawler-health?${chParams.toString()}`);
+      if (ch?.error) setCrawlerError(ch.error || "Failed to load crawler health");
+      else if (!ch?.success) setCrawlerError(ch?.error || "Unexpected response from /api/pixel/crawler-health");
+      else setCrawlerHealth(ch);
+    } catch (e) {
+      setCrawlerError(e?.message || "Failed to load crawler health");
+      setCrawlerHealth(null);
     }
 
     try {
@@ -321,11 +336,16 @@ export function RealtimeEventsDashboard({ sites = [], embedded = false }) {
           </div>
         </div>
 
-        {(error || postbackError) && (
+        {(error || postbackError || crawlerError) && (
           <div className="mt-3 space-y-2">
             {error && (
               <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-300">
                 Pixel: {error}
+              </div>
+            )}
+            {crawlerError && (
+              <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                Crawler UA summary: {crawlerError}
               </div>
             )}
             {postbackError && (
@@ -338,13 +358,46 @@ export function RealtimeEventsDashboard({ sites = [], embedded = false }) {
       </div>
 
       {view === "pixel" ? (
-        <div className="grid md:grid-cols-5 gap-3">
-          <StatCard label="Events" value={stats.total} />
-          <StatCard label="Page Views (pv)" value={stats.pv} />
-          <StatCard label="Form Start" value={stats.formStart} />
-          <StatCard label="Form Submit" value={stats.formSubmit} />
-          <StatCard label="Sold Lead" value={stats.soldLead} />
-        </div>
+        <>
+          <div className="grid md:grid-cols-5 gap-3">
+            <StatCard label="Events" value={stats.total} />
+            <StatCard label="Page Views (pv)" value={stats.pv} />
+            <StatCard label="Form Start" value={stats.formStart} />
+            <StatCard label="Form Submit" value={stats.formSubmit} />
+            <StatCard label="Sold Lead" value={stats.soldLead} />
+          </div>
+          <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 space-y-2">
+            <div className="text-sm font-semibold">Google crawler–like hits (pixel User-Agent)</div>
+            <p className="text-[11px] text-[hsl(var(--muted-foreground))] leading-relaxed">
+              {crawlerHealth?.disclaimer ||
+                "Counts User-Agent on hits to the first-party pixel endpoint only. HTML-only fetches may not execute the pixel."}
+            </p>
+            {crawlerHealth?.buckets ? (
+              <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                <StatCard
+                  label="AdsBot-Google"
+                  value={crawlerHealth.buckets.adsbot_google ?? 0}
+                />
+                <StatCard
+                  label="Mediapartners-Google"
+                  value={crawlerHealth.buckets.mediapartners_google ?? 0}
+                />
+                <StatCard
+                  label="Google Ads–related UA"
+                  value={crawlerHealth.buckets.google_ads_related_ua_hits ?? 0}
+                />
+                <StatCard
+                  label="Googlebot (non-AdsBot)"
+                  value={crawlerHealth.buckets.googlebot ?? 0}
+                />
+              </div>
+            ) : (
+              <div className="text-xs text-[hsl(var(--muted-foreground))]">
+                No crawler bucket data yet (see disclaimer above or deploy latest API Worker).
+              </div>
+            )}
+          </div>
+        </>
       ) : (
         <div className="grid md:grid-cols-5 gap-3">
           <StatCard label="Postbacks" value={postbackStats.total} />
