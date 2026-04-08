@@ -168,7 +168,12 @@ describe('Class Name Transformation', () => {
 
     let transformedScript = script;
     for (const [original, randomized] of Object.entries(map)) {
-      // Match "classname" or 'classname' in JS
+      // Match '.class' / ".class" (e.g. querySelector('.hero'))
+      transformedScript = transformedScript.replace(
+        new RegExp(`(['"])\\.${escapeRegex(original)}\\1`, 'g'),
+        `$1.${randomized}$1`
+      );
+      // Match "classname" or 'classname' in JS (e.g. classList.add('container'))
       transformedScript = transformedScript.replace(
         new RegExp(`["']${escapeRegex(original)}["']`, 'g'),
         `"${randomized}"`
@@ -180,8 +185,8 @@ describe('Class Name Transformation', () => {
     expect(transformedScript).not.toContain("'container'");
     expect(transformedScript).not.toContain("'title'");
 
-    // Verify randomized names are present
-    expect(transformedScript).toContain(`"${map.hero}"`);
+    // Verify randomized names are present (hero uses '.class' form; others may use double quotes)
+    expect(transformedScript).toContain(`.${map.hero}`);
     expect(transformedScript).toContain(`"${map.container}"`);
   });
 
