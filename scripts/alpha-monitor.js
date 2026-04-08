@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * Alpha Test Daily Monitoring Script
  *
