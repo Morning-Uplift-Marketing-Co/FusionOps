@@ -40,5 +40,7 @@
   "trustBadges": "",
   "reviews": [],
   "showReviews": true,
-  "deployedAt": "2026-04-07T18:54:13.878Z"
+  "deployedAt": "2026-04-07T18:54:13.878Z",
+  "_version": "0.12g78rktpd0e",
+  "_buildForce": 1775585704791
 }
