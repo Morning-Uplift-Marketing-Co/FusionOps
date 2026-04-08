@@ -2062,7 +2062,6 @@ export default {
     // Uses stored User-Agent on pixel_events (see /e handler). Not a full LP HTML crawl log.
     if (path === '/api/pixel/crawler-health' && method === 'GET') {
       try {
-        const primaryDb = env.PIXEL_DB || env.DB;
         const domain = String(url.searchParams.get('domain') || '').trim();
         const sinceParam = parseInt(url.searchParams.get('since') || '0', 10);
         const since = Number.isFinite(sinceParam) && sinceParam > 0 ? sinceParam : 0;
@@ -2072,6 +2071,13 @@ export default {
             .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='pixel_events' LIMIT 1")
             .first();
           if (!tableExists) return null;
+
+          // Legacy pixel_worker schema omitted ua; add column so crawler stats and /e inserts can use it.
+          try {
+            await d1Conn.prepare('ALTER TABLE pixel_events ADD COLUMN ua TEXT').run();
+          } catch (_e) {
+            /* column already exists */
+          }
 
           const schema = await d1Conn.prepare('PRAGMA table_info(pixel_events)').all();
           const columns = new Set((schema?.results || []).map((c) => String(c.name || '')));
@@ -2126,8 +2132,21 @@ export default {
           };
         }
 
-        const first = await aggregateCrawlerHits(primaryDb);
-        if (!first) {
+        const dbList = [];
+        if (env.PIXEL_DB) dbList.push(env.PIXEL_DB);
+        if (env.DB && (!env.PIXEL_DB || env.DB !== env.PIXEL_DB)) dbList.push(env.DB);
+
+        let merged = null;
+        let sawTable = false;
+        for (const d1Conn of dbList) {
+          const result = await aggregateCrawlerHits(d1Conn);
+          if (result === null) continue;
+          sawTable = true;
+          if (result.unsupported || !result.row) continue;
+          merged = merged ? mergeRows(merged, result.row) : result.row;
+        }
+
+        if (!sawTable) {
           return json({
             success: true,
             domain: domain || null,
@@ -2137,23 +2156,15 @@ export default {
               'No pixel_events table yet. Events appear after traffic hits t.{domain}/e.',
           });
         }
-        if (first.unsupported) {
+        if (!merged) {
           return json({
             success: true,
             domain: domain || null,
             since,
             buckets: null,
             disclaimer:
-              'This pixel_events schema has no ua column; deploy the latest Worker or migrate D1 to track User-Agent.',
+              'pixel_events exists but User-Agent could not be aggregated (unexpected schema).',
           });
-        }
-
-        let merged = first.row;
-        if (env.PIXEL_DB && env.DB && env.PIXEL_DB !== env.DB) {
-          const second = await aggregateCrawlerHits(env.DB);
-          if (second && !second.unsupported && second.row) {
-            merged = mergeRows(merged, second.row);
-          }
         }
 
         const r = merged || {};
