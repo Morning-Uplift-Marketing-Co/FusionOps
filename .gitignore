@@ -18,6 +18,7 @@ alpha-monitoring.log
 .DS_Store
 Thumbs.db
 .claude/
+.codex/
 # .planning/ — tracked for GSD workflow
 logs/
 *.zip
