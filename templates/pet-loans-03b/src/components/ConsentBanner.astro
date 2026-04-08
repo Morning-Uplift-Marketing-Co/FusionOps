@@ -1,0 +1,101 @@
+---
+const brand = import.meta.env.PUBLIC_BRAND || 'We';
+---
+
+<div
+  id="consent-banner"
+  role="dialog"
+  aria-label="Cookie consent"
+  aria-live="polite"
+  class="consent-banner fixed bottom-0 left-0 right-0 z-[300] px-4 py-4 md:px-6 md:py-5 border-t border-border/60"
+  style="display:none;"
+>
+  <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
+    <div class="flex items-start gap-3 flex-1 min-w-0">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="hsl(193 46% 44%)" stroke-width="2" stroke-linecap="round" class="flex-shrink-0 mt-0.5" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>
+      </svg>
+      <p class="text-foreground/70 text-xs leading-relaxed">
+        {brand} uses cookies and Google Analytics to measure site performance and improve your experience. Your data is never sold.
+        <button data-popup="Privacy Policy" class="underline hover:text-foreground/90 transition-colors ml-1">Privacy Policy</button>
+      </p>
+    </div>
+    <div class="flex items-center gap-2 flex-shrink-0">
+      <button
+        id="consent-reject"
+        class="px-4 py-2 rounded-lg text-xs font-semibold text-foreground/60 hover:text-foreground/80 border border-border hover:border-border/80 transition-colors"
+      >
+        Decline
+      </button>
+      <button
+        id="consent-accept"
+        class="px-5 py-2 rounded-lg text-xs font-semibold text-white transition-colors"
+        style="background: hsl(193 46% 44%);"
+      >
+        Accept All
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .consent-banner {
+    background: hsl(var(--background));
+    box-shadow: 0 -4px 24px hsl(0 0% 0% / 0.06);
+  }
+</style>
+
+<script>
+  const CONSENT_KEY = 'sp_consent_v2';
+
+  function updateGtag(granted: boolean) {
+    if (typeof (window as any).gtag !== 'function') return;
+    (window as any).gtag('consent', 'update', {
+      ad_storage:         granted ? 'granted' : 'denied',
+      ad_user_data:       granted ? 'granted' : 'denied',
+      ad_personalization: granted ? 'granted' : 'denied',
+      analytics_storage:  granted ? 'granted' : 'denied',
+    });
+  }
+
+  function hideBanner() {
+    const banner = document.getElementById('consent-banner');
+    if (banner) banner.style.display = 'none';
+  }
+
+  function showBanner() {
+    const banner = document.getElementById('consent-banner');
+    if (banner) banner.style.display = '';
+  }
+
+  function initConsent() {
+    const stored = localStorage.getItem(CONSENT_KEY);
+
+    if (stored === 'granted') {
+      updateGtag(true);
+      return;
+    }
+
+    if (stored === 'denied') {
+      updateGtag(false);
+      return;
+    }
+
+    showBanner();
+
+    document.getElementById('consent-accept')?.addEventListener('click', () => {
+      localStorage.setItem(CONSENT_KEY, 'granted');
+      updateGtag(true);
+      hideBanner();
+    });
+
+    document.getElementById('consent-reject')?.addEventListener('click', () => {
+      localStorage.setItem(CONSENT_KEY, 'denied');
+      updateGtag(false);
+      hideBanner();
+    });
+  }
+
+  initConsent();
+  document.addEventListener('astro:page-load', initConsent);
+</script>
