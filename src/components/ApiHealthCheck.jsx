@@ -193,6 +193,7 @@ const ENDPOINT_GROUPS = [
     icon: "📡",
     endpoints: [
       { id: "pixel-events", method: "GET", name: "Pixel Events", path: "/api/pixel/events?limit=5&since=0" },
+      { id: "pixel-crawler-health", method: "GET", name: "Pixel crawler UA (Google)", path: "/api/pixel/crawler-health?since=0" },
       { id: "postbacks", method: "GET", name: "Voluum postbacks", path: "/api/postbacks?limit=5&since=0" },
     ],
   },

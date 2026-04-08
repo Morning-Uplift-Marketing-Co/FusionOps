@@ -2058,6 +2058,133 @@ export default {
       }
     }
 
+    // ═══ PIXEL CRAWLER / BOT UA SUMMARY — Google crawler–like hits on t.{domain}/e ═══
+    // Uses stored User-Agent on pixel_events (see /e handler). Not a full LP HTML crawl log.
+    if (path === '/api/pixel/crawler-health' && method === 'GET') {
+      try {
+        const primaryDb = env.PIXEL_DB || env.DB;
+        const domain = String(url.searchParams.get('domain') || '').trim();
+        const sinceParam = parseInt(url.searchParams.get('since') || '0', 10);
+        const since = Number.isFinite(sinceParam) && sinceParam > 0 ? sinceParam : 0;
+
+        async function aggregateCrawlerHits(d1Conn) {
+          const tableExists = await d1Conn
+            .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='pixel_events' LIMIT 1")
+            .first();
+          if (!tableExists) return null;
+
+          const schema = await d1Conn.prepare('PRAGMA table_info(pixel_events)').all();
+          const columns = new Set((schema?.results || []).map((c) => String(c.name || '')));
+          if (!columns.has('ua')) {
+            return { unsupported: true };
+          }
+
+          const tsExpr = columns.has('ts')
+            ? 'ts'
+            : columns.has('timestamp')
+              ? "CASE WHEN CAST(timestamp AS INTEGER) > 2000000000 THEN CAST(timestamp AS INTEGER) / 1000 ELSE CAST(timestamp AS INTEGER) END"
+              : columns.has('created_at')
+                ? "unixepoch(created_at)"
+                : '0';
+
+          const domainExpr = columns.has('domain') ? 'domain' : "''";
+          const uaExpr = 'LOWER(COALESCE(ua, \'\'))';
+
+          let where = `${tsExpr} > ?`;
+          const binds = [since];
+          if (domain) {
+            where += ` AND ${domainExpr} LIKE ?`;
+            binds.push(`%${domain}%`);
+          }
+
+          const stmt = d1Conn.prepare(
+            `SELECT
+              COUNT(*) AS total_rows,
+              SUM(CASE WHEN LENGTH(TRIM(COALESCE(ua, ''))) > 0 THEN 1 ELSE 0 END) AS rows_with_ua,
+              SUM(CASE WHEN ${uaExpr} LIKE '%adsbot-google%' THEN 1 ELSE 0 END) AS adsbot_google,
+              SUM(CASE WHEN ${uaExpr} LIKE '%mediapartners-google%' THEN 1 ELSE 0 END) AS mediapartners_google,
+              SUM(CASE WHEN ${uaExpr} LIKE '%googlebot%' AND ${uaExpr} NOT LIKE '%adsbot-google%' THEN 1 ELSE 0 END) AS googlebot,
+              SUM(CASE WHEN ${uaExpr} LIKE '%google-read-aloud%' THEN 1 ELSE 0 END) AS google_read_aloud
+             FROM pixel_events
+             WHERE ${where}`
+          );
+          const row = await stmt.bind(...binds).first();
+          return { row, unsupported: false };
+        }
+
+        function mergeRows(a, b) {
+          if (!a && !b) return null;
+          if (!a) return b;
+          if (!b) return a;
+          return {
+            total_rows: Number(a.total_rows || 0) + Number(b.total_rows || 0),
+            rows_with_ua: Number(a.rows_with_ua || 0) + Number(b.rows_with_ua || 0),
+            adsbot_google: Number(a.adsbot_google || 0) + Number(b.adsbot_google || 0),
+            mediapartners_google: Number(a.mediapartners_google || 0) + Number(b.mediapartners_google || 0),
+            googlebot: Number(a.googlebot || 0) + Number(b.googlebot || 0),
+            google_read_aloud: Number(a.google_read_aloud || 0) + Number(b.google_read_aloud || 0),
+          };
+        }
+
+        const first = await aggregateCrawlerHits(primaryDb);
+        if (!first) {
+          return json({
+            success: true,
+            domain: domain || null,
+            since,
+            buckets: null,
+            disclaimer:
+              'No pixel_events table yet. Events appear after traffic hits t.{domain}/e.',
+          });
+        }
+        if (first.unsupported) {
+          return json({
+            success: true,
+            domain: domain || null,
+            since,
+            buckets: null,
+            disclaimer:
+              'This pixel_events schema has no ua column; deploy the latest Worker or migrate D1 to track User-Agent.',
+          });
+        }
+
+        let merged = first.row;
+        if (env.PIXEL_DB && env.DB && env.PIXEL_DB !== env.DB) {
+          const second = await aggregateCrawlerHits(env.DB);
+          if (second && !second.unsupported && second.row) {
+            merged = mergeRows(merged, second.row);
+          }
+        }
+
+        const r = merged || {};
+        const adsbot = Number(r.adsbot_google || 0);
+        const partners = Number(r.mediapartners_google || 0);
+        const gbot = Number(r.googlebot || 0);
+        const readAloud = Number(r.google_read_aloud || 0);
+        const googleAdsRelated = adsbot + partners;
+
+        return json({
+          success: true,
+          domain: domain || null,
+          since,
+          buckets: {
+            total_pixel_events: Number(r.total_rows || 0),
+            rows_with_user_agent: Number(r.rows_with_ua || 0),
+            adsbot_google: adsbot,
+            mediapartners_google: partners,
+            google_ads_related_ua_hits: googleAdsRelated,
+            googlebot: gbot,
+            google_read_aloud: readAloud,
+            google_crawler_ua_total: adsbot + partners + gbot + readAloud,
+          },
+          disclaimer:
+            'Counts are requests to the first-party pixel (t.{domain}/e) whose User-Agent matches known Google crawlers (e.g. AdsBot-Google, Googlebot). Many policy checks fetch HTML without executing JS, so those visits may not hit the pixel — this is a lower bound, not full “Google Ads inspection” coverage.',
+        });
+      } catch (e) {
+        return json({ success: false, error: e.message }, 500);
+      }
+    }
+
     // ═══ VOLUUM POSTBACKS API — query stored postbacks (t.{site}/v relay log) ═══
     if (path === '/api/postbacks' && method === 'GET') {
       return handleVoluumPostbacksApiGet(env, url);
