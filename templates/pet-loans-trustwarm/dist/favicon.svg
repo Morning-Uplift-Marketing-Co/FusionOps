@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2D7D6F"/>
+      <stop offset="100%" stop-color="#1F5C53"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="7" fill="url(#bg)"/>
+
+  <!-- Paw print design -->
+  <!-- Main pad (center) -->
+  <ellipse cx="16" cy="19" rx="4.5" ry="5.5" fill="white" opacity="0.95"/>
+
+  <!-- Top left toe -->
+  <ellipse cx="9.5" cy="12" rx="2.2" ry="3" transform="rotate(-15 9.5 12)" fill="white" opacity="0.95"/>
+
+  <!-- Top center toe -->
+  <ellipse cx="16" cy="10" rx="2.2" ry="3.2" fill="white" opacity="0.95"/>
+
+  <!-- Top right toe -->
+  <ellipse cx="22.5" cy="12" rx="2.2" ry="3" transform="rotate(15 22.5 12)" fill="white" opacity="0.95"/>
+
+  <!-- Bottom right toe (small) -->
+  <ellipse cx="21" cy="16.5" rx="1.8" ry="2.5" transform="rotate(10 21 16.5)" fill="white" opacity="0.95"/>
+</svg>
