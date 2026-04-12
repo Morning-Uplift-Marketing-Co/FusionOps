@@ -18,13 +18,19 @@ export function StepCopy({ c, u, onAiGenerate, aiLoading, onAiMeta, aiMetaLoadin
                 <h2 style={{ fontSize: 17, fontWeight: 700 }}>Copy & CTA</h2>
             </div>
 
-            {/* AI Generate LP Copy — 23 Pillars */}
-            <button onClick={onAiGenerate} disabled={aiLoading} style={{
-                width: "100%", padding: "12px", marginBottom: 20, background: aiLoading ? T.input : `${T.primary}15`,
-                border: `1px dashed ${T.primary}`, borderRadius: 8, cursor: aiLoading ? "not-allowed" : "pointer",
-                color: T.primary, fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            }}>
-                {aiLoading ? "⏳ Generating..." : "✨ Generate AI Copy (23 Pillars)"}
+            {/* AI LP copy — Halbert × Schwartz masters */}
+            <button
+                type="button"
+                title="Gary Halbert vs Eugene Schwartz — copywriting masters"
+                onClick={onAiGenerate}
+                disabled={aiLoading}
+                style={{
+                    width: "100%", padding: "12px", marginBottom: 20, background: aiLoading ? T.input : `${T.primary}15`,
+                    border: `1px dashed ${T.primary}`, borderRadius: 8, cursor: aiLoading ? "not-allowed" : "pointer",
+                    color: T.primary, fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                }}
+            >
+                {aiLoading ? "⏳ Generating..." : "✨ AI Copy — H×S"}
             </button>
 
             <Field label="H1 Headline"><Inp value={c.h1} onChange={v => u("h1", v)} placeholder="Get Cash Fast — Apply In Minutes" /></Field>
