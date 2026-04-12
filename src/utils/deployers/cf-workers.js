@@ -265,7 +265,7 @@ export async function deploy(assets, site, settings) {
     // Creates/updates:
     //   - A @ -> 192.0.2.1 (proxied)
     //   - A t -> 192.0.2.1 (proxied)
-    //   - CNAME trk -> track.voluum.com (dns only)
+    //   - CNAME trk -> site.voluumCfCname (dns only)
     let dnsUpdated = false;
     let dnsError = null;
     if (site.domain && cfAccountId && cfApiToken) {
@@ -276,6 +276,7 @@ export async function deploy(assets, site, settings) {
           cfApiToken,
           deployTarget: "cf-workers",
           deployUrl: url,
+          voluumCfCname: site.voluumCfCname,
           proxied: true,
         });
         dnsUpdated = dnsResult.success;

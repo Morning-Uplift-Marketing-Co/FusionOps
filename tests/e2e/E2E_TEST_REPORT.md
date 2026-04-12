@@ -178,7 +178,7 @@ Based on code analysis, the LP Wizard has **7 steps**:
 
 5. **Copy & Content** (`StepCopy.jsx`)
    - Quick-start copy templates
-   - AI Copy Generation (23 Pillars)
+   - AI Copy Generation (Halbert × Schwartz / H×S)
    - H1, Badge, CTA, Sub inputs
    - SEO Meta tags
    - Language selection

@@ -293,6 +293,7 @@ export async function updateDnsAfterDeploy({
   cfApiToken,
   deployTarget,
   deployUrl,
+  voluumCfCname = "",
   proxied = true,
 }) {
   try {
@@ -450,7 +451,13 @@ export async function updateDnsAfterDeploy({
         });
         trackResult(pixelA, "pixel A (t)");
 
-        // Also create trk.{domain} for Voluum tracking CNAME
+        // Also create trk.{domain} for Voluum tracking CNAME.
+        // Must be explicitly provided; never fallback to legacy track.voluum.com.
+        const trackingCnameTarget = String(voluumCfCname || "").trim();
+        if (!trackingCnameTarget) {
+          errors.push("trk CNAME: missing voluumCfCname (CloudFront target)");
+          break;
+        }
         const trkCname = await upsertDnsRecord({
           zoneId,
           cfAccountId,
@@ -458,7 +465,7 @@ export async function updateDnsAfterDeploy({
           domain,
           type: "CNAME",
           name: "trk",
-          content: "track.voluum.com",
+          content: trackingCnameTarget,
           proxied: false, // Must NOT be proxied for Voluum
         });
         trackResult(trkCname, "trk CNAME");
