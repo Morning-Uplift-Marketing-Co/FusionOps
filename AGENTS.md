@@ -25,7 +25,7 @@ This repository is **FusionOps** (internal name **LP Factory**): an **Astro + Re
 
 ## Quick commands
 
-- App dev: `npm run dev` (Astro, port **4444**).
+- App dev: `npm run dev` (Astro, port **8888**).
 - Tests: `npm test` (Vitest).
 
 If your tool does not read `.cursor/rules`, open and follow **`fusionops-project-core.mdc`** manually.

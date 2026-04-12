@@ -298,7 +298,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                 if (p.tagline) upd("tagline", p.tagline);
                 if (p.metaTitle) upd("metaTitle", p.metaTitle);
                 if (p.metaDesc) upd("metaDesc", p.metaDesc);
-                notify("AI copy generated! (23 Pillars)");
+                notify("AI copy generated! (Halbert × Schwartz)");
             } else {
                 notify(p?.error || "AI generation failed. Check your API key.", "warning");
             }
@@ -522,13 +522,17 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                 });
 
                 // 2. Ensure trk.{domain} for Voluum (only if Voluum mode)
-                // Uses CloudFront CNAME if provided (new setup), otherwise track.voluum.com (legacy)
+                // Never fallback to legacy track.voluum.com to avoid repeatedly overwriting DNS.
                 if (finalConfig.trackingMode === "voluum" && finalConfig.voluumTrackingDomain) {
                     const trkHost = finalConfig.voluumTrackingDomain; // e.g. trk.domain.com
                     const trkSub = trkHost.split(".")[0]; // "trk"
-                    const trkTarget = finalConfig.voluumCfCname || "track.voluum.com";
+                    const trkTarget = String(finalConfig.voluumCfCname || "").trim();
+                    if (!trkTarget) {
+                        notify?.("⚠️ Voluum DNS skipped: missing CloudFront CNAME target", "warning");
+                        console.warn("[DNS] trk CNAME skipped: missing voluumCfCname");
+                    }
                     // Skip if DNS already provisioned via StepTracking button
-                    if (!finalConfig._trkDnsProvisioned) {
+                    if (trkTarget && !finalConfig._trkDnsProvisioned) {
                         getOrCreateZone(domain, cfAccountId, cfApiToken).then(zone => {
                             if (!zone.success || !zone.zoneId) return;
                             upsertDnsRecord({

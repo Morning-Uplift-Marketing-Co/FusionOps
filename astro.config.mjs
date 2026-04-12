@@ -51,7 +51,7 @@ export default defineConfig({
   integrations: [react()],
   // Pin dev port so Playwright webServer.url matches (avoid silent fallback to 4322, etc.)
   server: {
-    port: 4444,
+    port: 8888,
     strictPort: true,
   },
   vite: {
@@ -61,7 +61,7 @@ export default defineConfig({
       'import.meta.env.VITE_E2E': JSON.stringify(process.env.VITE_E2E || ''),
     },
     server: {
-      port: 4444,
+      port: 8888,
       strictPort: true,
       host: true,
       fs: { allow: ['../..', '.'] },
