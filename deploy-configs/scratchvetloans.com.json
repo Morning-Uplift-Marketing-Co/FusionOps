@@ -1,8 +1,8 @@
 {
   "templateId": "astro-test002",
   "cfPagesProject": "lp-scratchvetloans-com",
-  "cfApiToken": "***CF_TOKEN_REMOVED***",
-  "cfAccountId": "***CF_ACCOUNT_ID_REMOVED***",
+  "cfApiToken": "",
+  "cfAccountId": "",
   "brand": "scratchvetloans",
   "domain": "scratchvetloans.com",
   "h1": "Simple Loans,",
