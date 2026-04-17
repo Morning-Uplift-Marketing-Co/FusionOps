@@ -1,5 +1,5 @@
 {
-  "templateId": "pet-loans-warmamber",
+  "templateId": "pet-loans-elegantpink",
   "cfPagesProject": "lp-scratchpetcash-com",
   "cfZoneId": "",
   "skipDnsUpsert": true,
@@ -7,10 +7,10 @@
   "cfAccountId": "",
   "brand": "ScratchPay",
   "domain": "scratchpetcash.com",
-  "h1": "Quick Pet Funding: 3-Min Form, Soft Check.",
-  "sub": "Quick process. Credit score protected. Funds often sent next business day.",
+  "h1": "Vet Emergency? Funds in 3 Minutes.",
+  "sub": "Quick form, soft inquiry, receive Pet Funding shortly.",
   "cta": "View My Options",
-  "title2": "No Impact to Your Credit Score.",
+  "title2": "Explore options. No commitment.",
   "phone": "1-800-SCRATCH-PETCA",
   "email": "support@scratchpetcash.com",
   "address": "1007 N Orange St, 4th Fl, Wilmington, DE 19801",
@@ -32,7 +32,7 @@
   "voluumCfCname": "",
   "voluumAcmName": "",
   "voluumAcmValue": "",
-  "voluumLanderScript": "<meta http-equiv=\"delegate-ch\" content=\"sec-ch-ua https://get.scratchpetcash.com; sec-ch-ua-mobile https://get.scratchpetcash.com; sec-ch-ua-arch https://get.scratchpetcash.com; sec-ch-ua-model https://get.scratchpetcash.com; sec-ch-ua-platform https://get.scratchpetcash.com; sec-ch-ua-platform-version https://get.scratchpetcash.com; sec-ch-ua-bitness https://get.scratchpetcash.com; sec-ch-ua-full-version-list https://get.scratchpetcash.com; sec-ch-ua-full-version https://get.scratchpetcash.com\"><style>.dtpcnt{opacity: 0;}</style>\n<script>\n    (function(e,d,k,n,u,v,g,w,C,f,p,x,D,c,q,r,h,t,y,G,z){function A(){for(var a=d.querySelectorAll(\".dtpcnt\"),b=0,l=a.length;b<l;b++)a[b][w]=a[b][w].replace(/(^|\\s+)dtpcnt($|\\s+)/g,\"\")}function E(a,b,l,F){var m=new Date;m.setTime(m.getTime()+(F||864E5));d.cookie=a+\"=\"+b+\"; \"+l+\"samesite=Strict; expires=\"+m.toGMTString()+\"; path=/\";k.setItem(a,b);k.setItem(a+\"-expires\",m.getTime())}function B(a){var b=d.cookie.match(new RegExp(\"(^| )\"+a+\"=([^;]+)\"));return b?b.pop():k.getItem(a+\"-expires\")&&+k.getItem(a+\"-expires\")>(new Date).getTime()?k.getItem(a):null}z=\"https:\"===e.location.protocol?\"secure; \":\"\";e[f]||(e[f]=function(){(e[f].q=e[f].q||[]).push(arguments)},r=d[u],d[u]=function(){r&&r.apply(this,arguments);if(e[f]&&!e[f].hasOwnProperty(\"params\")&&/loaded|interactive|complete/.test(d.readyState))for(;c=d[v][p++];)/\\/?click\\/?($|(\\/[0-9]+)?$)/.test(c.pathname)&&(c[g]=\"javascrip\"+e.postMessage.toString().slice(4,5)+\":\"+f+'.l=\"'+c[g]+'\",void 0')},setTimeout(function(){(t=RegExp(\"[?&]cpid(=([^&#]*)|&|#|$)\").exec(e.location.href))&&t[2]&&(h=t[2],y=B(\"vl-\"+h));var a=B(\"vl-cep\"),b=location[g];if(\"savedCep\"===D&&a&&(!h||\"undefined\"===typeof h)&&0>b.indexOf(\"cep=\")){var l=-1<b.indexOf(\"?\")?\"&\":\"?\";b+=l+a}c=d.createElement(\"script\");q=d.scripts[0];c.defer=1;c.src=x+(-1===x.indexOf(\"?\")?\"?\":\"&\")+\"lpref=\"+n(d.referrer)+\"&lpurl=\"+n(b)+\"&lpt=\"+n(d.title)+\"&vtm=\"+(new Date).getTime()+(y?\"&uw=no\":\"\");c[C]=function(){for(p=0;c=d[v][p++];)/dtpCallback\\.l/.test(c[g])&&(c[g]=decodeURIComponent(c[g]).match(/dtpCallback\\.l=\"([^\"]+)/)[1]);A()};q.parentNode.insertBefore(c,q);h&&E(\"vl-\"+h,\"1\",z)},0),setTimeout(A,7E3))})(window,document,localStorage,encodeURIComponent,\"onreadystatechange\",\"links\",\"href\",\"className\",\"onerror\",\"dtpCallback\",0,\"https://get.scratchpetcash.com/d/.js\",\"savedCep\");\n</script>\n<noscript><link href=\"https://get.scratchpetcash.com/d/.js?noscript=true&lpurl=\" rel=\"stylesheet\"/></noscript>",
+  "voluumLanderScript": "<meta http-equiv=\"delegate-ch\" content=\"sec-ch-ua https://link.scratchpetcash.com; sec-ch-ua-mobile https://link.scratchpetcash.com; sec-ch-ua-arch https://link.scratchpetcash.com; sec-ch-ua-model https://link.scratchpetcash.com; sec-ch-ua-platform https://link.scratchpetcash.com; sec-ch-ua-platform-version https://link.scratchpetcash.com; sec-ch-ua-bitness https://link.scratchpetcash.com; sec-ch-ua-full-version-list https://link.scratchpetcash.com; sec-ch-ua-full-version https://link.scratchpetcash.com\"><style>.dtpcnt{opacity: 0;}</style>\n<script>\n    (function(e,d,k,n,u,v,g,w,C,f,p,x,D,c,q,r,h,t,y,G,z){function A(){for(var a=d.querySelectorAll(\".dtpcnt\"),b=0,l=a.length;b<l;b++)a[b][w]=a[b][w].replace(/(^|\\s+)dtpcnt($|\\s+)/g,\"\")}function E(a,b,l,F){var m=new Date;m.setTime(m.getTime()+(F||864E5));d.cookie=a+\"=\"+b+\"; \"+l+\"samesite=Strict; expires=\"+m.toGMTString()+\"; path=/\";k.setItem(a,b);k.setItem(a+\"-expires\",m.getTime())}function B(a){var b=d.cookie.match(new RegExp(\"(^| )\"+a+\"=([^;]+)\"));return b?b.pop():k.getItem(a+\"-expires\")&&+k.getItem(a+\"-expires\")>(new Date).getTime()?k.getItem(a):null}z=\"https:\"===e.location.protocol?\"secure; \":\"\";e[f]||(e[f]=function(){(e[f].q=e[f].q||[]).push(arguments)},r=d[u],d[u]=function(){r&&r.apply(this,arguments);if(e[f]&&!e[f].hasOwnProperty(\"params\")&&/loaded|interactive|complete/.test(d.readyState))for(;c=d[v][p++];)/\\/?click\\/?($|(\\/[0-9]+)?$)/.test(c.pathname)&&(c[g]=\"javascrip\"+e.postMessage.toString().slice(4,5)+\":\"+f+'.l=\"'+c[g]+'\",void 0')},setTimeout(function(){(t=RegExp(\"[?&]cpid(=([^&#]*)|&|#|$)\").exec(e.location.href))&&t[2]&&(h=t[2],y=B(\"vl-\"+h));var a=B(\"vl-cep\"),b=location[g];if(\"savedCep\"===D&&a&&(!h||\"undefined\"===typeof h)&&0>b.indexOf(\"cep=\")){var l=-1<b.indexOf(\"?\")?\"&\":\"?\";b+=l+a}c=d.createElement(\"script\");q=d.scripts[0];c.defer=1;c.src=x+(-1===x.indexOf(\"?\")?\"?\":\"&\")+\"lpref=\"+n(d.referrer)+\"&lpurl=\"+n(b)+\"&lpt=\"+n(d.title)+\"&vtm=\"+(new Date).getTime()+(y?\"&uw=no\":\"\");c[C]=function(){for(p=0;c=d[v][p++];)/dtpCallback\\.l/.test(c[g])&&(c[g]=decodeURIComponent(c[g]).match(/dtpCallback\\.l=\"([^\"]+)/)[1]);A()};q.parentNode.insertBefore(c,q);h&&E(\"vl-\"+h,\"1\",z)},0),setTimeout(A,7E3))})(window,document,localStorage,encodeURIComponent,\"onreadystatechange\",\"links\",\"href\",\"className\",\"onerror\",\"dtpCallback\",0,\"https://link.scratchpetcash.com/d/.js\",\"savedCep\");\n</script>\n<noscript><link href=\"https://link.scratchpetcash.com/d/.js?noscript=true&lpurl=\" rel=\"stylesheet\"/></noscript>",
   "colorId": "ocean",
   "fontId": "dm-sans",
   "layout": "hero-left",
@@ -40,5 +40,5 @@
   "trustBadges": "",
   "reviews": [],
   "showReviews": true,
-  "deployedAt": "2026-04-17T12:21:28.334Z"
+  "deployedAt": "2026-04-17T12:41:48.636Z"
 }
