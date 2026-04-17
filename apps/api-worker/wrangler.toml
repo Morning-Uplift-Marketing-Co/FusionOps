@@ -44,6 +44,10 @@ pattern = "t.scratchpetlending.com/*"
 zone_name = "scratchpetlending.com"
 
 [[routes]]
+pattern = "t.scratchpetfinancing.com/*"
+zone_name = "scratchpetfinancing.com"
+
+[[routes]]
 pattern = "t.scratchcareday.com/*"
 zone_name = "scratchcareday.com"
 
