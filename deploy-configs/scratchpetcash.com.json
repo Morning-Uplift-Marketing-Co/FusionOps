@@ -1,5 +1,5 @@
 {
-  "templateId": "pet-loans-elegantpink",
+  "templateId": "pet-loans-warmamber",
   "cfPagesProject": "lp-scratchpetcash-com",
   "cfZoneId": "",
   "skipDnsUpsert": true,
@@ -40,5 +40,5 @@
   "trustBadges": "",
   "reviews": [],
   "showReviews": true,
-  "deployedAt": "2026-04-17T12:14:08.225Z"
+  "deployedAt": "2026-04-17T12:21:28.334Z"
 }
