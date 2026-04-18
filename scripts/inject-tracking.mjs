@@ -302,17 +302,20 @@ const PIXEL_BODY_SNIPPET = `
 (function(){
   var cid = window.__CONVERSION_ID__;
   if (!cid) return;
+  var relayHost = String(window.__GTAG_RELAY_HOST__ || '').trim();
+  var loaderBase = relayHost ? ('https://' + relayHost) : 'https://www.googletagmanager.com';
   var s = document.createElement('script');
   s.async = true;
-  s.src = 'https://www.googletagmanager.com/gtag/js?id=' + cid;
+  s.src = loaderBase + '/gtag/js?id=' + cid;
   document.head.appendChild(s);
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-  gtag('config', cid);
+  var cfg = {};
+  if (relayHost) cfg.transport_url = 'https://' + relayHost;
+  gtag('config', cid, cfg);
   window.__gtag = gtag;
   window.__gtagConversionId = cid;
-  // form_start / form_submit labels
   window.__formStartLabel = window.__FORM_START_LABEL__ || '';
   window.__formSubmitLabel = window.__FORM_SUBMIT_LABEL__ || '';
 })();
@@ -364,6 +367,7 @@ const RUNTIME_CONFIG_VITE = `
   window.__VOLUUM_DOMAIN__ = import.meta.env.VITE_VOLUUM_DOMAIN || '';
   window.__CONVERSION_ID__ = import.meta.env.VITE_CONVERSION_ID || '';
   window.__VOLUUM_CLICK_URL__ = import.meta.env.VITE_VOLUUM_CLICK_URL || '';
+  window.__GTAG_RELAY_HOST__ = import.meta.env.VITE_GTAG_RELAY_HOST || '';
   if (!window.__VOLUUM_DOMAIN__ && window.__VOLUUM_CLICK_URL__) {
     try {
       var __vh = new URL(String(window.__VOLUUM_CLICK_URL__)).hostname;
@@ -575,6 +579,7 @@ function runtimeConfigFromEnvHtml(env) {
   const vclick = env.PUBLIC_VOLUUM_CLICK_URL || env.VITE_VOLUUM_CLICK_URL || '';
   const fsl = env.PUBLIC_FORMSTARTLABEL || env.VITE_FORM_START_LABEL || '';
   const fsub = env.PUBLIC_FORMSUBMITLABEL || env.VITE_FORM_SUBMIT_LABEL || '';
+  const gtagRelayHost = env.PUBLIC_GTAGRELAYHOST || env.VITE_GTAG_RELAY_HOST || '';
   return `
 <!-- Runtime config from .env (auto-injected, static HTML) -->
 <script data-cfasync="false">
@@ -584,6 +589,7 @@ function runtimeConfigFromEnvHtml(env) {
   window.__VOLUUM_CLICK_URL__ = ${JSON.stringify(vclick)};
   window.__FORM_START_LABEL__ = ${JSON.stringify(fsl)};
   window.__FORM_SUBMIT_LABEL__ = ${JSON.stringify(fsub)};
+  window.__GTAG_RELAY_HOST__ = ${JSON.stringify(gtagRelayHost)};
   if (!window.__VOLUUM_DOMAIN__ && window.__VOLUUM_CLICK_URL__) {
     try {
       var __vh = new URL(String(window.__VOLUUM_CLICK_URL__)).hostname;
@@ -606,6 +612,7 @@ const RUNTIME_CONFIG_ASTRO = `
   window.__VOLUUM_CLICK_URL__ = '%%PUBLIC_VOLUUM_CLICK_URL%%';
   window.__FORM_START_LABEL__ = '%%PUBLIC_FORMSTARTLABEL%%';
   window.__FORM_SUBMIT_LABEL__ = '%%PUBLIC_FORMSUBMITLABEL%%';
+  window.__GTAG_RELAY_HOST__ = '%%PUBLIC_GTAGRELAYHOST%%';
   if (!window.__VOLUUM_DOMAIN__ && window.__VOLUUM_CLICK_URL__) {
     try {
       var __vh = new URL(String(window.__VOLUUM_CLICK_URL__)).hostname;
@@ -721,7 +728,8 @@ function injectIntoAstro(filePath, projectRoot) {
         + 'const __conversionId = import.meta.env.PUBLIC_CONVERSIONID || \'\';\n'
         + 'const __voluumClickUrl = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || \'\';\n'
         + 'const __formStartLabel = import.meta.env.PUBLIC_FORMSTARTLABEL || \'\';\n'
-        + 'const __formSubmitLabel = import.meta.env.PUBLIC_FORMSUBMITLABEL || \'\';';
+        + 'const __formSubmitLabel = import.meta.env.PUBLIC_FORMSUBMITLABEL || \'\';\n'
+        + 'const __gtagRelayHost = import.meta.env.PUBLIC_GTAGRELAYHOST || \'\';';
       const newFm = fmMatch[0].replace(/\r?\n---\s*$/, `${additions}\n---`);
       content = content.replace(fmMatch[0], newFm);
     }
@@ -734,12 +742,13 @@ function injectIntoAstro(filePath, projectRoot) {
     .replace("'%%PUBLIC_VOLUUM_CLICK_URL%%'", hasVoluumVar ? 'voluumClickUrl || ""' : '__voluumClickUrl')
     .replace("'%%PUBLIC_FORMSTARTLABEL%%'", '__formStartLabel')
     .replace("'%%PUBLIC_FORMSUBMITLABEL%%'", '__formSubmitLabel')
+    .replace("'%%PUBLIC_GTAGRELAYHOST%%'", '__gtagRelayHost')
     // For Astro, use define:vars or template literals
     .replace('<script is:inline>', () => {
       const varName = hasVoluumVar ? 'voluumDomain' : '__voluumDomain';
       const cidName = hasVoluumVar ? 'conversionId' : '__conversionId';
       const clickName = hasVoluumVar ? 'voluumClickUrl' : '__voluumClickUrl';
-      return `<script is:inline define:vars={{ ${varName}, ${cidName}, ${clickName}, __formStartLabel, __formSubmitLabel }}>`;
+      return `<script is:inline define:vars={{ ${varName}, ${cidName}, ${clickName}, __formStartLabel, __formSubmitLabel, __gtagRelayHost }}>`;
     })
     .replace("= '%%PUBLIC_VOLUUMDOMAIN%%'", () => {
       const varName = hasVoluumVar ? 'voluumDomain' : '__voluumDomain';
@@ -754,7 +763,8 @@ function injectIntoAstro(filePath, projectRoot) {
       return `= ${clickName}`;
     })
     .replace("= '%%PUBLIC_FORMSTARTLABEL%%'", '= __formStartLabel')
-    .replace("= '%%PUBLIC_FORMSUBMITLABEL%%'", '= __formSubmitLabel');
+    .replace("= '%%PUBLIC_FORMSUBMITLABEL%%'", '= __formSubmitLabel')
+    .replace("= '%%PUBLIC_GTAGRELAYHOST%%'", '= __gtagRelayHost');
 
   // Idempotently clean old tracking to prevent duplicates
  // content = cleanExistingTracking(content);
@@ -869,6 +879,13 @@ const aid = import.meta.env.PUBLIC_AID || '14881';
 const conversionId = import.meta.env.PUBLIC_CONVERSIONID || '';
 const formStartLabel = import.meta.env.PUBLIC_FORMSTARTLABEL || '';
 const formSubmitLabel = import.meta.env.PUBLIC_FORMSUBMITLABEL || '';
+// Google Ads / Analytics relay host (e.g. t.example.com). When set, gtag.js
+// loads from the relay and all beacons (GA4 + conversions) are sent via
+// transport_url so ad blockers and ITP can't strip them. Defaults to empty,
+// preserving legacy direct-to-Google behavior. See
+// .planning/specs/tracking-pipeline-v1/DESIGN.md.
+const gtagRelayHost = import.meta.env.PUBLIC_GTAGRELAYHOST || '';
+const gtagLoaderBase = gtagRelayHost ? \`https://\${gtagRelayHost}\` : 'https://www.googletagmanager.com';
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -886,16 +903,21 @@ const formSubmitLabel = import.meta.env.PUBLIC_FORMSUBMITLABEL || '';
     body { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 24px 16px 48px; }
     #_lg_form_ { width: 100%; max-width: 640px; }
   </style>
-{conversionId && <script async src={\`https://www.googletagmanager.com/gtag/js?id=\${conversionId}\`}></script>}
+{conversionId && <script async src={\`\${gtagLoaderBase}/gtag/js?id=\${conversionId}\`}></script>}
 </head>
 <body>
 <!-- Container MUST exist before inline script: LeadsGate reads #_lg_form_ when applicationInit.js runs. -->
 <div id="_lg_form_"></div>
 
-<script is:inline define:vars={{ aid, conversionId, formStartLabel, formSubmitLabel }}>
+<script is:inline define:vars={{ aid, conversionId, formStartLabel, formSubmitLabel, gtagRelayHost }}>
 window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
-if (conversionId) { gtag('js', new Date()); gtag('config', conversionId); }
+if (conversionId) {
+  gtag('js', new Date());
+  var __gtagCfg = {};
+  if (gtagRelayHost) __gtagCfg.transport_url = 'https://' + gtagRelayHost;
+  gtag('config', conversionId, __gtagCfg);
+}
 
 // Same transport as index: GET image pixel — shows in Network as /e, avoids sendBeacon JSON being dropped or hidden.
 function fpPixel(eventName, extra) {
