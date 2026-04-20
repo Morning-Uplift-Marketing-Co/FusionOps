@@ -1,5 +1,5 @@
 {
-  "templateId": "pet-loans-warmhearth",
+  "templateId": "pet-loans-freshgreen",
   "cfPagesProject": "lp-possiblefinence-com",
   "cfZoneId": "",
   "skipDnsUpsert": true,
@@ -7,10 +7,10 @@
   "cfAccountId": "",
   "brand": "Possible Finance",
   "domain": "possiblefinence.com",
-  "h1": "Unexpected Bill? Get Cash 75% Faster.",
-  "sub": "Quick application, soft credit check. Funds arrive fast.",
-  "cta": "Unlock My Offer",
-  "title2": "Credit Inquiry Won't Affect Score.",
+  "h1": "Access 85% Of Funds Quickly",
+  "sub": "Quick form, soft credit review. Get your funds by tomorrow.",
+  "cta": "Show My Options",
+  "title2": "Simple Process, No Obligation",
   "phone": "1-800-POSSIBL-EFINE",
   "email": "support@possiblefinence.com",
   "address": "1007 N Orange St, 4th Fl, Wilmington, DE 19801",
@@ -40,5 +40,5 @@
   "trustBadges": "",
   "reviews": [],
   "showReviews": true,
-  "deployedAt": "2026-04-20T08:34:11.696Z"
+  "deployedAt": "2026-04-20T09:30:31.483Z"
 }
