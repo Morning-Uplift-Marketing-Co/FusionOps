@@ -1,5 +1,5 @@
 {
-  "templateId": "pet-loans-warmhearth",
+  "templateId": "pastel-optimized-01",
   "cfPagesProject": "lp-possiblefinence-com",
   "cfZoneId": "",
   "skipDnsUpsert": true,
@@ -10,7 +10,6 @@
   "h1": "Access 85% Of Funds Quickly",
   "sub": "Quick form, soft credit review. Get your funds by tomorrow.",
   "cta": "Show My Options",
-  "title2": "Simple Process, No Obligation",
   "phone": "1-800-POSSIBL-EFINE",
   "email": "support@possiblefinence.com",
   "address": "1007 N Orange St, 4th Fl, Wilmington, DE 19801",
@@ -19,8 +18,8 @@
   "amountMax": 5000,
   "aprMin": 5.99,
   "aprMax": 35.99,
-  "primaryColor": "#3b5bdb",
-  "accentColor": "#f97316",
+  "primaryColor": "",
+  "accentColor": "",
   "conversionId": "AW-18003610179",
   "gtagFormStartLabel": "KEDQCPWUrJ8cEMOU5YhD",
   "gtagFormSubmitLabel": "Kc2iCPiUrJ8cEMOU5YhD",
@@ -39,6 +38,5 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "showReviews": true,
-  "deployedAt": "2026-04-24T13:12:56.488Z"
+  "deployedAt": "2026-04-24T17:37:49.291Z"
 }
