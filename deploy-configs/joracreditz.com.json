@@ -2,6 +2,7 @@
   "templateId": "lendpath_bolt",
   "cfPagesProject": "lp-jora-creditz-main",
   "cfZoneId": "",
+  "skipDnsUpsert": true,
   "cfApiToken": "",
   "cfAccountId": "",
   "brand": "Jora Credit",
@@ -9,6 +10,7 @@
   "h1": "Get Up To $10,000 Quick Funding Now",
   "sub": "Apply easily online for the funding you need, stress-free.",
   "cta": "Apply Now",
+  "title2": "",
   "phone": "1-800-JORACRE-DITZ",
   "email": "support@joracreditz.com",
   "address": "108 West 13th St, Wilmington, DE 19801",
@@ -38,5 +40,5 @@
   "trustBadges": "",
   "reviews": [],
   "showReviews": true,
-  "deployedAt": "2026-03-30T09:13:56.743Z"
+  "deployedAt": "2026-04-24T12:16:25.655Z"
 }
