@@ -154,6 +154,10 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk, sitesCou
     // Deploy credentials
     const [cfApiToken, setCfApiToken] = useState(settings.cfApiToken || import.meta.env.VITE_CF_API_TOKEN || "");
     const [cfAccountId, setCfAccountId] = useState(settings.cfAccountId || import.meta.env.VITE_CF_ACCOUNT_ID || "");
+    // Optional read-only CF token used ONLY for "Test" buttons in Settings.
+    // Keeps health-check requests off the deploy token's rate-limit bucket,
+    // which is what burns through the 10429 (Rate limited) allowance.
+    const [cfReadApiToken, setCfReadApiToken] = useState(settings.cfReadApiToken || import.meta.env.VITE_CF_READ_API_TOKEN || "");
 
     // ── Cloudflare Profiles (multi-account) ──
     const [cfProfiles, setCfProfiles] = useState(() => {
@@ -280,7 +284,12 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk, sitesCou
         if (!editingProfile?.name?.trim() || !editingProfile?.accountId?.trim() || !editingProfile?.apiToken?.trim()) return;
         const cleanId = editingProfile.accountId.trim();
         if (!/^[0-9a-f]{32}$/i.test(cleanId)) return;
-        const updated = { ...editingProfile, accountId: cleanId };
+        const updated = {
+            ...editingProfile,
+            accountId: cleanId,
+            // Persist optional read-only token (trimmed; empty string drops the field cleanly)
+            readApiToken: String(editingProfile.readApiToken || "").trim(),
+        };
         const exists = cfProfiles.find(p => p.id === updated.id);
         const newList = exists
             ? cfProfiles.map(p => p.id === updated.id ? updated : p)
@@ -301,9 +310,11 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk, sitesCou
             return;
         }
         const cfBase = getCfApiBase();
+        // Prefer the read-only token when present so Test clicks don't drain the deploy token's 10429 bucket.
+        const testToken = String(profile.readApiToken || "").trim() || profile.apiToken;
         try {
             const r = await fetch(`${cfBase}/accounts/${cleanId}/pages/projects?per_page=1`, {
-                headers: { Authorization: `Bearer ${profile.apiToken}` },
+                headers: { Authorization: `Bearer ${testToken}` },
             });
             if (!r.ok) {
                 const err = await r.json().catch(() => ({}));
@@ -311,7 +322,7 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk, sitesCou
             } else {
                 // Also check zones
                 const zr = await fetch(`${cfBase}/zones?account.id=${cleanId}&per_page=5`, {
-                    headers: { Authorization: `Bearer ${profile.apiToken}` },
+                    headers: { Authorization: `Bearer ${testToken}` },
                 });
                 const zd = await zr.json().catch(() => ({}));
                 const zoneCount = zd.result?.length || 0;
@@ -446,10 +457,13 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk, sitesCou
             return;
         }
         const cfBase = getCfApiBase();
+        // Use the read-only token for Test clicks when available — keeps this
+        // off the deploy token's rate-limit bucket (prevents code 10429).
+        const testToken = String(cfReadApiToken || "").trim() || cfApiToken;
         try {
             // Test 1: Verify token by listing Pages projects
             const pagesRes = await fetch(`${cfBase}/accounts/${cleanId}/pages/projects?per_page=1`, {
-                headers: { Authorization: `Bearer ${cfApiToken}` },
+                headers: { Authorization: `Bearer ${testToken}` },
             });
             if (!pagesRes.ok) {
                 const err = await pagesRes.json().catch(() => ({}));
@@ -460,7 +474,7 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk, sitesCou
             }
             // Test 2: Verify Workers permission
             const workersRes = await fetch(`${cfBase}/accounts/${cleanId}/workers/subdomain`, {
-                headers: { Authorization: `Bearer ${cfApiToken}` },
+                headers: { Authorization: `Bearer ${testToken}` },
             });
             if (!workersRes.ok) {
                 setTestResult(p => ({ ...p, cf: "partial", cfDetail: "Pages OK, Workers permission missing" }));
@@ -1007,7 +1021,19 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk, sitesCou
                                         </div>
                                         <div><Lbl>Profile Name</Lbl><Inp value={editingProfile.name} onChange={v => setEditingProfile(p => ({...p, name: v}))} placeholder="e.g. MCC-Alpha, Pet Sites, Loan Sites" /></div>
                                         <div><Lbl>Account ID <Hex32IdHint value={editingProfile.accountId} /></Lbl><Inp value={editingProfile.accountId} onChange={v => setEditingProfile(p => ({...p, accountId: v}))} placeholder="32-char hex ID" /></div>
-                                        <div><Lbl>API Token</Lbl><Inp type="password" value={editingProfile.apiToken} onChange={v => setEditingProfile(p => ({...p, apiToken: v}))} placeholder="Bearer token..." /></div>
+                                        <div><Lbl>API Token <span className="text-[9px] text-[hsl(var(--muted-foreground))]">(deploy — Pages:Edit, Workers:Edit, etc.)</span></Lbl><Inp type="password" value={editingProfile.apiToken} onChange={v => setEditingProfile(p => ({...p, apiToken: v}))} placeholder="Bearer token..." /></div>
+                                        <div>
+                                            <Lbl>
+                                                Read-only API Token
+                                                <span className="text-[9px] text-[hsl(var(--muted-foreground))]"> (optional — used only by Test buttons to avoid 10429 rate limits on the deploy token)</span>
+                                            </Lbl>
+                                            <Inp
+                                                type="password"
+                                                value={editingProfile.readApiToken || ""}
+                                                onChange={v => setEditingProfile(p => ({ ...p, readApiToken: v }))}
+                                                placeholder="Bearer token with Account:Read + Zone:Read (optional)"
+                                            />
+                                        </div>
                                         <div className="flex gap-1.5 pt-1">
                                             <Button onClick={saveEditingProfile} disabled={!editingProfile.name?.trim() || !editingProfile.accountId?.trim() || !editingProfile.apiToken?.trim()} className="text-xs">💾 Save Profile</Button>
                                             <Button variant="ghost" onClick={() => setEditingProfile(null)} className="text-xs">Cancel</Button>
