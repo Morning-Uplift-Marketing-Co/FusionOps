@@ -1,5 +1,5 @@
 {
-  "templateId": "lendpath_bolt",
+  "templateId": "pet-loans-warmhearth",
   "cfPagesProject": "lp-jora-creditz-main",
   "cfZoneId": "",
   "skipDnsUpsert": true,
@@ -10,7 +10,7 @@
   "h1": "Get Up To $10,000 Quick Funding Now",
   "sub": "Apply easily online for the funding you need, stress-free.",
   "cta": "Apply Now",
-  "title2": "",
+  "title2": "Quick Decision Process",
   "phone": "1-800-JORACRE-DITZ",
   "email": "support@joracreditz.com",
   "address": "108 West 13th St, Wilmington, DE 19801",
@@ -19,8 +19,8 @@
   "amountMax": 10000,
   "aprMin": 5.99,
   "aprMax": 35.99,
-  "primaryColor": "",
-  "accentColor": "",
+  "primaryColor": "#3b5bdb",
+  "accentColor": "#f97316",
   "conversionId": "AW-13254",
   "gtagFormStartLabel": "form_start ",
   "gtagFormSubmitLabel": "form_submit ",
@@ -40,5 +40,5 @@
   "trustBadges": "",
   "reviews": [],
   "showReviews": true,
-  "deployedAt": "2026-04-24T12:16:25.655Z"
+  "deployedAt": "2026-04-24T12:18:20.343Z"
 }
