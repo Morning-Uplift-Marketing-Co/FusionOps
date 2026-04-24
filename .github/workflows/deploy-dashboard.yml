@@ -20,6 +20,12 @@ on:
 permissions:
   contents: read
 
+# Shared group with deploy-lp.yml — serialize all Cloudflare deploys on this
+# account/token so we don't trip code 10429 (Rate limited).
+concurrency:
+  group: cloudflare-deploy-global
+  cancel-in-progress: false
+
 env:
   CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -39,14 +45,65 @@ jobs:
         with:
           node-version: 22
 
+      # Preflight guard — verify CF token/account before npm ci + wrangler, so
+      # misconfigured / revoked / wrong-scope tokens fail in ~2s with a clear
+      # error instead of surfacing as authentication error [code: 10000] later.
+      - name: Preflight — verify CF token
+        run: |
+          set -euo pipefail
+          if [ -z "${CLOUDFLARE_API_TOKEN:-}" ] || [ -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then
+            echo "::error::CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID secret is empty."
+            exit 1
+          fi
+          VERIFY=$(curl -sS -o /tmp/cf_verify.json -w "%{http_code}" \
+            "https://api.cloudflare.com/client/v4/user/tokens/verify" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN")
+          echo "--- /user/tokens/verify (HTTP $VERIFY) ---"
+          cat /tmp/cf_verify.json; echo
+          if [ "$VERIFY" != "200" ] || ! node -e "const r=require('/tmp/cf_verify.json');process.exit(r.success && r.result && r.result.status==='active'?0:1)"; then
+            echo "::error::CF token /verify failed (HTTP $VERIFY). Likely revoked, expired, or wrong value in secrets.CLOUDFLARE_API_TOKEN."
+            exit 1
+          fi
+          ACCT=$(curl -sS -o /tmp/cf_acct.json -w "%{http_code}" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN")
+          echo "--- /accounts/<id> (HTTP $ACCT) ---"
+          cat /tmp/cf_acct.json; echo
+          if [ "$ACCT" != "200" ]; then
+            echo "::error::CF token cannot read account $CLOUDFLARE_ACCOUNT_ID (HTTP $ACCT). Token is scoped to a different account, or missing Account Settings:Read."
+            exit 1
+          fi
+          echo "CF token verified and scoped to account ${CLOUDFLARE_ACCOUNT_ID:0:8}..."
+
       - name: Install dependencies
         working-directory: apps/api-worker
         run: npm ci
 
       - name: Deploy Worker
         working-directory: apps/api-worker
-        run: npx wrangler deploy
-        
+        run: |
+          set -euo pipefail
+          MAX_ATTEMPTS=5
+          for ATTEMPT in $(seq 1 $MAX_ATTEMPTS); do
+            echo "::group::wrangler deploy (attempt $ATTEMPT/$MAX_ATTEMPTS)"
+            if npx wrangler deploy 2>&1 | tee /tmp/wrangler_worker_out.txt; then
+              echo "::endgroup::"
+              exit 0
+            fi
+            echo "::endgroup::"
+            if grep -Eq '10429|Rate limited|rate.?limit' /tmp/wrangler_worker_out.txt; then
+              SLEEP=$((30 * ATTEMPT))
+              echo "Cloudflare rate limit hit (10429) — sleeping ${SLEEP}s before retry."
+              sleep "$SLEEP"
+              continue
+            fi
+            echo "Non-retryable wrangler failure — aborting."
+            exit 1
+          done
+          echo "Worker deploy failed after $MAX_ATTEMPTS attempts (persistent rate limiting)."
+          exit 1
+
+
       - name: Summary
         run: echo "✅ Worker deployed successfully"
 
@@ -64,6 +121,36 @@ jobs:
         with:
           node-version: 22
 
+      # Preflight guard — verify CF token/account before npm ci + build, so
+      # misconfigured / revoked / wrong-scope tokens fail in ~2s with a clear
+      # error instead of surfacing as authentication error [code: 10000] later.
+      - name: Preflight — verify CF token
+        run: |
+          set -euo pipefail
+          if [ -z "${CLOUDFLARE_API_TOKEN:-}" ] || [ -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then
+            echo "::error::CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID secret is empty."
+            exit 1
+          fi
+          VERIFY=$(curl -sS -o /tmp/cf_verify.json -w "%{http_code}" \
+            "https://api.cloudflare.com/client/v4/user/tokens/verify" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN")
+          echo "--- /user/tokens/verify (HTTP $VERIFY) ---"
+          cat /tmp/cf_verify.json; echo
+          if [ "$VERIFY" != "200" ] || ! node -e "const r=require('/tmp/cf_verify.json');process.exit(r.success && r.result && r.result.status==='active'?0:1)"; then
+            echo "::error::CF token /verify failed (HTTP $VERIFY). Likely revoked, expired, or wrong value in secrets.CLOUDFLARE_API_TOKEN."
+            exit 1
+          fi
+          ACCT=$(curl -sS -o /tmp/cf_acct.json -w "%{http_code}" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN")
+          echo "--- /accounts/<id> (HTTP $ACCT) ---"
+          cat /tmp/cf_acct.json; echo
+          if [ "$ACCT" != "200" ]; then
+            echo "::error::CF token cannot read account $CLOUDFLARE_ACCOUNT_ID (HTTP $ACCT). Token is scoped to a different account, or missing Account Settings:Read."
+            exit 1
+          fi
+          echo "CF token verified and scoped to account ${CLOUDFLARE_ACCOUNT_ID:0:8}..."
+
       - name: Install dependencies
         run: npm ci
 
@@ -75,9 +162,30 @@ jobs:
       - name: Deploy to Cloudflare Pages
         id: deploy
         run: |
-          OUTPUT=$(npx wrangler pages deploy dist/ --project-name=fusionops-web --branch main 2>&1)
-          echo "$OUTPUT"
-          URL=$(echo "$OUTPUT" | grep -Eo 'https://[A-Za-z0-9.-]+\.pages\.dev' | head -n1 || true)
+          set -euo pipefail
+          URL=""
+          MAX_ATTEMPTS=5
+          for ATTEMPT in $(seq 1 $MAX_ATTEMPTS); do
+            echo "::group::wrangler pages deploy (attempt $ATTEMPT/$MAX_ATTEMPTS)"
+            if npx wrangler pages deploy dist/ --project-name=fusionops-web --branch main 2>&1 | tee /tmp/wrangler_pages_out.txt; then
+              echo "::endgroup::"
+              URL=$(grep -Eo 'https://[A-Za-z0-9.-]+\.pages\.dev' /tmp/wrangler_pages_out.txt | head -n1 || true)
+              break
+            fi
+            echo "::endgroup::"
+            if grep -Eq '10429|Rate limited|rate.?limit' /tmp/wrangler_pages_out.txt; then
+              SLEEP=$((30 * ATTEMPT))
+              echo "Cloudflare rate limit hit (10429) — sleeping ${SLEEP}s before retry."
+              sleep "$SLEEP"
+              continue
+            fi
+            echo "Non-retryable wrangler failure — aborting."
+            exit 1
+          done
+          if [ -z "$URL" ]; then
+            echo "Pages deploy failed after $MAX_ATTEMPTS attempts (persistent rate limiting)."
+            exit 1
+          fi
           echo "url=$URL" >> "$GITHUB_OUTPUT"
 
       - name: Summary

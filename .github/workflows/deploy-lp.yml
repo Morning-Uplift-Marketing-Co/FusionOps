@@ -10,6 +10,14 @@ on:
 permissions:
   contents: read
 
+# Serialize LP deploys to avoid hammering the Cloudflare API.
+# Shared group name with deploy-dashboard.yml so *all* CF deploys on this
+# account/token queue against each other (single-flight across workflows).
+# Queued (never cancelled) so every pushed deploy-config eventually ships.
+concurrency:
+  group: cloudflare-deploy-global
+  cancel-in-progress: false
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -294,6 +302,43 @@ jobs:
             echo "Mirrored dist/apply/index.html → dist/apply.html for /apply"
           fi
 
+      # Preflight guard — verifies the CF token and account BEFORE wrangler
+      # touches the API. Catches misconfigured / revoked / wrong-scope tokens
+      # in ~2s with a clear error, instead of surfacing as 10000 mid-deploy.
+      - name: Preflight — verify CF token
+        env:
+          CF_TOKEN_FROM_CONFIG: ${{ steps.template.outputs.cf_api_token }}
+          CF_ACCOUNT_FROM_CONFIG: ${{ steps.template.outputs.cf_account_id }}
+          CF_TOKEN_FROM_SECRET: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_FROM_SECRET: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          export CLOUDFLARE_API_TOKEN="${CF_TOKEN_FROM_SECRET:-$CF_TOKEN_FROM_CONFIG}"
+          export CLOUDFLARE_ACCOUNT_ID="${CF_ACCOUNT_FROM_SECRET:-$CF_ACCOUNT_FROM_CONFIG}"
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID is empty (neither secret nor deploy-config supplied a value)."
+            exit 1
+          fi
+          VERIFY=$(curl -sS -o /tmp/cf_verify.json -w "%{http_code}" \
+            "https://api.cloudflare.com/client/v4/user/tokens/verify" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN")
+          echo "--- /user/tokens/verify (HTTP $VERIFY) ---"
+          cat /tmp/cf_verify.json; echo
+          if [ "$VERIFY" != "200" ] || ! node -e "const r=require('/tmp/cf_verify.json');process.exit(r.success && r.result && r.result.status==='active'?0:1)"; then
+            echo "::error::CF token /verify failed (HTTP $VERIFY). Likely revoked, expired, or wrong value in secrets.CLOUDFLARE_API_TOKEN."
+            exit 1
+          fi
+          ACCT=$(curl -sS -o /tmp/cf_acct.json -w "%{http_code}" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN")
+          echo "--- /accounts/<id> (HTTP $ACCT) ---"
+          cat /tmp/cf_acct.json; echo
+          if [ "$ACCT" != "200" ]; then
+            echo "::error::CF token cannot read account $CLOUDFLARE_ACCOUNT_ID (HTTP $ACCT). Token is scoped to a different account, or missing Account Settings:Read."
+            exit 1
+          fi
+          echo "CF token verified and scoped to account ${CLOUDFLARE_ACCOUNT_ID:0:8}..."
+
       - name: Deploy to Cloudflare Pages
         id: deploy
         working-directory: ${{ steps.template.outputs.dir }}
@@ -311,16 +356,54 @@ jobs:
           echo "Token set: $([ -n "$CLOUDFLARE_API_TOKEN" ] && echo YES || echo NO)"
           PROJECT="${{ steps.template.outputs.cf_pages_project }}"
 
-          # Create project if it doesn't exist yet (ignore error if already exists)
-          npx wrangler pages project create "$PROJECT" --production-branch=main 2>&1 || true
+          # Only call `pages project create` when the project doesn't exist yet.
+          # Unconditional creates burn a separate /accounts/*/pages/projects
+          # request on every deploy and contribute to 10429 rate limits.
+          EXISTS=0
+          if PROJECT_LIST=$(npx wrangler pages project list --json 2>/dev/null); then
+            if PROJECT="$PROJECT" node -e "
+              let raw='';process.stdin.on('data',d=>raw+=d).on('end',()=>{
+                try{const arr=JSON.parse(raw);const want=process.env.PROJECT;
+                  process.exit(arr.some(x=>x && x.name===want)?0:1)}catch{process.exit(1)}
+              })" <<< "$PROJECT_LIST"; then
+              EXISTS=1
+            fi
+          fi
+          if [ "$EXISTS" = "0" ]; then
+            echo "Project $PROJECT not found — creating."
+            npx wrangler pages project create "$PROJECT" --production-branch=main 2>&1 || true
+          else
+            echo "Project $PROJECT already exists — skipping create."
+          fi
 
-          # Deploy
-          npx wrangler pages deploy dist/ \
-            --project-name="$PROJECT" \
-            --branch=main \
-            --commit-dirty=true 2>&1 | tee /tmp/wrangler_out.txt
-          cat /tmp/wrangler_out.txt
-          URL=$(grep -Eo 'https://[A-Za-z0-9._-]+\.pages\.dev' /tmp/wrangler_out.txt | head -n1 || true)
+          # Deploy with retry/backoff on Cloudflare rate limits (code 10429).
+          # Wrangler does not retry 10429 itself, so wrap it here.
+          URL=""
+          MAX_ATTEMPTS=5
+          for ATTEMPT in $(seq 1 $MAX_ATTEMPTS); do
+            echo "::group::wrangler pages deploy (attempt $ATTEMPT/$MAX_ATTEMPTS)"
+            if npx wrangler pages deploy dist/ \
+                --project-name="$PROJECT" \
+                --branch=main \
+                --commit-dirty=true 2>&1 | tee /tmp/wrangler_out.txt; then
+              echo "::endgroup::"
+              URL=$(grep -Eo 'https://[A-Za-z0-9._-]+\.pages\.dev' /tmp/wrangler_out.txt | head -n1 || true)
+              break
+            fi
+            echo "::endgroup::"
+            if grep -Eq '10429|Rate limited|rate.?limit' /tmp/wrangler_out.txt; then
+              SLEEP=$((30 * ATTEMPT))
+              echo "Cloudflare rate limit hit (10429) — sleeping ${SLEEP}s before retry."
+              sleep "$SLEEP"
+              continue
+            fi
+            echo "Non-retryable wrangler failure — aborting."
+            exit 1
+          done
+          if [ -z "$URL" ]; then
+            echo "Deploy failed after $MAX_ATTEMPTS attempts (likely persistent rate limiting)."
+            exit 1
+          fi
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "Deploy URL: $URL"
 
