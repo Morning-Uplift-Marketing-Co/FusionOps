@@ -1,5 +1,5 @@
 {
-  "templateId": "pet-loans-02b",
+  "templateId": "pet-bold-02a",
   "cfPagesProject": "lp-bearlendlng-com",
   "cfZoneId": "",
   "skipDnsUpsert": true,
@@ -40,5 +40,5 @@
   "trustBadges": "",
   "reviews": [],
   "showReviews": true,
-  "deployedAt": "2026-04-27T11:06:31.107Z"
+  "deployedAt": "2026-04-27T11:25:44.887Z"
 }
