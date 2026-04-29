@@ -1,0 +1,121 @@
+---
+const aprMin = import.meta.env.PUBLIC_APRMIN || '${aprMin}';
+const aprMax = import.meta.env.PUBLIC_APRMAX || '${aprMax}';
+const phone  = import.meta.env.PUBLIC_PHONE  || '${phone}';
+
+const faqs = [
+  {
+    q: 'Will checking my financing options hurt my credit score?',
+    a: 'Absolutely not. PawCare Plus uses only soft credit inquiries—the same type you use when checking your own credit report. Soft inquiries never appear on credit reports viewed by other lenders and have zero impact on your credit score. Check your options as many times as you want, risk-free.',
+  },
+  {
+    q: 'How do 0% APR financing plans work?',
+    a: '0% APR plans are available for qualified applicants on select term lengths (usually 3-6 months). With 0% APR, you pay back exactly what you borrowed—no interest charges. Eligibility depends on your credit profile and the amount financed. If you qualify, 0% options will appear clearly in your plan choices.',
+  },
+  {
+    q: 'What types of pet care can I finance?',
+    a: 'PawCare Plus covers all veterinary services: emergency surgeries, routine check-ups, dental procedures, diagnostics, specialist care, cancer treatment, orthopedic surgery, prescriptions, and preventive care. If your vet provides it, we can finance it.',
+  },
+  {
+    q: 'How quickly will I get approved?',
+    a: 'You\'ll receive an instant decision in 60 seconds or less. Once you choose your preferred payment plan, approval is immediate—no waiting, no paperwork, no phone calls. Your vet can start treatment right away.',
+  },
+  {
+    q: 'What credit score do I need to qualify?',
+    a: 'PawCare Plus approves a wide range of credit profiles, including those with fair or limited credit history. We look at your complete financial picture—income, employment, and overall stability—not just your credit score. Many applicants with less-than-perfect credit are approved.',
+  },
+  {
+    q: `What are PawCare Plus interest rates?`,
+    a: `APRs range from ${aprMin}% to ${aprMax}%, based on your credit profile and loan term. Your rate is fixed—it never changes. Before you accept any plan, you\'ll see the exact APR, monthly payment, and total cost. No surprises, no variable rates.`,
+  },
+  {
+    q: 'Are there any hidden fees?',
+    a: 'None. Zero application fees, zero origination fees, zero hidden charges. The total amount you\'ll repay is shown upfront before you accept your plan. What you see is exactly what you pay.',
+  },
+  {
+    q: 'Can I pay off my loan early?',
+    a: 'Yes, anytime. There are zero prepayment penalties. Pay ahead or pay in full whenever you want without extra fees. Early payoff reduces your total interest since interest only accrues on your remaining balance.',
+  },
+  {
+    q: 'What if my vet doesn\'t accept PawCare Plus?',
+    a: 'We partner with thousands of veterinary clinics nationwide and are adding new partners daily. If your vet isn\'t enrolled yet, they can apply quickly online. You can also use our clinic finder to locate participating vets near you.',
+  },
+  {
+    q: 'Why choose PawCare Plus over a credit card?',
+    a: 'Credit cards have variable APRs (often 20-30%), revolving balances, and minimum payments that extend debt for years. PawCare Plus offers fixed-rate plans with predictable monthly payments, clear payoff dates, and 0% APR options. You know the full cost upfront—no surprises, no games.',
+  },
+];
+---
+
+<script type="application/ld+json" set:html={JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": faqs.map(f => ({
+    "@type": "Question",
+    "name": f.q,
+    "acceptedAnswer": { "@type": "Answer", "text": f.a }
+  }))
+})} />
+
+<section id="faq" class="py-20 md:py-28 px-6">
+  <div class="max-w-6xl mx-auto">
+
+    <div class="grid md:grid-cols-[380px_1fr] gap-14 items-start">
+      <!-- Left: sticky -->
+      <div class="md:sticky md:top-24">
+        <span class="section-label">Pet Financing—Your Questions Answered</span>
+        <h2 class="section-title">Frequently Asked Questions</h2>
+        <p class="text-foreground/70 text-base leading-relaxed mb-8">
+          Honest answers to the questions pet parents ask most. If you don't see your question here, give us a call—we're happy to help.
+        </p>
+
+        <div class="glass-card p-5 flex gap-4 items-center">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            style="background: hsl(var(--accent) / 0.1);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--accent))" stroke-width="2" stroke-linecap="round">
+              <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 11.12 19.79 19.79 0 012 2.44 2 2 0 014 .4h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 8.15a16 16 0 006.29 6.29l1.01-1.01a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+            </svg>
+          </div>
+          <div>
+            <p class="text-foreground/70 text-sm font-semibold">Still have questions?</p>
+            <p class="text-foreground/65 text-xs mt-0.5">{phone} · Mon–Fri 8am–8pm EST</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: accordion -->
+      <div id="faq-list">
+        {faqs.map((faq, i) => (
+          <div class={`faq-item ${i === 0 ? 'open' : ''}`} data-index={i}>
+            <button class="faq-trigger">
+              <span>{faq.q}</span>
+              <span class="faq-icon">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+                  <path d="M12 5v14M5 12h14"/>
+                </svg>
+              </span>
+            </button>
+            <div class="faq-content">
+              {faq.a}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const faqList = document.getElementById('faq-list');
+  if (faqList) {
+    faqList.addEventListener('click', (e) => {
+      const trigger = (e.target as HTMLElement).closest('.faq-trigger');
+      if (!trigger) return;
+      const item = trigger.closest('.faq-item');
+      if (!item) return;
+      const isOpen = item.classList.contains('open');
+      faqList.querySelectorAll('.faq-item').forEach(el => el.classList.remove('open'));
+      if (!isOpen) item.classList.add('open');
+    });
+  }
+</script>
