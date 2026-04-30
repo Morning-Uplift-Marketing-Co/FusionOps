@@ -1,5 +1,5 @@
 {
-  "templateId": "pet-loans-01b",
+  "templateId": "pet-loans-02b",
   "cfPagesProject": "lp-scratchpetnow-com",
   "cfZoneId": "",
   "skipDnsUpsert": true,
@@ -7,10 +7,10 @@
   "cfAccountId": "",
   "brand": "ScratchPay",
   "domain": "scratchpetnow.com",
-  "h1": "8 Years of Pet Care Funding",
-  "sub": "Quick form, no credit score impact. Get funding offers fast.",
-  "cta": "Claim My Options",
-  "title2": "Just a Soft Credit Check",
+  "h1": "Sudden Vet Bill? Fund 100% Pet Care.",
+  "sub": "Quick form. No credit impact. Financing decisions in minutes.",
+  "cta": "See My Options",
+  "title2": "Soft Check. Zero Obligation.",
   "phone": "1-800-SCRATCH-PETNO",
   "email": "support@scratchpetnow.com",
   "address": "5830 E 2nd St, Ste 7000, Casper, WY 82609",
@@ -40,5 +40,5 @@
   "trustBadges": "",
   "reviews": [],
   "showReviews": true,
-  "deployedAt": "2026-04-30T11:42:59.138Z"
+  "deployedAt": "2026-04-30T11:48:41.766Z"
 }
