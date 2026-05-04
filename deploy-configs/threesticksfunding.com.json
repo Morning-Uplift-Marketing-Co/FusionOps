@@ -1,0 +1,63 @@
+{
+  "templateId": "astro-green",
+  "cfPagesProject": "lp-threesticksfunding-com",
+  "cfZoneId": "",
+  "skipDnsUpsert": true,
+  "cfApiToken": "",
+  "cfAccountId": "",
+  "brand": "Three Sticks Lending",
+  "domain": "threesticksfunding.com",
+  "h1": "Get $3500 in Quick Funding Today",
+  "sub": "Quick online form. Gentle credit review. Funds by tomorrow.",
+  "cta": "Unlock My Options",
+  "title2": "No Hard Credit Impact",
+  "phone": "1-800-THREEST-ICKSF",
+  "email": "support@threesticksfunding.com",
+  "address": "108 West 13th St, Wilmington, DE 19801",
+  "aid": "14881",
+  "amountMin": 100,
+  "amountMax": 5000,
+  "aprMin": 5.99,
+  "aprMax": 35.99,
+  "primaryColor": "#3b5bdb",
+  "accentColor": "#f97316",
+  "conversionId": "AW-18070210955",
+  "gtagFormStartLabel": "W8B3CKPtmKccEIuTxqhD",
+  "gtagFormSubmitLabel": "hp_9CL76r6ccEIuTxqhD",
+  "formStartLabel": "W8B3CKPtmKccEIuTxqhD",
+  "formSubmitLabel": "hp_9CL76r6ccEIuTxqhD",
+  "voluumId": "7744bbbb-0f83-448e-b430-2f62f1de8e0a",
+  "voluumDomain": "start.threesticksfunding.com",
+  "voluumClickUrl": "https://start.threesticksfunding.com/click",
+  "voluumCfCname": "",
+  "voluumAcmName": "",
+  "voluumAcmValue": "",
+  "voluumLanderScript": "<meta http-equiv=\"delegate-ch\" content=\"sec-ch-ua https://link.threesticksfunding.com; sec-ch-ua-mobile https://link.threesticksfunding.com; sec-ch-ua-arch https://link.threesticksfunding.com; sec-ch-ua-model https://link.threesticksfunding.com; sec-ch-ua-platform https://link.threesticksfunding.com; sec-ch-ua-platform-version https://link.threesticksfunding.com; sec-ch-ua-bitness https://link.threesticksfunding.com; sec-ch-ua-full-version-list https://link.threesticksfunding.com; sec-ch-ua-full-version https://link.threesticksfunding.com\"><style>.dtpcnt{opacity: 0;}</style>\n<script>\n    (function(e,d,k,n,u,v,g,w,C,f,p,x,D,c,q,r,h,t,y,G,z){function A(){for(var a=d.querySelectorAll(\".dtpcnt\"),b=0,l=a.length;b<l;b++)a[b][w]=a[b][w].replace(/(^|\\s+)dtpcnt($|\\s+)/g,\"\")}function E(a,b,l,F){var m=new Date;m.setTime(m.getTime()+(F||864E5));d.cookie=a+\"=\"+b+\"; \"+l+\"samesite=Strict; expires=\"+m.toGMTString()+\"; path=/\";k.setItem(a,b);k.setItem(a+\"-expires\",m.getTime())}function B(a){var b=d.cookie.match(new RegExp(\"(^| )\"+a+\"=([^;]+)\"));return b?b.pop():k.getItem(a+\"-expires\")&&+k.getItem(a+\"-expires\")>(new Date).getTime()?k.getItem(a):null}z=\"https:\"===e.location.protocol?\"secure; \":\"\";e[f]||(e[f]=function(){(e[f].q=e[f].q||[]).push(arguments)},r=d[u],d[u]=function(){r&&r.apply(this,arguments);if(e[f]&&!e[f].hasOwnProperty(\"params\")&&/loaded|interactive|complete/.test(d.readyState))for(;c=d[v][p++];)/\\/?click\\/?($|(\\/[0-9]+)?$)/.test(c.pathname)&&(c[g]=\"javascrip\"+e.postMessage.toString().slice(4,5)+\":\"+f+'.l=\"'+c[g]+'\",void 0')},setTimeout(function(){(t=RegExp(\"[?&]cpid(=([^&#]*)|&|#|$)\").exec(e.location.href))&&t[2]&&(h=t[2],y=B(\"vl-\"+h));var a=B(\"vl-cep\"),b=location[g];if(\"savedCep\"===D&&a&&(!h||\"undefined\"===typeof h)&&0>b.indexOf(\"cep=\")){var l=-1<b.indexOf(\"?\")?\"&\":\"?\";b+=l+a}c=d.createElement(\"script\");q=d.scripts[0];c.defer=1;c.src=x+(-1===x.indexOf(\"?\")?\"?\":\"&\")+\"lpref=\"+n(d.referrer)+\"&lpurl=\"+n(b)+\"&lpt=\"+n(d.title)+\"&vtm=\"+(new Date).getTime()+(y?\"&uw=no\":\"\");c[C]=function(){for(p=0;c=d[v][p++];)/dtpCallback\\.l/.test(c[g])&&(c[g]=decodeURIComponent(c[g]).match(/dtpCallback\\.l=\"([^\"]+)/)[1]);A()};q.parentNode.insertBefore(c,q);h&&E(\"vl-\"+h,\"1\",z)},0),setTimeout(A,7E3))})(window,document,localStorage,encodeURIComponent,\"onreadystatechange\",\"links\",\"href\",\"className\",\"onerror\",\"dtpCallback\",0,\"https://link.threesticksfunding.com/d/.js\",\"savedCep\");\n</script>\n<noscript><link href=\"https://link.threesticksfunding.com/d/.js?noscript=true&lpurl=\" rel=\"stylesheet\"/></noscript>",
+  "colorId": "ocean",
+  "fontId": "dm-sans",
+  "layout": "hero-left",
+  "radius": "rounded",
+  "trustBadges": "",
+  "reviews": [
+    {
+      "name": "Sarah K.",
+      "location": "Dallas, TX",
+      "rating": 5,
+      "text": "When my AC unit unexpectedly broke, I needed funds fast. Three Sticks Lending made the process incredibly easy and offered manageable installment payments that fit my budget."
+    },
+    {
+      "name": "Michael P.",
+      "location": "Orlando, FL",
+      "rating": 5,
+      "text": "I had a sudden medical bill that was more than I expected. Getting an installment loan from Three Sticks Lending was quick, and I really appreciate the clear terms and flexible payment schedule."
+    },
+    {
+      "name": "Jessica L.",
+      "location": "Denver, CO",
+      "rating": 5,
+      "text": "My car needed a major repair, and I couldn't afford to pay for it all at once. Three Sticks Lending provided the funds I needed with an easy application and payments I could comfortably handle."
+    }
+  ],
+  "showReviews": true,
+  "deployedAt": "2026-05-04T12:30:42.049Z"
+}
