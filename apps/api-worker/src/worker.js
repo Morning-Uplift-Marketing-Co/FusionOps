@@ -49,6 +49,7 @@ import {
 } from './handlers/pixel-tracking.js';
 import { handleInitRoute } from './handlers/init.js';
 import { handleAiGenerationRoute } from './handlers/ai-generation.js';
+import { handleD1AutomationRoute } from './handlers/automation/d1.js';
 import {
   SECRET_KEYS,
   redactSettings,
@@ -3613,168 +3614,10 @@ export default {
         });
       }
 
-      // ═══ D1 DATABASE QUERIES ═══
-      // Direct SQL queries to D1 database (proxied to avoid CORS)
-      if (path === '/api/automation/d1/query' && method === 'POST') {
-        const body = await request.json();
-        const { sql, params = [], accountId, databaseId, apiToken } = body;
-
-        if (!sql) return json({ success: false, error: 'Missing SQL query' }, 400);
-        if (!accountId) return json({ success: false, error: 'Missing accountId' }, 400);
-        if (!databaseId) return json({ success: false, error: 'Missing databaseId' }, 400);
-        if (!apiToken) return json({ success: false, error: 'Missing apiToken (send from request body)' }, 400);
-
-        try {
-          // Cloudflare D1 Query API
-          const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/d1/database/${databaseId}/query`;
-
-          console.log('[D1 Query]', {
-            url: url.replace(accountId, '***').replace(databaseId, '***'),
-            sql: sql.substring(0, 50) + (sql.length > 50 ? '...' : ''),
-            hasToken: !!apiToken,
-            tokenPrefix: apiToken ? apiToken.substring(0, 10) + '...' : 'none',
-          });
-
-          const res = await fetch(url, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${apiToken}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ sql, params }),
-          });
-
-          const responseText = await res.text();
-
-          if (!res.ok) {
-            let errData = {};
-            try {
-              errData = JSON.parse(responseText);
-            } catch { }
-
-            const errorMessage = errData.errors?.[0]?.message || errData.errors?.[0]?.code || responseText || `HTTP ${res.status}`;
-
-            console.error('[D1 Error]', {
-              status: res.status,
-              error: errorMessage,
-              details: errData.errors?.[0] || {},
-            });
-
-            return json({
-              success: false,
-              error: errorMessage,
-              code: errData.errors?.[0]?.code,
-              details: errData.errors?.[0] || {},
-              httpStatus: res.status,
-            }, res.status);
-          }
-
-          const data = JSON.parse(responseText);
-          return json({
-            success: true,
-            results: data.result?.[0]?.results || [],
-          });
-        } catch (e) {
-          console.error('[D1 Exception]', e.message, e.stack);
-          return json({ success: false, error: e.message, stack: e.stack }, 500);
-        }
-      }
-
-      if (path === '/api/automation/d1/execute' && method === 'POST') {
-        const body = await request.json();
-        const { sql, params = [], accountId, databaseId, apiToken } = body;
-
-        if (!sql) return json({ success: false, error: 'Missing SQL command' }, 400);
-        if (!accountId) return json({ success: false, error: 'Missing accountId' }, 400);
-        if (!databaseId) return json({ success: false, error: 'Missing databaseId' }, 400);
-        if (!apiToken) return json({ success: false, error: 'Missing apiToken (send from request body)' }, 400);
-
-        try {
-          const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/d1/database/${databaseId}/query`;
-          const res = await fetch(url, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${apiToken}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ sql, params }),
-          });
-
-          if (!res.ok) {
-            const errData = await res.json().catch(() => ({}));
-            return json({
-              success: false,
-              error: errData.errors?.[0]?.message || `HTTP ${res.status}`,
-            }, res.status);
-          }
-
-          return json({ success: true });
-        } catch (e) {
-          return json({ success: false, error: e.message }, 500);
-        }
-      }
-
-      // ═══ D1 DATABASE DIRECT (using env.DB binding) ═══
-      // Test endpoint - no API token needed, uses Worker's D1 binding directly
-      if (path === '/api/automation/d1/test' && method === 'GET') {
-        try {
-          // Query using env.DB binding (no token needed)
-          const { results } = await env.DB
-            .prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
-            .all();
-
-          return json({
-            success: true,
-            tables: results.map(r => r.name),
-            message: 'D1 connection successful',
-          });
-        } catch (e) {
-          return json({
-            success: false,
-            error: e.message,
-          }, 500);
-        }
-      }
-
-      // ═══ D1 DATABASE DIRECT QUERY ═══
-      // Execute SQL using env.DB binding directly (no API token needed)
-      if (path === '/api/automation/d1/direct-query' && method === 'POST') {
-        try {
-          const body = await request.json();
-          const { sql, params = [] } = body;
-
-          if (!sql) return json({ success: false, error: 'Missing SQL query' }, 400);
-          if (!isReadOnlyD1DirectSql(sql)) {
-            return json(
-              {
-                success: false,
-                error:
-                  'This endpoint is read-only (SELECT/WITH on the Worker D1 binding). For CREATE/INSERT/UPDATE use Settings D1 credentials: POST /api/automation/d1/execute from the app (FusionOps d1.js).',
-                code: 'D1_DIRECT_READ_ONLY',
-              },
-              400,
-            );
-          }
-
-          // Use env.DB binding directly
-          const stmt = env.DB.prepare(sql);
-          let result;
-          if (params && params.length > 0) {
-            result = await stmt.bind(...params).all();
-          } else {
-            result = await stmt.all();
-          }
-
-          return json({
-            success: true,
-            results: result.results || [],
-          });
-        } catch (e) {
-          return json({
-            success: false,
-            error: e.message,
-          }, 500);
-        }
+      // ═══ D1 AUTOMATION (query/execute via CF API + direct-query via env.DB) ═══
+      {
+        const d1Res = await handleD1AutomationRoute({ request, env, path, method });
+        if (d1Res) return d1Res;
       }
 
       // ═══ AI GENERATION (copy / meta / description / reviews) ═══
