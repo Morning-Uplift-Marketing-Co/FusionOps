@@ -2,7 +2,6 @@
 // Binds to D1 database "ppc-gen-claude"
 // Origin: https://github.com/songsawat-w/ppc-gen-cfca
 
-import { neon } from '@neondatabase/serverless';
 import puppeteer from '@cloudflare/puppeteer';
 import { connect } from 'cloudflare:sockets';
 import { corsHeaders, json, uid, toBase64 } from './lib/http.js';
@@ -29,6 +28,15 @@ import {
   upsertGithubFile,
   ensureGithubBranch,
 } from './lib/github.js';
+import {
+  getNeonSql,
+  ensureNeonTables,
+  neonUpsertSettings,
+  neonUpsertSite,
+  neonDeleteSite,
+  neonUpsertDeploy,
+  neonDeleteDeploy,
+} from './lib/neon-sync.js';
 
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -279,109 +287,6 @@ const THUMB_PREVIEW_HTML_MAX_BYTES = 2 * 1024 * 1024;
 
 /** Cap manual thumbnail upload size. */
 const THUMB_UPLOAD_MAX_BYTES = 8 * 1024 * 1024;
-
-function getNeonSql(env) {
-  const connStr = env?.NEON_DATABASE_URL;
-  if (!connStr || typeof connStr !== 'string') return null;
-  if (!connStr.includes('@')) return null;
-  try {
-    return neon(connStr);
-  } catch (_e) {
-    return null;
-  }
-}
-
-async function ensureNeonTables(sql) {
-  if (!sql) return;
-  try {
-    await sql`
-      CREATE TABLE IF NOT EXISTS settings (
-        key TEXT PRIMARY KEY,
-        value JSONB,
-        updated_at TIMESTAMPTZ DEFAULT now()
-      )
-    `;
-
-    await sql`
-      ALTER TABLE settings
-      ALTER COLUMN value TYPE JSONB
-      USING (
-        CASE
-          WHEN value IS NULL THEN NULL
-          WHEN pg_typeof(value) = 'jsonb'::regtype THEN value
-          ELSE to_jsonb(value)
-        END
-      )
-    `;
-    await sql`
-      CREATE TABLE IF NOT EXISTS sites (
-        id TEXT PRIMARY KEY,
-        data JSONB,
-        created_at TIMESTAMPTZ DEFAULT now(),
-        updated_at TIMESTAMPTZ DEFAULT now()
-      )
-    `;
-    await sql`
-      CREATE TABLE IF NOT EXISTS deploys (
-        id TEXT PRIMARY KEY,
-        site_id TEXT,
-        brand TEXT,
-        url TEXT,
-        type TEXT,
-        deployed_by TEXT,
-        created_at TIMESTAMPTZ DEFAULT now()
-      )
-    `;
-  } catch (_e) {
-    // Best-effort only; D1 remains primary.
-  }
-}
-
-async function neonUpsertSettings(sql, obj) {
-  if (!sql || !obj) return;
-  for (const [key, value] of Object.entries(obj)) {
-    await sql`
-      INSERT INTO settings (key, value, updated_at)
-      VALUES (${key}, ${JSON.stringify(value)}, now())
-      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()
-    `;
-  }
-}
-
-async function neonUpsertSite(sql, id, body) {
-  if (!sql) return;
-  await sql`
-    INSERT INTO sites (id, data, created_at, updated_at)
-    VALUES (${id}, ${JSON.stringify(body || {})}, now(), now())
-    ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = now()
-  `;
-}
-
-async function neonDeleteSite(sql, id) {
-  if (!sql) return;
-  await sql`DELETE FROM sites WHERE id = ${id}`;
-}
-
-async function neonUpsertDeploy(sql, id, body) {
-  if (!sql) return;
-  await sql`
-    INSERT INTO deploys (id, site_id, brand, url, type, deployed_by, created_at)
-    VALUES (
-      ${id}, ${body?.siteId || ''}, ${body?.brand || ''}, ${body?.url || ''}, ${body?.type || 'new'}, ${body?.deployedBy || ''}, now()
-    )
-    ON CONFLICT (id) DO UPDATE SET
-      site_id = EXCLUDED.site_id,
-      brand = EXCLUDED.brand,
-      url = EXCLUDED.url,
-      type = EXCLUDED.type,
-      deployed_by = EXCLUDED.deployed_by
-  `;
-}
-
-async function neonDeleteDeploy(sql, id) {
-  if (!sql) return;
-  await sql`DELETE FROM deploys WHERE id = ${id}`;
-}
 
 async function createVersionSnapshot(db, siteId, config) {
   try {
