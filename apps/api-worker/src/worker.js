@@ -13,6 +13,14 @@ import {
   isSafeVoluumForwardHost,
   voluumForwardSearchParams,
 } from './lib/voluum-guard.js';
+import {
+  TRUSTED_PAGES_SUFFIXES,
+  buildAllowedHosts,
+  isFusionopsPagesDevHost,
+  isTrustedOriginRequest,
+  denyUnlessTrustedOrBearer,
+  isReadOnlyD1DirectSql,
+} from './lib/auth.js';
 
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -258,88 +266,11 @@ async function handleGtagRelay(request, url, env) {
   return new Response(upstream.body, { status: upstream.status, headers: respHeaders });
 }
 
-const TRUSTED_PAGES_SUFFIXES = [
-  '.fusionops-web.pages.dev',
-  '.fusionops.pages.dev',
-  '.up.railway.app',
-];
-
-function buildAllowedHosts(env, requestHost) {
-  const configured = String(env?.ALLOWED_ORIGINS || '')
-    .split(',')
-    .map((v) => extractHost(v))
-    .filter(Boolean);
-  return new Set([
-    'localhost',
-    '127.0.0.1',
-    '::1',
-    'fusionops-web.pages.dev',
-    'main.fusionops.pages.dev',
-    'fusionops.pages.dev',
-    extractHost(env?.APP_ORIGIN || ''),
-    extractHost(env?.PUBLIC_APP_ORIGIN || ''),
-    extractHost(requestHost || ''),
-    ...configured,
-  ].filter(Boolean));
-}
-
-/** Cloudflare Pages preview/production hosts that include "fusionops" (e.g. multi-fusionops-web.pages.dev). */
-function isFusionopsPagesDevHost(host) {
-  const h = String(host || '').toLowerCase();
-  if (!h.endsWith('.pages.dev')) return false;
-  return h.includes('fusionops');
-}
-
-function isTrustedOriginRequest(request, url, env) {
-  const allowed = buildAllowedHosts(env, url?.hostname || '');
-  const originHost = extractHost(request.headers.get('Origin') || '');
-  const refererHost = extractHost(request.headers.get('Referer') || '');
-  const sourceHost = originHost || refererHost;
-  if (!sourceHost) return false;
-  if (allowed.has(sourceHost)) return true;
-  if (isFusionopsPagesDevHost(sourceHost)) return true;
-  return TRUSTED_PAGES_SUFFIXES.some((suffix) => sourceHost.endsWith(suffix));
-}
-
 /** Cap client-supplied HTML for Browser Rendering (abuse / memory). */
 const THUMB_PREVIEW_HTML_MAX_BYTES = 2 * 1024 * 1024;
 
 /** Cap manual thumbnail upload size. */
 const THUMB_UPLOAD_MAX_BYTES = 8 * 1024 * 1024;
-
-/**
- * Expensive template thumb mutations: require same trust as authenticated /api —
- * Bearer API_SECRET, or browser Origin/Referer on allowlist (see isTrustedOriginRequest).
- */
-function denyUnlessTrustedOrBearer(request, url, env) {
-  const auth = request.headers.get('Authorization') || '';
-  if (env.API_SECRET && auth === `Bearer ${env.API_SECRET}`) return null;
-  if (isTrustedOriginRequest(request, url, env)) return null;
-  if (env.API_SECRET) {
-    return json({ error: 'Unauthorized (missing/invalid Bearer and untrusted origin)' }, 401);
-  }
-  return json({ error: 'Unauthorized (untrusted origin)' }, 401);
-}
-
-/**
- * Bound-D1 direct-query: one statement only; SELECT / WITH only (after optional EXPLAIN).
- * Blocks writes and PRAGMA even if outer auth is compromised.
- */
-function isReadOnlyD1DirectSql(sql) {
-  let s = String(sql || '').trim();
-  if (!s) return false;
-  s = s.replace(/\/\*[\s\S]*?\*\//g, ' ');
-  s = s
-    .split(/\r?\n/)
-    .map((line) => line.replace(/--[^\n]*/, ''))
-    .join('\n');
-  s = s.trim();
-  const parts = s.split(';').map((x) => x.trim()).filter(Boolean);
-  if (parts.length !== 1) return false;
-  let one = parts[0];
-  one = one.replace(/^\s*EXPLAIN\s+(QUERY\s+PLAN\s+)?/i, '').trim();
-  return /^(SELECT|WITH)\b/i.test(one);
-}
 
 function getNeonSql(env) {
   const connStr = env?.NEON_DATABASE_URL;
