@@ -38,6 +38,7 @@ import {
 } from './lib/neon-sync.js';
 import { isGtagRelayPath, handleGtagRelay } from './handlers/gtag-relay.js';
 import { handleProxy } from './handlers/proxy.js';
+import { handleLeadingCardsRoute, getLcSettings } from './handlers/leadingcards.js';
 
 
 /** Cap client-supplied HTML for Browser Rendering (abuse / memory). */
@@ -628,13 +629,6 @@ function resolveCategory(explicit, templateId, name, description, files) {
   const cat = String(explicit || '').trim().toLowerCase();
   if (cat && cat !== 'general' && ['loan', 'pet', 'pet-care', 'installment', 'custom'].includes(cat)) return cat;
   return inferTemplateCategory(templateId, name, description, files);
-}
-
-async function getLcSettings(db) {
-  const rows = await db.prepare("SELECT key, value FROM settings WHERE key IN ('lcToken', 'lcTeamUuid')").all();
-  const s = {};
-  rows.results.forEach(r => { s[r.key] = r.value; });
-  return s;
 }
 
 async function getMlSettings(db) {
@@ -3775,99 +3769,9 @@ export default {
       }
 
       // ═══ LEADINGCARDS PROXY ═══
-      if (path === '/api/lc/cards' && method === 'GET') {
-        const lc = await getLcSettings(db);
-        if (!lc.lcToken) return json({ error: 'LeadingCards token not configured' }, 400);
-        const params = new URLSearchParams(url.search);
-        if (lc.lcTeamUuid) params.set('team_uuid', lc.lcTeamUuid);
-        const res = await fetch(`https://app.leadingcards.media/v1/cards/?${params.toString()}`, {
-          headers: { 'Authorization': `Token ${lc.lcToken}`, 'Content-Type': 'application/json' },
-        });
-        const data = await res.json();
-        return json(data, res.status);
-      }
-
-      if (path.match(/^\/api\/lc\/cards\/[\w-]+$/) && method === 'GET') {
-        const lc = await getLcSettings(db);
-        if (!lc.lcToken) return json({ error: 'LeadingCards token not configured' }, 400);
-        const parts = path.split('/');
-        const uuid = parts.pop();
-        const res = await fetch(`https://app.leadingcards.media/v1/cards/${uuid}/`, {
-          headers: { 'Authorization': `Token ${lc.lcToken}`, 'Content-Type': 'application/json' },
-        });
-        const data = await res.json();
-        return json(data, res.status);
-      }
-
-      if (path === '/api/lc/cards' && method === 'POST') {
-        const lc = await getLcSettings(db);
-        if (!lc.lcToken) return json({ error: 'LeadingCards token not configured' }, 400);
-        const body = await request.json();
-        if (lc.lcTeamUuid) body.team_uuid = lc.lcTeamUuid;
-        const res = await fetch('https://app.leadingcards.media/v1/cards/', {
-          method: 'POST',
-          headers: { 'Authorization': `Token ${lc.lcToken}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        });
-        const data = await res.json();
-        return json(data, res.status);
-      }
-
-      if (path.match(/^\/api\/lc\/cards\/[\w-]+\/(block|activate)$/) && method === 'PUT') {
-        const lc = await getLcSettings(db);
-        if (!lc.lcToken) return json({ error: 'LeadingCards token not configured' }, 400);
-        const parts = path.split('/');
-        const action = parts.pop();
-        const uuid = parts.pop();
-        const res = await fetch(`https://app.leadingcards.media/v1/cards/${uuid}/${action}/`, {
-          method: 'PUT',
-          headers: { 'Authorization': `Token ${lc.lcToken}`, 'Content-Type': 'application/json' },
-        });
-        const data = await res.json();
-        return json(data, res.status);
-      }
-
-      if (path.match(/^\/api\/lc\/cards\/[\w-]+\/change_limit$/) && method === 'PUT') {
-        const lc = await getLcSettings(db);
-        if (!lc.lcToken) return json({ error: 'LeadingCards token not configured' }, 400);
-        const parts = path.split('/');
-        parts.pop(); // change_limit
-        const uuid = parts.pop();
-        const body = await request.json();
-        const res = await fetch(`https://app.leadingcards.media/v1/cards/${uuid}/change_limit/`, {
-          method: 'PUT',
-          headers: { 'Authorization': `Token ${lc.lcToken}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        });
-        const data = await res.json();
-        return json(data, res.status);
-      }
-
-      if (path.match(/^\/api\/lc\/(bins|billing|tags|transactions|teams)$/) && method === 'GET') {
-        const lc = await getLcSettings(db);
-        if (!lc.lcToken) return json({ error: 'LeadingCards token not configured' }, 400);
-        const resource = path.split('/').pop();
-        const apiMap = { bins: 'cards/bins', billing: 'billing_addresses', tags: 'tags', transactions: 'transactions', teams: 'teams' };
-        const endpoint = apiMap[resource];
-        const params = new URLSearchParams(url.search);
-        const res = await fetch(`https://app.leadingcards.media/v1/${endpoint}/?${params.toString()}`, {
-          headers: { 'Authorization': `Token ${lc.lcToken}`, 'Content-Type': 'application/json' },
-        });
-        const data = await res.json();
-        return json(data, res.status);
-      }
-
-      if (path === '/api/lc/billing' && method === 'POST') {
-        const lc = await getLcSettings(db);
-        if (!lc.lcToken) return json({ error: 'LeadingCards token not configured' }, 400);
-        const body = await request.json();
-        const res = await fetch('https://app.leadingcards.media/v1/billing_addresses/', {
-          method: 'POST',
-          headers: { 'Authorization': `Token ${lc.lcToken}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        });
-        const data = await res.json();
-        return json(data, res.status);
+      {
+        const lcRes = await handleLeadingCardsRoute({ request, db, path, method, url });
+        if (lcRes) return lcRes;
       }
 
       // ═══ MULTILOGIN PROXY ═══
