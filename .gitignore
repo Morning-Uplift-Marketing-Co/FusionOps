@@ -15,6 +15,10 @@ dist
 # Local / one-off logs
 alpha-monitoring.log
 
+# Test side-effect output (alpha-monitor.test.js writes timestamps here)
+.planning/alpha-test/MONITORING-REPORT.md
+.planning/alpha-test/monitoring-summary.json
+
 # OS
 .DS_Store
 Thumbs.db
