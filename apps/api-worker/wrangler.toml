@@ -40,40 +40,49 @@ invocation_logs = true
 binding = "THUMBS"
 bucket_name = "lp-factory-thumbs"
 
-# First-party pixel hostnames: t.{domain}/* → this Worker (see worker.js path === '/e').
-# Keep in sync with Cloudflare Dashboard; duplicate on lp-factory-pixel will fail deploy (route conflict).
-[[routes]]
-pattern = "t.scratchpetlending.com/*"
-zone_name = "scratchpetlending.com"
-
-[[routes]]
-pattern = "t.scratchpetfinancing.com/*"
-zone_name = "scratchpetfinancing.com"
-
-[[routes]]
-pattern = "t.scratchcareday.com/*"
-zone_name = "scratchcareday.com"
-
-[[routes]]
-pattern = "t.pawvetfund.com/*"
-zone_name = "pawvetfund.com"
-
-[[routes]]
-pattern = "t.scratchpaypet.tech/*"
-zone_name = "scratchpaypet.tech"
-
-[[routes]]
-pattern = "t.scratchpayeasy.com/*"
-zone_name = "scratchpayeasy.com"
-
-[[routes]]
-pattern = "t.joracreditz.com/*"
-zone_name = "joracreditz.com"
-
-[[routes]]
-pattern = "node.sysassets-core-delivery.com"
-zone_name = "sysassets-core-delivery.com"
-custom_domain = true
+# Worker Routes are managed in the Cloudflare Dashboard (Workers → Routes),
+# not in wrangler.toml. Hardcoding them here previously caused deploys to
+# fail when a zone was no longer on the active CF account, e.g.:
+#   The zone "scratchpetlending.com" does not exist on your account. [code: 10083]
+# The bundle uploads regardless, but wrangler treats route attach failures as
+# a non-zero exit. Routes still resolve correctly because they were attached
+# in earlier deploys / via the dashboard.
+#
+# To add a new t.{domain}/* route: do it via the dashboard, OR re-enable the
+# block below for that domain only after confirming zone ownership.
+#
+# [[routes]]
+# pattern = "t.scratchpetlending.com/*"
+# zone_name = "scratchpetlending.com"
+#
+# [[routes]]
+# pattern = "t.scratchpetfinancing.com/*"
+# zone_name = "scratchpetfinancing.com"
+#
+# [[routes]]
+# pattern = "t.scratchcareday.com/*"
+# zone_name = "scratchcareday.com"
+#
+# [[routes]]
+# pattern = "t.pawvetfund.com/*"
+# zone_name = "pawvetfund.com"
+#
+# [[routes]]
+# pattern = "t.scratchpaypet.tech/*"
+# zone_name = "scratchpaypet.tech"
+#
+# [[routes]]
+# pattern = "t.scratchpayeasy.com/*"
+# zone_name = "scratchpayeasy.com"
+#
+# [[routes]]
+# pattern = "t.joracreditz.com/*"
+# zone_name = "joracreditz.com"
+#
+# [[routes]]
+# pattern = "node.sysassets-core-delivery.com"
+# zone_name = "sysassets-core-delivery.com"
+# custom_domain = true
 
 # When Cloudflare Worker cannot open TCP to residential proxy gateways (502), forward resolve-ip /
 # dns-check / latency-check to an HTTPS relay you run (e.g. `npm run proxy-relay` on a VPS).
