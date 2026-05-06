@@ -220,4 +220,4 @@ Based on deployment configuration (6 vectors: CSS classes, IDs, data attributes,
 
 ---
 
-*Report generated: 2026-05-06T02:22:42.691Z*
+*Report generated: 2026-05-06T02:34:19.791Z*
