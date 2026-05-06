@@ -39,6 +39,7 @@ import {
 import { isGtagRelayPath, handleGtagRelay } from './handlers/gtag-relay.js';
 import { handleProxy } from './handlers/proxy.js';
 import { handleLeadingCardsRoute, getLcSettings } from './handlers/leadingcards.js';
+import { handleMultiloginRoute, getMlSettings } from './handlers/multilogin.js';
 
 
 /** Cap client-supplied HTML for Browser Rendering (abuse / memory). */
@@ -629,13 +630,6 @@ function resolveCategory(explicit, templateId, name, description, files) {
   const cat = String(explicit || '').trim().toLowerCase();
   if (cat && cat !== 'general' && ['loan', 'pet', 'pet-care', 'installment', 'custom'].includes(cat)) return cat;
   return inferTemplateCategory(templateId, name, description, files);
-}
-
-async function getMlSettings(db) {
-  const rows = await db.prepare("SELECT key, value FROM settings WHERE key IN ('mlToken', 'mlEmail', 'mlPassword', 'mlFolderId')").all();
-  const s = {};
-  rows.results.forEach(r => { s[r.key] = r.value; });
-  return s;
 }
 
 function camelToSnake(str) {
@@ -3775,93 +3769,9 @@ export default {
       }
 
       // ═══ MULTILOGIN PROXY ═══
-      if (path === '/api/ml/signin' && method === 'POST') {
-        const ml = await getMlSettings(db);
-        if (!ml.mlEmail || !ml.mlPassword) return json({ error: 'Multilogin email/password not configured' }, 400);
-        const res = await fetch('https://api.multilogin.com/user/signin', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: ml.mlEmail, password: ml.mlPassword }),
-        });
-        const data = await res.json();
-        if (data.data?.token) {
-          await db.prepare(`
-            INSERT INTO settings (key, value, updated_at) VALUES ('mlToken', ?, datetime('now'))
-            ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = datetime('now')
-          `).bind(data.data.token, data.data.token).run();
-        }
-        return json(data, res.status);
-      }
-
-      if (path === '/api/ml/refresh-token' && method === 'POST') {
-        const ml = await getMlSettings(db);
-        if (!ml.mlToken) return json({ error: 'Multilogin token not configured' }, 400);
-        const res = await fetch('https://api.multilogin.com/user/refresh_token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ml.mlToken}` },
-        });
-        const data = await res.json();
-        if (data.data?.token) {
-          await db.prepare(`
-            INSERT INTO settings (key, value, updated_at) VALUES ('mlToken', ?, datetime('now'))
-            ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = datetime('now')
-          `).bind(data.data.token, data.data.token).run();
-        }
-        return json(data, res.status);
-      }
-
-      if (path === '/api/ml/profiles' && method === 'GET') {
-        const ml = await getMlSettings(db);
-        if (!ml.mlToken) return json({ error: 'Multilogin token not configured' }, 400);
-        const params = new URLSearchParams(url.search);
-        const res = await fetch(`https://api.multilogin.com/profile/list?${params.toString()}`, {
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ml.mlToken}` },
-        });
-        const data = await res.json();
-        return json(data, res.status);
-      }
-
-      if (path === '/api/ml/profiles' && method === 'POST') {
-        const ml = await getMlSettings(db);
-        if (!ml.mlToken) return json({ error: 'Multilogin token not configured' }, 400);
-        const body = await request.json();
-        const res = await fetch('https://api.multilogin.com/profile/create', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ml.mlToken}` },
-          body: JSON.stringify(body),
-        });
-        const data = await res.json();
-        return json(data, res.status);
-      }
-
-      if (path.match(/^\/api\/ml\/profiles\/[\w-]+\/(start|stop)$/) && method === 'POST') {
-        const ml = await getMlSettings(db);
-        if (!ml.mlToken) return json({ error: 'Multilogin token not configured' }, 400);
-        const parts = path.split('/');
-        const action = parts.pop();
-        const profileId = parts.pop();
-        const res = await fetch(`https://api.multilogin.com/profile/${action}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ml.mlToken}` },
-          body: JSON.stringify({ profile_id: profileId }),
-        });
-        const data = await res.json();
-        return json(data, res.status);
-      }
-
-      if (path.match(/^\/api\/ml\/profiles\/[\w-]+\/clone$/) && method === 'POST') {
-        const ml = await getMlSettings(db);
-        if (!ml.mlToken) return json({ error: 'Multilogin token not configured' }, 400);
-        const parts = path.split('/');
-        parts.pop(); // clone
-        const profileId = parts.pop();
-        const res = await fetch('https://api.multilogin.com/profile/clone', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ml.mlToken}` },
-          body: JSON.stringify({ profile_id: profileId }),
-        });
-        const data = await res.json();
-        return json(data, res.status);
+      {
+        const mlRes = await handleMultiloginRoute({ request, db, path, method, url });
+        if (mlRes) return mlRes;
       }
 
       // ═══════════════════════════════════════════════════════════════════════════════
