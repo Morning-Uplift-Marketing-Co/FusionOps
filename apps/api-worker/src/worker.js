@@ -40,6 +40,7 @@ import { isGtagRelayPath, handleGtagRelay } from './handlers/gtag-relay.js';
 import { handleProxy } from './handlers/proxy.js';
 import { handleLeadingCardsRoute, getLcSettings } from './handlers/leadingcards.js';
 import { handleMultiloginRoute, getMlSettings } from './handlers/multilogin.js';
+import { handleVoluumApiRoute } from './handlers/voluum-api.js';
 
 
 /** Cap client-supplied HTML for Browser Rendering (abuse / memory). */
@@ -3777,66 +3778,9 @@ export default {
       // ═══════════════════════════════════════════════════════════════════════════════
       // VOLUUM API PROXY
       // ═══════════════════════════════════════════════════════════════════════════════
-      if (path === '/api/voluum/session' && method === 'POST') {
-        const body = await request.json();
-        const res = await fetch('https://api.voluum.com/auth/access/session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: JSON.stringify(body)
-        });
-        const data = await res.json().catch(() => ({}));
-        return json(data, res.status);
-      }
-
-      if (path === '/api/voluum/report' && method === 'GET') {
-        const token = request.headers.get('cwauth-token');
-        if (!token) return json({ error: 'Missing cwauth-token proxy header' }, 401);
-        const params = new URLSearchParams(url.search);
-        const res = await fetch(`https://api.voluum.com/report?${params.toString()}`, {
-          headers: { 'Accept': 'application/json', 'cwauth-token': token }
-        });
-        const data = await res.json().catch(() => ({}));
-        return json(data, res.status);
-      }
-
-      if (path === '/api/voluum/proxy' && method === 'POST') {
-        const body = await request.json().catch(() => ({}));
-        const token = String(body?.token || '').trim();
-        const proxyMethod = String(body?.method || 'GET').toUpperCase();
-        const proxyPath = String(body?.path || '').trim();
-        const proxyBody = body?.body;
-
-        if (!token) return json({ error: 'Missing Voluum token' }, 401);
-        if (!proxyPath || !proxyPath.startsWith('/')) {
-          return json({ error: 'Invalid Voluum path; expected path starting with "/"' }, 400);
-        }
-        if (proxyPath.includes('://') || proxyPath.includes('..')) {
-          return json({ error: 'Invalid Voluum path' }, 400);
-        }
-        if (!['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].includes(proxyMethod)) {
-          return json({ error: `Unsupported method: ${proxyMethod}` }, 400);
-        }
-
-        const targetUrl = `https://api.voluum.com${proxyPath}`;
-        const headers = {
-          'Accept': 'application/json',
-          'cwauth-token': token,
-        };
-        const init = { method: proxyMethod, headers };
-        if (proxyMethod !== 'GET' && proxyMethod !== 'DELETE' && proxyBody !== undefined) {
-          headers['Content-Type'] = 'application/json';
-          init.body = JSON.stringify(proxyBody);
-        }
-
-        const res = await fetch(targetUrl, init);
-        const text = await res.text();
-        let data;
-        try {
-          data = text ? JSON.parse(text) : {};
-        } catch (_e) {
-          data = { raw: text };
-        }
-        return json(data, res.status);
+      {
+        const voluumRes = await handleVoluumApiRoute({ request, path, method, url });
+        if (voluumRes) return voluumRes;
       }
 
       // ═══════════════════════════════════════════════════════════════════════════════
