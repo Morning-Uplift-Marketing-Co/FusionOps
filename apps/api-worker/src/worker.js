@@ -56,6 +56,7 @@ import { handleDeployAutomationRoute } from './handlers/automation/deploy.js';
 import { handleTrackingVerifyRoute } from './handlers/automation/tracking-verify.js';
 import { handleIntegrationsAutomationRoute } from './handlers/automation/integrations.js';
 import { handleSitesRoute } from './handlers/sites.js';
+import { handleSettingsRoute } from './handlers/settings.js';
 import {
   normalizeNameservers,
   canonicalizeNameservers,
@@ -1566,103 +1567,10 @@ export default {
         if (initRes) return initRes;
       }
 
-      // ═══ SETTINGS ═══
-      if (path === '/api/settings' && method === 'GET') {
-        const { results } = await db.prepare('SELECT * FROM settings').all();
-        const obj = {};
-        results.forEach(r => { obj[r.key] = r.value; });
-        return json(obj);
-      }
-
-      if (path === '/api/settings' && method === 'POST') {
-        const body = await request.json();
-        for (const [key, value] of Object.entries(body)) {
-          await db.prepare(`
-            INSERT INTO settings (key, value, updated_at) VALUES (?, ?, datetime('now'))
-            ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = datetime('now')
-          `).bind(key, String(value), String(value)).run();
-        }
-
-        if (neonSql) {
-          neonUpsertSettings(neonSql, body).catch(() => {});
-        }
-        return json({ success: true });
-      }
-
-      // ═══ ADSPOWER — server relay (HTTPS dashboard → user’s HTTPS tunnel → Local API) ═══
-      if (path === "/api/adspower/proxy" && method === "POST") {
-        try {
-          const body = await request.json();
-          const subPath = String(body.path || "/status");
-          const m = String(body.method || "GET").toUpperCase();
-          if (!subPath.startsWith("/") || subPath.includes("..")) {
-            return json({ code: -1, msg: "Invalid path" }, 400);
-          }
-          const pathOnly = subPath.split("?")[0];
-          const allowed = new Set([
-            "/status",
-            "/api/v2/browser-profile/list",
-            "/api/v2/browser-profile/start",
-            "/api/v2/browser-profile/stop",
-          ]);
-          if (!allowed.has(pathOnly)) {
-            return json({ code: -1, msg: "Path not allowed" }, 400);
-          }
-          if (pathOnly === "/status" && m !== "GET") {
-            return json({ code: -1, msg: "GET only for /status" }, 400);
-          }
-          if (pathOnly !== "/status" && m !== "POST") {
-            return json({ code: -1, msg: "POST required for this endpoint" }, 400);
-          }
-
-          const baseRow = await db.prepare("SELECT value FROM settings WHERE key = ?").bind("adspowerLocalBase").first();
-          const keyRow = await db.prepare("SELECT value FROM settings WHERE key = ?").bind("adspowerApiKey").first();
-          const fromBodyBase = String(body.adspowerLocalBase ?? "").trim().replace(/\/+$/, "");
-          const fromD1Base = String(baseRow?.value ?? "").trim().replace(/\/+$/, "");
-          const base = fromBodyBase || fromD1Base;
-          if (!base) {
-            return json({
-              code: -1,
-              msg: "ยังไม่มี Base URL — ใส่ในฟอร์มหรือ Save ใน Settings → Automation (HTTPS tunnel)",
-            });
-          }
-          if (!/^https:\/\//i.test(base)) {
-            return json({
-              code: -1,
-              msg: "Base URL ต้องเป็น https:// (Worker เรียกจาก Cloudflare ไม่ถึง http://127.0.0.1)",
-            });
-          }
-
-          const fromBodyKey = String(body.adspowerApiKey ?? "").trim();
-          const fromD1Key = String(keyRow?.value ?? "").trim();
-          const apiKey = fromBodyKey || fromD1Key;
-
-          const headers = { Accept: "application/json" };
-          if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
-
-          const targetUrl = `${base}${subPath}`;
-          const init = { method: m, headers, redirect: "manual" };
-          if (m === "POST") {
-            headers["Content-Type"] = "application/json";
-            const payload = body.body != null && typeof body.body === "object" && !Array.isArray(body.body) ? body.body : {};
-            init.body = JSON.stringify(payload);
-          }
-
-          const res = await fetch(targetUrl, init);
-          const text = await res.text();
-          let data;
-          try {
-            data = text ? JSON.parse(text) : {};
-          } catch {
-            data = { code: -1, msg: String(text || "").slice(0, 400) || `HTTP ${res.status}` };
-          }
-          if (!res.ok && (data.code === undefined || data.code === null) && !data.msg) {
-            data = { code: -1, msg: `HTTP ${res.status}` };
-          }
-          return json(data);
-        } catch (e) {
-          return json({ code: -1, msg: `AdsPower relay: ${e.message || String(e)}` });
-        }
+      // ═══ SETTINGS + ADSPOWER PROXY ═══
+      {
+        const settingsRes = await handleSettingsRoute({ request, db, neonSql, path, method });
+        if (settingsRes) return settingsRes;
       }
 
       // ═══ AI: GENERATE ASSETS ═══
