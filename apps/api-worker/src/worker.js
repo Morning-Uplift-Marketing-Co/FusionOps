@@ -47,6 +47,14 @@ import {
   handleVoluumPostbacksApiGet,
   canonicalPixelEvent,
 } from './handlers/pixel-tracking.js';
+import { handleInitRoute } from './handlers/init.js';
+import {
+  SECRET_KEYS,
+  redactSettings,
+  snakeToCamel,
+  camelToSnake,
+  isMaskedSecret,
+} from './lib/case-utils.js';
 
 
 /** Cap client-supplied HTML for Browser Rendering (abuse / memory). */
@@ -639,14 +647,6 @@ function resolveCategory(explicit, templateId, name, description, files) {
   return inferTemplateCategory(templateId, name, description, files);
 }
 
-function camelToSnake(str) {
-  return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-}
-
-function isMaskedSecret(value) {
-  return /^[•*]+$/.test(String(value || "").trim());
-}
-
 const DEPLOY_MANIFEST_SCHEMA = {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://lp-factory.dev/schemas/deploy-manifest.schema.json",
@@ -709,27 +709,6 @@ const ALLOWED_COLS = {
   profiles: new Set(['name', 'proxyIp', 'browserType', 'os', 'status', 'mlProfileId', 'mlFolderId', 'proxyHost', 'proxyPort', 'proxyUser', 'fingerprintOs']),
   payments: new Set(['label', 'type', 'last4', 'bankName', 'status', 'lcCardUuid', 'lcBinUuid', 'cardLimit', 'cardExpiry', 'totalSpend']),
 };
-
-// Secret keys that should never be returned in API responses
-const SECRET_KEYS = new Set(['apiKey', 'geminiKey', 'netlifyToken', 'lcToken', 'mlToken', 'mlPassword', 'githubToken', 'adspowerApiKey']);
-
-function redactSettings(obj) {
-  const safe = {};
-  for (const [k, v] of Object.entries(obj)) {
-    safe[k] = SECRET_KEYS.has(k) ? (v ? '••••' : '') : v;
-  }
-  return safe;
-}
-
-// Convert snake_case DB columns to camelCase for frontend
-function snakeToCamel(obj) {
-  const result = {};
-  for (const [key, value] of Object.entries(obj)) {
-    const camel = key.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
-    result[camel] = value;
-  }
-  return result;
-}
 
 
 
@@ -2205,45 +2184,14 @@ export default {
         return json(results);
       }
 
-      // ═══ INIT — Bootstrap Endpoint ═══
+      // ═══ INIT / STATS — Bootstrap Endpoints ═══
       // Returns settings + sites + deploys + ops for the app to hydrate on load.
-      // IMPORTANT: Returns neonUrl in plain text so the frontend can auto-connect Neon
-      // on new devices/browsers where localStorage is empty.
-      if (path === '/api/init-legacy' && method === 'GET') {
-        const [settingsRows, sitesRows, deploysRows] = await Promise.all([
-          db.prepare('SELECT key, value FROM settings').all(),
-          db.prepare('SELECT * FROM sites ORDER BY updated_at DESC').all(),
-          db.prepare('SELECT * FROM deploy_history ORDER BY deploy_time DESC LIMIT 100').all(),
-        ]);
-
-        const settings = {};
-        settingsRows.results.forEach(r => { settings[r.key] = r.value; });
-
-        // Ops data
-        const [domains, accounts, profiles, payments, logs] = await Promise.all([
-          db.prepare('SELECT * FROM ops_domains ORDER BY created_at DESC').all(),
-          db.prepare('SELECT * FROM ops_accounts ORDER BY created_at DESC').all(),
-          db.prepare('SELECT * FROM ops_profiles ORDER BY created_at DESC').all(),
-          db.prepare('SELECT * FROM ops_payments ORDER BY created_at DESC').all(),
-          db.prepare('SELECT * FROM ops_logs ORDER BY created_at DESC LIMIT 50').all(),
-        ]);
-
-        return json({
-          settings,
-          sites: sitesRows.results || [],
-          deploys: deploysRows.results || [],
-          stats: {
-            builds: sitesRows.results?.length || 0,
-            spend: (sitesRows.results || []).reduce((a, s) => a + (Number(s.cost) || 0), 0),
-          },
-          ops: {
-            domains: domains.results || [],
-            accounts: accounts.results || [],
-            profiles: profiles.results || [],
-            payments: payments.results || [],
-            logs: logs.results || [],
-          },
-        });
+      // /api/init-legacy: legacy bootstrap (settings + sites + deploys + ops)
+      // /api/stats: lightweight stats
+      // /api/init: full bootstrap (handler dispatch below also matches both)
+      {
+        const initRes = await handleInitRoute({ db, path, method });
+        if (initRes) return initRes;
       }
 
       // ═══ SETTINGS ═══
@@ -2787,119 +2735,6 @@ export default {
           }
           throw e;
         }
-      }
-
-      // ═══ STATS (computed) ═══
-      if (path === '/api/stats' && method === 'GET') {
-        const sites = await db.prepare('SELECT COUNT(*) as count, COALESCE(SUM(cost),0) as spend FROM sites').first();
-        const deploys = await db.prepare('SELECT COUNT(*) as count FROM deploys').first();
-        const domains = await db.prepare('SELECT COUNT(*) as count FROM ops_domains').first();
-        const postbacksTotal = await db.prepare('SELECT COALESCE(SUM(payout),0) as revenue FROM voluum_postbacks').first().catch(() => ({ revenue: 0 }));
-        const revenueSeriesRows = await db.prepare(
-          `SELECT strftime('%Y-%m-%d', datetime(ts, 'unixepoch')) as date, COALESCE(SUM(payout),0) as revenue
-           FROM voluum_postbacks
-           WHERE ts >= unixepoch('now', '-7 days')
-           GROUP BY date
-           ORDER BY date ASC`
-        ).all().catch(() => ({ results: [] }));
-
-        const revenueSeries = (revenueSeriesRows?.results || []).map((r) => ({
-          date: r.date,
-          revenue: Number(r.revenue || 0),
-          v: Number(r.revenue || 0),
-        }));
-
-        return json({
-          builds: sites.count,
-          spend: sites.spend,
-          revenue: Number(postbacksTotal?.revenue || 0),
-          revenueSeries,
-          deployed: deploys.count,
-          domains: domains.count,
-        });
-      }
-
-      // ═══ ALL DATA (initial load) ═══
-      if (path === '/api/init' && method === 'GET') {
-        const safeAll = async (sql, fallback = []) => {
-          try {
-            const r = await db.prepare(sql).all();
-            return r?.results || fallback;
-          } catch (e) {
-            console.warn('[init] safeAll failed:', sql, e?.message || e);
-            return fallback;
-          }
-        };
-
-        const safeFirst = async (sql, fallback = {}) => {
-          try {
-            return (await db.prepare(sql).first()) || fallback;
-          } catch (e) {
-            console.warn('[init] safeFirst failed:', sql, e?.message || e);
-            return fallback;
-          }
-        };
-
-        const [sites, deploys, variants, domains, accounts, profiles, payments, logs, settingsRows, stats, revenueTotals, revenueSeriesRows, cfAccountsResults, registrarAccountsResults, deploymentsResults] = await Promise.all([
-          safeAll('SELECT * FROM sites ORDER BY created_at DESC'),
-          safeAll('SELECT * FROM deploys ORDER BY created_at DESC LIMIT 100'),
-          safeAll('SELECT * FROM variants ORDER BY created_at DESC'),
-          safeAll('SELECT * FROM ops_domains ORDER BY created_at DESC'),
-          safeAll('SELECT * FROM ops_accounts ORDER BY created_at DESC'),
-          safeAll('SELECT * FROM ops_profiles ORDER BY created_at DESC'),
-          safeAll('SELECT * FROM ops_payments ORDER BY created_at DESC'),
-          safeAll('SELECT * FROM ops_logs ORDER BY created_at DESC LIMIT 200'),
-          safeAll('SELECT * FROM settings'),
-          safeFirst('SELECT COUNT(*) as builds, COALESCE(SUM(cost),0) as spend FROM sites', { builds: 0, spend: 0 }),
-          safeFirst('SELECT COALESCE(SUM(payout),0) as revenue FROM voluum_postbacks', { revenue: 0 }),
-          safeAll(
-            `SELECT strftime('%Y-%m-%d', datetime(ts, 'unixepoch')) as date, COALESCE(SUM(payout),0) as revenue
-             FROM voluum_postbacks
-             WHERE ts >= unixepoch('now', '-7 days')
-             GROUP BY date
-             ORDER BY date ASC`
-          ),
-          safeAll('SELECT * FROM cf_accounts ORDER BY label ASC'),
-          safeAll('SELECT * FROM registrar_accounts ORDER BY provider ASC, label ASC'),
-          safeAll('SELECT * FROM ops_deployments ORDER BY created_at DESC LIMIT 50'),
-        ]);
-
-        const settingsObj = {};
-        settingsRows.forEach(r => { settingsObj[r.key] = r.value; });
-
-        const revenueSeries = (revenueSeriesRows || []).map((r) => ({
-          date: r.date,
-          revenue: Number(r.revenue || 0),
-          v: Number(r.revenue || 0),
-        }));
-
-        return json({
-          sites: sites.map(snakeToCamel),
-          deploys: deploys.map(snakeToCamel),
-          variants: variants.map(snakeToCamel),
-          ops: {
-            domains: domains.map(snakeToCamel),
-            accounts: accounts.map(snakeToCamel),
-            profiles: profiles.map(snakeToCamel),
-            payments: payments.map(snakeToCamel),
-            logs: logs.map(snakeToCamel),
-            deployments: deploymentsResults.map(snakeToCamel),
-          },
-          cfAccounts: cfAccountsResults.map(snakeToCamel),
-          registrarAccounts: registrarAccountsResults.map(snakeToCamel),
-          settings: redactSettings(settingsObj),
-          stats: {
-            builds: stats.builds || 0,
-            spend: stats.spend || 0,
-            revenue: Number(revenueTotals?.revenue || 0),
-            revenueSeries,
-          },
-          integrations: {
-            lcConfigured: !!settingsObj.lcToken,
-            mlConfigured: !!settingsObj.mlToken,
-            netlifyConfigured: !!settingsObj.netlifyToken,
-          },
-        });
       }
 
       // ═══ LEADINGCARDS PROXY ═══
