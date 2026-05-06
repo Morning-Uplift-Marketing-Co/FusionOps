@@ -6,7 +6,13 @@ on:
   push:
     paths:
       - "deploy-configs/**.json"
-
+on:
+  workflow_dispatch:
+    ...
+  push:
+    branches: [main]
+    paths:
+      - 'apps/api-worker/**'
 permissions:
   contents: read
 
