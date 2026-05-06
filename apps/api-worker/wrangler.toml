@@ -2,7 +2,10 @@ name = "lp-factory-api"
 main = "src/worker.js"
 compatibility_date = "2024-12-01"
 compatibility_flags = ["nodejs_compat"]
-account_id = "***CF_ACCOUNT_ID_REMOVED***"
+# account_id intentionally omitted — wrangler reads CLOUDFLARE_ACCOUNT_ID from
+# env/secrets at deploy time. Hardcoding it here previously caused deploys to
+# fail with "Could not route to /accounts/***CF_ACCOUNT_ID_REMOVED***/..." because
+# the placeholder string was treated as a literal account ID.
 
 # Keep workers.dev URL active — the SPA defaults to https://lp-factory-api.<subdomain>.workers.dev/api.
 # Without this, Wrangler deploy disables the workers.dev route and the browser gets fetch NETWORK_ERROR (DNS sync, etc.).
