@@ -51,6 +51,7 @@ import { handleInitRoute } from './handlers/init.js';
 import { handleAiGenerationRoute } from './handlers/ai-generation.js';
 import { handleD1AutomationRoute } from './handlers/automation/d1.js';
 import { handleRegistrarAutomationRoute } from './handlers/automation/registrar.js';
+import { handleCloudflareAutomationRoute } from './handlers/automation/cloudflare.js';
 import {
   normalizeNameservers,
   canonicalizeNameservers,
@@ -58,6 +59,11 @@ import {
   fetchInternetBsCurrentNameservers,
   updateInternetBsNameservers,
 } from './lib/internetbs.js';
+import {
+  pollCloudflareNameservers,
+  resolveCloudflareAccount,
+  ensureCloudflareZoneAndNameservers,
+} from './lib/cloudflare.js';
 import {
   SECRET_KEYS,
   redactSettings,
@@ -108,111 +114,6 @@ async function createVersionSnapshot(db, siteId, config) {
     console.error('Version snapshot failed:', err);
     // DO NOT throw
   }
-}
-
-const CF_NS_RETRY_ATTEMPTS = 6;
-const CF_NS_RETRY_DELAY_MS = 2000;
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function pollCloudflareNameservers(zoneId, headers, options = {}) {
-  const attempts = Number(options.attempts || CF_NS_RETRY_ATTEMPTS);
-  const delayMs = Number(options.delayMs || CF_NS_RETRY_DELAY_MS);
-  let lastError = "";
-  let latestZone = null;
-
-  for (let i = 0; i < attempts; i++) {
-    if (i > 0) {
-      await sleep(delayMs);
-    }
-
-    const zoneRes = await fetch(`https://api.cloudflare.com/client/v4/zones/${zoneId}`, { headers });
-    const zoneData = await zoneRes.json().catch(() => ({}));
-
-    if (!zoneRes.ok || zoneData?.success === false) {
-      lastError = zoneData?.errors?.[0]?.message || `Cloudflare zone lookup failed (${zoneRes.status})`;
-      continue;
-    }
-
-    latestZone = zoneData?.result || latestZone;
-    const nameservers = normalizeNameservers(latestZone?.name_servers || latestZone?.nameServers);
-    if (nameservers.length >= 2) {
-      return { success: true, nameservers, zone: latestZone };
-    }
-
-    lastError = "Cloudflare nameservers are not ready yet";
-  }
-
-  return {
-    success: false,
-    error: lastError || "Cloudflare nameservers are not ready yet",
-    zone: latestZone,
-  };
-}
-
-async function resolveCloudflareAccount(db, cfAccountRef) {
-  if (!cfAccountRef) return null;
-  const row = await db
-    .prepare("SELECT id, account_id, api_token FROM cf_accounts WHERE id = ? OR account_id = ? LIMIT 1")
-    .bind(cfAccountRef, cfAccountRef)
-    .first();
-  if (!row?.account_id || !row?.api_token) return null;
-  return row;
-}
-
-async function ensureCloudflareZoneAndNameservers(accountId, apiToken, domain) {
-  const headers = {
-    Authorization: `Bearer ${apiToken}`,
-    "Content-Type": "application/json",
-  };
-
-  let zone = null;
-
-  const checkRes = await fetch(
-    `https://api.cloudflare.com/client/v4/zones?name=${encodeURIComponent(domain)}&account.id=${encodeURIComponent(accountId)}`,
-    { headers }
-  );
-  const checkData = await checkRes.json();
-  if (checkData?.success && Array.isArray(checkData.result) && checkData.result.length > 0) {
-    zone = checkData.result[0];
-  } else {
-    const createRes = await fetch("https://api.cloudflare.com/client/v4/zones", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        account: { id: accountId },
-        name: domain,
-        jump_start: false,
-      }),
-    });
-    const createData = await createRes.json();
-    if (!createData?.success || !createData?.result?.id) {
-      return { success: false, error: createData?.errors?.[0]?.message || "Failed to create Cloudflare zone" };
-    }
-    zone = createData.result;
-  }
-
-  let nameservers = normalizeNameservers(zone?.name_servers || zone?.nameServers);
-  let latestZone = zone;
-  if (nameservers.length < 2 && zone?.id) {
-    const nsPoll = await pollCloudflareNameservers(zone.id, headers);
-    if (!nsPoll.success) {
-      return {
-        success: false,
-        error: `${nsPoll.error}. Retry in 10-30 seconds.`,
-      };
-    }
-    nameservers = nsPoll.nameservers;
-    latestZone = nsPoll.zone || zone;
-  }
-
-  if (nameservers.length < 2) {
-    return { success: false, error: "Cloudflare nameservers are not ready yet. Retry in 10-30 seconds." };
-  }
-
-  return { success: true, zoneId: zone.id, nameservers, zone: latestZone };
 }
 
 async function autoSyncInternetBsNameserversForSite(db, body) {
@@ -2653,217 +2554,9 @@ export default {
       }
 
       // ═══ CLOUDFLARE AUTOMATION ═══
-      // Validate CF API token and account ID
-      if (path === '/api/automation/cf-validate' && method === 'POST') {
-        const body = await request.json();
-        const { accountId, apiToken } = body;
-        if (!accountId || !apiToken) return json({ error: 'Missing accountId or apiToken' }, 400);
-
-        // Validate by fetching account info
-        const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}`, {
-          headers: { 'Authorization': `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
-        });
-
-        if (!res.ok) {
-          let errMsg = `HTTP ${res.status}`;
-          try {
-            const data = await res.json();
-            errMsg = data.errors?.[0]?.message || errMsg;
-          } catch { }
-          return json({ success: false, error: errMsg }, 400);
-        }
-
-        const data = await res.json();
-        if (!data.success) {
-          return json({ success: false, error: data.errors?.[0]?.message || 'Invalid credentials' }, 400);
-        }
-
-        return json({ success: true, account: data.result });
-      }
-
-      if (path === '/api/automation/cf/zone' && method === 'POST') {
-        const body = await request.json();
-        const { domain, cfAccountId, cfApiToken, apiToken } = body;
-        if (!domain || !cfAccountId) return json({ error: 'Missing domain or cfAccountId' }, 400);
-
-        let token = cfApiToken || apiToken || '';
-        let resolvedAccountId = cfAccountId;
-
-        const acctRow = await db.prepare('SELECT api_token, account_id FROM cf_accounts WHERE id = ? OR account_id = ? LIMIT 1')
-          .bind(cfAccountId, cfAccountId).first();
-
-        if (acctRow) {
-          if (!token) token = acctRow.api_token || '';
-          resolvedAccountId = acctRow.account_id || cfAccountId;
-        }
-
-        if (!token) return json({ error: 'Cloudflare API token not found' }, 400);
-
-        // First check if zone exists
-        const checkRes = await fetch(`https://api.cloudflare.com/client/v4/zones?name=${encodeURIComponent(domain)}`, {
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        });
-        const checkData = await checkRes.json();
-        if (checkData.success && checkData.result?.[0]) {
-          let zone = checkData.result[0];
-          let nameservers = normalizeNameservers(zone?.name_servers || zone?.nameServers);
-          if (nameservers.length < 2 && zone?.id) {
-            const nsPoll = await pollCloudflareNameservers(zone.id, {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            }, { attempts: 4, delayMs: 1500 });
-            if (nsPoll.success) {
-              zone = nsPoll.zone || zone;
-              nameservers = nsPoll.nameservers;
-            }
-          }
-          return json({
-            success: true,
-            exists: true,
-            zoneId: zone.id,
-            zone,
-            nameservers,
-            warning: nameservers.length < 2 ? 'Cloudflare nameservers are not ready yet. Retry in 10-30 seconds.' : undefined,
-          });
-        }
-
-        // Create zone
-        const createRes = await fetch('https://api.cloudflare.com/client/v4/zones', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: domain, account: { id: resolvedAccountId }, type: 'full' }),
-        });
-        const createData = await createRes.json();
-        if (!createData.success) {
-          return json({ success: false, error: createData.errors?.[0]?.message || 'Zone creation failed' }, 400);
-        }
-        let zone = createData.result;
-        let nameservers = normalizeNameservers(zone?.name_servers || zone?.nameServers);
-        if (nameservers.length < 2 && zone?.id) {
-          const nsPoll = await pollCloudflareNameservers(zone.id, {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          }, { attempts: 4, delayMs: 1500 });
-          if (nsPoll.success) {
-            zone = nsPoll.zone || zone;
-            nameservers = nsPoll.nameservers;
-          }
-        }
-        return json({
-          success: true,
-          exists: false,
-          zoneId: zone.id,
-          zone,
-          nameservers,
-          warning: nameservers.length < 2 ? 'Cloudflare nameservers are not ready yet. Retry in 10-30 seconds.' : undefined,
-        });
-      }
-
-      if (path === '/api/automation/cf/dns' && method === 'GET') {
-        const zoneId = url.searchParams.get('zoneId');
-        const cfAccountId = url.searchParams.get('cfAccountId');
-        const apiToken = request.headers.get('x-cf-api-token') || url.searchParams.get('apiToken') || '';
-        if (!zoneId || !cfAccountId) return json({ error: 'Missing zoneId or cfAccountId' }, 400);
-
-        let token = apiToken;
-        const acctRow = await db.prepare('SELECT api_token, account_id FROM cf_accounts WHERE id = ? OR account_id = ? LIMIT 1')
-          .bind(cfAccountId, cfAccountId).first();
-
-        if (acctRow) {
-          if (!token) token = acctRow.api_token || '';
-        }
-
-        if (!token) return json({ error: 'Cloudflare API token not found' }, 400);
-
-        const res = await fetch(`https://api.cloudflare.com/client/v4/zones/${zoneId}/dns_records`, {
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        });
-        const data = await res.json();
-        return json({ success: data.success, records: data.result || [], error: data.errors?.[0]?.message });
-      }
-
-      if (path === '/api/automation/cf/dns' && method === 'POST') {
-        const body = await request.json();
-        const { zoneId, cfAccountId, apiToken, type, name, content, ttl = 3600, proxied = false } = body;
-        if (!zoneId || !cfAccountId || !type || !name || content === undefined) {
-          return json({ error: 'Missing zoneId, cfAccountId, type, name, or content' }, 400);
-        }
-
-        let token = apiToken || '';
-        const acctRow = await db.prepare('SELECT api_token, account_id FROM cf_accounts WHERE id = ? OR account_id = ? LIMIT 1')
-          .bind(cfAccountId, cfAccountId).first();
-
-        if (acctRow) {
-          if (!token) token = acctRow.api_token || '';
-        }
-
-        if (!token) return json({ error: 'Cloudflare API token not found' }, 400);
-
-        const res = await fetch(`https://api.cloudflare.com/client/v4/zones/${zoneId}/dns_records`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type, name, content, ttl, proxied }),
-        });
-        const data = await res.json();
-        if (!data.success) return json({ success: false, error: data.errors?.[0]?.message }, 400);
-        return json({ success: true, record: data.result });
-      }
-
-      if (path === '/api/automation/cf/dns' && method === 'PUT') {
-        const body = await request.json();
-        const { dnsRecordId, zoneId, cfAccountId, apiToken, type, name, content, ttl, proxied } = body;
-        if (!dnsRecordId || !zoneId || !cfAccountId) return json({ error: 'Missing dnsRecordId, zoneId, or cfAccountId' }, 400);
-
-        let token = apiToken || '';
-        const acctRow = await db.prepare('SELECT api_token, account_id FROM cf_accounts WHERE id = ? OR account_id = ? LIMIT 1')
-          .bind(cfAccountId, cfAccountId).first();
-
-        if (acctRow) {
-          if (!token) token = acctRow.api_token || '';
-        }
-
-        if (!token) return json({ error: 'Cloudflare API token not found' }, 400);
-
-        const updateData = {};
-        if (type) updateData.type = type;
-        if (name) updateData.name = name;
-        if (content !== undefined) updateData.content = content;
-        if (ttl !== undefined) updateData.ttl = ttl;
-        if (proxied !== undefined) updateData.proxied = proxied;
-
-        const res = await fetch(`https://api.cloudflare.com/client/v4/zones/${zoneId}/dns_records/${dnsRecordId}`, {
-          method: 'PUT',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify(updateData),
-        });
-        const data = await res.json();
-        if (!data.success) return json({ success: false, error: data.errors?.[0]?.message }, 400);
-        return json({ success: true, record: data.result });
-      }
-
-      if (path === '/api/automation/cf/dns' && method === 'DELETE') {
-        const dnsRecordId = url.searchParams.get('dnsRecordId');
-        const zoneId = url.searchParams.get('zoneId');
-        const cfAccountId = url.searchParams.get('cfAccountId');
-        const apiToken = request.headers.get('x-cf-api-token') || url.searchParams.get('apiToken') || '';
-        if (!dnsRecordId || !zoneId || !cfAccountId) return json({ error: 'Missing dnsRecordId, zoneId, or cfAccountId' }, 400);
-
-        let token = apiToken;
-        const acctRow = await db.prepare('SELECT api_token, account_id FROM cf_accounts WHERE id = ? OR account_id = ? LIMIT 1')
-          .bind(cfAccountId, cfAccountId).first();
-
-        if (acctRow) {
-          if (!token) token = acctRow.api_token || '';
-        }
-
-        if (!token) return json({ error: 'Cloudflare API token not found' }, 400);
-
-        const res = await fetch(`https://api.cloudflare.com/client/v4/zones/${zoneId}/dns_records/${dnsRecordId}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        });
-        const data = await res.json();
-        return json({ success: data.success });
+      {
+        const cfRes = await handleCloudflareAutomationRoute({ request, db, url, path, method });
+        if (cfRes) return cfRes;
       }
 
       // ═══ DEPLOY ADAPTERS ═══
