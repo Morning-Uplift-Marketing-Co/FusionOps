@@ -1,52 +1,22 @@
 // FusionOps V2 — Cloudflare Workers API
 // Binds to D1 database "ppc-gen-claude"
 // Origin: https://github.com/songsawat-w/ppc-gen-cfca
+//
+// Router shell: this file delegates every route to a handler module.
+// All business logic lives in src/handlers/*.js and src/lib/*.js.
+// Adding a new endpoint = create/extend a handler, then wire the dispatch
+// here (or extend an existing handler's route table).
 
-import puppeteer from '@cloudflare/puppeteer';
-import { corsHeaders, json, uid, toBase64 } from './lib/http.js';
-import { extractHost } from './lib/url.js';
-import {
-  parseVoluumPostbackMergedParams,
-  normalizeVoluumDomainParam,
-  isSafeVoluumForwardHost,
-  voluumForwardSearchParams,
-} from './lib/voluum-guard.js';
-import {
-  TRUSTED_PAGES_SUFFIXES,
-  buildAllowedHosts,
-  isFusionopsPagesDevHost,
-  isTrustedOriginRequest,
-  denyUnlessTrustedOrBearer,
-  isReadOnlyD1DirectSql,
-} from './lib/auth.js';
-import { extractJson, callGemini, callAnthropic, callAI } from './lib/ai.js';
-import {
-  githubFetch,
-  githubApi,
-  getGithubFileSha,
-  upsertGithubFile,
-  ensureGithubBranch,
-} from './lib/github.js';
-import {
-  getNeonSql,
-  ensureNeonTables,
-  neonUpsertSettings,
-  neonUpsertSite,
-  neonDeleteSite,
-  neonUpsertDeploy,
-  neonDeleteDeploy,
-} from './lib/neon-sync.js';
+import { corsHeaders, json } from './lib/http.js';
+import { isTrustedOriginRequest } from './lib/auth.js';
+import { getNeonSql, ensureNeonTables } from './lib/neon-sync.js';
 import { isGtagRelayPath, handleGtagRelay } from './handlers/gtag-relay.js';
 import { handleProxy } from './handlers/proxy.js';
-import { handleLeadingCardsRoute, getLcSettings } from './handlers/leadingcards.js';
-import { handleMultiloginRoute, getMlSettings } from './handlers/multilogin.js';
+import { handleLeadingCardsRoute } from './handlers/leadingcards.js';
+import { handleMultiloginRoute } from './handlers/multilogin.js';
 import { handleVoluumApiRoute } from './handlers/voluum-api.js';
 import { handleOpenApiRoute } from './handlers/openapi.js';
-import {
-  handlePixelTrackingRoute,
-  handleVoluumPostbacksApiGet,
-  canonicalPixelEvent,
-} from './handlers/pixel-tracking.js';
+import { handlePixelTrackingRoute } from './handlers/pixel-tracking.js';
 import { handleInitRoute } from './handlers/init.js';
 import { handleAiGenerationRoute } from './handlers/ai-generation.js';
 import { handleD1AutomationRoute } from './handlers/automation/d1.js';
@@ -62,47 +32,6 @@ import { handleMiscRoute } from './handlers/misc.js';
 import { handleTemplateThumbnailRoute, handleTemplatesRoute } from './handlers/templates.js';
 import { handleAccountsRoute } from './handlers/accounts.js';
 import { handleDeploymentsRoute } from './handlers/deployments.js';
-import {
-  ensureTemplateManagerSchema,
-  getTemplateUsageMap,
-  parseTemplateFiles,
-  normalizeTemplateFileKey,
-  getTemplateFileFromMap,
-  pickTemplateHtmlForThumb,
-  getTemplateQualityGateReport,
-  createTemplateVersionSnapshot,
-  jsonFromTemplatePostException,
-  BUILTIN_TEMPLATE_IDS,
-  isValidTemplateId,
-  inferTemplateCategory,
-  resolveCategory,
-} from './lib/template-utils.js';
-import {
-  normalizeNameservers,
-  canonicalizeNameservers,
-  nameserversMatch,
-  fetchInternetBsCurrentNameservers,
-  updateInternetBsNameservers,
-} from './lib/internetbs.js';
-import {
-  pollCloudflareNameservers,
-  resolveCloudflareAccount,
-  ensureCloudflareZoneAndNameservers,
-} from './lib/cloudflare.js';
-import {
-  SECRET_KEYS,
-  redactSettings,
-  snakeToCamel,
-  camelToSnake,
-  isMaskedSecret,
-} from './lib/case-utils.js';
-
-
-/** Cap client-supplied HTML for Browser Rendering (abuse / memory). */
-const THUMB_PREVIEW_HTML_MAX_BYTES = 2 * 1024 * 1024;
-
-/** Cap manual thumbnail upload size. */
-const THUMB_UPLOAD_MAX_BYTES = 8 * 1024 * 1024;
 
 export default {
   async fetch(request, env) {
