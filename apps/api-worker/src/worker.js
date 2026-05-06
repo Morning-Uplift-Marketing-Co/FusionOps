@@ -60,6 +60,7 @@ import { handleSettingsRoute } from './handlers/settings.js';
 import { handlePixelEventsRoute } from './handlers/pixel-events.js';
 import { handleMiscRoute } from './handlers/misc.js';
 import { handleTemplateThumbnailRoute, handleTemplatesRoute } from './handlers/templates.js';
+import { handleAccountsRoute } from './handlers/accounts.js';
 import {
   ensureTemplateManagerSchema,
   getTemplateUsageMap,
@@ -278,56 +279,10 @@ export default {
         if (settingsRes) return settingsRes;
       }
 
-      // ═══ CF ACCOUNTS ═══
-      if (path === "/api/cf-accounts" && method === "GET") {
-        const { results } = await db.prepare("SELECT * FROM cf_accounts ORDER BY label ASC").all();
-        return json(results);
-      }
-      if (path === "/api/cf-accounts" && method === "POST") {
-        const body = await request.json();
-        const id = body.id || uid();
-        await db.prepare("INSERT INTO cf_accounts (id, email, api_key, api_token, account_id, label) VALUES (?, ?, ?, ?, ?, ?)")
-          .bind(id, body.email || "", body.apiKey || "", body.apiToken || "", body.accountId || "", body.label || "").run();
-        return json({ id, success: true }, 201);
-      }
-      if (path.match(/^\/api\/cf-accounts\/[\w-]+$/) && method === "PUT") {
-        const id = path.split("/").pop();
-        const body = await request.json();
-        await db.prepare("UPDATE cf_accounts SET email = ?, api_key = ?, api_token = ?, account_id = ?, label = ? WHERE id = ?")
-          .bind(body.email || "", body.apiKey || "", body.apiToken || "", body.accountId || "", body.label || "", id).run();
-        return json({ success: true });
-      }
-      if (path.match(/^\/api\/cf-accounts\/[\w-]+$/) && method === "DELETE") {
-        const id = path.split("/").pop();
-        await db.prepare("DELETE FROM cf_accounts WHERE id = ?").bind(id).run();
-        return json({ success: true });
-      }
-
-      // ═══ REGISTRAR ACCOUNTS ═══
-      if (path === "/api/registrar-accounts" && method === "GET") {
-        const { results } = await db.prepare("SELECT * FROM registrar_accounts ORDER BY provider ASC, label ASC").all();
-        return json(results);
-      }
-      if (path === "/api/registrar-accounts" && method === "POST") {
-        const body = await request.json();
-        const id = body.id || uid();
-        await db.prepare("INSERT INTO registrar_accounts (id, provider, label, api_key, secret_key) VALUES (?, ?, ?, ?, ?)")
-          .bind(id, body.provider || "internetbs", body.label || "", body.apiKey || "", body.secretKey || "").run();
-        await db.prepare('INSERT INTO ops_logs (id, msg) VALUES (?, ?)').bind(uid(), `Added registrar account: ${body.label || body.provider}`).run();
-        return json({ id, success: true }, 201);
-      }
-      if (path.match(/^\/api\/registrar-accounts\/[\w-]+$/) && method === "PUT") {
-        const id = path.split("/").pop();
-        const body = await request.json();
-        await db.prepare("UPDATE registrar_accounts SET provider = ?, label = ?, api_key = ?, secret_key = ? WHERE id = ?")
-          .bind(body.provider || "internetbs", body.label || "", body.apiKey || "", body.secretKey || "", id).run();
-        await db.prepare('INSERT INTO ops_logs (id, msg) VALUES (?, ?)').bind(uid(), `Updated registrar account: ${body.label || body.provider}`).run();
-        return json({ success: true });
-      }
-      if (path.match(/^\/api\/registrar-accounts\/[\w-]+$/) && method === "DELETE") {
-        const id = path.split("/").pop();
-        await db.prepare("DELETE FROM registrar_accounts WHERE id = ?").bind(id).run();
-        return json({ success: true });
+      // ═══ CF + REGISTRAR ACCOUNTS CRUD ═══
+      {
+        const accountsRes = await handleAccountsRoute({ request, db, path, method });
+        if (accountsRes) return accountsRes;
       }
 
       // ═══ DEPLOYMENT HISTORY ═══
