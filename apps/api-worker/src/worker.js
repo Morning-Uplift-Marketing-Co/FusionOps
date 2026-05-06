@@ -50,6 +50,14 @@ import {
 import { handleInitRoute } from './handlers/init.js';
 import { handleAiGenerationRoute } from './handlers/ai-generation.js';
 import { handleD1AutomationRoute } from './handlers/automation/d1.js';
+import { handleRegistrarAutomationRoute } from './handlers/automation/registrar.js';
+import {
+  normalizeNameservers,
+  canonicalizeNameservers,
+  nameserversMatch,
+  fetchInternetBsCurrentNameservers,
+  updateInternetBsNameservers,
+} from './lib/internetbs.js';
 import {
   SECRET_KEYS,
   redactSettings,
@@ -102,23 +110,6 @@ async function createVersionSnapshot(db, siteId, config) {
   }
 }
 
-function normalizeNameservers(input) {
-  return (Array.isArray(input) ? input : [])
-    .map((ns) => String(ns || "").trim().toLowerCase().replace(/\.$/, ""))
-    .filter(Boolean);
-}
-
-function canonicalizeNameservers(input) {
-  return Array.from(new Set(normalizeNameservers(input))).sort();
-}
-
-function nameserversMatch(a, b) {
-  const left = canonicalizeNameservers(a);
-  const right = canonicalizeNameservers(b);
-  if (left.length !== right.length) return false;
-  return left.every((value, idx) => value === right[idx]);
-}
-
 const CF_NS_RETRY_ATTEMPTS = 6;
 const CF_NS_RETRY_DELAY_MS = 2000;
 
@@ -158,78 +149,6 @@ async function pollCloudflareNameservers(zoneId, headers, options = {}) {
     success: false,
     error: lastError || "Cloudflare nameservers are not ready yet",
     zone: latestZone,
-  };
-}
-
-function extractInternetBsNameservers(payload) {
-  const out = [];
-  const walk = (obj) => {
-    if (!obj || typeof obj !== "object") return;
-    for (const [rawKey, value] of Object.entries(obj)) {
-      const key = String(rawKey || "").toLowerCase();
-
-      if (key === "ns_list" && typeof value === "string") {
-        out.push(...value.split(","));
-      } else if (/^ns\d+$/.test(key) || key.includes("nameserver")) {
-        if (Array.isArray(value)) out.push(...value);
-        else out.push(value);
-      } else if (Array.isArray(value)) {
-        value.forEach((entry) => {
-          if (entry && typeof entry === "object") walk(entry);
-        });
-      } else if (value && typeof value === "object") {
-        walk(value);
-      }
-    }
-  };
-
-  walk(payload);
-  return canonicalizeNameservers(out);
-}
-
-async function fetchInternetBsCurrentNameservers(registrar, domain) {
-  const apiUrl = "https://api.internet.bs/Domain/Info";
-  const formData = new URLSearchParams({
-    ApiKey: registrar.api_key || "",
-    Password: registrar.secret_key || "",
-    responseformat: "JSON",
-    Domain: domain,
-  });
-
-  const res = await fetch(apiUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: formData.toString(),
-  });
-
-  const rawText = await res.text();
-  let data = null;
-  try {
-    data = JSON.parse(rawText);
-  } catch (_e) {
-    return {
-      success: false,
-      nameservers: [],
-      message: rawText?.slice(0, 800) || "Non-JSON response from registrar",
-    };
-  }
-
-  const statusText = String(data?.status || "").toLowerCase();
-  if (statusText === "failure") {
-    return {
-      success: false,
-      nameservers: [],
-      message: data?.message || data?.error || "Registrar Domain/Info failed",
-      raw: data,
-    };
-  }
-
-  const nameservers = extractInternetBsNameservers(data);
-  return {
-    success: true,
-    nameservers,
-    message: data?.message || "",
-    raw: data,
   };
 }
 
@@ -294,42 +213,6 @@ async function ensureCloudflareZoneAndNameservers(accountId, apiToken, domain) {
   }
 
   return { success: true, zoneId: zone.id, nameservers, zone: latestZone };
-}
-
-async function updateInternetBsNameservers(db, accountId, domain, nameservers) {
-  const registrar = await db.prepare("SELECT * FROM registrar_accounts WHERE id = ? LIMIT 1").bind(accountId).first();
-  if (!registrar) return { success: false, error: "Internet.bs account not found" };
-
-  const apiUrl = "https://api.internet.bs/Domain/Update";
-  const formData = new URLSearchParams({
-    ApiKey: registrar.api_key || "",
-    Password: registrar.secret_key || "",
-    responseformat: "JSON",
-    Domain: domain,
-    Ns_list: nameservers.join(","),
-  });
-
-  const res = await fetch(apiUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: formData.toString(),
-  });
-
-  const rawText = await res.text();
-  let data = null;
-  try {
-    data = JSON.parse(rawText);
-  } catch (_e) {
-    data = { status: "FAILURE", message: rawText?.slice(0, 800) || "Non-JSON response from registrar" };
-  }
-
-  const statusText = String(data?.status || "").toLowerCase();
-  const isSuccess = statusText === "success" || statusText === "ok";
-  return {
-    success: isSuccess,
-    message: data?.message || data?.error || data?.msg || "Unknown registrar response",
-    raw: data,
-  };
 }
 
 async function autoSyncInternetBsNameserversForSite(db, body) {
@@ -2763,283 +2646,10 @@ export default {
       // AUTOMATION API — Structured endpoints for external automation tools
       // ═══════════════════════════════════════════════════════════════════════════════
 
-      // ═══ REGISTRAR AUTOMATION ═══
-      if (path === '/api/automation/registrar/check' && method === 'POST') {
-        const body = await request.json();
-        const { domain, provider, accountId } = body;
-        if (!domain || !provider) return json({ error: 'Missing domain or provider' }, 400);
-
-        const acctRow = accountId
-          ? await db.prepare('SELECT * FROM registrar_accounts WHERE id = ?').bind(accountId).first()
-          : await db.prepare('SELECT * FROM registrar_accounts WHERE provider = ? LIMIT 1').bind(provider).first();
-        if (!acctRow) return json({ error: 'Registrar account not found' }, 404);
-
-        const apiUrl = `https://api.internet.bs/Domain/Check`;
-        const formData = new URLSearchParams({
-          ApiKey: acctRow.api_key,
-          Password: acctRow.secret_key,
-          responseformat: 'JSON',
-          Domain: domain,
-        });
-
-        const res = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: formData.toString(),
-        });
-        const data = await res.json();
-        return json({
-          success: data.status?.toLowerCase() !== 'failure',
-          available: data.status?.toLowerCase() === 'available',
-          domain,
-          provider,
-          status: data.status,
-          message: data.message,
-        });
-      }
-
-      if (path === '/api/automation/registrar/register' && method === 'POST') {
-        const body = await request.json();
-        const { domain, provider, accountId, period = '1Y' } = body;
-        if (!domain || !provider) return json({ error: 'Missing domain or provider' }, 400);
-
-        const acctRow = accountId
-          ? await db.prepare('SELECT * FROM registrar_accounts WHERE id = ?').bind(accountId).first()
-          : await db.prepare('SELECT * FROM registrar_accounts WHERE provider = ? LIMIT 1').bind(provider).first();
-        if (!acctRow) return json({ error: 'Registrar account not found' }, 404);
-
-        const apiUrl = `https://api.internet.bs/Domain/Create`;
-        const formData = new URLSearchParams({
-          ApiKey: acctRow.api_key,
-          Password: acctRow.secret_key,
-          responseformat: 'JSON',
-          Domain: domain,
-          Period: period,
-        });
-
-        // Add nameservers if provided
-        if (body.nameservers && Array.isArray(body.nameservers)) {
-          body.nameservers.forEach((ns, i) => {
-            formData.append(`Ns${i + 1}`, ns);
-          });
-        }
-
-        const res = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: formData.toString(),
-        });
-        const data = await res.json();
-        const success = data.status?.toLowerCase() === 'success';
-        return json({
-          success,
-          domain,
-          provider,
-          transactionId: data.transactid,
-          status: data.status,
-          message: data.message,
-          product: data.product,
-        });
-      }
-
-      if (path === '/api/automation/registrar/credentials' && method === 'POST') {
-        const body = await request.json();
-        const { provider, accountId } = body;
-        const acctRow = accountId
-          ? await db.prepare('SELECT * FROM registrar_accounts WHERE id = ?').bind(accountId).first()
-          : await db.prepare('SELECT * FROM registrar_accounts WHERE provider = ? LIMIT 1').bind(provider).first();
-        if (!acctRow) return json({ error: 'Registrar account not found' }, 404);
-        return json({ apiKey: acctRow.api_key, secretKey: acctRow.secret_key, provider: acctRow.provider });
-      }
-
-      if (path === '/api/automation/registrar/nameservers' && method === 'PUT') {
-        const body = await request.json();
-        const { domain, nameservers, provider, accountId } = body;
-        if (!domain || !nameservers || !Array.isArray(nameservers)) return json({ error: 'Missing domain or nameservers' }, 400);
-
-        const cleanedNameservers = canonicalizeNameservers(nameservers);
-        if (cleanedNameservers.length < 2) {
-          return json({ error: 'At least 2 valid nameservers are required' }, 400);
-        }
-
-        const acctRow = accountId
-          ? await db.prepare('SELECT * FROM registrar_accounts WHERE id = ?').bind(accountId).first()
-          : await db.prepare('SELECT * FROM registrar_accounts WHERE provider = ? LIMIT 1').bind(provider).first();
-        if (!acctRow) return json({ error: 'Registrar account not found' }, 404);
-
-        // Whitelist worker's actual outbound IP in InternetBS before calling Domain/Update
-        // Use api64.ipify.org which returns the real IP used (IPv6 or IPv4)
-        try {
-          const ipRes = await fetch('https://api64.ipify.org?format=json').catch(() => null);
-          const ipData = await ipRes?.json().catch(() => ({}));
-          const workerIp = ipData?.ip;
-          const isIPv6 = workerIp?.includes(':');
-          console.log('[IBS] Worker outbound IP:', workerIp, isIPv6 ? '(IPv6 - skipping whitelist, add CF IPv4 ranges manually)' : '');
-          if (workerIp && !isIPv6) {
-            const f = new URLSearchParams({ ApiKey: acctRow.api_key, Password: acctRow.secret_key, responseformat: 'JSON', Ip: workerIp });
-            const r = await fetch('https://api.internet.bs/Account/Access/AddIp', {
-              method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: f.toString(),
-            }).catch(() => null);
-            const d = await r?.json().catch(() => ({}));
-            console.log(`[IBS] AddIp ${workerIp}:`, d?.status, d?.message);
-          }
-        } catch (_e) { console.warn('[IBS] IP whitelist failed:', _e?.message); }
-
-        // Pre-check to avoid unnecessary registrar updates.
-        const beforeCheck = await fetchInternetBsCurrentNameservers(acctRow, domain);
-        if (beforeCheck.success && beforeCheck.nameservers.length >= 2 && nameserversMatch(beforeCheck.nameservers, cleanedNameservers)) {
-          return json({
-            success: true,
-            domain,
-            nameservers: cleanedNameservers,
-            currentNameservers: beforeCheck.nameservers,
-            alreadySynced: true,
-            verified: true,
-            message: 'Nameservers already match target. No update needed.',
-          });
-        }
-
-        const apiUrl = `https://api.internet.bs/Domain/Update`;
-        const formData = new URLSearchParams({
-          ApiKey: acctRow.api_key,
-          Password: acctRow.secret_key,
-          responseformat: 'JSON',
-          Domain: domain,
-          Ns_list: cleanedNameservers.join(','),
-        });
-
-        // Internet.bs Domain/Update expects Ns_list; Ns1/Ns2 can be rejected.
-
-        const res = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: formData.toString(),
-        });
-
-        const rawText = await res.text();
-        let data = null;
-        try {
-          data = JSON.parse(rawText);
-        } catch (_e) {
-          data = { status: 'FAILURE', message: rawText?.slice(0, 800) || 'Non-JSON response from registrar' };
-        }
-
-        const statusText = String(data?.status || '').toLowerCase();
-        const isSuccess = statusText === 'success' || statusText === 'ok';
-        const message = data?.message || data?.error || data?.msg || 'Unknown registrar response';
-
-        const afterCheck = isSuccess ? await fetchInternetBsCurrentNameservers(acctRow, domain) : { success: false, nameservers: [] };
-        const verified = !!(afterCheck.success && nameserversMatch(afterCheck.nameservers, cleanedNameservers));
-
-        return json({
-          success: isSuccess,
-          domain,
-          nameservers: cleanedNameservers,
-          currentNameservers: afterCheck.success ? afterCheck.nameservers : beforeCheck.nameservers,
-          verified,
-          alreadySynced: false,
-          status: data.status,
-          message: verified ? 'Nameservers updated and verified.' : message,
-          raw: data,
-          verify: {
-            before: beforeCheck.success ? beforeCheck.nameservers : [],
-            after: afterCheck.success ? afterCheck.nameservers : [],
-            beforeError: beforeCheck.success ? null : (beforeCheck.message || null),
-            afterError: afterCheck.success ? null : (afterCheck.message || null),
-          },
-        });
-      }
-
-      if (path === '/api/automation/registrar/import' && method === 'POST') {
-        const body = await request.json();
-        const { provider, accountId } = body;
-        if (!provider) return json({ error: 'Missing provider' }, 400);
-
-        const acctRow = accountId
-          ? await db.prepare('SELECT * FROM registrar_accounts WHERE id = ?').bind(accountId).first()
-          : await db.prepare('SELECT * FROM registrar_accounts WHERE provider = ? LIMIT 1').bind(provider).first();
-        if (!acctRow) return json({ error: 'Registrar account not found' }, 404);
-
-        const apiUrl = `https://api.internet.bs/Domain/List`;
-        const formData = new URLSearchParams({
-          ApiKey: acctRow.api_key,
-          Password: acctRow.secret_key,
-          responseformat: 'JSON',
-          CompactList: 'no',
-        });
-
-        const res = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: formData.toString(),
-        });
-        const data = await res.json();
-        const domains = Array.isArray(data.domain) ? data.domain : (data.domain ? [data.domain] : []);
-        return json({
-          success: data.status?.toLowerCase() !== 'failure',
-          provider,
-          count: domains.length,
-          domains: domains.map(d => ({
-            domain: typeof d === 'string' ? d : d.name,
-            status: typeof d === 'string' ? 'ACTIVE' : d.status,
-            expiration: typeof d === 'string' ? null : d.expiration,
-            autoRenew: typeof d === 'string' ? null : d.autorenew?.toLowerCase() === 'yes',
-          })),
-        });
-      }
-
-      if (path === '/api/automation/registrar/ping' && method === 'POST') {
-        const body = await request.json();
-        const { provider, accountId, apiKey, secretKey } = body;
-        if (!provider) return json({ error: 'Missing provider' }, 400);
-
-        // Support testing unsaved credentials directly from UI
-        let resolvedApiKey = apiKey || '';
-        let resolvedSecretKey = secretKey || '';
-
-        if (!resolvedApiKey || !resolvedSecretKey) {
-          const acctRow = accountId
-            ? await db.prepare('SELECT * FROM registrar_accounts WHERE id = ?').bind(accountId).first()
-            : await db.prepare('SELECT * FROM registrar_accounts WHERE provider = ? LIMIT 1').bind(provider).first();
-          if (!acctRow) return json({ error: 'Registrar account not found' }, 404);
-          resolvedApiKey = acctRow.api_key || '';
-          resolvedSecretKey = acctRow.secret_key || '';
-        }
-
-        if (!resolvedApiKey || !resolvedSecretKey) {
-          return json({ error: 'Missing registrar credentials' }, 400);
-        }
-
-        const apiUrl = `https://api.internet.bs/Account/Balance/Get`;
-        const formData = new URLSearchParams({
-          ApiKey: resolvedApiKey,
-          Password: resolvedSecretKey,
-          responseformat: 'JSON',
-        });
-
-        const res = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: formData.toString(),
-        });
-        const data = await res.json();
-        return json({
-          success: data.status?.toLowerCase() === 'success',
-          provider,
-          balance: data.balance,
-          currency: data.balance?.[0]?.currency,
-          message: data.message,
-        });
-      }
-
-      if (path === '/api/automation/registrar/ip' && method === 'GET') {
-        try {
-          const res = await fetch('https://api.ipify.org?format=json');
-          const data = await res.json();
-          return json({ success: true, ip: data.ip });
-        } catch (e) {
-          return json({ success: false, error: e.message }, 500);
-        }
+      // ═══ REGISTRAR AUTOMATION (Internet.bs) ═══
+      {
+        const registrarRes = await handleRegistrarAutomationRoute({ request, db, path, method });
+        if (registrarRes) return registrarRes;
       }
 
       // ═══ CLOUDFLARE AUTOMATION ═══
