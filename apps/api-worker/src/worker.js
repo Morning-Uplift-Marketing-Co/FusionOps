@@ -5,7 +5,7 @@
 import { neon } from '@neondatabase/serverless';
 import puppeteer from '@cloudflare/puppeteer';
 import { connect } from 'cloudflare:sockets';
-import { corsHeaders, json, uid } from './lib/http.js';
+import { corsHeaders, json, uid, toBase64 } from './lib/http.js';
 import { extractHost } from './lib/url.js';
 import {
   parseVoluumPostbackMergedParams,
@@ -22,6 +22,13 @@ import {
   isReadOnlyD1DirectSql,
 } from './lib/auth.js';
 import { extractJson, callGemini, callAnthropic, callAI } from './lib/ai.js';
+import {
+  githubFetch,
+  githubApi,
+  getGithubFileSha,
+  upsertGithubFile,
+  ensureGithubBranch,
+} from './lib/github.js';
 
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -978,15 +985,6 @@ function camelToSnake(str) {
   return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
 }
 
-function toBase64(text) {
-  const bytes = new TextEncoder().encode(String(text ?? ""));
-  let binary = "";
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-}
-
 /** RFC 7617-style UTF-8 safe Basic auth for HTTP proxies (btoa(user:pass) breaks on non-Latin1). */
 function proxyBasicAuth(username, password) {
   return toBase64(`${String(username ?? "")}:${String(password ?? "")}`);
@@ -1101,69 +1099,6 @@ function isMaskedSecret(value) {
   return /^[•*]+$/.test(String(value || "").trim());
 }
 
-async function githubFetch(url, options = {}, GITHUB_TOKEN) {
-  const mergedHeaders = new Headers(options.headers || {});
-  mergedHeaders.set("Authorization", `Bearer ${GITHUB_TOKEN}`);
-  mergedHeaders.set("Content-Type", "application/json");
-  mergedHeaders.set("User-Agent", "FusionOps-LP-Factory");
-  mergedHeaders.set("Accept", "application/vnd.github+json");
-  mergedHeaders.set("X-GitHub-Api-Version", "2022-11-28");
-
-  const reqOptions = {
-    ...options,
-    headers: mergedHeaders,
-  };
-
-  const res = await fetch(url, reqOptions);
-
-  if (!res.ok) {
-    const detail = await res.text().catch(() => "");
-    const method = String(reqOptions.method || "GET").toUpperCase();
-    const bodySnippet = detail ? detail.slice(0, 1000) : res.statusText;
-    const error = new Error(`GitHub API ${res.status} ${method} ${url}: ${bodySnippet}`);
-    error.status = res.status;
-    throw error;
-  }
-
-  return res;
-}
-
-async function githubApi(token, path, options = {}) {
-  const res = await githubFetch(`https://api.github.com${path}`, options, token);
-
-  if (res.status === 204) return null;
-  return res.json();
-}
-
-async function getGithubFileSha(token, owner, repo, path, branch) {
-  const encodedPath = path.split("/").map(encodeURIComponent).join("/");
-  try {
-    const data = await githubApi(token, `/repos/${owner}/${repo}/contents/${encodedPath}?ref=${encodeURIComponent(branch)}`);
-    return data?.sha || null;
-  } catch (e) {
-    if (e?.status === 404) return null;
-    throw e;
-  }
-}
-
-async function upsertGithubFile({ token, owner, repo, branch, filePath, content, message }) {
-  const sha = await getGithubFileSha(token, owner, repo, filePath, branch);
-  const encodedPath = filePath.split("/").map(encodeURIComponent).join("/");
-  const payload = {
-    message,
-    content: toBase64(content),
-    branch,
-  };
-  if (sha) payload.sha = sha;
-
-  const data = await githubApi(token, `/repos/${owner}/${repo}/contents/${encodedPath}`, {
-    method: "PUT",
-    body: JSON.stringify(payload),
-  });
-
-  return data?.content?.sha || null;
-}
-
 const DEPLOY_MANIFEST_SCHEMA = {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://lp-factory.dev/schemas/deploy-manifest.schema.json",
@@ -1218,22 +1153,6 @@ const DEPLOY_MANIFEST_SCHEMA = {
     }
   }
 };
-
-async function ensureGithubBranch(token, owner, repo, branchName, sourceBranch) {
-  try {
-    await githubApi(token, `/repos/${owner}/${repo}/git/ref/${encodeURIComponent(`heads/${branchName}`)}`);
-    return;
-  } catch (e) {
-    if (e?.status !== 404) throw e;
-  }
-  const sourceRef = await githubApi(token, `/repos/${owner}/${repo}/git/ref/${encodeURIComponent(`heads/${sourceBranch}`)}`);
-  const sha = sourceRef?.object?.sha;
-  if (!sha) throw new Error(`Cannot resolve source branch ${sourceBranch}`);
-  await githubApi(token, `/repos/${owner}/${repo}/git/refs`, {
-    method: "POST",
-    body: JSON.stringify({ ref: `refs/heads/${branchName}`, sha }),
-  });
-}
 
 // Column whitelists for PUT endpoints (SQL injection protection)
 const ALLOWED_COLS = {

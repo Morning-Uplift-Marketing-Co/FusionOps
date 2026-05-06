@@ -22,3 +22,13 @@ export function json(data, status = 200) {
 export function uid() {
   return crypto.randomUUID().replace(/-/g, '').slice(0, 12);
 }
+
+/** UTF-8 safe base64 encoder (btoa() can't handle non-Latin1 chars). */
+export function toBase64(text) {
+  const bytes = new TextEncoder().encode(String(text ?? ''));
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
