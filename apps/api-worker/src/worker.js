@@ -5,6 +5,7 @@
 import { neon } from '@neondatabase/serverless';
 import puppeteer from '@cloudflare/puppeteer';
 import { connect } from 'cloudflare:sockets';
+import { handleAnalysisRoutes } from './analysis/routes.js';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -1916,6 +1917,10 @@ export default {
 
     const url = new URL(request.url);
     const path = url.pathname;
+    // --- FBIS Analysis routes ---
+    const analysisResponse = await handleAnalysisRoutes(path, request.method, request, env);
+    if (analysisResponse) return analysisResponse;
+    // --- end FBIS ---
     const method = request.method;
     const hostname = url.hostname;
     // Main D1 binding — must be declared here so early routes (/e, /v, /api/postbacks, …) never hit TDZ
