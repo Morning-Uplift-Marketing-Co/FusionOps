@@ -16,6 +16,10 @@ on:
         description: "Optional API callback URL for status update"
         required: false
         type: string
+  push:
+    branches: [main]
+    paths:
+      - 'apps/api-worker/**'
 
 permissions:
   contents: read
@@ -28,7 +32,8 @@ env:
 
 jobs:
   deploy-worker:
-    if: ${{ inputs.deploy_target == 'both' || inputs.deploy_target == 'worker-only' }}
+    # Run on push (path filter limits to api-worker changes) OR explicit dispatch with worker-only/both.
+    if: ${{ github.event_name == 'push' || inputs.deploy_target == 'both' || inputs.deploy_target == 'worker-only' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -51,7 +56,8 @@ jobs:
         run: echo "✅ Worker deployed successfully"
 
   deploy-pages:
-    if: ${{ inputs.deploy_target == 'both' || inputs.deploy_target == 'pages-only' }}
+    # Pages only deploys on explicit dispatch — never on push (path filter is api-worker only).
+    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.deploy_target == 'both' || inputs.deploy_target == 'pages-only') }}
     runs-on: ubuntu-latest
     outputs:
       deploy_url: ${{ steps.deploy.outputs.url }}

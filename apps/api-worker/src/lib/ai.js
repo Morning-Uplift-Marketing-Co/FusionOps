@@ -6,8 +6,8 @@
 //
 // Extracted from worker.js (Phase 1: utility extraction).
 //
-// Note: Gemini key passed via query string is a known leakage risk.
-// Tracked for migration to header-based auth in Phase 4.
+// Gemini key passed via x-goog-api-key header (not URL query) so it does not
+// leak into logs, edge proxies, or Referer.
 // ============================================================
 
 /** Pull a JSON object or array from model text (markdown fences, prose, etc.). */
@@ -48,11 +48,17 @@ export function extractJson(text) {
 }
 
 export async function callGemini(apiKey, prompt, maxTokens = 512) {
+  // Pass key via x-goog-api-key header, never the URL query string. URLs leak
+  // into Cloudflare logs, edge proxies, and Referer headers; the header form
+  // stays in TLS. Generative Language API supports both.
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
     {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        'x-goog-api-key': apiKey,
+      },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: { maxOutputTokens: maxTokens, temperature: 0.95 },

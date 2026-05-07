@@ -217,9 +217,10 @@ async function handleAiGenerateAssets({ request, db }) {
           Requirements: ${type === 'logo' ? 'Flat vector, minimalist, white background, no text except brand' : 'Photorealistic, soft lighting, lots of copy space, 16:9'}
           Output: ONLY the refined prompt text.No chatter.`;
 
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+  // Pass key via x-goog-api-key header (URLs leak into logs / Referer / proxies).
+  const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
     body: JSON.stringify({ contents: [{ parts: [{ text: promptGen }] }] }),
   });
   const d = await res.json();

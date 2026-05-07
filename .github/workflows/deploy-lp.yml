@@ -1,7 +1,8 @@
 name: Deploy Landing Page
 
-# Triggered by a git push of deploy-configs/{domain}.json
-# Only needs "repo" scope on PAT — no "workflow" scope required
+# Triggered by a git push of deploy-configs/{domain}.json.
+# Only needs "repo" scope on PAT — no "workflow" scope required.
+# (api-worker auto-deploy lives in deploy-dashboard.yml, not here.)
 on:
   push:
     paths:

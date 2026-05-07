@@ -158,6 +158,32 @@ function mlxCacheGet(key) {
   return entry;
 }
 
+/**
+ * SSRF guard for /api/proxy/pass. Only allow hosts whose hostname matches
+ * (or ends with) a suffix in env.PROXY_PASS_ALLOWLIST. If the allowlist is
+ * unset/empty, deny everything — refusing to serve as an open relay is the
+ * safe default.
+ */
+function isAllowedProxyPassHost(passUrl, env) {
+  let host;
+  try {
+    host = new URL(passUrl).hostname.toLowerCase();
+  } catch {
+    return false;
+  }
+  if (!host) return false;
+  // Block obvious internal/loopback even if allowlist is misconfigured.
+  if (host === 'localhost' || host === '0.0.0.0' || host === '::1') return false;
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) return false;
+  if (/^(?:fc|fd)[0-9a-f]{2}:/i.test(host)) return false;
+  if (/^169\.254\./.test(host) || host === '169.254.169.254') return false;
+
+  const list = String(env?.PROXY_PASS_ALLOWLIST || '').trim();
+  if (!list) return false;
+  const suffixes = list.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+  return suffixes.some((suffix) => host === suffix || host.endsWith(suffix.startsWith('.') ? suffix : '.' + suffix));
+}
+
 function mlxCacheSet(key, body, status, headers, ttlMs) {
   if (mlxCache.size > 200) {
     // Evict oldest entry to cap memory usage
@@ -196,11 +222,19 @@ export async function handleProxy(request, url, env) {
   }
 
   // Check for generic pass-through: /api/proxy/pass?url=<encoded-target>
+  // SSRF guard: refuse unless the target host matches an env-configured
+  // allowlist (PROXY_PASS_ALLOWLIST = comma-separated suffixes, e.g.
+  // "api.example.com,.partner-api.io"). If no allowlist is set the route
+  // refuses everything — the previous "any HTTPS URL" behavior let
+  // attackers use the Worker as an open relay to mask their IP, brute-force
+  // third-party APIs, or amplify outbound traffic.
   if (!targetBase && url.pathname === '/api/proxy/pass') {
     const passUrl = url.searchParams.get('url');
     if (!passUrl) return json({ error: 'Missing ?url= parameter' }, 400);
-    // Only allow HTTPS targets
     if (!passUrl.startsWith('https://')) return json({ error: 'Only HTTPS targets allowed' }, 400);
+    if (!isAllowedProxyPassHost(passUrl, env)) {
+      return json({ error: 'Target host not in PROXY_PASS_ALLOWLIST' }, 403);
+    }
     const targetUrl = passUrl;
     const proxyHeaders = new Headers(request.headers);
     // Strip headers that expose original client IP — targets see Worker IP only
