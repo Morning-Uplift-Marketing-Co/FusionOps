@@ -35,11 +35,35 @@ async function handleCfg({ db, url }) {
   }
 }
 
-async function handleProvisionDomainDns({ request, db }) {
+// Safe CNAME targets: Cloudflare Pages/Workers hostnames only.
+// Admins may extend this via CNAME_ALLOW_SUFFIXES env var (comma-separated suffixes).
+const DEFAULT_PAGES_HOST_SUFFIXES = ['.pages.dev', '.workers.dev'];
+
+function isAllowedPagesHost(pagesHost, env) {
+  let host;
+  try { host = new URL(`https://${pagesHost}`).hostname.toLowerCase(); } catch { return false; }
+  if (!host) return false;
+  const extras = String(env?.CNAME_ALLOW_SUFFIXES || '')
+    .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+  const allowed = [...DEFAULT_PAGES_HOST_SUFFIXES, ...extras];
+  return allowed.some(suffix => host.endsWith(suffix));
+}
+
+async function handleProvisionDomainDns({ request, env, db }) {
   try {
     const body = await request.json();
     const { domain, pagesHost } = body;
     if (!domain || !pagesHost) return json({ error: 'domain and pagesHost required' }, 400);
+
+    // Validate CNAME target: only allow *.pages.dev / *.workers.dev (or CNAME_ALLOW_SUFFIXES).
+    // Prevents DNS hijacking where an authenticated caller redirects a managed domain to
+    // attacker-controlled infrastructure by supplying a malicious pagesHost.
+    if (!isAllowedPagesHost(pagesHost, env)) {
+      return json({
+        error: 'pagesHost must be a *.pages.dev or *.workers.dev hostname. Add CNAME_ALLOW_SUFFIXES to permit other suffixes.',
+        code: 'PAGES_HOST_NOT_ALLOWED',
+      }, 400);
+    }
 
     const cleanDomain = String(domain).trim().toLowerCase().replace(/^www\./, '');
 
@@ -237,7 +261,7 @@ async function handleAiGenerateAssets({ request, db }) {
 export async function handleMiscRoute({ request, env, db, url, path, method }) {
   if (path === '/api/cfg' && method === 'GET') return handleCfg({ db, url });
   if (path === '/api/postbacks' && method === 'GET') return handleVoluumPostbacksApiGet(env, url);
-  if (path === '/api/provision-domain-dns' && method === 'POST') return handleProvisionDomainDns({ request, db });
+  if (path === '/api/provision-domain-dns' && method === 'POST') return handleProvisionDomainDns({ request, env, db });
   if (path === '/api/deploy/vps' && method === 'POST') return handleVpsDeploy({ request, env, url });
   if (path.startsWith('/api/deploy/vps/download/') && method === 'GET') return handleVpsDownload({ env, path });
   if (path === '/api/ai/generate-assets' && method === 'POST') return handleAiGenerateAssets({ request, db });

@@ -173,27 +173,29 @@ export function getTemplateQualityGateReport({ files = {}, sourceCode = '', cate
 
 /**
  * Append a new template_versions row and bump current_version.
- * Race condition: MAX(version_number)+1 is not atomic — two concurrent
- * snapshots can collide on the UNIQUE index. Caller should retry on 409.
+ * Version number is assigned atomically via a subquery inside the INSERT so that
+ * two concurrent callers cannot compute the same version and collide on the
+ * UNIQUE index (template_db_id, version_number).
  */
 export async function createTemplateVersionSnapshot(db, templateRow, note = '') {
-  const { results } = await db
-    .prepare('SELECT COALESCE(MAX(version_number), 0) AS v FROM template_versions WHERE template_db_id = ?')
-    .bind(templateRow.id)
-    .all();
-  const nextVersion = Number(results?.[0]?.v || 0) + 1;
   const vid = uid();
 
+  // Compute version_number inside INSERT — SQLite holds the write lock for the
+  // entire statement, so the subquery and the row assignment are atomic.
   await db.prepare(`
     INSERT INTO template_versions (
       id, template_db_id, template_id, version_number,
       name, description, category, badge, source_code, files, note
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (
+      ?, ?, ?,
+      (SELECT COALESCE(MAX(version_number), 0) + 1 FROM template_versions WHERE template_db_id = ?),
+      ?, ?, ?, ?, ?, ?, ?
+    )
   `).bind(
     vid,
     templateRow.id,
     templateRow.template_id || '',
-    nextVersion,
+    templateRow.id,         // bound for the subquery's WHERE template_db_id = ?
     templateRow.name || '',
     templateRow.description || '',
     templateRow.category || 'general',
@@ -203,7 +205,14 @@ export async function createTemplateVersionSnapshot(db, templateRow, note = '') 
     note || ''
   ).run();
 
-  await db.prepare('UPDATE templates SET current_version = ?, updated_at = datetime(\'now\') WHERE id = ?')
+  // Read back the actual version_number that was assigned.
+  const row = await db
+    .prepare('SELECT version_number FROM template_versions WHERE id = ?')
+    .bind(vid)
+    .first();
+  const nextVersion = Number(row?.version_number || 1);
+
+  await db.prepare("UPDATE templates SET current_version = ?, updated_at = datetime('now') WHERE id = ?")
     .bind(nextVersion, templateRow.id).run();
 
   return nextVersion;
