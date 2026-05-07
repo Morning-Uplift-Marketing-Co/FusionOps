@@ -112,7 +112,17 @@ async function adspowerProxy({ request, db }) {
     }
     return json(data);
   } catch (e) {
-    return json({ code: -1, msg: `AdsPower relay: ${e.message || String(e)}` });
+    // Sanitize error: never echo raw e.message — fetch/undici errors often
+    // include the target URL (the user's private HTTPS tunnel) and rarely
+    // also Authorization-header bytes. Map to a stable category instead.
+    const raw = String(e?.message || e || '');
+    let category = 'unknown';
+    if (/abort|timeout|timed out/i.test(raw)) category = 'timeout';
+    else if (/ENOTFOUND|getaddrinfo|DNS/i.test(raw)) category = 'dns';
+    else if (/ECONNREFUSED|connection refused/i.test(raw)) category = 'refused';
+    else if (/network|fetch failed/i.test(raw)) category = 'network';
+    else if (/json|parse/i.test(raw)) category = 'parse';
+    return json({ code: -1, msg: `AdsPower relay failed (${category})` });
   }
 }
 

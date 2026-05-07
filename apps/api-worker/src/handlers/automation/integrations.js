@@ -15,11 +15,9 @@
 //   /api/automation/ml/profiles/stop
 //   /api/automation/ml/profiles/clone
 //
-// NOTE: /api/automation/ml/signin references md5() which is not
-// defined anywhere in the codebase (pre-existing bug — would throw
-// ReferenceError if invoked). Preserved as-is to avoid behavior
-// change; needs follow-up to either define md5 or use plaintext
-// password like the operator-facing /api/ml/signin already does.
+// /api/automation/ml/signin sends plaintext password (matches the
+// operator-facing /api/ml/signin). A previous version called md5()
+// which was never defined → endpoint always 500'd; that bug is fixed.
 //
 // Extracted from worker.js (Phase 2: handler extraction).
 // ============================================================
@@ -100,13 +98,15 @@ async function mlSignin({ db }) {
   const ml = await getMlSettings(db);
   if (!ml.mlEmail || !ml.mlPassword) return json({ error: 'Multilogin credentials not configured' }, 400);
 
-  // PRE-EXISTING BUG: md5 is not defined anywhere in worker.js.
-  // Would throw ReferenceError if this endpoint is invoked.
-  // Preserved here to avoid behavior change; tracked for cleanup.
+  // Use plaintext password — matches the working operator route
+  // /api/ml/signin (handlers/multilogin.js). The previous md5() wrap was
+  // a long-standing bug: md5 was never defined, so this endpoint always
+  // threw ReferenceError on first call. Multilogin's API accepts plaintext
+  // over HTTPS.
   const res = await fetch(`${ML_BASE}/user/signin`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: ml.mlEmail, password: md5(ml.mlPassword) }), // eslint-disable-line no-undef
+    body: JSON.stringify({ email: ml.mlEmail, password: ml.mlPassword }),
   });
   const data = await res.json();
   if (data.data?.token) {
