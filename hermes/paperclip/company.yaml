@@ -1,0 +1,64 @@
+company:
+  name: FusionOps Intelligence
+  description: AI workforce managing Google Ads ban risk analysis and account operations
+
+departments:
+  - name: Account Intelligence
+    description: Nightly analysis of account risk signals
+    employees:
+      - name: ARGUS
+        skill: argus
+        schedule: "0 2 * * *"
+        description: Proxy and IP risk analysis
+        kpis:
+          - name: clean_proxy_rate
+            target: 90
+            unit: "%"
+          - name: ip_collision_count
+            target: 0
+            unit: count
+
+      - name: NEXUS
+        skill: nexus
+        schedule: "0 2 * * *"
+        description: Account isolation analysis
+        kpis:
+          - name: isolation_score_avg
+            target: 85
+            unit: score
+          - name: card_sharing_violations
+            target: 0
+            unit: count
+
+      - name: IRIS
+        skill: iris
+        schedule: "0 2 * * *"
+        description: Traffic quality and behavioral analysis
+        kpis:
+          - name: form_submit_rate_avg
+            target: 3
+            unit: "%"
+          - name: gclid_match_rate_avg
+            target: 70
+            unit: "%"
+
+      - name: CHRONO
+        skill: chrono
+        schedule: "0 2 * * *"
+        description: Ban timeline prediction
+        kpis:
+          - name: avg_lifespan_days
+            target: 18
+            unit: days
+
+  - name: Risk Management
+    description: Risk aggregation and alerting
+    employees:
+      - name: VERDICT
+        skill: verdict
+        schedule: "0 3 * * *"
+        description: Aggregate risk scores and dispatch alerts
+        kpis:
+          - name: critical_accounts_count
+            target: 0
+            unit: count
