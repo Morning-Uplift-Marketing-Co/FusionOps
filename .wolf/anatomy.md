@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-07T17:56:20.771Z
-> Files: 2 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-05-11T14:05:23.743Z
+> Files: 1 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../
 
@@ -222,6 +222,10 @@
 ## apps/cf-proxy/
 
 
+## apps/fbis-mcp-server/tools/
+
+- `_client.py` — Env var names match what the Cloudflare Worker expects (API_SECRET → Bearer token) (~295 tok)
+
 ## apps/lander/
 
 
@@ -302,8 +306,6 @@
 
 ## templates/pet-bold-01a/src/components/
 
-- `Hero.astro` — Astro: Hero (~4162 tok)
 
 ## templates/pet-bold-02a/src/components/
 
-- `Hero.astro` — Astro: Hero (~4162 tok)

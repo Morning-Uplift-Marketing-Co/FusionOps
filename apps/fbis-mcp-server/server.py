@@ -3,7 +3,7 @@
 import asyncio
 import os
 from dotenv import load_dotenv
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 
 load_dotenv()
 
@@ -23,4 +23,4 @@ register_risk_tools(mcp)
 
 if __name__ == "__main__":
     port = int(os.getenv("MCP_PORT", "8765"))
-    mcp.run(transport="sse")
+    mcp.run(transport="http", port=port)
