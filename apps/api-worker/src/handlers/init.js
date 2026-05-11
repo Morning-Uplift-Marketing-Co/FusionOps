@@ -15,6 +15,27 @@
 import { json } from '../lib/http.js';
 import { snakeToCamel, redactSettings } from '../lib/case-utils.js';
 
+// Credential fields that must never appear in /api/init responses.
+// These rows are returned to the browser and their plaintext tokens must be masked.
+const CF_ACCOUNT_SECRET_FIELDS = new Set(['api_key', 'api_token', 'apiKey', 'apiToken']);
+const REGISTRAR_SECRET_FIELDS = new Set(['api_key', 'secret_key', 'apiKey', 'secretKey']);
+
+function redactCfAccount(row) {
+  const obj = snakeToCamel(row);
+  for (const k of Object.keys(obj)) {
+    if (CF_ACCOUNT_SECRET_FIELDS.has(k)) obj[k] = obj[k] ? '••••' : '';
+  }
+  return obj;
+}
+
+function redactRegistrarAccount(row) {
+  const obj = snakeToCamel(row);
+  for (const k of Object.keys(obj)) {
+    if (REGISTRAR_SECRET_FIELDS.has(k)) obj[k] = obj[k] ? '••••' : '';
+  }
+  return obj;
+}
+
 async function handleInitLegacy(db) {
   const [settingsRows, sitesRows, deploysRows] = await Promise.all([
     db.prepare('SELECT key, value FROM settings').all(),
@@ -22,8 +43,8 @@ async function handleInitLegacy(db) {
     db.prepare('SELECT * FROM deploy_history ORDER BY deploy_time DESC LIMIT 100').all(),
   ]);
 
-  const settings = {};
-  settingsRows.results.forEach(r => { settings[r.key] = r.value; });
+  const settingsRaw = {};
+  settingsRows.results.forEach(r => { settingsRaw[r.key] = r.value; });
 
   // Ops data
   const [domains, accounts, profiles, payments, logs] = await Promise.all([
@@ -35,7 +56,7 @@ async function handleInitLegacy(db) {
   ]);
 
   return json({
-    settings,
+    settings: redactSettings(settingsRaw),
     sites: sitesRows.results || [],
     deploys: deploysRows.results || [],
     stats: {
@@ -150,8 +171,8 @@ async function handleInit(db) {
       logs: logs.map(snakeToCamel),
       deployments: deploymentsResults.map(snakeToCamel),
     },
-    cfAccounts: cfAccountsResults.map(snakeToCamel),
-    registrarAccounts: registrarAccountsResults.map(snakeToCamel),
+    cfAccounts: cfAccountsResults.map(redactCfAccount),
+    registrarAccounts: registrarAccountsResults.map(redactRegistrarAccount),
     settings: redactSettings(settingsObj),
     stats: {
       builds: stats.builds || 0,

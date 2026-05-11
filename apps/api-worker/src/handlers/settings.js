@@ -17,6 +17,7 @@
 
 import { json } from '../lib/http.js';
 import { neonUpsertSettings } from '../lib/neon-sync.js';
+import { redactSettings, isMaskedSecret, SECRET_KEYS } from '../lib/case-utils.js';
 
 const ADSPOWER_ALLOWED_PATHS = new Set([
   '/status',
@@ -29,12 +30,15 @@ async function settingsGet(db) {
   const { results } = await db.prepare('SELECT * FROM settings').all();
   const obj = {};
   results.forEach(r => { obj[r.key] = r.value; });
-  return json(obj);
+  return json(redactSettings(obj));
 }
 
 async function settingsPost({ request, db, neonSql }) {
   const body = await request.json();
   for (const [key, value] of Object.entries(body)) {
+    // Skip if the frontend sent back a masked placeholder for a secret key —
+    // this prevents '••••' from being persisted as the real credential.
+    if (SECRET_KEYS.has(key) && isMaskedSecret(value)) continue;
     await db.prepare(`
       INSERT INTO settings (key, value, updated_at) VALUES (?, ?, datetime('now'))
       ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = datetime('now')

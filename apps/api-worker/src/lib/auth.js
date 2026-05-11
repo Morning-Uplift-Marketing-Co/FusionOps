@@ -72,19 +72,85 @@ export function denyUnlessTrustedOrBearer(request, url, env) {
 /**
  * Bound-D1 direct-query: one statement only; SELECT / WITH only (after optional EXPLAIN).
  * Blocks writes and PRAGMA even if outer auth is compromised.
+ *
+ * Uses a string-aware tokenizer instead of a bare split(';') so that a semicolon
+ * inside a quoted string literal ('foo;bar') is not miscounted as a statement separator.
  */
 export function isReadOnlyD1DirectSql(sql) {
   let s = String(sql || '').trim();
   if (!s) return false;
+
+  // Strip block comments first (not string-aware, but block comments can't
+  // contain unmatched quotes in valid SQL).
   s = s.replace(/\/\*[\s\S]*?\*\//g, ' ');
-  s = s
-    .split(/\r?\n/)
-    .map((line) => line.replace(/--[^\n]*/, ''))
-    .join('\n');
+
+  // Strip line comments using a string-aware pass so that '--' inside a quoted
+  // string is not treated as a comment start.
+  s = stripLineComments(s);
   s = s.trim();
-  const parts = s.split(';').map((x) => x.trim()).filter(Boolean);
-  if (parts.length !== 1) return false;
-  let one = parts[0];
+  if (!s) return false;
+
+  // Count top-level statement separators (semicolons outside string literals).
+  if (countTopLevelStatements(s) !== 1) return false;
+
+  // Remove trailing semicolon for the keyword check.
+  let one = s.replace(/;\s*$/, '').trim();
   one = one.replace(/^\s*EXPLAIN\s+(QUERY\s+PLAN\s+)?/i, '').trim();
   return /^(SELECT|WITH)\b/i.test(one);
+}
+
+/** Strip SQL line comments (--...) while respecting single- and double-quoted strings. */
+function stripLineComments(sql) {
+  let out = '';
+  let i = 0;
+  while (i < sql.length) {
+    const c = sql[i];
+    if (c === "'" || c === '"') {
+      const q = c;
+      out += c; i++;
+      while (i < sql.length) {
+        const d = sql[i];
+        out += d; i++;
+        if (d === q) {
+          // Handle escaped quote by doubling ('' or "")
+          if (sql[i] === q) { out += sql[i]; i++; } else { break; }
+        }
+      }
+    } else if (c === '-' && sql[i + 1] === '-') {
+      // Line comment: skip to end of line
+      while (i < sql.length && sql[i] !== '\n') i++;
+    } else {
+      out += c; i++;
+    }
+  }
+  return out;
+}
+
+/** Count the number of non-empty SQL statements (split by top-level semicolons). */
+function countTopLevelStatements(sql) {
+  let count = 0;
+  let current = '';
+  let i = 0;
+  while (i < sql.length) {
+    const c = sql[i];
+    if (c === "'" || c === '"') {
+      const q = c;
+      current += c; i++;
+      while (i < sql.length) {
+        const d = sql[i];
+        current += d; i++;
+        if (d === q) {
+          if (sql[i] === q) { current += sql[i]; i++; } else { break; }
+        }
+      }
+    } else if (c === ';') {
+      if (current.trim()) count++;
+      current = '';
+      i++;
+    } else {
+      current += c; i++;
+    }
+  }
+  if (current.trim()) count++;
+  return count;
 }

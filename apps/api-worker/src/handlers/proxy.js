@@ -19,6 +19,17 @@
 import { connect } from 'cloudflare:sockets';
 import { corsHeaders, json, toBase64 } from '../lib/http.js';
 
+/** Categorize a fetch/network error without leaking target URLs or raw messages. */
+function proxyFetchErrorMsg(e, label = 'Proxy') {
+  const raw = String(e?.message || e || '');
+  let category = 'network';
+  if (/abort|timeout|timed out/i.test(raw)) category = 'timeout';
+  else if (/ENOTFOUND|getaddrinfo|DNS/i.test(raw)) category = 'dns';
+  else if (/ECONNREFUSED|connection refused/i.test(raw)) category = 'refused';
+  else if (/json|parse|unexpected token/i.test(raw)) category = 'parse';
+  return `${label} failed (${category})`;
+}
+
 /** RFC 7617-style UTF-8 safe Basic auth for HTTP proxies (btoa(user:pass) breaks on non-Latin1). */
 export function proxyBasicAuth(username, password) {
   return toBase64(`${String(username ?? '')}:${String(password ?? '')}`);
@@ -264,7 +275,7 @@ export async function handleProxy(request, url, env) {
         headers: responseHeaders,
       });
     } catch (e) {
-      return json({ error: e.message }, 502);
+      return json({ error: proxyFetchErrorMsg(e, 'Proxy pass') }, 502);
     }
   }
 
@@ -367,7 +378,7 @@ export async function handleProxy(request, url, env) {
         return json(proxyTcpFailurePayload(tcpErr, host, port), 502);
       }
     } catch (e) {
-      return json({ error: e.message }, 500);
+      return json({ error: proxyFetchErrorMsg(e, 'Resolve-IP') }, 500);
     }
   }
 
@@ -411,7 +422,7 @@ export async function handleProxy(request, url, env) {
         return json(proxyTcpFailurePayload(tcpErr, host, port), 502);
       }
     } catch (e) {
-      return json({ error: e.message }, 500);
+      return json({ error: proxyFetchErrorMsg(e, 'DNS-check') }, 500);
     }
   }
 
@@ -449,12 +460,12 @@ export async function handleProxy(request, url, env) {
         if (relayed) return relayed;
         const latencyMs = Date.now() - start;
         const p = proxyTcpFailurePayload(tcpErr, host, port);
-        p.error = `Latency check failed: ${String(tcpErr?.message ?? tcpErr)}`;
+        p.error = proxyFetchErrorMsg(tcpErr, 'Latency check');
         p.latencyMs = latencyMs;
         return json(p, 502);
       }
     } catch (e) {
-      return json({ error: e.message }, 500);
+      return json({ error: proxyFetchErrorMsg(e, 'Latency-check') }, 500);
     }
   }
 
@@ -507,6 +518,6 @@ export async function handleProxy(request, url, env) {
       headers: responseHeaders,
     });
   } catch (e) {
-    return json({ error: e.message }, 502);
+    return json({ error: proxyFetchErrorMsg(e, 'Proxy') }, 502);
   }
 }
