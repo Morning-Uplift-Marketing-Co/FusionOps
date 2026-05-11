@@ -1,0 +1,61 @@
+# ~/.hermes/config.yaml — FusionOps Hermes Agent Configuration
+# Copy this file to ~/.hermes/config.yaml on the Hetzner server
+
+model:
+  default: anthropic/claude-haiku-4-5
+  provider: openrouter
+
+terminal:
+  backend: local
+  timeout: 300
+  cwd: /opt/fusionops
+
+compression:
+  enabled: true
+  threshold: 0.50
+  target_ratio: 0.20
+
+memory:
+  memory_enabled: true
+  memory_char_limit: 4000
+
+auxiliary:
+  vision:
+    provider: openrouter
+    model: google/gemini-2.5-flash
+
+# ─── MCP Servers ──────────────────────────────────────────────────────────────
+mcp_servers:
+
+  # FBIS — Ban Intelligence System tools
+  fbis:
+    url: "http://localhost:8765/mcp"
+    enabled: true
+
+  # Browser automation — Gmail, LP QA, form filling
+  browser:
+    url: "http://localhost:8766/mcp"
+    enabled: true
+    tools:
+      include:
+        - navigate
+        - click
+        - fill
+        - screenshot
+        - evaluate
+        - wait_for_selector
+
+  # mem0 — Persistent memory across agent sessions
+  mem0:
+    command: "npx"
+    args: ["-y", "@mem0/mcp"]
+    env:
+      MEM0_API_KEY: "${MEM0_API_KEY}"
+    enabled: true
+
+  # Mission Control — Spawn and monitor sub-agents
+  mission-control:
+    url: "http://localhost:3001/mcp"
+    headers:
+      Authorization: "Bearer ${MC_API_KEY}"
+    enabled: true

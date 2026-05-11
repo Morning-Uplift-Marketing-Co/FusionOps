@@ -7,6 +7,7 @@
 // Adding a new endpoint = create/extend a handler, then wire the dispatch
 // here (or extend an existing handler's route table).
 
+import { handleAnalysisRoutes } from './analysis/routes.js';
 import { corsHeaders, json } from './lib/http.js';
 import { isTrustedOriginRequest } from './lib/auth.js';
 import { getNeonSql, ensureNeonTables } from './lib/neon-sync.js';
@@ -42,6 +43,10 @@ export default {
 
     const url = new URL(request.url);
     const path = url.pathname;
+    // --- FBIS Analysis routes ---
+    const analysisResponse = await handleAnalysisRoutes(path, request.method, request, env);
+    if (analysisResponse) return analysisResponse;
+    // --- end FBIS ---
     const method = request.method;
     const hostname = url.hostname;
     // Main D1 binding — must be declared here so early routes (/e, /v, /api/postbacks, …) never hit TDZ

@@ -13,7 +13,7 @@ import { defineConfig, devices } from '@playwright/test';
  * - Browser and device configurations
  *
  * Environment Variables:
- * - BASE_URL: The base URL for tests (default: http://localhost:8888)
+ * - BASE_URL: The base URL for tests (default: http://localhost:4321)
  * - CI: Set to 'true' in CI environment (affects retries and parallelism)
  * - UPDATE_SNAPSHOTS: Set to 'true' to update visual snapshots
  * - DEBUG: Set to 'true' to run tests in headed mode with debug logs
@@ -61,7 +61,7 @@ export default defineConfig({
   // Shared settings for all tests
   use: {
     // Base URL for tests
-    baseURL: process.env.BASE_URL || 'http://localhost:8888',
+    baseURL: process.env.BASE_URL || 'http://localhost:4321',
 
     // Collect trace when retrying the test for the first time
     trace: process.env.CI ? 'retain-on-failure' : 'on-first-retry',
@@ -153,7 +153,7 @@ export default defineConfig({
   // Run your local dev server before starting the tests
   webServer: {
     command: 'npm run dev',
-    url: 'http://localhost:8888',
+    url: 'http://localhost:4321',
     reuseExistingServer: !process.env.CI,
     timeout: 240 * 1000, // 4 minutes
     stdout: 'pipe',
