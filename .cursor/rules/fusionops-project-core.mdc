@@ -59,7 +59,7 @@ alwaysApply: true
 
 ## Commands (repo root `package.json`)
 
-- `npm run dev` — Astro dev (**port 8888**, `strictPort` in `astro.config.mjs`).
+- `npm run dev` — Astro dev (**port 4321**, `strictPort` in `astro.config.mjs`).
 - `npm run build` / `npm run preview` — Astro app.
 - `npm test` — Vitest; E2E: `npm run test:e2e`.
 
@@ -79,7 +79,7 @@ alwaysApply: true
 ## Quality gates
 
 - **ESLint:** `npm run lint` at repo root.
-- **E2E:** Playwright (`npm run test:e2e`); webServer URL must match Astro **`strictPort`** (**8888**).
+- **E2E:** Playwright (`npm run test:e2e`); webServer URL must match Astro **`strictPort`** (**4321**).
 
 ## Version
 

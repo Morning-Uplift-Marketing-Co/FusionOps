@@ -1,7 +1,9 @@
 # Roadmap: LP Factory
 
-**Updated:** 2026-03-22
+**Updated:** 2026-05-11
 **Mode:** YOLO (research-driven, parallelization enabled)
+
+> **v1.3:** Team is **not pursuing** the v1.3 “Template Reliability” milestone (Phases 4–6). Requirements and phase docs remain below **for reference only**.
 
 ---
 
@@ -10,7 +12,7 @@
 - ✅ **v1.0 MVP** — Phases 1-3 (shipped 2026-03-20)
 - ✅ **v1.1 Preview UX & Alpha Validation** — Phases 1-2 (shipped 2026-03-20)
 - ✅ **v1.2 Anti-FP Vector Expansion** — Phase 3 (shipped 2026-03-20)
-- ◆ **v1.3 Template Reliability** — Phases 4-6
+- ~~◆ **v1.3 Template Reliability** — Phases 4-6~~ **deprecated (not pursued, 2026-05-11)**
 
 ---
 
@@ -46,7 +48,9 @@ See `.planning/milestones/v1.2-ROADMAP.md` for full details.
 
 </details>
 
-## v1.3 Template Reliability
+## Archived: v1.3 Template Reliability (not pursued)
+
+The following phases were planned under v1.3; **no longer an active roadmap**.
 
 ### Phase 4: Color Defaults
 **Goal:** Templates display default colors (ocean palette) immediately in local dev and preview without CI injection
@@ -96,6 +100,6 @@ See `.planning/milestones/v1.2-ROADMAP.md` for full details.
 | 1. Preview UX | v1.1 | 6/6 | Complete | 2026-03-20 |
 | 2. Alpha Test | v1.1 | 3/3 | Complete | 2026-03-20 |
 | 3. Anti-FP Vectors | v1.2 | 5/5 | Complete | 2026-03-20 |
-| 4. Color Defaults | v1.3 | 0/? | Not started | - |
-| 5. Tracking Verification | v1.3 | 0/? | Not started | - |
-| 6. Apply & Local Testing | v1.3 | 0/? | Not started | - |
+| 4. Color Defaults | v1.3 | 0/? | **Deprecated** | — |
+| 5. Tracking Verification | v1.3 | 0/? | **Deprecated** | — |
+| 6. Apply & Local Testing | v1.3 | 0/? | **Deprecated** | — |

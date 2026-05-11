@@ -3,8 +3,14 @@
   "private": true,
   "version": "3.6.3",
   "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
     "prepare": "git config core.hooksPath .githooks",
+    "bootstrap": "npm install && node scripts/check-setup.mjs",
+    "setup:check": "node scripts/check-setup.mjs",
+    "install:api-worker": "npm install --prefix apps/api-worker --no-audit --no-fund",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",

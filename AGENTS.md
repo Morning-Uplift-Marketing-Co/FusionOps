@@ -5,7 +5,10 @@ This repository is **FusionOps** (internal name **LP Factory**): an **Astro + Re
 ## Start here
 
 1. **Always-on context:** `.cursor/rules/fusionops-project-core.mdc` (product map, data flow, duplicate-`utils` warning, env naming).
-2. **Deeper docs:** `.planning/codebase/ARCHITECTURE.md`, `docs/CODEMAPS/frontend.md`, `docs/template-system-flow.md`.
+2. **New clone / env:** `README.md`, `docs/GETTING-STARTED.md`
+3. **Databases & Neon / D1 / keys:** `docs/DATABASES.md`
+4. **PRs / CI secrets / operator workflow:** `docs/CONTRIBUTING.md`
+5. **Deeper docs:** `.planning/codebase/ARCHITECTURE.md`, `docs/CODEMAPS/frontend.md`, `docs/template-system-flow.md`.
 
 ## Scoped rules (Cursor `.mdc`)
 
@@ -25,7 +28,7 @@ This repository is **FusionOps** (internal name **LP Factory**): an **Astro + Re
 
 ## Quick commands
 
-- App dev: `npm run dev` (Astro, port **8888**).
+- App dev: `npm run dev` (Astro, port **4321**).
 - Tests: `npm test` (Vitest).
 
 If your tool does not read `.cursor/rules`, open and follow **`fusionops-project-core.mdc`** manually.
