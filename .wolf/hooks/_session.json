@@ -1,25 +1,9 @@
 {
-  "session_id": "session-2026-04-07-0041",
-  "started": "2026-04-07T17:41:16.093Z",
+  "session_id": "session-2026-04-20-2202",
+  "started": "2026-04-20T15:02:30.325Z",
   "files_read": {},
-  "files_written": [
-    {
-      "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/goofy-mestorf/templates/pet-bold-02a/src/components/Hero.astro",
-      "action": "edit",
-      "tokens": 214,
-      "at": "2026-04-07T17:56:15.731Z"
-    },
-    {
-      "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/goofy-mestorf/templates/pet-bold-01a/src/components/Hero.astro",
-      "action": "edit",
-      "tokens": 214,
-      "at": "2026-04-07T17:56:20.773Z"
-    }
-  ],
-  "edit_counts": {
-    "templates/pet-bold-02a/src/components/Hero.astro": 1,
-    "templates/pet-bold-01a/src/components/Hero.astro": 1
-  },
+  "files_written": [],
+  "edit_counts": {},
   "anatomy_hits": 0,
   "anatomy_misses": 0,
   "repeated_reads_warned": 0,

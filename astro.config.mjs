@@ -49,9 +49,10 @@ const API_BASE = process.env.VITE_API_BASE || 'https://lp-factory-api.misty-feat
 
 export default defineConfig({
   integrations: [react()],
-  // Pin dev port so Playwright webServer.url matches (avoid silent fallback to 4322, etc.)
+  // Pin dev port so Playwright webServer.url matches. Avoid 8888 on Windows: it often falls in
+  // Hyper-V/WSL `netsh interface ipv4 show excludedportrange` (8866–8965) → EACCES.
   server: {
-    port: 8888,
+    port: 4321,
     strictPort: true,
   },
   vite: {
@@ -61,7 +62,7 @@ export default defineConfig({
       'import.meta.env.VITE_E2E': JSON.stringify(process.env.VITE_E2E || ''),
     },
     server: {
-      port: 8888,
+      port: 4321,
       strictPort: true,
       host: true,
       fs: { allow: ['../..', '.'] },
