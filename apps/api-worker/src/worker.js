@@ -5,6 +5,7 @@
 import { neon } from '@neondatabase/serverless';
 import puppeteer from '@cloudflare/puppeteer';
 import { connect } from 'cloudflare:sockets';
+import { handleAnalysisRoutes } from './analysis/routes.js';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -6181,6 +6182,10 @@ Return this exact JSON shape:
           return json({ error: e.message }, 500);
         }
       }
+
+      // ═══ ANALYSIS / FBIS ROUTES ═══
+      const analysisResponse = await handleAnalysisRoutes(request, env, db, env.PIXEL_DB || null, json);
+      if (analysisResponse) return analysisResponse;
 
       return json({ error: 'Not found' }, 404);
 

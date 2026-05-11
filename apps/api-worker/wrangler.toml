@@ -40,10 +40,6 @@ bucket_name = "lp-factory-thumbs"
 # First-party pixel hostnames: t.{domain}/* → this Worker (see worker.js path === '/e').
 # Keep in sync with Cloudflare Dashboard; duplicate on lp-factory-pixel will fail deploy (route conflict).
 [[routes]]
-pattern = "t.scratchpetlending.com/*"
-zone_name = "scratchpetlending.com"
-
-[[routes]]
 pattern = "t.scratchpetfinancing.com/*"
 zone_name = "scratchpetfinancing.com"
 
