@@ -1,9 +1,12 @@
 # Requirements: LP Factory v1.3 Template Reliability
 
 **Defined:** 2026-03-22
+
+> **Status (2026-05-11):** The **v1.3** milestone is **not pursued** by the team. This file is **archived for reference** (IDs CLR/TRK/APPLY/TEST are not active backlog).
+
 **Core Value:** Import any template, inject variables, deploy to Cloudflare with unique fingerprint -- every time, without manual fixing.
 
-## v1.3 Requirements
+## v1.3 Requirements (archived)
 
 ### Color
 
@@ -46,22 +49,18 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CLR-01 | Phase 4 | Pending |
-| CLR-02 | Phase 4 | Pending |
-| TRK-01 | Phase 5 | Pending |
-| TRK-02 | Phase 5 | Pending |
-| TRK-03 | Phase 5 | Pending |
-| APPLY-01 | Phase 6 | Pending |
-| TEST-01 | Phase 6 | Pending |
-| TEST-02 | Phase 6 | Pending |
+| CLR-01 | Phase 4 | Deprecated |
+| CLR-02 | Phase 4 | Deprecated |
+| TRK-01 | Phase 5 | Deprecated |
+| TRK-02 | Phase 5 | Deprecated |
+| TRK-03 | Phase 5 | Deprecated |
+| APPLY-01 | Phase 6 | Deprecated |
+| TEST-01 | Phase 6 | Deprecated |
+| TEST-02 | Phase 6 | Deprecated |
 
-**Coverage:**
+**Coverage (historical):**
 - v1.3 requirements: 8 total
 - Mapped to phases: 8
 - Unmapped: 0
 
-✓ 100% coverage validated
-
----
-
-*Requirements updated: 2026-03-22*
+*Requirements archived: 2026-05-11 (v1.3 not pursued). Originally updated: 2026-03-22.*

@@ -5,11 +5,19 @@ Landing page factory: Astro-based template system with CloudFlare Workers backen
 ## Quick Start
 
 ```bash
-# Install dependencies
-npm install
+# Install dependencies (Node ≥22 — see .nvmrc)
+npm run bootstrap
 
-# Local dev (http://localhost:3000)
+# Quick sanity check anytime:
+# npm run setup:check
+
+# Copy env template: cp .env.example .env — set VITE_API_BASE / VITE_NEON_URL as needed
+
+# Local dev (http://localhost:4321 — strictPort for Playwright E2E)
 npm run dev
+
+# Optional: deps for local apps/api-worker development
+# npm run install:api-worker
 
 # Build for production
 npm run build
@@ -22,6 +30,8 @@ npm run test:coverage    # Coverage report
 # Deploy to CloudFlare Pages
 npm run deploy:org
 ```
+
+See **README.md** for full onboarding.
 
 ## Architecture Overview
 
@@ -78,19 +88,13 @@ npm run deploy:org
 
 ### Prerequisites
 1. Clone repository
-2. `npm install` (Node ≥22.0.0)
-3. Create `.env.local`:
-   ```
-   # CloudFlare Workers (auto-bound in wrangler.toml)
-   # D1 databases accessible via D1 bindings
-   # Neon Postgres (optional)
-   DATABASE_URL=postgresql://...
-   ```
+2. `npm run bootstrap` (or `npm install`) — Node ≥22.0.0
+3. Copy `.env.example` to `.env` and set `VITE_*` vars (see README). Optional: `.env.lock` for local convenience (not committed).
 
 ### Local Development
 ```bash
 npm run dev
-# Opens http://localhost:3000
+# Opens http://localhost:4321
 # Auto-reload on file changes (HMR enabled)
 ```
 
