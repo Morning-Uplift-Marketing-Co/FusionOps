@@ -187,6 +187,7 @@ export function Sidebar({ page, setPage, siteCount, taskBadge, startCreate, star
         { id: "tracking", icon: "🔬", label: "Tracking Test" },
         { id: "realtime-events", icon: "⚡", label: "Realtime Events" },
         { id: "proxy-health", icon: "🛡️", label: "Proxy Health" },
+        { id: "risk-dashboard", icon: "🔴", label: "FBIS Dashboard" },
         { id: "error-log", icon: "🐛", label: "Error Log" },
         { id: "api-health", icon: "🩺", label: "API Health" },
         { id: "docs", icon: "📚", label: "API Docs", external: true, href: "/docs" },
