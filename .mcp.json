@@ -7,6 +7,10 @@
     "context7": {
       "type": "http",
       "url": "https://mcp.context7.com/mcp"
+    },
+    "fbis": {
+      "type": "http",
+      "url": "http://178.105.137.23:8765/mcp"
     }
   }
 }
