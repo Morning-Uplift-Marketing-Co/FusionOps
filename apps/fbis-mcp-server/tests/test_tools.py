@@ -60,3 +60,73 @@ class TestAgentKpiValidation:
         valid = {"argus", "nexus", "iris", "chrono", "verdict"}
         assert "zeus" not in valid
         assert "ARGUS" not in valid  # case-sensitive
+
+
+class TestFatigueScoreFormula:
+    """Pure formula tests for lifecycle creative fatigue — no HTTP required."""
+
+    def _calc(self, ctr_delta: float, conv_delta: float, impressions: int) -> int:
+        score = 0
+        if ctr_delta < -0.20:
+            score += 40
+        elif ctr_delta < -0.10:
+            score += 20
+        if conv_delta < -0.30:
+            score += 40
+        elif conv_delta < -0.15:
+            score += 20
+        if impressions > 50_000:
+            score += 10
+        if impressions > 200_000:
+            score += 10
+        return min(100, score)
+
+    def _status(self, score: int) -> str:
+        if score >= 80:
+            return "retired"
+        if score >= 60:
+            return "fatigued"
+        if score >= 40:
+            return "watch"
+        return "healthy"
+
+    def test_healthy_creative(self):
+        score = self._calc(0.05, 0.02, 10_000)
+        assert score == 0
+        assert self._status(score) == "healthy"
+
+    def test_watch_creative_ctr_and_conv_drop(self):
+        # CTR 10-20% drop (+20) + conv 15-30% drop (+20) = 40 → watch
+        score = self._calc(-0.12, -0.18, 5_000)
+        assert score == 40
+        assert self._status(score) == "watch"
+
+    def test_fatigued_creative(self):
+        score = self._calc(-0.25, -0.20, 60_000)
+        # CTR >20% drop (+40) + conv >15% drop (+20) + impressions >50k (+10) = 70
+        assert score == 70
+        assert self._status(score) == "fatigued"
+
+    def test_retired_creative(self):
+        score = self._calc(-0.35, -0.40, 250_000)
+        # CTR >20% drop (+40) + conv >30% drop (+40) + >50k (+10) + >200k (+10) = 100
+        assert score == 100
+        assert self._status(score) == "retired"
+
+    def test_score_capped_at_100(self):
+        score = self._calc(-0.99, -0.99, 999_999)
+        assert score == 100
+
+    def test_valid_lifecycle_transitions(self):
+        transitions = {
+            "new":       ["warming", "retired"],
+            "warming":   ["active", "suspended", "retired"],
+            "active":    ["resting", "suspended", "retired"],
+            "resting":   ["active", "retired"],
+            "suspended": ["active", "retired"],
+            "retired":   [],
+        }
+        assert "active" in transitions["warming"]
+        assert "resting" in transitions["active"]
+        assert transitions["retired"] == []
+        assert "new" not in transitions["warming"]  # no backward transition

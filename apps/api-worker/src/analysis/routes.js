@@ -94,6 +94,28 @@ export async function handleAnalysisRoutes(path, method, request, env) {
     return json({ ok: true });
   }
 
+  // GET /api/analysis/agent-kpis — latest KPI per agent per metric
+  if (path === '/api/analysis/agent-kpis' && method === 'GET') {
+    const url = new URL(request.url);
+    const agent = url.searchParams.get('agent') || null;
+    const limit = parseInt(url.searchParams.get('limit') || '50', 10);
+    const { results } = await db.prepare(`
+      SELECT k1.*
+      FROM agent_kpis k1
+      INNER JOIN (
+        SELECT agent_name, kpi_name, MAX(recorded_at) as latest
+        FROM agent_kpis
+        ${agent ? "WHERE agent_name = ?" : ""}
+        GROUP BY agent_name, kpi_name
+      ) k2 ON k1.agent_name = k2.agent_name
+           AND k1.kpi_name = k2.kpi_name
+           AND k1.recorded_at = k2.latest
+      ORDER BY k1.agent_name, k1.kpi_name
+      LIMIT ?
+    `).bind(...(agent ? [agent, limit] : [limit])).all();
+    return json({ ok: true, data: results });
+  }
+
   // POST /api/analysis/agent-kpi
   if (path === '/api/analysis/agent-kpi' && method === 'POST') {
     const body = await request.json();
