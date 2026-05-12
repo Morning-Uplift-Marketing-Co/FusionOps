@@ -16,10 +16,9 @@
       "command": "npx",
       "args": ["@dashclaw/mcp-server"],
       "env": {
-        "DASHCLAW_URL": "https://dashclaw-fusionops.vercel.app",
-        "DASHCLAW_API_KEY": ""
-      },
-      "_note": "Deploy DashClaw free at vercel.com — see docs/QUICK-START.md in ucsandman/DashClaw. Fill in API key after deploy."
+        "DASHCLAW_URL": "http://178.105.137.23:3100",
+        "DASHCLAW_API_KEY": "aee45e8ccb60fe9ca733ac343a83621e40479697eab01459"
+      }
     }
   }
 }
