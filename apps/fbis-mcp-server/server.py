@@ -16,6 +16,7 @@ from tools.pixel import register as register_pixel
 from tools.audit import register as register_audit
 from tools.risk import register as register_risk
 from tools.lifecycle import register as register_lifecycle
+from tools.cloudflare import register as register_cloudflare
 
 register_accounts(mcp)
 register_proxy(mcp)
@@ -23,6 +24,7 @@ register_pixel(mcp)
 register_audit(mcp)
 register_risk(mcp)
 register_lifecycle(mcp)
+register_cloudflare(mcp)
 
 if __name__ == "__main__":
     port = int(os.getenv("MCP_PORT", "8765"))
