@@ -128,5 +128,43 @@ export async function handleAnalysisRoutes(path, method, request, env) {
     return json({ ok: true });
   }
 
+  // POST /api/analysis/accounts/sync  — from Google Ads Script
+  if (path === '/api/analysis/accounts/sync' && method === 'POST') {
+    const body = await request.json();
+    // Accept single object OR array
+    const rows = Array.isArray(body) ? body : [body];
+    if (rows.length === 0) return json({ ok: false, error: 'empty payload' }, 400);
+    if (rows.length > 200) return json({ ok: false, error: 'max 200 accounts per sync' }, 400);
+
+    let upserted = 0;
+    const errors = [];
+
+    for (const row of rows) {
+      const { account_id, label, email, status, site_domain, spend_30d } = row;
+      if (!account_id) { errors.push('missing account_id'); continue; }
+
+      // Normalise: strip dashes from Google customer ID (123-456-7890 → 1234567890)
+      const id = String(account_id).replace(/-/g, '');
+
+      try {
+        await db.prepare(Q.UPSERT_ACCOUNT)
+          .bind(
+            id,
+            label   || '',
+            email   || '',
+            status  || 'active',
+            site_domain || '',
+            Math.round(spend_30d ?? 0),
+          )
+          .run();
+        upserted++;
+      } catch (e) {
+        errors.push(`${id}: ${e.message}`);
+      }
+    }
+
+    return json({ ok: true, upserted, errors });
+  }
+
   return null; // not handled
 }

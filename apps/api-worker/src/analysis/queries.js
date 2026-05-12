@@ -74,4 +74,18 @@ export const Q = {
       (id, agent_name, kpi_name, kpi_value, kpi_target, kpi_unit, recorded_at)
     VALUES (?1, ?2, ?3, ?4, ?5, ?6, datetime('now'))
   `,
+
+  // Upsert from Google Ads Script sync
+  UPSERT_ACCOUNT: `
+    INSERT INTO ops_accounts
+      (id, label, email, status, site_domain,
+       monthly_spend, created_at)
+    VALUES (?1, ?2, ?3, ?4, ?5, ?6, datetime('now'))
+    ON CONFLICT(id) DO UPDATE SET
+      label         = excluded.label,
+      email         = coalesce(nullif(excluded.email,''),    ops_accounts.email),
+      status        = excluded.status,
+      site_domain   = coalesce(nullif(excluded.site_domain,''), ops_accounts.site_domain),
+      monthly_spend = excluded.monthly_spend
+  `,
 };
