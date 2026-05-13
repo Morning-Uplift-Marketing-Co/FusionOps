@@ -1,0 +1,123 @@
+---
+import '../styles/global.css';
+import ConsentBanner from '../components/ConsentBanner.astro';
+
+const brand = import.meta.env.PUBLIC_BRAND || '${brand}';
+const conversionId = import.meta.env.PUBLIC_CONVERSION_ID || '${conversionId}';
+const siteUrl = import.meta.env.PUBLIC_SITE_URL || '${siteUrl}';
+const aprMin = import.meta.env.PUBLIC_APRMIN || '5.99';
+const aprMax = import.meta.env.PUBLIC_APRMAX || '34.99';
+const amtMin = import.meta.env.PUBLIC_AMOUNTMIN || '200';
+const amtMax = import.meta.env.PUBLIC_AMOUNTMAX || '5000';
+const phone  = import.meta.env.PUBLIC_PHONE || '';
+const email  = import.meta.env.PUBLIC_EMAIL || '';
+
+interface Props {
+  title?: string;
+  description?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+}
+
+const {
+  title = import.meta.env.PUBLIC_META_TITLE || `${brand} — Fixed-Rate Installment Loans Up to $5,000`,
+  description = import.meta.env.PUBLIC_META_DESCRIPTION || `Compare fixed-rate installment loan offers from $500 to $5,000. Rates from ${import.meta.env.PUBLIC_APRMIN || '5.99'}% APR. Soft credit check only — no impact to your score. Funds deposited as fast as the next business day.`,
+  ogTitle = import.meta.env.PUBLIC_OG_TITLE || title,
+  ogDescription = import.meta.env.PUBLIC_OG_DESCRIPTION || `Need up to $5,000 with a payment you can plan around? Check your rate in 3 minutes. Fixed monthly payments, no prepayment penalty, and funds arrive fast.`,
+  ogImage = import.meta.env.PUBLIC_OG_IMAGE || `${siteUrl}/og.png`,
+} = Astro.props;
+
+const canonicalUrl = siteUrl;
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  <link rel="canonical" href={canonicalUrl} />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content={brand} />
+  <meta property="og:url" content={canonicalUrl} />
+  <meta property="og:title" content={ogTitle} />
+  <meta property="og:description" content={ogDescription} />
+  <meta property="og:image" content={ogImage} />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={ogTitle} />
+  <meta name="twitter:description" content={ogDescription} />
+  <meta name="twitter:image" content={ogImage} />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/favicon.svg" />
+  <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+  <link rel="dns-prefetch" href="https://bolt.new" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <link
+    rel="preload"
+    as="style"
+    fetchpriority="high"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap"
+  />
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap"
+    media="print"
+    onload="this.media='all'"
+  />
+  <noscript>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" />
+  </noscript>
+
+  <script type="application/ld+json" set:html={JSON.stringify([
+    {
+      "@context": "https://schema.org",
+      "@type": "FinancialService",
+      "name": brand,
+      "url": siteUrl,
+      "telephone": phone,
+      "email": email,
+      "sameAs": [siteUrl],
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "LoanOrCredit",
+      "name": `${brand} Installment Loans`,
+      "loanTerm": { "@type": "QuantitativeValue", "minValue": 2, "maxValue": 60, "unitCode": "MON" },
+      "amount": { "@type": "MonetaryAmount", "minValue": amtMin, "maxValue": amtMax, "currency": "USD" },
+      "annualPercentageRate": { "@type": "QuantitativeValue", "minValue": aprMin, "maxValue": aprMax },
+      "provider": { "@type": "Organization", "name": brand, "url": siteUrl },
+    },
+  ])} />
+
+  <script is:inline define:vars={{ conversionId }}>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'ad_personalization': 'denied',
+      'analytics_storage': 'denied',
+      'wait_for_update': 500
+    });
+    (window.requestIdleCallback || function(cb){ setTimeout(cb, 1); })(function() {
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=' + conversionId;
+      s.onload = function() {
+        gtag('js', new Date());
+        gtag('config', conversionId);
+      };
+      document.head.appendChild(s);
+    });
+  </script>
+</head>
+<body class="bg-background text-foreground antialiased">
+  <slot />
+  <ConsentBanner />
+</body>
+</html>
