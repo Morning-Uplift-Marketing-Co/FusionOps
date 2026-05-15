@@ -1,61 +1,137 @@
 # ~/.hermes/config.yaml — FusionOps Hermes Agent Configuration
-# Copy this file to ~/.hermes/config.yaml on the Hetzner server
+# Deployed on Hetzner VPS (178.105.137.23)
+# Last synced: 2026-05-16 (Phase 6 config sync)
+# All secrets use ${VAR} environment variable references
 
 model:
   default: anthropic/claude-haiku-4-5
   provider: openrouter
 
+agent:
+  max_turns: 90
+  gateway_timeout: 1800
+  restart_drain_timeout: 180
+  api_max_retries: 3
+  tool_use_enforcement: auto
+
 terminal:
   backend: local
-  timeout: 300
+  modal_mode: auto
   cwd: /opt/fusionops
+  timeout: 300
+  auto_source_bashrc: true
+  docker_image: nikolaik/python-nodejs:python3.11-nodejs20
+  persistent_shell: true
 
 compression:
   enabled: true
-  threshold: 0.50
-  target_ratio: 0.20
+  threshold: 0.3
+  target_ratio: 0.2
+  protect_last_n: 20
+  hygiene_hard_message_limit: 400
+  protect_first_n: 3
+
+prompt_caching:
+  cache_ttl: 5m
+
+openrouter:
+  response_cache: true
+  response_cache_ttl: 300
+  min_coding_score: 0.65
 
 memory:
   memory_enabled: true
+  user_profile_enabled: true
   memory_char_limit: 4000
+  user_char_limit: 1375
 
-auxiliary:
-  vision:
-    provider: openrouter
-    model: google/gemini-2.5-flash
+context:
+  engine: compressor
+
+security:
+  allow_private_urls: false
+  redact_secrets: true
+  tirith_enabled: true
+
+cron:
+  wrap_response: true
+  max_parallel_jobs: null
+
+kanban:
+  dispatch_in_gateway: true
+  dispatch_interval_seconds: 60
+  failure_limit: 2
+
+logging:
+  level: INFO
+  max_size_mb: 5
+  backup_count: 3
+
+lsp:
+  enabled: true
+  wait_mode: document
+
+# ─── Platform Integrations ────────────────────────────────────────────────────
+platforms:
+  telegram:
+    bot_token: ${TELEGRAM_BOT_TOKEN}
+    chat_id: ${TELEGRAM_CHAT_ID}
+    enabled: true
 
 # ─── MCP Servers ──────────────────────────────────────────────────────────────
 mcp_servers:
 
-  # FBIS — Ban Intelligence System tools
+  # FBIS — Ban Intelligence System tools (Phase 4)
   fbis:
-    url: "http://localhost:8765/mcp"
+    url: http://localhost:8765/mcp
     enabled: true
+    description: Account risk analysis, proxy inspection, pixel tracking
+
+  # DashClaw — Human-in-the-loop governance (Phase 4)
+  dashclaw:
+    url: http://localhost:3100/api/mcp
+    headers:
+      x-api-key: ${DASHCLAW_API_KEY}
+    enabled: true
+    description: Policy enforcement, action audit trail, operator approval flows
 
   # Browser automation — Gmail, LP QA, form filling
   browser:
-    url: "http://localhost:8766/mcp"
+    url: http://localhost:8766
     enabled: true
-    tools:
-      include:
-        - navigate
-        - click
-        - fill
-        - screenshot
-        - evaluate
-        - wait_for_selector
+    type: http
+    description: Playwright/browser-based automation
 
   # mem0 — Persistent memory across agent sessions
   mem0:
-    command: "npx"
+    command: npx
     args: ["-y", "@mem0/mcp"]
     env:
-      MEM0_API_KEY: "${MEM0_API_KEY}"
+      MEM0_API_KEY: ${MEM0_API_KEY}
     enabled: true
+    description: Long-term episodic memory storage
 
   # Mission Control — Spawn and monitor sub-agents
   mission-control:
-    url: "http://localhost:3001/mcp"
+    url: http://localhost:3001/mcp
     headers:
-      Authorization: "Bearer ${MC_API_KEY}"
+      Authorization: Bearer ${MC_API_KEY}
     enabled: true
+    description: Sub-agent orchestration and execution dashboard
+
+# ─── Plugins ──────────────────────────────────────────────────────────────────
+plugins:
+  enabled:
+  - disk-cleanup  # Auto-cleanup of ephemeral files (Phase 5)
+  disabled: []
+
+# ─── Environment Variables ────────────────────────────────────────────────────
+# Required before starting Hermes:
+#   TELEGRAM_BOT_TOKEN        — Telegram bot API token (alerts)
+#   TELEGRAM_CHAT_ID          — Telegram chat ID (alerts target)
+#   DASHCLAW_API_KEY          — DashClaw governance API key
+#   DASHCLAW_BASE_URL         — DashClaw URL (default: http://dashclaw-app-1:3100)
+#   MEM0_API_KEY              — mem0 long-term memory API key
+#   MC_API_KEY                — Mission Control API key
+#
+# Start with: export TELEGRAM_BOT_TOKEN="..." && hermes gateway start

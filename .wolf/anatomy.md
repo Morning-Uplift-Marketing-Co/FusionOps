@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-07T17:56:20.771Z
-> Files: 2 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-05-15T20:58:02.172Z
+> Files: 20 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../
 
@@ -11,12 +11,26 @@
 
 ## ./
 
+- `CLAUDE.md` — CLAUDE.md (~4626 tok)
+- `HERMES_FBIS_AUDIT.txt` — Declares Queries (~1805 tok)
 
 ## .astro/
 
 
 ## .claude/
 
+- `DASHCLAW_HERMES_INTEGRATION.md` — DashClaw + Hermes Integration Analysis (~3344 tok)
+- `DASHCLAW_SUMMARY.txt` (~1338 tok)
+- `HERMES_FBIS_SYSTEM.md` — HERMES + FBIS System Overview (~3204 tok)
+- `SYSTEM_VERIFICATION_REPORT.md` — HERMES + FBIS System Verification Report (~3040 tok)
+
+## .claude/handoff/
+
+- `2026-05-16-phase1-resume.md` — Resume: Phase 1 Hermes Update (~516 tok)
+- `2026-05-16-phase4-complete.md` — Phase 4 Complete: DashClaw HITL Wiring (✅ DONE) (~1426 tok)
+- `2026-05-16-phase4-progress.md` — Phase 4 Progress: DashClaw HITL Wiring (IN PROGRESS) (~1056 tok)
+- `2026-05-16-phase5-progress.md` — Phase 5 Progress: Ecosystem Plugins (~90% Complete) (~906 tok)
+- `2026-05-16-phase6-complete.md` — Phase 6 Complete: Repo↔VPS Config Sync (✅ DONE) (~1603 tok)
 
 ## .claude/rules/
 
@@ -189,6 +203,14 @@
 ## .github/workflows/
 
 
+## C:/Users/Barbara/.claude-code-router/
+
+- `config.json` (~338 tok)
+
+## C:/Users/Barbara/.claude/plans/
+
+- `rosy-mapping-bentley.md` — Claude + Codex Collaboration Plan — FBIS/Hermes Work (~4969 tok)
+
 ## apps/
 
 
@@ -221,6 +243,14 @@
 
 ## apps/cf-proxy/
 
+
+## apps/fbis-mcp-server/
+
+- `requirements.txt` — Python dependencies (~32 tok)
+
+## apps/fbis-mcp-server/tools/
+
+- `risk.py` — register, write_risk_score, write_agent_kpi (~3065 tok)
 
 ## apps/lander/
 
@@ -297,13 +327,28 @@
 ## deploy-configs/
 
 
+## hermes/
+
+- `hermes-nightly.py` — get, post, kpi, telegram (~2931 tok)
+
+## infra/
+
+- `docker-compose.yml` — Docker Compose services (~440 tok)
+- `setup.sh` — infra/setup.sh — One-command setup on Hetzner CX22 (Ubuntu 24.04) (~774 tok)
+
+## infra/dashclaw/
+
+- `policies.spec.md` — DashClaw Governance Policies (~1853 tok)
+
+## infra/hermes/
+
+- `config.yaml` — ~/.hermes/config.yaml — FusionOps Hermes Agent Configuration (~1031 tok)
+
 ## scripts/
 
 
 ## templates/pet-bold-01a/src/components/
 
-- `Hero.astro` — Astro: Hero (~4162 tok)
 
 ## templates/pet-bold-02a/src/components/
 
-- `Hero.astro` — Astro: Hero (~4162 tok)
