@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-05-15T20:58:02.172Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-05-15T22:51:07.393Z
 > Files: 20 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../
@@ -250,7 +250,7 @@
 
 ## apps/fbis-mcp-server/tools/
 
-- `risk.py` — register, write_risk_score, write_agent_kpi (~3065 tok)
+- `risk.py` — register, write_risk_score, write_agent_kpi (~3286 tok)
 
 ## apps/lander/
 

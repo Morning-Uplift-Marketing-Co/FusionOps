@@ -320,6 +320,38 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-05-15T20:57:08.302Z"
+    },
+    {
+      "id": "bug-021",
+      "timestamp": "2026-05-15T22:51:03.846Z",
+      "error_message": "Significant refactor of ",
+      "file": "apps/fbis-mcp-server/tools/risk.py",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 11→13 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-15T22:51:03.846Z"
+    },
+    {
+      "id": "bug-022",
+      "timestamp": "2026-05-15T22:51:07.400Z",
+      "error_message": "Incorrect value in code",
+      "file": "apps/fbis-mcp-server/tools/risk.py",
+      "root_cause": "Had \"Authorization\"",
+      "fix": "Changed to \"x-api-key\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-15T22:51:07.400Z"
     }
   ]
 }

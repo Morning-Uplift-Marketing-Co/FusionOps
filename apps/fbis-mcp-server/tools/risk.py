@@ -40,6 +40,19 @@ def register(mcp: FastMCP) -> None:
           56-75 → risk
           76-100 → critical
         """
+        # Input validation: ensure all scores are in valid range [0, 100]
+        for score, name in [
+            (proxy_risk, "proxy_risk"),
+            (isolation_score, "isolation_score"),
+            (traffic_quality, "traffic_quality"),
+            (timeline_risk, "timeline_risk"),
+        ]:
+            if not (0 <= score <= 100):
+                return {
+                    "ok": False,
+                    "error": f"{name} must be between 0 and 100, got {score}",
+                }
+
         verdict_score = int(
             proxy_risk * 0.25
             + (100 - isolation_score) * 0.30
@@ -129,9 +142,11 @@ def register(mcp: FastMCP) -> None:
         # Send Telegram alert for risk/critical
         if status in ("risk", "critical") and TELEGRAM_TOKEN and TELEGRAM_CHAT_ID:
             emoji = "🟠" if status == "risk" else "🔴"
+            # Escape account_id for Telegram Markdown (backticks)
+            safe_account_id = account_id.replace("`", "\\`").replace("*", "\\*").replace("_", "\\_")
             msg = (
                 f"{emoji} *FBIS ALERT — {status.upper()}*\n"
-                f"Account: `{account_id}`\n"
+                f"Account: `{safe_account_id}`\n"
                 f"Score: {verdict_score}/100\n"
                 f"Proxy: {proxy_risk} | Isolation: {isolation_score} | "
                 f"Traffic: {traffic_quality} | Timeline: {timeline_risk}"
@@ -183,13 +198,15 @@ async def _send_telegram(text: str) -> None:
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            await client.post(url, json={
+            resp = await client.post(url, json={
                 "chat_id": TELEGRAM_CHAT_ID,
                 "text": text,
                 "parse_mode": "Markdown",
             })
-    except Exception:
-        pass  # alerts are best-effort
+            if resp.status_code != 200:
+                print(f"[telegram] alert failed with HTTP {resp.status_code}: {resp.text}")
+    except Exception as e:
+        print(f"[telegram] alert failed: {e}")
 
 
 # ── DashClaw HITL Integration ────────────────────────────────────────────────
@@ -211,7 +228,7 @@ async def _claw_guard(
                     "risk_score": risk_score,
                     "context": {"verdict_status": verdict_status},
                 },
-                headers={"Authorization": f"Bearer {DASHCLAW_API_KEY}"},
+                headers={"x-api-key": DASHCLAW_API_KEY},
             )
             if resp.status_code == 200:
                 return resp.json()
@@ -238,7 +255,7 @@ async def _claw_create_action(
                     "risk_score": risk_score,
                     "context": json.dumps(context or {}),
                 },
-                headers={"Authorization": f"Bearer {DASHCLAW_API_KEY}"},
+                headers={"x-api-key": DASHCLAW_API_KEY},
             )
             if resp.status_code == 201:
                 return resp.json()
@@ -257,7 +274,7 @@ async def _claw_wait_for_approval(action_id: str) -> dict:
         async with httpx.AsyncClient(timeout=60.0) as client:
             resp = await client.post(
                 f"{DASHCLAW_BASE}/api/actions/{action_id}/wait",
-                headers={"Authorization": f"Bearer {DASHCLAW_API_KEY}"},
+                headers={"x-api-key": DASHCLAW_API_KEY},
             )
             if resp.status_code == 200:
                 data = resp.json()
@@ -280,7 +297,7 @@ async def _claw_update_outcome(
             resp = await client.patch(
                 f"{DASHCLAW_BASE}/api/actions/{action_id}",
                 json={"status": status, "note": note},
-                headers={"Authorization": f"Bearer {DASHCLAW_API_KEY}"},
+                headers={"x-api-key": DASHCLAW_API_KEY},
             )
             return {"ok": resp.status_code in (200, 204)}
     except Exception as e:

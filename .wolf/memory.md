@@ -299,3 +299,33 @@
 | 03:57 | Edited infra/setup.sh | expanded (+13 lines) | ~474 |
 | 03:57 | Edited infra/setup.sh | modified DashClaw() | ~278 |
 | 03:58 | Created .claude/handoff/2026-05-16-phase6-complete.md | — | ~1710 |
+| 03:58 | Session end: 9 writes across 8 files (policies.spec.md, docker-compose.yml, requirements.txt, 2026-05-16-phase4-complete.md, 2026-05-16-phase5-progress.md) | 7 reads | ~10432 tok |
+| 04:08 | Session end: 9 writes across 8 files (policies.spec.md, docker-compose.yml, requirements.txt, 2026-05-16-phase4-complete.md, 2026-05-16-phase5-progress.md) | 7 reads | ~10432 tok |
+| 04:12 | Session end: 9 writes across 8 files (policies.spec.md, docker-compose.yml, requirements.txt, 2026-05-16-phase4-complete.md, 2026-05-16-phase5-progress.md) | 7 reads | ~10432 tok |
+| 04:15 | Session end: 9 writes across 8 files (policies.spec.md, docker-compose.yml, requirements.txt, 2026-05-16-phase4-complete.md, 2026-05-16-phase5-progress.md) | 7 reads | ~10432 tok |
+| 04:16 | Session end: 9 writes across 8 files (policies.spec.md, docker-compose.yml, requirements.txt, 2026-05-16-phase4-complete.md, 2026-05-16-phase5-progress.md) | 7 reads | ~10432 tok |
+| 04:26 | Session end: 9 writes across 8 files (policies.spec.md, docker-compose.yml, requirements.txt, 2026-05-16-phase4-complete.md, 2026-05-16-phase5-progress.md) | 7 reads | ~10432 tok |
+| 04:29 | Session end: 9 writes across 8 files (policies.spec.md, docker-compose.yml, requirements.txt, 2026-05-16-phase4-complete.md, 2026-05-16-phase5-progress.md) | 7 reads | ~10432 tok |
+| 04:34 | Session end: 9 writes across 8 files (policies.spec.md, docker-compose.yml, requirements.txt, 2026-05-16-phase4-complete.md, 2026-05-16-phase5-progress.md) | 7 reads | ~10432 tok |
+| 05:01 | Session end: 9 writes across 8 files (policies.spec.md, docker-compose.yml, requirements.txt, 2026-05-16-phase4-complete.md, 2026-05-16-phase5-progress.md) | 7 reads | ~10432 tok |
+| 05:04 | Session end: 9 writes across 8 files (policies.spec.md, docker-compose.yml, requirements.txt, 2026-05-16-phase4-complete.md, 2026-05-16-phase5-progress.md) | 7 reads | ~10432 tok |
+| 05:06 | Session end: 9 writes across 8 files (policies.spec.md, docker-compose.yml, requirements.txt, 2026-05-16-phase4-complete.md, 2026-05-16-phase5-progress.md) | 7 reads | ~10432 tok |
+| 05:08 | Session end: 9 writes across 8 files (policies.spec.md, docker-compose.yml, requirements.txt, 2026-05-16-phase4-complete.md, 2026-05-16-phase5-progress.md) | 7 reads | ~10432 tok |
+| 05:10 | Session end: 9 writes across 8 files (policies.spec.md, docker-compose.yml, requirements.txt, 2026-05-16-phase4-complete.md, 2026-05-16-phase5-progress.md) | 7 reads | ~10432 tok |
+| 05:11 | Session end: 9 writes across 8 files (policies.spec.md, docker-compose.yml, requirements.txt, 2026-05-16-phase4-complete.md, 2026-05-16-phase5-progress.md) | 7 reads | ~10432 tok |
+| 05:12 | Session end: 9 writes across 8 files (policies.spec.md, docker-compose.yml, requirements.txt, 2026-05-16-phase4-complete.md, 2026-05-16-phase5-progress.md) | 7 reads | ~10432 tok |
+| 05:13 | Session end: 9 writes across 8 files (policies.spec.md, docker-compose.yml, requirements.txt, 2026-05-16-phase4-complete.md, 2026-05-16-phase5-progress.md) | 7 reads | ~10432 tok |
+| 05:14 | Session end: 9 writes across 8 files (policies.spec.md, docker-compose.yml, requirements.txt, 2026-05-16-phase4-complete.md, 2026-05-16-phase5-progress.md) | 7 reads | ~10432 tok |
+| 05:14 | Session end: 9 writes across 8 files (policies.spec.md, docker-compose.yml, requirements.txt, 2026-05-16-phase4-complete.md, 2026-05-16-phase5-progress.md) | 7 reads | ~10432 tok |
+| 05:14 | Session end: 9 writes across 8 files (policies.spec.md, docker-compose.yml, requirements.txt, 2026-05-16-phase4-complete.md, 2026-05-16-phase5-progress.md) | 7 reads | ~10432 tok |
+| 05:15 | Session end: 9 writes across 8 files (policies.spec.md, docker-compose.yml, requirements.txt, 2026-05-16-phase4-complete.md, 2026-05-16-phase5-progress.md) | 7 reads | ~10432 tok |
+| 05:16 | Session end: 9 writes across 8 files (policies.spec.md, docker-compose.yml, requirements.txt, 2026-05-16-phase4-complete.md, 2026-05-16-phase5-progress.md) | 7 reads | ~10432 tok |
+| 05:17 | Session end: 9 writes across 8 files (policies.spec.md, docker-compose.yml, requirements.txt, 2026-05-16-phase4-complete.md, 2026-05-16-phase5-progress.md) | 7 reads | ~10432 tok |
+| 05:22 | Session end: 9 writes across 8 files (policies.spec.md, docker-compose.yml, requirements.txt, 2026-05-16-phase4-complete.md, 2026-05-16-phase5-progress.md) | 7 reads | ~10432 tok |
+| 05:26 | Session end: 9 writes across 8 files (policies.spec.md, docker-compose.yml, requirements.txt, 2026-05-16-phase4-complete.md, 2026-05-16-phase5-progress.md) | 7 reads | ~10432 tok |
+| 05:34 | Session end: 9 writes across 8 files (policies.spec.md, docker-compose.yml, requirements.txt, 2026-05-16-phase4-complete.md, 2026-05-16-phase5-progress.md) | 7 reads | ~10432 tok |
+| 05:50 | Edited apps/fbis-mcp-server/tools/risk.py | modified write_risk_score() | ~474 |
+| 05:50 | Edited apps/fbis-mcp-server/tools/risk.py | modified _claw_guard() | ~287 |
+| 05:50 | Edited apps/fbis-mcp-server/tools/risk.py | 11→13 lines | ~209 |
+| 05:51 | Edited apps/fbis-mcp-server/tools/risk.py | modified _send_telegram() | ~164 |
+| 05:51 | Edited apps/fbis-mcp-server/tools/risk.py | "Authorization" → "x-api-key" | ~16 |
