@@ -250,6 +250,7 @@ async def _claw_create_action(
             resp = await client.post(
                 f"{DASHCLAW_BASE}/api/actions",
                 json={
+                    "agent_id": "fbis-verdict",
                     "action_type": action_type,
                     "declared_goal": declared_goal,
                     "risk_score": risk_score,
@@ -272,13 +273,13 @@ async def _claw_wait_for_approval(action_id: str) -> dict:
 
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
-            resp = await client.post(
-                f"{DASHCLAW_BASE}/api/actions/{action_id}/wait",
+            resp = await client.get(
+                f"{DASHCLAW_BASE}/api/approvals/{action_id}",
                 headers={"x-api-key": DASHCLAW_API_KEY},
             )
             if resp.status_code == 200:
                 data = resp.json()
-                return {"ok": True, "approved": data.get("approved", False)}
+                return {"ok": True, "approved": data.get("decision") == "approved"}
             return {"ok": False, "approved": False}
     except Exception as e:
         print(f"[claw] wait_for_approval failed: {e}")

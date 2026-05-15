@@ -352,6 +352,61 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-05-15T22:51:07.400Z"
+    },
+    {
+      "id": "bug-phase4g-001",
+      "timestamp": "2026-05-16T06:00:00.000Z",
+      "error_message": "DashClaw HITL integration fails with HTTP 400 on action creation",
+      "file": "apps/fbis-mcp-server/tools/risk.py",
+      "root_cause": "_claw_create_action() missing agent_id field; DashClaw requires agent_id to route actions correctly",
+      "fix": "Added 'agent_id': 'fbis-verdict' to _claw_create_action() JSON payload (line 245)",
+      "tags": [
+        "integration",
+        "dashclaw-api",
+        "hitl-approval",
+        "blocking",
+        "fixed"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-16T06:00:00.000Z"
+    },
+    {
+      "id": "bug-phase4g-002",
+      "timestamp": "2026-05-16T06:00:30.000Z",
+      "error_message": "DashClaw approval endpoint mismatch",
+      "file": "apps/fbis-mcp-server/tools/risk.py",
+      "root_cause": "_claw_wait_for_approval() called /api/actions/{id}/wait (POST) but correct endpoint is /api/approvals/{id} (GET); also wrong response field check",
+      "fix": "Changed to GET /api/approvals/{action_id}; updated response field from data.get('approved') to data.get('decision') == 'approved' (line 276-281)",
+      "tags": [
+        "integration",
+        "dashclaw-api",
+        "endpoint-mismatch",
+        "blocking",
+        "fixed"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-16T06:00:30.000Z"
+    },
+    {
+      "id": "bug-phase4g-003",
+      "timestamp": "2026-05-16T06:01:00.000Z",
+      "error_message": "DashClaw policies don't match action types in risk.py",
+      "file": "infra/dashclaw/policies.spec.md",
+      "root_cause": "Policies registered with generic action types (api, build, deploy) but risk.py uses action_type='risk_score_write'; policies never trigger due to action_type mismatch",
+      "fix": "Created infra/dashclaw/POLICY-FIXES.md with corrected triggers; manual re-registration required in DashClaw UI",
+      "tags": [
+        "integration",
+        "dashclaw-policy",
+        "policy-mismatch",
+        "blocking",
+        "manual-step",
+        "pending"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-16T06:01:00.000Z"
     }
   ]
 }
