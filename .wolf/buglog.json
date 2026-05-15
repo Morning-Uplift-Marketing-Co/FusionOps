@@ -407,6 +407,57 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-05-16T06:01:00.000Z"
+    },
+    {
+      "id": "bug-026",
+      "timestamp": "2026-05-15T23:33:56.124Z",
+      "error_message": "Wrong return value",
+      "file": "apps/fbis-mcp-server/tools/risk.py",
+      "root_cause": "Was returning: resp.json()",
+      "fix": "Now returns: {\"ok\": True, \"action_id\": data.get(\"action_id\", \"\"",
+      "tags": [
+        "auto-detected",
+        "return-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-15T23:33:56.124Z"
+    },
+    {
+      "id": "bug-027",
+      "timestamp": "2026-05-15T23:52:16.555Z",
+      "error_message": "Significant refactor of ",
+      "file": "apps/fbis-mcp-server/tools/risk.py",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 18→30 lines (6 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-15T23:52:16.555Z"
+    },
+    {
+      "id": "bug-phase4g-004",
+      "timestamp": "2026-05-16T00:00:00.000Z",
+      "error_message": "DashClaw approval endpoint returning 500 UNDEFINED_VALUE on POST /api/approvals/{id}",
+      "file": "apps/fbis-mcp-server/tools/risk.py",
+      "root_cause": "Three separate issues: (1) GET /api/approvals/{id} returns 405 — correct method is POST. (2) Decision values must be 'allow'/'deny' not 'approved'/'rejected'. (3) 'reasoning' field must be a string (even empty) — if omitted, it becomes undefined in DB query, causing postgres UNDEFINED_VALUE error. (4) Endpoint requires x-org-role: admin and x-user-id headers for human operator simulation.",
+      "fix": "Updated _claw_wait_for_approval() to poll GET /api/actions/{action_id} for status changes (pending_approval→running=approved, →failed=denied) rather than trying to GET /api/approvals/. Human operator approves via POST /api/approvals/{id} with {decision: 'allow', reasoning: ''} + x-org-role: admin header. Full E2E test: guard→require_approval, create action→pending_approval, programmatic approval→running, outcome update→completed. ALL 6 STEPS PASS.",
+      "tags": [
+        "dashclaw",
+        "hitl",
+        "approval",
+        "phase4g",
+        "py",
+        "e2e-validated"
+      ],
+      "related_bugs": ["bug-phase4g-001", "bug-phase4g-002", "bug-phase4g-003"],
+      "occurrences": 1,
+      "last_seen": "2026-05-16T00:00:00.000Z"
     }
   ]
 }

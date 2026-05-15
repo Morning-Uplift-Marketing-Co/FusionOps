@@ -258,29 +258,42 @@ async def _claw_create_action(
                 },
                 headers={"x-api-key": DASHCLAW_API_KEY},
             )
-            if resp.status_code == 201:
-                return resp.json()
+            if resp.status_code in (201, 202):
+                data = resp.json()
+                return {"ok": True, "action_id": data.get("action_id", ""), "action": data.get("action", {})}
             return {"ok": False, "error": f"HTTP {resp.status_code}", "action_id": ""}
     except Exception as e:
         print(f"[claw] create_action failed: {e}")
         return {"ok": False, "error": str(e), "action_id": ""}
 
 
-async def _claw_wait_for_approval(action_id: str) -> dict:
-    """Wait for human operator approval of a pending action."""
+async def _claw_wait_for_approval(action_id: str, poll_interval: float = 5.0, max_wait: float = 55.0) -> dict:
+    """Poll GET /api/actions/{id} until status leaves pending_approval (approved=running, denied=failed)."""
     if not DASHCLAW_API_KEY:
         return {"ok": True, "approved": True}
 
+    import asyncio, time
+    deadline = time.monotonic() + max_wait
     try:
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            resp = await client.get(
-                f"{DASHCLAW_BASE}/api/approvals/{action_id}",
-                headers={"x-api-key": DASHCLAW_API_KEY},
-            )
-            if resp.status_code == 200:
-                data = resp.json()
-                return {"ok": True, "approved": data.get("decision") == "approved"}
-            return {"ok": False, "approved": False}
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            while time.monotonic() < deadline:
+                resp = await client.get(
+                    f"{DASHCLAW_BASE}/api/actions/{action_id}",
+                    headers={"x-api-key": DASHCLAW_API_KEY},
+                )
+                if resp.status_code == 200:
+                    action = resp.json().get("action", {})
+                    status = action.get("status", "")
+                    if status == "running":
+                        return {"ok": True, "approved": True}
+                    if status in ("failed", "cancelled", "blocked"):
+                        return {"ok": True, "approved": False}
+                    # still pending_approval — wait and retry
+                    await asyncio.sleep(poll_interval)
+                else:
+                    return {"ok": False, "approved": False}
+        # Timeout — operator did not respond
+        return {"ok": False, "approved": False, "error": "approval_timeout"}
     except Exception as e:
         print(f"[claw] wait_for_approval failed: {e}")
         return {"ok": False, "approved": False}
