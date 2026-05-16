@@ -1,0 +1,16 @@
+#!/bin/bash
+# Auto-sync Hermes config when main is pulled
+
+CONFIG_FILE="infra/hermes/config.yaml"
+HERMES_CONFIG="$HOME/.hermes/config.yaml"
+
+if git diff --name-only HEAD@{1} HEAD 2>/dev/null | grep -q "$CONFIG_FILE"; then
+    echo "[Hermes] Config changed, syncing..."
+    cp "$CONFIG_FILE" "$HERMES_CONFIG"
+    
+    # Restart gateway if running
+    if pgrep -f "hermes gateway" > /dev/null 2>&1; then
+        hermes gateway restart 2>&1 | grep -v "error\|warn" || true
+        echo "[Hermes] Gateway restarted"
+    fi
+fi
