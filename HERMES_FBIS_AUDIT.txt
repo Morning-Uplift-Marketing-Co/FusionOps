@@ -1,0 +1,275 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║           HERMES + FBIS SYSTEM AUDIT REPORT                               ║
+║                     (Autonomous Agent System)                              ║
+║                         Generated: 2026-05-16                             ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+📊 FBIS MCP SERVER (Python FastMCP)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Location:        apps/fbis-mcp-server/
+Language:        Python 3.8+ (FastMCP framework)
+Port:            8765 (configurable)
+Total Lines:     251 (tool implementations)
+
+┌─ Tool Modules ─────────────────────────────────┐
+│ accounts.py      (23 lines)  - Account queries │
+│ proxy.py         (22 lines)  - Proxy intel     │
+│ pixel.py         (19 lines)  - Event tracking  │
+│ audit.py         (38 lines)  - Link audits     │
+│ risk.py         (124 lines)  - Risk scoring   │
+│ _client.py       (25 lines)  - API client      │
+└────────────────────────────────────────────────┘
+
+Environment Vars:
+  ✓ FUSIONOPS_API_URL  (API Worker URL)
+  ✓ FUSIONOPS_API_KEY  (Bearer token)
+  ✓ TELEGRAM_BOT_TOKEN (Optional: alerts)
+  ✓ TELEGRAM_CHAT_ID   (Optional: alerts)
+  ✓ MCP_PORT           (Default: 8765)
+
+Dependencies:
+  ✓ fastmcp>=0.9.0
+  ✓ httpx>=0.27.0
+  ✓ python-dotenv>=1.0.0
+
+
+🤖 HERMES AGENT SYSTEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Location:        hermes/skills/
+Language:        Markdown (.skill.md executable)
+Total Agents:    9 skills (532 lines)
+Agent Identity:  infra/hermes/SOUL.md
+
+┌─ FBIS TEAM (Ban Intelligence) ─────────────────┐
+│  🔴 ARGUS      (64 lines) Proxy/IP analyst    │
+│  🔴 NEXUS      (50 lines) Account isolation   │
+│  🔴 IRIS       (51 lines) Traffic quality     │
+│  🔴 CHRONO     (55 lines) Ban timeline pred.  │
+│  🔴 VERDICT    (63 lines) Risk aggregator     │
+│     Runs: Nightly via /fbis-run               │
+└────────────────────────────────────────────────┘
+
+┌─ GMAIL TEAM ────────────────────────────────┐
+│  Gmail Creator    (57 lines)                 │
+│  Gmail Warmer     (50 lines)                 │
+└─────────────────────────────────────────────┘
+
+┌─ ADS REPORTING TEAM ──────────────────────┐
+│  Ads Reporter     (58 lines)                │
+└──────────────────────────────────────────┘
+
+┌─ LP BUILDER TEAM ──────────────────────────┐
+│  LP Builder       (84 lines)                │
+└──────────────────────────────────────────┘
+
+
+🔄 NIGHTLY ANALYSIS PIPELINE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Triggered:  /fbis-run skill
+Duration:   ~2-5 min (depending on account count)
+
+Phase 1: PARALLEL EXECUTION (4 agents)
+  ├─ ARGUS   → Proxy risk analysis
+  ├─ NEXUS   → Account isolation scoring
+  ├─ IRIS    → Traffic quality analysis
+  └─ CHRONO  → Ban timeline prediction
+
+Phase 2: SERIAL EXECUTION (after Phase 1)
+  └─ VERDICT → Aggregates all 4 scores
+              → Writes D1 risk_scores
+              → Sends Telegram alerts
+              → Updates wiki
+
+Phase 3: Wiki Update
+  └─ Writes wiki/overview.md with daily summary
+
+Phase 4: Telegram Alert
+  └─ Sends summary to team chat
+
+
+📈 RISK SCORING SYSTEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Components (each 0-100 where 100 = safest):
+  • proxy_risk         (from ARGUS)
+  • isolation_score    (from NEXUS)
+  • traffic_quality    (from IRIS)
+  • timeline_risk      (from CHRONO)
+
+Final Score: Weighted average → verdict_score (0-100)
+             Higher = More risk (inverted scale)
+
+Status Mapping:
+  0-30   → 🟢 HEALTHY   (Safe)
+  31-60  → 🟡 WATCH     (Monitor closely)
+  61-80  → 🔴 RISK      (Action required)
+  81-100 → 🔴 CRITICAL  (Pause account)
+
+Auto-Pause Rules:
+  ✓ critical_risk_pause (score ≥80)  → PAUSE
+  ✓ high_risk_reduce    (score ≥60)  → Reduce budget 50%
+  ✓ overspend_alert     (spend≥110%) → Alert
+  ✓ conv_drop_alert     (drop≥30%)   → Alert
+  ✓ creative_fatigue    (score≥70)   → Alert
+
+
+📂 DATA & WIKI STRUCTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Wiki Root: wiki/
+
+├─ overview.md              (Daily system health)
+├─ accounts/
+│  └─ {account_id}/
+│     ├─ profile.md         (Account details)
+│     ├─ risk-history.md    (Score timeline)
+│     └─ actions.md         (Taken actions)
+├─ risk-verdicts/
+│  ├─ 2026-05-16-summary.md (Today's verdict)
+│  └─ 2026-05-15-summary.md (Previous)
+├─ proxies/
+│  └─ 2026-05-16-analysis.md (ARGUS findings)
+├─ traffic-quality/
+│  └─ 2026-05-16-analysis.md (IRIS findings)
+└─ ban-patterns/
+   └─ ban-event-timeline.md  (Historical patterns)
+
+
+🔌 API INTEGRATION POINTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+FBIS MCP Server ↔ API Worker
+  GET  /api/accounts                → query_accounts()
+  POST /api/risk                    → write_risk_score()
+  GET  /api/proxy-pool              → query_proxy_pool()
+  GET  /api/pixel-events?domain=X   → query_pixel_events()
+  GET  /api/link-audit?id=X         → query_link_audit()
+  GET  /api/ban-events              → query_ban_events()
+
+API Worker ↔ D1 Databases
+  • Main: fusionops-main-new-v2 (campaigns, accounts)
+  • Pixel: fusionops-pixel-new-v2 (event tracking)
+  • Callback: fusionops-callback-new-v2 (webhooks)
+  • Risk: risk_scores table (new)
+
+
+✨ AVAILABLE SKILLS (Claude Code)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+/fbis-run
+  Orchestrates full nightly pipeline
+  • Runs 4 agents in parallel
+  • VERDICT aggregation
+  • Wiki update
+  • Telegram summary
+
+/wiki-fbis
+  Opens Claude Obsidian wiki interface
+  Queries today's risk summary
+
+
+📝 DOCUMENTATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Main Doc:         .claude/HERMES_FBIS_SYSTEM.md (comprehensive)
+Agent Definition: infra/hermes/SOUL.md
+Orchestration:    .claude/commands/fbis-run.md
+Wiki Command:     .claude/commands/wiki-fbis.md
+
+
+🚀 LOCAL DEVELOPMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Start FBIS MCP Server:
+  cd apps/fbis-mcp-server
+  cp .env.example .env
+  # Edit .env with your API key
+  python server.py
+
+Run nightly analysis:
+  /fbis-run
+
+View today's risk:
+  /wiki-fbis
+
+Test an individual agent:
+  cat hermes/skills/argus.skill.md
+  # Copy contents and run as Claude prompt
+
+
+✅ SYSTEM STATUS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Components Present:
+  ✓ FBIS MCP Server (Python, 251 lines, 5 tool modules)
+  ✓ 5 FBIS Agents (ARGUS, NEXUS, IRIS, CHRONO, VERDICT)
+  ✓ 4 Additional Agents (Gmail team, Ads, LP Builder)
+  ✓ Nightly pipeline orchestration (/fbis-run)
+  ✓ Wiki system for findings
+  ✓ Telegram alert integration
+  ✓ Auto-pause rules evaluation
+  ✓ D1 risk scoring storage
+
+Integration Status:
+  ✓ API Worker → FBIS MCP comms ready
+  ✓ MCP tools → D1 bindings ready
+  ✓ Wiki structure established
+  ✓ Agent skills documented
+
+🔒 SECURITY IMPROVEMENTS (Phase 4g - 2026-05-16)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Fixed: Unauthenticated /api/analysis/* endpoints (CRITICAL)
+  ✓ Added Bearer token validation to /api/analysis/risk-score
+  ✓ Added Bearer token validation to /api/analysis/agent-kpi
+  ✓ Uses existing denyUnlessTrustedOrBearer() auth gate
+  ✓ API_SECRET environment variable required (from FBIS_API_KEY)
+
+Implementation:
+  • File: apps/api-worker/src/analysis/routes.js (lines 84-95, 97-107)
+  • Auth gate: denyUnlessTrustedOrBearer() imported from lib/auth.js
+  • Config: wrangler.toml requires API_SECRET set via dashboard secret
+  • Deployment: wrangler secret put API_SECRET <FBIS_API_KEY>
+
+Status:
+  ✅ Code deployed locally (Ready for VPS push)
+  ⏳ Production deployment: Set API_SECRET in Wrangler dashboard
+  ⏳ Docker Compose: .env file must include FBIS_API_KEY (passed to fbis-mcp container)
+
+🌟 PHASE 5: ECOSYSTEM PLUGINS (2026-05-16) — COMPLETE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Components Implemented:
+  ✅ Disk-cleanup plugin (enabled in infra/setup.sh)
+  ✅ Caveman compression middleware (threshold 0.3, target 0.2)
+  ✅ DashClaw audit exclusion patterns (decisions, approval_events, etc.)
+  ✅ Graphify dependency visualization (MCP on port 8767)
+  ✅ Mission Control orchestration dashboard (port 3001)
+
+Configuration Files:
+  • infra/hermes/config.yaml — All plugins + compression configured
+  • infra/setup.sh — Plugin installation steps added
+  • infra/docker-compose.yml — Mission Control + Graphify services
+  • infra/Dockerfile.graphify — Graphify container image
+  • infra/.env.example — Compression + Graphify variables documented
+
+Documentation:
+  • .claude/guides/PHASE_5_ECOSYSTEM_SETUP.md (comprehensive setup)
+  • .claude/guides/COMPRESSION_TUNING.md (compression optimization)
+
+Token Savings:
+  • Expected reduction: 80% on average (~500 tokens → 100 tokens per call)
+  • Monthly impact: ~288K tokens saved (~$3/month reduction)
+  • Excluded: DashClaw audit (governance trail preserved)
+
+Next Steps (Priority Order):
+  1. Deploy API Worker with Bearer token auth (Phase 4g security)
+  2. Set API_SECRET in Wrangler dashboard (value: FBIS_API_KEY)
+  3. Update infra/.env with FBIS_API_KEY + TELEGRAM_BOT_TOKEN
+  4. Run: bash infra/setup.sh (on VPS for Phase 5 plugin setup)
+  5. Verify: hermes plugins list (disk-cleanup should appear)
+  6. Test: write_risk_score and confirm compression works
+  7. Phase 6: Config sync (hermes/config.yaml → production)

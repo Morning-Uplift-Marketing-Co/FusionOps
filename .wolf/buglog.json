@@ -192,6 +192,397 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-07T15:30:36.724Z"
+    },
+    {
+      "id": "bug-013",
+      "timestamp": "2026-05-15T17:00:25.074Z",
+      "error_message": "Significant refactor of ",
+      "file": "CLAUDE.md",
+      "root_cause": "12 lines replaced/restructured",
+      "fix": "Rewrote 34→52 lines (12 removed) | Also: npm test                 # Run all tests; npm run test:ui        # Interactive UI | Also: - **CloudFlare**: https://developers.cloudflare.co; - **Global Rules**: `~/.claude/rules/common/`",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-05-15T17:00:53.243Z"
+    },
+    {
+      "id": "bug-014",
+      "timestamp": "2026-05-15T18:19:01.416Z",
+      "error_message": "Significant refactor of ",
+      "file": ".claude/plans/rosy-mapping-bentley.md",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 10→6 lines (6 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-15T18:19:01.416Z"
+    },
+    {
+      "id": "bug-015",
+      "timestamp": "2026-05-15T19:20:48.416Z",
+      "error_message": "Significant refactor of ",
+      "file": "C:/Users/Barbara/.claude/plans/rosy-mapping-bentley.md",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 9→18 lines (6 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-15T19:20:48.416Z"
+    },
+    {
+      "id": "bug-016",
+      "timestamp": "2026-05-15T19:31:01.467Z",
+      "error_message": "Null/undefined access in ",
+      "file": "C:/Users/Barbara/.claude/plans/rosy-mapping-bentley.md",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-15T19:31:01.467Z"
+    },
+    {
+      "id": "bug-017",
+      "timestamp": "2026-05-15T19:31:46.596Z",
+      "error_message": "Significant refactor of ",
+      "file": "C:/Users/Barbara/.claude/plans/rosy-mapping-bentley.md",
+      "root_cause": "4 lines replaced/restructured",
+      "fix": "Rewrote 7→21 lines (4 removed) | Also: | Phase | Status | Owner | Notes |; |---|---|---|---| | Also: ### Phase 0 — Install parallel-code (visual orches; **Decision**: parallel-code. Reason: desktop app t",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-05-15T19:37:10.205Z"
+    },
+    {
+      "id": "bug-018",
+      "timestamp": "2026-05-15T20:38:06.502Z",
+      "error_message": "Significant refactor of ",
+      "file": "apps/fbis-mcp-server/tools/risk.py",
+      "root_cause": "9 lines replaced/restructured",
+      "fix": "Rewrote 69→134 lines (9 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-15T20:38:06.502Z"
+    },
+    {
+      "id": "bug-019",
+      "timestamp": "2026-05-15T20:56:42.216Z",
+      "error_message": "Significant refactor of ",
+      "file": "infra/hermes/config.yaml",
+      "root_cause": "21 lines replaced/restructured",
+      "fix": "Rewrote 61→137 lines (21 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-15T20:56:42.217Z"
+    },
+    {
+      "id": "bug-020",
+      "timestamp": "2026-05-15T20:57:08.302Z",
+      "error_message": "Significant refactor of ",
+      "file": "infra/setup.sh",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 36→49 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "sh"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-15T20:57:08.302Z"
+    },
+    {
+      "id": "bug-021",
+      "timestamp": "2026-05-15T22:51:03.846Z",
+      "error_message": "Significant refactor of ",
+      "file": "apps/fbis-mcp-server/tools/risk.py",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 11→13 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-15T22:51:03.846Z"
+    },
+    {
+      "id": "bug-022",
+      "timestamp": "2026-05-15T22:51:07.400Z",
+      "error_message": "Incorrect value in code",
+      "file": "apps/fbis-mcp-server/tools/risk.py",
+      "root_cause": "Had \"Authorization\"",
+      "fix": "Changed to \"x-api-key\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-15T22:51:07.400Z"
+    },
+    {
+      "id": "bug-phase4g-001",
+      "timestamp": "2026-05-16T06:00:00.000Z",
+      "error_message": "DashClaw HITL integration fails with HTTP 400 on action creation",
+      "file": "apps/fbis-mcp-server/tools/risk.py",
+      "root_cause": "_claw_create_action() missing agent_id field; DashClaw requires agent_id to route actions correctly",
+      "fix": "Added 'agent_id': 'fbis-verdict' to _claw_create_action() JSON payload (line 245)",
+      "tags": [
+        "integration",
+        "dashclaw-api",
+        "hitl-approval",
+        "blocking",
+        "fixed"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-16T06:00:00.000Z"
+    },
+    {
+      "id": "bug-phase4g-002",
+      "timestamp": "2026-05-16T06:00:30.000Z",
+      "error_message": "DashClaw approval endpoint mismatch",
+      "file": "apps/fbis-mcp-server/tools/risk.py",
+      "root_cause": "_claw_wait_for_approval() called /api/actions/{id}/wait (POST) but correct endpoint is /api/approvals/{id} (GET); also wrong response field check",
+      "fix": "Changed to GET /api/approvals/{action_id}; updated response field from data.get('approved') to data.get('decision') == 'approved' (line 276-281)",
+      "tags": [
+        "integration",
+        "dashclaw-api",
+        "endpoint-mismatch",
+        "blocking",
+        "fixed"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-16T06:00:30.000Z"
+    },
+    {
+      "id": "bug-phase4g-003",
+      "timestamp": "2026-05-16T06:01:00.000Z",
+      "error_message": "DashClaw policies don't match action types in risk.py",
+      "file": "infra/dashclaw/policies.spec.md",
+      "root_cause": "Policies registered with generic action types (api, build, deploy) but risk.py uses action_type='risk_score_write'; policies never trigger due to action_type mismatch",
+      "fix": "Created infra/dashclaw/POLICY-FIXES.md with corrected triggers; manual re-registration required in DashClaw UI",
+      "tags": [
+        "integration",
+        "dashclaw-policy",
+        "policy-mismatch",
+        "blocking",
+        "manual-step",
+        "pending"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-16T06:01:00.000Z"
+    },
+    {
+      "id": "bug-026",
+      "timestamp": "2026-05-15T23:33:56.124Z",
+      "error_message": "Wrong return value",
+      "file": "apps/fbis-mcp-server/tools/risk.py",
+      "root_cause": "Was returning: resp.json()",
+      "fix": "Now returns: {\"ok\": True, \"action_id\": data.get(\"action_id\", \"\"",
+      "tags": [
+        "auto-detected",
+        "return-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-15T23:33:56.124Z"
+    },
+    {
+      "id": "bug-027",
+      "timestamp": "2026-05-15T23:52:16.555Z",
+      "error_message": "Significant refactor of ",
+      "file": "apps/fbis-mcp-server/tools/risk.py",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 18→30 lines (6 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-15T23:52:16.555Z"
+    },
+    {
+      "id": "bug-phase4g-004",
+      "timestamp": "2026-05-16T00:00:00.000Z",
+      "error_message": "DashClaw approval endpoint returning 500 UNDEFINED_VALUE on POST /api/approvals/{id}",
+      "file": "apps/fbis-mcp-server/tools/risk.py",
+      "root_cause": "Three separate issues: (1) GET /api/approvals/{id} returns 405 — correct method is POST. (2) Decision values must be 'allow'/'deny' not 'approved'/'rejected'. (3) 'reasoning' field must be a string (even empty) — if omitted, it becomes undefined in DB query, causing postgres UNDEFINED_VALUE error. (4) Endpoint requires x-org-role: admin and x-user-id headers for human operator simulation.",
+      "fix": "Updated _claw_wait_for_approval() to poll GET /api/actions/{action_id} for status changes (pending_approval→running=approved, →failed=denied) rather than trying to GET /api/approvals/. Human operator approves via POST /api/approvals/{id} with {decision: 'allow', reasoning: ''} + x-org-role: admin header. Full E2E test: guard→require_approval, create action→pending_approval, programmatic approval→running, outcome update→completed. ALL 6 STEPS PASS.",
+      "tags": [
+        "dashclaw",
+        "hitl",
+        "approval",
+        "phase4g",
+        "py",
+        "e2e-validated",
+        "prod-validated"
+      ],
+      "related_bugs": [
+        "bug-phase4g-001",
+        "bug-phase4g-002",
+        "bug-phase4g-003"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-05-16T00:00:00.000Z"
+    },
+    {
+      "id": "security-fbis-unauthenticated-d1",
+      "timestamp": "2026-05-16T00:01:00.000Z",
+      "error_message": "CRITICAL: /api/analysis/* endpoints bypass auth gate, accept unauthenticated writes to D1",
+      "file": "apps/fbis-mcp-server/tools/_client.py",
+      "root_cause": "POST /api/analysis/risk-score mounted in FastMCP before global auth middleware. FBIS_API_KEY missing in fbis-mcp container env. Route accepts writes without Bearer token validation.",
+      "fix": "1) Add FBIS_API_KEY to fbis-mcp container environment. 2) Implement Bearer token validation in /api/analysis/* route handlers. 3) Verify all D1 writes require authentication. Production test shows risk_score persisted without any auth token (security gap, not clean).",
+      "tags": [
+        "security",
+        "critical",
+        "auth",
+        "d1",
+        "fbis-mcp",
+        "prod-blocker"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-16T00:01:00.000Z"
+    },
+    {
+      "id": "phase4g-policy-audit-fail",
+      "timestamp": "2026-05-16T00:02:00.000Z",
+      "error_message": "Risk Decision Audit Trail policy not populating decisions table",
+      "file": "infra/dashclaw/POLICY-REGISTRATION-GUIDE.md",
+      "root_cause": "Policy 2 (Risk Decision Audit Trail) configured but decisions table remains empty after write_risk_score. Either policy trigger not matching or audit_log policy not wired to D1 persistence.",
+      "fix": "Verify Policy 2 trigger conditions match actual action context. Check DashClaw UI for policy execution logs. May need to re-register policy with corrected trigger rules.",
+      "tags": [
+        "dashclaw",
+        "policy",
+        "audit",
+        "phase4g",
+        "prod-finding"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-16T00:02:00.000Z"
+    },
+    {
+      "id": "phase4g-freeze-policy-fail",
+      "timestamp": "2026-05-16T00:03:00.000Z",
+      "error_message": "Account Freeze Authority policy not blocking non-verdict agent transition_account",
+      "file": "infra/dashclaw/POLICY-REGISTRATION-GUIDE.md",
+      "root_cause": "Policy 3 configured to block transition_account from agent != fbis-verdict. Production test: POST transition_account from agent=hermes-argus returned allow (policy not enforced). Either policy trigger not matching or agent_id check misconfigured.",
+      "fix": "Verify Policy 3 trigger rules and allowed_agents restriction. Test with actual transition_account action from rogue agent. May need manual re-registration in DashClaw UI with corrected agent whitelist.",
+      "tags": [
+        "dashclaw",
+        "policy",
+        "account-freeze",
+        "phase4g",
+        "security",
+        "prod-finding"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-16T00:03:00.000Z"
+    },
+    {
+      "id": "bug-032",
+      "timestamp": "2026-05-16T01:02:27.372Z",
+      "error_message": "Significant refactor of ",
+      "file": "apps/api-worker/src/analysis/routes.js",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 25→33 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-16T01:02:27.372Z"
+    },
+    {
+      "id": "bug-033",
+      "timestamp": "2026-05-16T01:02:47.496Z",
+      "error_message": "Significant refactor of ",
+      "file": "HERMES_FBIS_AUDIT.txt",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 6→28 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "txt"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-16T01:02:47.496Z"
+    },
+    {
+      "id": "bug-034",
+      "timestamp": "2026-05-16T01:19:41.152Z",
+      "error_message": "Significant refactor of ",
+      "file": "infra/hermes/config.yaml",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 7→16 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-16T01:19:41.152Z"
+    },
+    {
+      "id": "bug-035",
+      "timestamp": "2026-05-16T01:28:53.701Z",
+      "error_message": "Significant refactor of ",
+      "file": "HERMES_FBIS_AUDIT.txt",
+      "root_cause": "7 lines replaced/restructured",
+      "fix": "Rewrote 8→34 lines (7 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "txt"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-16T01:28:53.701Z"
     }
   ]
 }

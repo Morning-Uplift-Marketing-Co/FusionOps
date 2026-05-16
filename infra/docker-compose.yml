@@ -20,6 +20,8 @@ services:
       FBIS_API_KEY: ${FBIS_API_KEY}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+      DASHCLAW_BASE_URL: ${DASHCLAW_BASE_URL}
+      DASHCLAW_API_KEY: ${DASHCLAW_API_KEY}
       MCP_PORT: "8765"
 
   # ─── Browser MCP (Playwright) — Gmail automation, LP QA ───────────────────
@@ -35,20 +37,37 @@ services:
       DISPLAY: ":99"
     shm_size: "2gb"
 
-  # ─── Mission Control — Orchestration Dashboard ─────────────────────────────
+  # ─── FBIS Status Dashboard — Uptime Kuma (replaces unavailable Mission Control)
   mission-control:
-    image: builderzlabs/mission-control:latest
+    image: louislam/uptime-kuma:1
     container_name: mission-control
     restart: unless-stopped
     ports:
-      - "3001:3000"
-    environment:
-      AUTH_USER: ${MC_USER}
-      AUTH_PASS: ${MC_PASS}
-      API_KEY: ${MC_API_KEY}
-      NEXT_PUBLIC_GATEWAY_OPTIONAL: "true"
+      - "3001:3001"
     volumes:
       - mc_data:/app/data
+
+  # ─── Graphify — Dependency Graph Visualization (Phase 5) ────────────────────
+  # Analyzes codebase and visualizes dependency graphs
+  # Note: Runs on port 8767 (not 8765, which is reserved for FBIS)
+  graphify:
+    build:
+      context: ./
+      dockerfile: Dockerfile.graphify
+    container_name: graphify
+    restart: unless-stopped
+    ports:
+      - "8767:8767"
+    environment:
+      WORKSPACE_DIR: ${GRAPHIFY_WORKSPACE:-/opt/fusionops}
+      PORT: "8767"
+    volumes:
+      - /opt/fusionops:/workspace:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8767/mcp"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
 volumes:
   mc_data:

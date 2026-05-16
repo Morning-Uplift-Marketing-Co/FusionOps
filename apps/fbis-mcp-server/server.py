@@ -24,4 +24,4 @@ register_risk(mcp)
 
 if __name__ == "__main__":
     port = int(os.getenv("MCP_PORT", "8765"))
-    mcp.run(transport="http", port=port)
+    mcp.run(transport="http", host="0.0.0.0", port=port)
