@@ -223,11 +223,11 @@
 ## .github/workflows/
 
 
-## C:/Users/Barbara/.claude-code-router/
+## .claude-code-router/
 
 - `config.json` (~338 tok)
 
-## C:/Users/Barbara/.claude/plans/
+## .claude/plans/
 
 - `concurrent-riding-cook.md` — Phase 5: Ecosystem Plugins Implementation Plan (~1999 tok)
 - `rosy-mapping-bentley.md` — Claude + Codex Collaboration Plan — FBIS/Hermes Work (~4969 tok)

@@ -110,6 +110,17 @@ def register(mcp: FastMCP) -> None:
         # HITL Step 3: If pending approval, wait for human operator
         if action_status == "pending_approval":
             approval_result = await _claw_wait_for_approval(action_id)
+            if not approval_result.get("ok"):
+                await _claw_update_outcome(
+                    action_id, status="failed",
+                    note=f"Approval check failed: {approval_result.get('error', 'unknown_error')}",
+                )
+                return {
+                    "ok": False,
+                    "error": f"Approval check failed for action {action_id}",
+                    "action_id": action_id,
+                    "decision": "error",
+                }
             if not approval_result.get("approved"):
                 await _claw_update_outcome(
                     action_id, status="rejected",

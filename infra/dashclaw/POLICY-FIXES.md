@@ -128,9 +128,8 @@ curl -X POST http://localhost:8765/mcp \
     "id": 1
   }'
 
-# Expected: action_status="pending_approval" (Policy 1 triggered)
-# Then: Decision record created in DashClaw (Policy 2 triggered)
-# Then: Operator approves → risk score written to D1, Telegram alert sent
+# Expected: DashClaw action created and held for approval when Policy 1 triggers.
+# Then: Operator approves -> risk score written to D1, Telegram alert sent, final approved outcome returned.
 ```
 
 ---

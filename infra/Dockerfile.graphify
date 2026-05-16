@@ -14,12 +14,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install Graphify
 RUN pip install --no-cache-dir graphify
 
+RUN useradd --create-home --shell /usr/sbin/nologin graphify
+
 # Health check script
 HEALTHCHECK --interval=10s --timeout=5s --retries=3 \
   CMD curl -f http://localhost:${PORT:-8767}/mcp || exit 1
 
 # Expose port for MCP server
 EXPOSE 8767
+
+USER graphify
 
 # Start Graphify MCP server
 CMD ["python", "-m", "graphify.serve", "--port", "8767", "--dir", "/workspace"]

@@ -133,7 +133,8 @@ def run_argus(accounts):
 def run_nexus(accounts):
     print("\n[NEXUS] traffic quality analysis...")
     scores = []
-    for a in accounts[:20]:
+    analyzed = min(len(accounts), 20)
+    for a in accounts[:analyzed]:
         try:
             d = get(f"/api/analysis/pixel-events/{a.get('site_domain','')}", days=30)
             events = d.get("data", [])
@@ -159,7 +160,7 @@ def run_nexus(accounts):
 
     avg_quality = round(sum(scores) / len(scores), 1) if scores else 0
     kpi("nexus", "avg_traffic_quality", avg_quality, 70,  "score")
-    kpi("nexus", "accounts_analyzed",   len(accounts), len(accounts), "count")
+    kpi("nexus", "accounts_analyzed",   analyzed, analyzed, "count")
     return {"avg_quality": avg_quality}
 
 # ── IRIS — link health ───────────────────────────────────────────────────────

@@ -213,7 +213,7 @@
       "id": "bug-014",
       "timestamp": "2026-05-15T18:19:01.416Z",
       "error_message": "Significant refactor of ",
-      "file": "C:/Users/Barbara/.claude/plans/rosy-mapping-bentley.md",
+      "file": ".claude/plans/rosy-mapping-bentley.md",
       "root_cause": "6 lines replaced/restructured",
       "fix": "Rewrote 10→6 lines (6 removed)",
       "tags": [

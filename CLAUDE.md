@@ -551,7 +551,7 @@ Each app has its own `package.json`, config, and optional `.env`:
 Key vars:
 - `VITE_API_BASE` — Worker URL (default: team shared Worker if unset)
 - `VITE_NEON_URL` — Optional Neon Postgres for dashboard data
-- `CF_API_TOKEN` / `VITE_CF_API_TOKEN` — CloudFlare API auth (from `.env.lock`)
+- `CF_API_TOKEN` — Cloudflare API auth; store server-side only, never expose through `VITE_*`
 
 ## References
 

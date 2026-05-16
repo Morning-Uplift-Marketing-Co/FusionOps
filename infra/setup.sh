@@ -2,7 +2,7 @@
 # infra/setup.sh — One-command setup on Hetzner CX22 (Ubuntu 24.04)
 # Run as root: bash setup.sh
 # Updated: 2026-05-16 (Phase 6 — DashClaw + ecosystem integration)
-set -e
+set -euo pipefail
 
 PROJECT_REPO="https://github.com/YOUR_USER/ppc-claude-web-V1.git"
 PROJECT_DIR="/opt/fusionops"
@@ -66,7 +66,7 @@ echo "   - MC_API_KEY (optional, for mission-control dashboard)"
 if [ -f "infra/.env" ]; then
   echo "Starting Docker services..."
   cd infra
-  docker compose up -d 2>&1 | tail -3
+  docker compose up -d
   sleep 10
   echo "✅ Services status:"
   docker compose ps
