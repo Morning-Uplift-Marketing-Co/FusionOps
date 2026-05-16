@@ -219,9 +219,31 @@ Integration Status:
   ✓ Wiki structure established
   ✓ Agent skills documented
 
+🔒 SECURITY IMPROVEMENTS (Phase 4g - 2026-05-16)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Fixed: Unauthenticated /api/analysis/* endpoints (CRITICAL)
+  ✓ Added Bearer token validation to /api/analysis/risk-score
+  ✓ Added Bearer token validation to /api/analysis/agent-kpi
+  ✓ Uses existing denyUnlessTrustedOrBearer() auth gate
+  ✓ API_SECRET environment variable required (from FBIS_API_KEY)
+
+Implementation:
+  • File: apps/api-worker/src/analysis/routes.js (lines 84-95, 97-107)
+  • Auth gate: denyUnlessTrustedOrBearer() imported from lib/auth.js
+  • Config: wrangler.toml requires API_SECRET set via dashboard secret
+  • Deployment: wrangler secret put API_SECRET <FBIS_API_KEY>
+
+Status:
+  ✅ Code deployed locally (Ready for VPS push)
+  ⏳ Production deployment: Set API_SECRET in Wrangler dashboard
+  ⏳ Docker Compose: .env file must include FBIS_API_KEY (passed to fbis-mcp container)
+
 Next Steps:
-  1. Verify FBIS_API_KEY is set in production
-  2. Configure TELEGRAM_BOT_TOKEN for alerts
-  3. Set up D1 risk_scores table migrations (if needed)
-  4. Test /fbis-run on staging first
-  5. Schedule nightly runs (cron/automation)
+  1. Deploy API Worker with Bearer token auth
+  2. Set API_SECRET in Wrangler dashboard (value: FBIS_API_KEY)
+  3. Update infra/.env with FBIS_API_KEY value
+  4. Verify FBIS_API_KEY is set in production (docker-compose)
+  5. Configure TELEGRAM_BOT_TOKEN for alerts
+  6. Test /fbis-run on staging first
+  7. Schedule nightly runs (cron/automation)
