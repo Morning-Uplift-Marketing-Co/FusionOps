@@ -1,0 +1,49 @@
+# External vendored projects (not part of lp-factory-web)
+everything-claude-code/
+
+# External template samples
+templates/
+
+# Build / generated / cache
+node_modules/
+dist/
+coverage/
+.astro/
+.wrangler/
+.preview-astrodeck/
+.pytest_cache/
+.deepeval/
+.worktrees/
+.voltagent/
+test-artifacts/
+testsprite_tests/
+graphify-out/
+tmp/
+
+# Tool / IDE configs
+.claude/
+.codex/
+.cursor/
+.gemini/
+.opencode/
+.windsurf/
+.wolf/
+.vscode/
+.github/
+.githooks/
+
+# Lockfiles + binary assets
+package-lock.json
+*.min.js
+*.map
+*.zip
+*.tar.gz
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.ico
+*.woff
+*.woff2
+*.ttf
+*.pdf

@@ -39,3 +39,18 @@ templates/installment-loans-101/package-lock.json
 
 # Generated template directories
 tmp/
+
+# Local agent/runtime state
+.wolf/backups/
+.worktrees/
+everything-claude-code/
+
+# Local Python environments
+apps/fbis-mcp-server/.venv/
+
+# Graphify generated cache
+graphify-out/cache/
+
+# Local secrets
+hermes/gads-scripts/.sync-secret
+infra/.server

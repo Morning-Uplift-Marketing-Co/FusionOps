@@ -1,0 +1,2762 @@
+{
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\api-deploy-test.mjs": {
+    "mtime": 1778505671.6757603,
+    "hash": "acf028f27ed614ab413b84055c57364e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\App.jsx": {
+    "mtime": 1771959598.0,
+    "hash": "47e7cdba9c53b08a08c28f07aa10d65d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\AppRoot.jsx": {
+    "mtime": 1771734350.0,
+    "hash": "e60aca39f3ed7b9daf1e42a971480ce6"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\astro.config.mjs": {
+    "mtime": 1778505677.043781,
+    "hash": "e2ed6bb15eeee2d7df5c2ed6154d0884"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\cleanup-unnecessary-files.ps1": {
+    "mtime": 1773007051.9637733,
+    "hash": "0b7585fa3474b95426470c586f80f8c2"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\copy-tracking.mjs": {
+    "mtime": 1771973306.0,
+    "hash": "d63113904ea4d8276cb06ec22753d518"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\create-and-deploy.mjs": {
+    "mtime": 1778505671.687757,
+    "hash": "db105f5f8f852fd95ff47a3f0012e0f4"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\create-test-domain.mjs": {
+    "mtime": 1778505671.6887562,
+    "hash": "1bf7d0367dce3e370e95b68d744e9808"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\debug-connections.js": {
+    "mtime": 1772150562.0,
+    "hash": "142df89f07b454184407ca9d782e0f60"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\delete-archived-files.ps1": {
+    "mtime": 1773007078.6496842,
+    "hash": "6accef50b85d4a44a21e9d221767a02c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\deploy-template-test.mjs": {
+    "mtime": 1778505671.6917567,
+    "hash": "743b6940160027267d6c1350ace1d1e3"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\direct-deploy.mjs": {
+    "mtime": 1778505671.692757,
+    "hash": "a81051f7f615d2ba12cd0bb0b31290b8"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\eslint.config.js": {
+    "mtime": 1772562443.5200639,
+    "hash": "2d4b8e3bea9b0ea4da9295acfa6156a6"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\fix-cloudflare-settings.mjs": {
+    "mtime": 1778505671.692757,
+    "hash": "26b60f6f52f8f32d7023b23b989ce92d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\playwright.config.ts": {
+    "mtime": 1778505677.0468402,
+    "hash": "129c488f0faa0f3c69d3f559c225cbd9"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\real-deploy.mjs": {
+    "mtime": 1778505671.6987593,
+    "hash": "2a5c4a15de1d3045804cada784f29277"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\setup-tracking-dashboard.mjs": {
+    "mtime": 1771973390.0,
+    "hash": "5a2b6560dc04be54986d420f1bc0cdca"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\simple-deploy-test.mjs": {
+    "mtime": 1778505671.6997585,
+    "hash": "450b6ea4d3c68d4f130a11063f9e0ff5"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\test-deploy-api.mjs": {
+    "mtime": 1771896428.0,
+    "hash": "1502f987fd09ec7cb8d97f50667ed981"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\test-real-deploy.mjs": {
+    "mtime": 1778505671.7892883,
+    "hash": "98958fb9f7296d2f6ac5446df9918e34"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\test-ui-deploy.mjs": {
+    "mtime": 1778505671.7892883,
+    "hash": "5427abb5172e32284a9daf35c5b691dc"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\update-settings.mjs": {
+    "mtime": 1778505671.7902975,
+    "hash": "788ac1a60a36d09489d0dcf4bd353698"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\vitest.config.ts": {
+    "mtime": 1771758742.0,
+    "hash": "b0341e8845224dd9f9ed0e29ce8a2c51"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\migrations\\0001_init.sql": {
+    "mtime": 1771830155.0,
+    "hash": "b6906ac840a0b2fde2f5ed56cedea9b8"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\migrations\\0002_add_templates.sql": {
+    "mtime": 1771830155.0,
+    "hash": "7666748b8780cd6b725f718d37971390"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\migrations\\0002_deploy_history.sql": {
+    "mtime": 1771734349.0,
+    "hash": "e2cc8e55513d2fd401fde76dd73b38d8"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\migrations\\0002_templates.sql": {
+    "mtime": 1771867637.0,
+    "hash": "3314884a8add018f846309efd516df84"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\migrations\\0003_spend_dashboard.sql": {
+    "mtime": 1771800028.0,
+    "hash": "1960acd37b2a7ecd0722b4835fb3bc8f"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\migrations\\0004_profile_link_audit.sql": {
+    "mtime": 1773445956.3731866,
+    "hash": "340f8bf458c58725d2e0a895b6e4dcc6"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\migrations\\0004_site_versions.sql": {
+    "mtime": 1772571697.502918,
+    "hash": "217d66eccfde833e24cf091655dc6ab7"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\migrations\\0005_template_manager.sql": {
+    "mtime": 1772586859.7410915,
+    "hash": "c02b8730affea02cfa2625188c86f26d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\migrations\\0006_account_site_link.sql": {
+    "mtime": 1773445956.4397426,
+    "hash": "8e792965497b373fdf46b8d81d2a9d62"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\migrations\\0007_voluum_postback_forward.sql": {
+    "mtime": 1774405733.9012046,
+    "hash": "e082ec73e7ab5c9a517325190de8e7ac"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\migrations\\0008_analysis.sql": {
+    "mtime": 1778505677.04064,
+    "hash": "b7cd59d1b32a69a63e5817654e565864"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\migrations\\0009_lifecycle.sql": {
+    "mtime": 1778554409.171152,
+    "hash": "4e9bcdb9bc558ed8d1587fec63103b74"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\migrations\\0010_spend_history.sql": {
+    "mtime": 1778660321.3264654,
+    "hash": "cdd6268d31279341643a9008eac4b24b"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\schema\\voluum_postbacks_upgrade.sql": {
+    "mtime": 1774405733.9012046,
+    "hash": "5f8b5fa701020c37f35c7691be41770d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\worker.js": {
+    "mtime": 1778562603.4619253,
+    "hash": "20c4d418265cba3b5c9c21e43bb0b3c7"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\analysis\\lifecycle.js": {
+    "mtime": 1778562703.549648,
+    "hash": "badfb45e9c4063688e13795ad16e8f8c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\analysis\\queries.js": {
+    "mtime": 1778903573.2597897,
+    "hash": "858979970319fcd928540d03da96aa51"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\analysis\\routes.js": {
+    "mtime": 1778903932.9903102,
+    "hash": "b8ed4ab7d9396af61ccf30ba62a8794c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\handlers\\accounts.js": {
+    "mtime": 1778903874.1341414,
+    "hash": "2f69c53304a6de7f978d63525c0d8e76"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\handlers\\ai-generation.js": {
+    "mtime": 1778505671.6777587,
+    "hash": "1c88272d9a51257a4189652e34b85fea"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\handlers\\deployments.js": {
+    "mtime": 1778505671.6787577,
+    "hash": "362c52a33fdfcc8bca761370eb0efff1"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\handlers\\gtag-relay.js": {
+    "mtime": 1778505671.6797578,
+    "hash": "f4b32b208e0b3b3bc45e56b09e2f91d8"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\handlers\\init.js": {
+    "mtime": 1778903874.1341414,
+    "hash": "5e6234465020afc7ec242da54019aaaa"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\handlers\\leadingcards.js": {
+    "mtime": 1778505671.6797578,
+    "hash": "58daffd3c1d73e97da5aa9d2561d0f32"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\handlers\\misc.js": {
+    "mtime": 1778903874.1351502,
+    "hash": "d4803b48cbf1f6a4b10d8f7cfd8a135d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\handlers\\multilogin.js": {
+    "mtime": 1778505671.6807566,
+    "hash": "d3a02a8817213a4b8f5be990ff6f32da"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\handlers\\openapi.js": {
+    "mtime": 1778505671.6807566,
+    "hash": "1ba2338e2570ff5949e2a554d93105f3"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\handlers\\pixel-events.js": {
+    "mtime": 1778505671.6807566,
+    "hash": "3d281a654f9b56c14025b7ce2b4e42cf"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\handlers\\pixel-tracking.js": {
+    "mtime": 1778505671.6807566,
+    "hash": "233941b01c8c62368c2a6dfc96bfa6ce"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\handlers\\proxy.js": {
+    "mtime": 1778903874.1351502,
+    "hash": "7547c3003bc8974188eaadaa65ccb7f3"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\handlers\\settings.js": {
+    "mtime": 1778903874.1351502,
+    "hash": "dbaf4a0d8cf581e188c44a9670c34ca7"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\handlers\\sites.js": {
+    "mtime": 1778505671.6817563,
+    "hash": "27fef3a818142d252fcb80a1d4df37df"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\handlers\\templates.js": {
+    "mtime": 1778505671.6817563,
+    "hash": "06d1631c8211d4e0cc8c5e66afb0ed0e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\handlers\\voluum-api.js": {
+    "mtime": 1778505671.682757,
+    "hash": "d57ee9237336266117c64348b64affd7"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\handlers\\automation\\cloudflare.js": {
+    "mtime": 1778505671.6777587,
+    "hash": "cd14c6de642906943026532f885f4c8d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\handlers\\automation\\d1.js": {
+    "mtime": 1778505671.6777587,
+    "hash": "3b138cc2fa178a9f164a96806a815d82"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\handlers\\automation\\deploy.js": {
+    "mtime": 1778505671.6787577,
+    "hash": "a491d53b85bca1fe7921594a952ee2c3"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\handlers\\automation\\integrations.js": {
+    "mtime": 1778505671.6787577,
+    "hash": "254cb727274a04e87767a9d2285689a3"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\handlers\\automation\\registrar.js": {
+    "mtime": 1778505671.6787577,
+    "hash": "4c23c286800823981aed0d52845186df"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\handlers\\automation\\tracking-verify.js": {
+    "mtime": 1778505671.6787577,
+    "hash": "26a625dce9315fb0b1512de0cae50fa3"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\lib\\ai.js": {
+    "mtime": 1778505671.682757,
+    "hash": "62dd92b47efebfdd1f604eba0658437a"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\lib\\auth.js": {
+    "mtime": 1778903874.1351502,
+    "hash": "aa17b04dc79fa74d52b24c0a6ae6dfb9"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\lib\\case-utils.js": {
+    "mtime": 1778505671.682757,
+    "hash": "f940cabfdfb4c94256a8bf7e0c7eb149"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\lib\\cloudflare.js": {
+    "mtime": 1778505671.682757,
+    "hash": "bfccc92c2f198f812bce7c6cc02d1156"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\lib\\github.js": {
+    "mtime": 1778505671.682757,
+    "hash": "3f838d09df0469bba774578904ef09bb"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\lib\\http.js": {
+    "mtime": 1778505671.6837568,
+    "hash": "f17a46495042a24cc36fd5d3f2a60245"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\lib\\internetbs.js": {
+    "mtime": 1778505671.6837568,
+    "hash": "bbbdce0051be295a9d830fe7d2bef2fb"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\lib\\neon-sync.js": {
+    "mtime": 1778505671.6837568,
+    "hash": "06e6a6ca3fd6928deaa9b3437aea9275"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\lib\\template-utils.js": {
+    "mtime": 1778903874.1361506,
+    "hash": "a680f38b4cc5f45a78cdd9915ca85cee"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\lib\\url.js": {
+    "mtime": 1778505671.6837568,
+    "hash": "ada8d37456535446c6e44ca9e821d641"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\src\\lib\\voluum-guard.js": {
+    "mtime": 1778505671.6847568,
+    "hash": "0185952d66d06cc2869aff134357c7b5"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\browser-use-api\\server.py": {
+    "mtime": 1778500077.460956,
+    "hash": "df67d7aff85d44c28ef8a7e69f7de68c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\cf-proxy\\worker.js": {
+    "mtime": 1773009581.3009503,
+    "hash": "496f662d96a3a8d8d0b5ce008ec4ff26"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\fbis-mcp-server\\pm2.config.js": {
+    "mtime": 1778600235.1099582,
+    "hash": "3fe0b44bd6f9e420c07d48c9288c3891"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\fbis-mcp-server\\server.py": {
+    "mtime": 1778609903.657014,
+    "hash": "e555f8db1b7047d875acf7968f788fc1"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\fbis-mcp-server\\tests\\test_tools.py": {
+    "mtime": 1778892277.3436377,
+    "hash": "85f6d7f987ab9b51e30f661c98b67020"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\fbis-mcp-server\\tests\\__init__.py": {
+    "mtime": 1778505677.0422218,
+    "hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\fbis-mcp-server\\tools\\accounts.py": {
+    "mtime": 1778505677.0427475,
+    "hash": "a96c50851e295e58ab0926c8e32afe84"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\fbis-mcp-server\\tools\\audit.py": {
+    "mtime": 1778505677.0432565,
+    "hash": "178d5fe6fd7d409ae924b6f1bbfdec87"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\fbis-mcp-server\\tools\\cloudflare.py": {
+    "mtime": 1778609888.8100524,
+    "hash": "a6c7693f788de6b0ad30d2241f346437"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\fbis-mcp-server\\tools\\lifecycle.py": {
+    "mtime": 1778562933.172438,
+    "hash": "06b5b9bfdc0bb924f4a16d593886b380"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\fbis-mcp-server\\tools\\pixel.py": {
+    "mtime": 1778505677.0432565,
+    "hash": "b575c8bed644be6a20aea716a7a0bb5b"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\fbis-mcp-server\\tools\\proxy.py": {
+    "mtime": 1778505677.0432565,
+    "hash": "724e70d20fda3fe0eb36347b3023096d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\fbis-mcp-server\\tools\\risk.py": {
+    "mtime": 1778903874.1371477,
+    "hash": "8bf1d32fa24a3f795f3415c8cd3af059"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\fbis-mcp-server\\tools\\_client.py": {
+    "mtime": 1778903932.9882402,
+    "hash": "de842032f5c9f5304c9f0ca4d72452fd"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\fbis-mcp-server\\tools\\__init__.py": {
+    "mtime": 1778505677.0427475,
+    "hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\lander\\astro.config.mjs": {
+    "mtime": 1771830155.0,
+    "hash": "f019cfef06d50b10a8e2c0fb632118da"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\lander\\scripts\\build-domain.js": {
+    "mtime": 1771736470.0,
+    "hash": "2f2cd0b382018d0f384e34ace2c96798"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\lander\\src\\lib\\tracking.ts": {
+    "mtime": 1774031026.9478405,
+    "hash": "f39f7de5abc1f1c3ac1fa722064d1895"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\pixel-worker\\migrations\\0001_pixel_events.sql": {
+    "mtime": 1771734349.0,
+    "hash": "6a03e0f75db0a0994376ad6a7ca443b7"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\pixel-worker\\src\\index.ts": {
+    "mtime": 1774405733.9032795,
+    "hash": "5a85147044b3c1cc858ee4d8303c554c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\proxy-gateway\\ops-proxy-gateway\\index.mjs": {
+    "mtime": 1774514091.8483891,
+    "hash": "6bf2630f803fa37fe0078f8450e2a34c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\worker\\migrations\\0001_init.sql": {
+    "mtime": 1771734349.0,
+    "hash": "02de26b2e2a4370f8dd1745dd59a2b6f"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\worker\\migrations\\0003_idempotent_claims.sql": {
+    "mtime": 1774031026.9488456,
+    "hash": "cef48748993fa3ff1d0fab9ac68245c5"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\worker\\src\\index.ts": {
+    "mtime": 1774031026.9488456,
+    "hash": "959dfc5326fbea6a50699668cfc2b066"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\worker\\src\\types.ts": {
+    "mtime": 1774031026.949853,
+    "hash": "a022ca0f22a183926a6bdb2ef0fc70d0"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\worker\\src\\handlers\\callback.ts": {
+    "mtime": 1774031026.9488456,
+    "hash": "657c9dc0e833598124bfcc790ab6ace7"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\worker\\src\\lib\\dedup.ts": {
+    "mtime": 1774031026.9488456,
+    "hash": "a3763b5b417060817f9a405363ac0bc9"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\worker\\src\\lib\\validation.ts": {
+    "mtime": 1774031026.949853,
+    "hash": "16997e969236a262dfef7a5e07f0bef4"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\worker\\src\\lib\\voluum.ts": {
+    "mtime": 1771734349.0,
+    "hash": "926c15cae9b88b09a4eb537599f08c70"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\AccountMap.jsx": {
+    "mtime": 1771874930.0,
+    "hash": "195d3c0ab9e938765a693110dd2c6a87"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\ChangelogViewer.jsx": {
+    "mtime": 1771860362.0,
+    "hash": "d142d709ca22817bec4527bc293363b0"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\Dashboard.jsx": {
+    "mtime": 1771874940.0,
+    "hash": "b680f4d85d60ab5553223705d88d3b14"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\DeployHistory.jsx": {
+    "mtime": 1771736470.0,
+    "hash": "cd3949535e686509bf1a727b8b6c0526"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\ErrorBoundary.jsx": {
+    "mtime": 1771736470.0,
+    "hash": "030a6d36af4a05f2d87cbfa22ab789ac"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\ErrorLog.jsx": {
+    "mtime": 1771736470.0,
+    "hash": "96326ea3a6a0f84f9c7782eabc57d395"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\OpsCenter.jsx": {
+    "mtime": 1774501177.0613892,
+    "hash": "1f7f2abe3cc54b27cef47ca138d61231"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\Settings.jsx": {
+    "mtime": 1774297068.1778727,
+    "hash": "c8832b90c70380b63ba20009fe500f6d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\Sidebar.jsx": {
+    "mtime": 1774409596.297028,
+    "hash": "15dbb8590053f560e8b2d03a2f6e002a"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\Sites.jsx": {
+    "mtime": 1771880756.0,
+    "hash": "78c14ad29917e993b409b581718c60e1"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\SpendDashboard.jsx": {
+    "mtime": 1771873480.0,
+    "hash": "cb6a2a965e7dd5ee622437a616fd5cde"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\TemplateEditor.jsx": {
+    "mtime": 1771736470.0,
+    "hash": "14a4f6da2032d6d913031cf591a4f175"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\TemplateRegistry.jsx": {
+    "mtime": 1771873680.0,
+    "hash": "cf54a9d15ae8702682335e37e947326c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\TopBar.jsx": {
+    "mtime": 1771863640.0,
+    "hash": "3ac13a567205e2d05454fa22878ca85e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\VariantStudio.jsx": {
+    "mtime": 1771736470.0,
+    "hash": "8eb8cae83b3996d2ca2b85094b6a4834"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\Wizard.jsx": {
+    "mtime": 1771736470.0,
+    "hash": "5ea152f98f7374b97c5bc68d8538b164"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\OpsCenter\\deploy\\DeployDashboard.jsx": {
+    "mtime": 1774297068.1773436,
+    "hash": "01feadb72b334e7d7a181d48ea55fcdf"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\OpsCenter\\deploy\\DeployHistory.jsx": {
+    "mtime": 1771736470.0,
+    "hash": "8e743bd41572c02d33452c43e12b09fe"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\OpsCenter\\deploy\\DeploySection.jsx": {
+    "mtime": 1774297068.1773436,
+    "hash": "32654c7da803af659027a7589d6bd06f"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\OpsCenter\\deploy\\DeployTab.jsx": {
+    "mtime": 1771736470.0,
+    "hash": "c255a9078cb1cc7ad00fc7c68ec876e7"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\OpsCenter\\deploy\\DnsRecordModal.jsx": {
+    "mtime": 1771796622.0,
+    "hash": "39975cbe3f1cca86929ed54095c09d08"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\OpsCenter\\deploy\\DnsSection.jsx": {
+    "mtime": 1771736470.0,
+    "hash": "1a77240115dd76f3d91f339803564b77"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\OpsCenter\\deploy\\QuickActionsPanel.jsx": {
+    "mtime": 1771736470.0,
+    "hash": "3d9b4cfe392b378c321fc749b5aaa9fe"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\spend\\DailyLogTab.jsx": {
+    "mtime": 1771874632.0,
+    "hash": "43e4670baed97e4b30f3706ad46875ff"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\spend\\MonthlyPnLTab.jsx": {
+    "mtime": 1771803350.0,
+    "hash": "7456d148fea5a14dddedb50824033170"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\spend\\OpexTab.jsx": {
+    "mtime": 1771803372.0,
+    "hash": "5a9d4c7ec6b17841e4125b4b1f32d24d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\spend\\OverviewTab.jsx": {
+    "mtime": 1771803214.0,
+    "hash": "0d5f944537d265c6ab420f2f365ae22c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\spend\\PerAccountTab.jsx": {
+    "mtime": 1771803284.0,
+    "hash": "0fbba0181320b3d7808cc2ba74d0a1cd"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\spend\\PerCardTab.jsx": {
+    "mtime": 1771803294.0,
+    "hash": "b0565be29ac35ebc577b9778a4a14cae"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\spend\\PerDomainTab.jsx": {
+    "mtime": 1771803296.0,
+    "hash": "dd4942e8510b9dab0d38c3bdf93ede78"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\spend\\ReconcileTab.jsx": {
+    "mtime": 1771803370.0,
+    "hash": "47b3d6077a307034aa6781496c0a8d54"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\TemplateGenerator\\generateTemplateCode.js": {
+    "mtime": 1771736470.0,
+    "hash": "3d3b17c937622bb423e555a241a27195"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\TemplateGenerator\\index.js": {
+    "mtime": 1771736470.0,
+    "hash": "1805ea3b37f34dc20852a2f0c0e9dac8"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\TemplateGenerator\\TemplateGeneratorModal.jsx": {
+    "mtime": 1774031075.1922169,
+    "hash": "dce4c1de45ba0db10218c3264fbb614c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\TemplateGenerator\\steps\\StepTemplateCode.jsx": {
+    "mtime": 1772562443.5200639,
+    "hash": "902515cbf8310af36148163018674e76"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\TemplateGenerator\\steps\\StepTemplateDesign.jsx": {
+    "mtime": 1771736470.0,
+    "hash": "de045143d1ff260dcbdcb52451bd043c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\TemplateGenerator\\steps\\StepTemplateFeatures.jsx": {
+    "mtime": 1771736470.0,
+    "hash": "d7d0b094d278bfb5c6a8553bb63d54b3"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\TemplateGenerator\\steps\\StepTemplateFromDir.jsx": {
+    "mtime": 1771736470.0,
+    "hash": "f0ebb846b235c0f1ddc5262c2cddf50b"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\TemplateGenerator\\steps\\StepTemplateFromZip.jsx": {
+    "mtime": 1774031075.1922169,
+    "hash": "ccec1f441b3fee8ceab16bec237777c4"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\TemplateGenerator\\steps\\StepTemplateInfo.jsx": {
+    "mtime": 1771736470.0,
+    "hash": "743b4cb63feaa6ab4afece2317e69b91"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\TemplateGenerator\\steps\\StepTemplateReview.jsx": {
+    "mtime": 1771736470.0,
+    "hash": "c271a644940a2f7044c3fb5d706faad0"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\ui\\AccountVerificationBanner.jsx": {
+    "mtime": 1771908980.0,
+    "hash": "b9d18134daeac84890b7b588ee4af1ff"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\ui\\badge.tsx": {
+    "mtime": 1771736470.0,
+    "hash": "b8722c3d7208e3b96b708d35fdfa30a3"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\ui\\button.tsx": {
+    "mtime": 1771736470.0,
+    "hash": "9b3f2debf6dd29d759ad96a3a2140a12"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\ui\\card.tsx": {
+    "mtime": 1771736470.0,
+    "hash": "6bd0c1b433f6a5b333f42fc4d0be0d98"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\ui\\dot.tsx": {
+    "mtime": 1771736470.0,
+    "hash": "5b7febd39e67ec96956f6f4846622f9b"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\ui\\field.tsx": {
+    "mtime": 1771736470.0,
+    "hash": "aed6f148e6dc35ee3762a54e150ef7c2"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\ui\\input-field.tsx": {
+    "mtime": 1771736470.0,
+    "hash": "e57ea5e5f3cd8bb48d5cd7b0ce8e259c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\ui\\input.tsx": {
+    "mtime": 1771736470.0,
+    "hash": "f9fa12c49cd2eaab46897a5749bf5204"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\ui\\mock-phone.tsx": {
+    "mtime": 1771736470.0,
+    "hash": "89ed49a8782d80c772c9eff7eae5af76"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\ui\\table.tsx": {
+    "mtime": 1771874412.0,
+    "hash": "97d6eb861183e7e4b8f837f3f931f641"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\ui\\tabs.tsx": {
+    "mtime": 1771874420.0,
+    "hash": "86820654d642f0f7374ce3a83131bd04"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\ui\\theme-toggle.tsx": {
+    "mtime": 1771803076.0,
+    "hash": "7e119c7b057ce2c61d3272a7648c5a4c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\ui\\toast.tsx": {
+    "mtime": 1771736470.0,
+    "hash": "78d3f71c1ba62b4c2160f49137eb2c1c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\Wizard\\index.js": {
+    "mtime": 1771734350.0,
+    "hash": "613a01ce824a59512690285d0dfd9010"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\Wizard\\StepBrand.jsx": {
+    "mtime": 1771876526.0,
+    "hash": "8a89d634a48a89a7e27b83a53f789048"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\Wizard\\StepCopy.jsx": {
+    "mtime": 1771736470.0,
+    "hash": "8890e17ff17c2355686a0fdc67d795c7"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\Wizard\\StepDesign.jsx": {
+    "mtime": 1771757458.0,
+    "hash": "a828fc0121a371fdbf2b5b48e4ad83f5"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\Wizard\\StepProduct.jsx": {
+    "mtime": 1771736470.0,
+    "hash": "aef7ce4e0ac0dbea3661f77fc0eaa5f6"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\Wizard\\StepReview.jsx": {
+    "mtime": 1771736470.0,
+    "hash": "5ed2adca8417f75ff9a78dd2141b28c6"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\Wizard\\StepTracking.jsx": {
+    "mtime": 1771736470.0,
+    "hash": "c53fa31f74808cef9e9058efe8e22f4a"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\components\\Wizard\\template-utils.js": {
+    "mtime": 1771736470.0,
+    "hash": "f52ef388784bdec86d5b25de6877c9b7"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\constants\\index.js": {
+    "mtime": 1774297068.1783948,
+    "hash": "7c13909d32a4b084398eea7f5c10a896"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\examples\\cards.py": {
+    "mtime": 1771830154.0,
+    "hash": "ab4c8b1f76314f65959b82aa1e5d0d7b"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\examples\\deploy.js": {
+    "mtime": 1771830154.0,
+    "hash": "18353d502a570faeede36b80ce3bc4ff"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\gen\\build-variant.mjs": {
+    "mtime": 1771475766.0,
+    "hash": "08f522bcf07a73fa4f82ed078b7b6ce5"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\hermes\\hermes-nightly.py": {
+    "mtime": 1778903906.733564,
+    "hash": "484318459326bb1781937205195b4d13"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\hermes\\telegram-trigger.py": {
+    "mtime": 1778604710.09786,
+    "hash": "4b6655ca9a35859b3b45eefe2c4469aa"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\hermes\\gads-scripts\\fbis-account-sync.js": {
+    "mtime": 1778903650.6299522,
+    "hash": "5b6d431c9b9cb0bb33b7ca1baba74ba1"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\hermes\\gads-scripts\\fbis-relay-worker.js": {
+    "mtime": 1778903650.6304698,
+    "hash": "a80203e5b8c56e871bdde82c44a52f9b"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\hermes\\gads-scripts\\generate-sync-script.js": {
+    "mtime": 1778623332.497685,
+    "hash": "850986ad1a6431897c16acce2c3ec6d5"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\infra\\git-hooks\\post-merge": {
+    "mtime": 1778903874.1401503,
+    "hash": "4dd4388455b274fa035bb23971bfb16f"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\lib\\utils.ts": {
+    "mtime": 1771736470.0,
+    "hash": "e3f848f1b39f863e6164cf58b5a8e752"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\packages\\lp-template-generator\\tailwind.config.base.mjs": {
+    "mtime": 1774031174.074217,
+    "hash": "b5167e9174d16b83555d1e79efd67e3d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\packages\\lp-template-generator\\bin\\lp-gen.js": {
+    "mtime": 1771941560.0,
+    "hash": "2337e541e30f2d57252a4697f468709a"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\packages\\lp-template-generator\\src\\cli.js": {
+    "mtime": 1771736470.0,
+    "hash": "63f04a6a9e164ee6546fe594c82a172c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\packages\\lp-template-generator\\src\\index.js": {
+    "mtime": 1771941542.0,
+    "hash": "86b09019292eaf403e97255e6b47a390"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\packages\\lp-template-generator\\src\\core\\generator.js": {
+    "mtime": 1771941286.0,
+    "hash": "23bc462758363413bee0d23f521daa10"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\packages\\lp-template-generator\\src\\core\\index.js": {
+    "mtime": 1771941292.0,
+    "hash": "2f2fbefbaa6dbfb738f32ec2a95d2f02"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\packages\\lp-template-generator\\src\\core\\registry.js": {
+    "mtime": 1771941270.0,
+    "hash": "0749e98da1906fefec7bf639a2755832"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\packages\\lp-template-generator\\src\\core\\schema.js": {
+    "mtime": 1772562443.5230637,
+    "hash": "747c3734ae78b630d3c7a49cbdc44383"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\packages\\lp-template-generator\\src\\core\\template-registry.js": {
+    "mtime": 1772559967.3244197,
+    "hash": "38f8239e25c5bc0f19ac6b55014e1b7b"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\packages\\lp-template-generator\\src\\shared\\base-css.js": {
+    "mtime": 1771967590.0,
+    "hash": "a048121508d30fd4d81d37b707b8fed3"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\packages\\lp-template-generator\\src\\shared\\compliance.js": {
+    "mtime": 1772857024.4982207,
+    "hash": "4ab53d484f4b0ad3ed14c1de923e700d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\packages\\lp-template-generator\\src\\shared\\scaffold.js": {
+    "mtime": 1771967574.0,
+    "hash": "0f5597909637e549c62a1779d87930a7"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\packages\\lp-template-generator\\src\\shared\\tracking.js": {
+    "mtime": 1772857024.4987335,
+    "hash": "12b4f5a72e5c425cc7539972e406465b"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\packages\\lp-template-generator\\src\\shared\\unified-colors.js": {
+    "mtime": 1774031174.074217,
+    "hash": "56e9237eb3823e8640cbae09e09b6be2"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\packages\\lp-template-generator\\src\\shared\\unified-tracking.js": {
+    "mtime": 1775616760.954998,
+    "hash": "78b9b1174905600040f9d1c51fdc905f"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\packages\\lp-template-generator\\test\\generate-all.js": {
+    "mtime": 1771941576.0,
+    "hash": "2d3265111afd0741f29027048b8fc21e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\alpha-analyze-vectors.js": {
+    "mtime": 1774031096.02729,
+    "hash": "d552a1361e0919cb93831e764a53b6bb"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\alpha-consolidate-monitoring.js": {
+    "mtime": 1778500696.1623046,
+    "hash": "89d5dc53d6f6262fb05b7b184e7a405b"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\alpha-deploy.js": {
+    "mtime": 1774031095.8117285,
+    "hash": "a39c9c2fbe524686ef9c4e348cccd271"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\alpha-monitor.js": {
+    "mtime": 1778500696.1603124,
+    "hash": "945ef9d033a72a92774124b69d2f1b9d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\alpha-verify-deployment.js": {
+    "mtime": 1774031095.8127291,
+    "hash": "f33ccdd3cd3d945b71c34d245efb2bab"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\benchmark.js": {
+    "mtime": 1774031096.4323144,
+    "hash": "111add7510132142db783d4c02553d9f"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\build-variant.mjs": {
+    "mtime": 1775616760.9555106,
+    "hash": "4325289f85066d41ea6f7c2aaa2130ed"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\check-setup.mjs": {
+    "mtime": 1778508389.7901988,
+    "hash": "52f682374f2384b8c65430bdbe0b3201"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\ci-ensure-template-tsconfig.mjs": {
+    "mtime": 1774405733.9147317,
+    "hash": "1f40b81b601ca0d787155a5ca20e3d68"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\cleanup-db-templates.mjs": {
+    "mtime": 1773445956.5481472,
+    "hash": "3c0ce53fe5f09859e1b9fae082daab3f"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\convert-template.mjs": {
+    "mtime": 1771889388.0,
+    "hash": "1e5e8af5fcbe7cda81cfde5643b4b000"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\convert-vite-to-astro-template.mjs": {
+    "mtime": 1775355606.114895,
+    "hash": "ddab30cad49d8b84a7359e04a369bf11"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\create-new-databases.js": {
+    "mtime": 1774580961.09879,
+    "hash": "61aa151ce6ad0f5f853580e7aa4bcccb"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\debug-css-vars.mjs": {
+    "mtime": 1772835823.6009684,
+    "hash": "457736b3543b94761b0de7999a6e111b"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\deploy-all.js": {
+    "mtime": 1771744164.0,
+    "hash": "3e85d3cb3876c1d823e765582ef7b5ed"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\deploy-domains.js": {
+    "mtime": 1774031096.3840182,
+    "hash": "17ad772e44b52966d42c9236e9dc8050"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\deploy-org.js": {
+    "mtime": 1771736470.0,
+    "hash": "9fd69952fc9e7a706fd9bf9809440e97"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\deploy-scratchvetloans.mjs": {
+    "mtime": 1772841268.2542424,
+    "hash": "0fcf6d7cb884d1f542f815ed8fcd191a"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\deploy-site-with-db-template.mjs": {
+    "mtime": 1773445956.5481472,
+    "hash": "4d3c779b49d3f2d1b63f44e5ab5cc580"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\fbis-test.py": {
+    "mtime": 1778899613.5231967,
+    "hash": "dd6c8cab525e66c71c19ff58bae53838"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\fix-installment-001.mjs": {
+    "mtime": 1772842816.47607,
+    "hash": "83e2068388d590e160f4170398b43826"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\folder-to-template-json.js": {
+    "mtime": 1774251088.8560328,
+    "hash": "208bc35b17556f0649cc027da8a4782e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\generate-template-from-db.mjs": {
+    "mtime": 1774405733.9153533,
+    "hash": "dadf2eac9043935a88690632f5eda867"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\inject-index-html-tracking.mjs": {
+    "mtime": 1775355206.7834857,
+    "hash": "19c7388330a5fa36855e69be32a7dd0e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\inject-tracking.mjs": {
+    "mtime": 1778505671.6997585,
+    "hash": "40bfd119696adb6d37dc2c89bb8a51f3"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\migrate-d1.js": {
+    "mtime": 1771744378.0,
+    "hash": "dd7dcb24906f09447bb3f480de9b817f"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\migrate-neon.js": {
+    "mtime": 1771800606.0,
+    "hash": "ec6f9614ada97dfcd1ed6e081c975acc"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\migrate-v2-tables.mjs": {
+    "mtime": 1771801106.0,
+    "hash": "0aa60162a2e4e04c64322292fb5764a0"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\monitoring-setup.js": {
+    "mtime": 1774031096.4088113,
+    "hash": "3249a83dc6b99a4ad99db2cbaaebab01"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\pack-template.mjs": {
+    "mtime": 1771889244.0,
+    "hash": "6b5f86c9afccc2538bee800ebbde3309"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\package-template.mjs": {
+    "mtime": 1771889152.0,
+    "hash": "1ee0af67385811a0b2098b791fe0afa8"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\prepare-bolt-astro-import.mjs": {
+    "mtime": 1775616760.9561882,
+    "hash": "b842add5647df83e5bb9b511293533c6"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\preview-astrodeck.mjs": {
+    "mtime": 1772083294.0,
+    "hash": "8d0b30369af4042f9e593718329e782d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\proxy-resolve-relay.mjs": {
+    "mtime": 1774514096.1665819,
+    "hash": "5fd3cb4d1dcb5fc8efb33bb7f2863002"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\push-to-github.mjs": {
+    "mtime": 1772845608.0425992,
+    "hash": "e317e9b91fb26be7549d11b11b2b86d0"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\push-workflow.ps1": {
+    "mtime": 1772846033.65686,
+    "hash": "345c003b7a2e06b9d95531a41c42c883"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\setup-infrastructure.js": {
+    "mtime": 1771738512.0,
+    "hash": "6286d56fd43aff53ee3a272c8357c4cc"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\test-equations.js": {
+    "mtime": 1771770056.0,
+    "hash": "96a5d5537a282f0cbca00b433d154f0c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\test-lendingcard-api.js": {
+    "mtime": 1771769730.0,
+    "hash": "c1a58a794d2a47057140420d69808903"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\test-neon-tables.mjs": {
+    "mtime": 1771800890.0,
+    "hash": "0c21d06af9cce3de52f1e3d46708488e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\test-voluum-report.js": {
+    "mtime": 1771767500.0,
+    "hash": "48532d50af569d57058786c5d9f9e422"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\test-voluum.js": {
+    "mtime": 1771805610.0,
+    "hash": "4d646c634d4712c8c8810dda08806db6"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\upload-template.mjs": {
+    "mtime": 1774031026.9798453,
+    "hash": "b541472a762e841b6a92a19c870ba99d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\validate-template-build.mjs": {
+    "mtime": 1775616760.9567478,
+    "hash": "2419be82ce9ed544db3285a385aef3cf"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\validate-template-quality.mjs": {
+    "mtime": 1774031026.9808447,
+    "hash": "b27dda9dba5e7dc054cd324c84505aa8"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\validate-template-tracking.mjs": {
+    "mtime": 1774325230.7171426,
+    "hash": "657c782d80364debc1bf51af2c6f0ea6"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\validate-voluum-dns.mjs": {
+    "mtime": 1775616760.957262,
+    "hash": "ce73cb090fde7aefcf80503962b18604"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\verify-speed.js": {
+    "mtime": 1771734350.0,
+    "hash": "ad9eb50109e205c584f8eea7559b712e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\lib\\astro-shell-resolve.mjs": {
+    "mtime": 1774405733.9158814,
+    "hash": "8fc94054be30f5405fceb059ba81468c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\lib\\db-template-validate.mjs": {
+    "mtime": 1774405733.9158814,
+    "hash": "242ef3ff55635aba7e222bc55d2e0313"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\lib\\template-tsconfig-fallback.mjs": {
+    "mtime": 1774405733.9168875,
+    "hash": "efa4566e7151654d73d756475000d19c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\__tests__\\alpha-monitor.test.js": {
+    "mtime": 1774031174.0752163,
+    "hash": "5590a3f57412c90454af220f477d9547"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\services\\account-lock.js": {
+    "mtime": 1771916188.0,
+    "hash": "f0a0da52dd3c8e36db5469469ed625f6"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\services\\api.js": {
+    "mtime": 1772857024.5008097,
+    "hash": "1a2c989d121773e76243163fd13f4a51"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\services\\cloudflare-dns.js": {
+    "mtime": 1771734350.0,
+    "hash": "9037b09551a23fc29670b13822cd7e4e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\services\\cloudflare-zone.js": {
+    "mtime": 1771734350.0,
+    "hash": "de49039f2e7c60f10aa4e1f41a791cbe"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\services\\d1.js": {
+    "mtime": 1771734350.0,
+    "hash": "ed8ba70e9d683fe6d31e2ae7f8eeaa37"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\services\\leadingCards.js": {
+    "mtime": 1771867412.0,
+    "hash": "a0d0ce10f62d49025438e20e3252bc10"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\services\\lendingcard.js": {
+    "mtime": 1771769918.0,
+    "hash": "c52987528cbc7f53e6a212f6ac990f66"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\services\\multilogin.js": {
+    "mtime": 1774512309.461104,
+    "hash": "ae57d5a5c1cbd55ccbb09e89a7d92570"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\services\\neon.js": {
+    "mtime": 1771914340.0,
+    "hash": "3e6862c89eb51504ad85bca8f59cd614"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\services\\registrar.js": {
+    "mtime": 1771736470.0,
+    "hash": "dda2a17e543fa1a7fdf5a0977dcdcf71"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\services\\voluum.js": {
+    "mtime": 1771777566.0,
+    "hash": "ad19480e17057fb57006056174ad1fac"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\App.jsx": {
+    "mtime": 1778613830.9780385,
+    "hash": "298ebb4c206529175a6019fe61f59972"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\AppRoot.jsx": {
+    "mtime": 1774580961.1004107,
+    "hash": "b005f970b8aabe2b4fa7840745d859ce"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\adapters\\runtime-version.ts": {
+    "mtime": 1772568705.6526332,
+    "hash": "45f5d418612cd365ad2c11cdb4b5eec7"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\adapters\\template-adapter.ts": {
+    "mtime": 1772568705.6526332,
+    "hash": "c21e84b2bbc8b7ab7439372571cf9e31"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\adapters\\template-feature-matrix.ts": {
+    "mtime": 1774251088.8587253,
+    "hash": "f920e8343022048a9fa856db812c0097"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\adapters\\template-registry-types.ts": {
+    "mtime": 1774251088.8587253,
+    "hash": "3f810ae182b7ae0884bbcd204e403d08"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\adapters\\template-runtime-error.ts": {
+    "mtime": 1772568705.6546338,
+    "hash": "f5264a1caf7348f9141074b87872b6a0"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\adapters\\template-runtime-events.ts": {
+    "mtime": 1772568705.6546338,
+    "hash": "f4631cdeb5b07f1816dc7eef9ee3983d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\AccountMap.jsx": {
+    "mtime": 1773211926.3334622,
+    "hash": "f5d86b23e813ad6a18ac9bcdb9369442"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\AdsPowerProfileManager.jsx": {
+    "mtime": 1774546324.260449,
+    "hash": "1bc74c0de22f40828d04f244d1297a82"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\AgentKPICard.jsx": {
+    "mtime": 1778505677.0468402,
+    "hash": "49062b4b952824f7bfbf3390e9b14a57"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\ApiHealthCheck.jsx": {
+    "mtime": 1775617285.2444642,
+    "hash": "845a770e39763e4f4c75245445f296ea"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\ChangelogViewer.jsx": {
+    "mtime": 1774297068.1820316,
+    "hash": "bd5bcadf7c76d9a911cfa8ed6d93baeb"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\Dashboard.jsx": {
+    "mtime": 1774405733.9173923,
+    "hash": "cef8e83d85bdc4d684294e51f42644f9"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\DeployHistory.jsx": {
+    "mtime": 1771736470.0,
+    "hash": "cd3949535e686509bf1a727b8b6c0526"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\DiffViewer.jsx": {
+    "mtime": 1774031095.604607,
+    "hash": "228c3fbacf7eca18d52ffeb7f2a68c71"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\DiffViewer.test.jsx": {
+    "mtime": 1774031095.604607,
+    "hash": "a8db2c51f188064c708710ab360adaff"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\ErrorBoundary.jsx": {
+    "mtime": 1771980434.0,
+    "hash": "83737a95f382b405e382d67d48879e0d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\ErrorLog.jsx": {
+    "mtime": 1772926195.0460043,
+    "hash": "4ab86d6a1c0429d565b419abda0a1288"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\KpiDashboard.jsx": {
+    "mtime": 1773653727.9751747,
+    "hash": "5d716f6e7660a3a9a74e96743fd3c3ca"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\LoginPage.jsx": {
+    "mtime": 1774409596.1234343,
+    "hash": "6048320c3e0a8cf1d5536899a22ec958"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\OpsCenter.jsx": {
+    "mtime": 1774501177.0687308,
+    "hash": "1726e1181234f69668401059622463b7"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\PreflightModal.jsx": {
+    "mtime": 1771985264.0,
+    "hash": "c5c16775233f3e206676d57315801ef0"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\ProfileManager.jsx": {
+    "mtime": 1774501177.0687308,
+    "hash": "74f6bd0368a91e001b9e619f99a37d6a"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\ProxyHealthTab.jsx": {
+    "mtime": 1774580961.1009421,
+    "hash": "38834845165b2040ec6c4762aa6f7df5"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\ProxyListTab.jsx": {
+    "mtime": 1774606093.416775,
+    "hash": "b003184487c36786837346cc2d5be69d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\RealtimeEventsDashboard.jsx": {
+    "mtime": 1775617281.2458687,
+    "hash": "f7343a19ff04f79b127d72e484c208e0"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\RiskDashboard.jsx": {
+    "mtime": 1778599450.6624348,
+    "hash": "93a6fa53c5b5435a0a32c93afa311b15"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\Settings.jsx": {
+    "mtime": 1778505677.04784,
+    "hash": "13fc9bbaedb59271b9e45f6ac78f1b8d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\Sidebar.jsx": {
+    "mtime": 1778613836.6439097,
+    "hash": "d04153c62822a4cce27458e5199c1702"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\Sites.jsx": {
+    "mtime": 1774580961.10244,
+    "hash": "d0e7ed8544425d338ec32ca65ca7af68"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\SpendDashboard.jsx": {
+    "mtime": 1774297066.2963872,
+    "hash": "07e7588c6477b47fbdc220d3b79bd0b5"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\TaskManager.jsx": {
+    "mtime": 1773654797.2960296,
+    "hash": "b0c014d0be4be51f582867168a2ecf86"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\TemplateManager.jsx": {
+    "mtime": 1774580961.1029515,
+    "hash": "1c79432a050b4c6ceb2bc0e8435a9fc5"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\TemplateRegistry.jsx": {
+    "mtime": 1772568690.548007,
+    "hash": "cf54a9d15ae8702682335e37e947326c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\TopBar.jsx": {
+    "mtime": 1774580961.1029515,
+    "hash": "2046f5f9f177dd333a1367e8c1d889b6"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\TrackingDashboard.jsx": {
+    "mtime": 1774412449.2170067,
+    "hash": "93674ff1eee53adae29901d9b7595ee9"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\UserManager.jsx": {
+    "mtime": 1773653756.8593552,
+    "hash": "e947835587d1b50f9a0853ee7da28c67"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\VoluumExplorer.jsx": {
+    "mtime": 1773211926.3350284,
+    "hash": "12f3056aab6c01b659c59c461b83c4fe"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\Wizard.jsx": {
+    "mtime": 1776016216.6798456,
+    "hash": "6a47180988931bf00cac75763c29a042"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\OpsCenter\\deploy\\DeployDashboard.jsx": {
+    "mtime": 1774297068.1833627,
+    "hash": "01feadb72b334e7d7a181d48ea55fcdf"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\OpsCenter\\deploy\\DeployHistory.jsx": {
+    "mtime": 1771736470.0,
+    "hash": "8e743bd41572c02d33452c43e12b09fe"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\OpsCenter\\deploy\\DeploySection.jsx": {
+    "mtime": 1775616760.95778,
+    "hash": "852652fd77a1899b0db6f6c55ce78adb"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\OpsCenter\\deploy\\DeployStatusTracker.jsx": {
+    "mtime": 1774102437.6682749,
+    "hash": "4362a0b9e2c72d7fa98fac73dd6353bf"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\OpsCenter\\deploy\\DeployTab.jsx": {
+    "mtime": 1771736470.0,
+    "hash": "c255a9078cb1cc7ad00fc7c68ec876e7"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\OpsCenter\\deploy\\DnsRecordModal.jsx": {
+    "mtime": 1771796622.0,
+    "hash": "39975cbe3f1cca86929ed54095c09d08"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\OpsCenter\\deploy\\DnsSection.jsx": {
+    "mtime": 1771736470.0,
+    "hash": "1a77240115dd76f3d91f339803564b77"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\OpsCenter\\deploy\\QuickActionsPanel.jsx": {
+    "mtime": 1771736470.0,
+    "hash": "3d9b4cfe392b378c321fc749b5aaa9fe"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\spend\\DailyLogTab.jsx": {
+    "mtime": 1773211926.3355427,
+    "hash": "fa56b747a6bc76d158dc603506231a03"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\spend\\MonthlyPnLTab.jsx": {
+    "mtime": 1773211926.3360584,
+    "hash": "1ae48d4b8a88325c2d6c0f68f59a4e28"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\spend\\OpexTab.jsx": {
+    "mtime": 1771803372.0,
+    "hash": "5a9d4c7ec6b17841e4125b4b1f32d24d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\spend\\OverviewTab.jsx": {
+    "mtime": 1773211926.3360584,
+    "hash": "2387256d6186e091259b8015aa669b33"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\spend\\PerAccountTab.jsx": {
+    "mtime": 1773211926.3365753,
+    "hash": "2de914684d098d8dbfd9cc885085ed9b"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\spend\\PerCardTab.jsx": {
+    "mtime": 1771803294.0,
+    "hash": "b0565be29ac35ebc577b9778a4a14cae"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\spend\\PerDomainTab.jsx": {
+    "mtime": 1773211926.3365753,
+    "hash": "ebae6c6c633c786b9851a09c2118a345"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\spend\\ReconcileTab.jsx": {
+    "mtime": 1771803370.0,
+    "hash": "47b3d6077a307034aa6781496c0a8d54"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\spend\\TrackingReconcileTab.jsx": {
+    "mtime": 1774512309.4621437,
+    "hash": "ce4783f1db93333dffeefbd5200c6b95"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\spend\\VoluumTab.jsx": {
+    "mtime": 1772187824.0,
+    "hash": "92e28a3c6c8399837682e0ff95b766d9"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\TemplateGenerator\\generateTemplateCode.js": {
+    "mtime": 1772562443.5385697,
+    "hash": "3d3b17c937622bb423e555a241a27195"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\TemplateGenerator\\index.js": {
+    "mtime": 1771736470.0,
+    "hash": "1805ea3b37f34dc20852a2f0c0e9dac8"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\TemplateGenerator\\TemplateGeneratorModal.jsx": {
+    "mtime": 1774031075.2466557,
+    "hash": "51a0b24b466a1be6b360bbe0c0064061"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\TemplateGenerator\\steps\\StepTemplateCode.jsx": {
+    "mtime": 1772562443.5385697,
+    "hash": "902515cbf8310af36148163018674e76"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\TemplateGenerator\\steps\\StepTemplateDesign.jsx": {
+    "mtime": 1771736470.0,
+    "hash": "de045143d1ff260dcbdcb52451bd043c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\TemplateGenerator\\steps\\StepTemplateFeatures.jsx": {
+    "mtime": 1771736470.0,
+    "hash": "d7d0b094d278bfb5c6a8553bb63d54b3"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\TemplateGenerator\\steps\\StepTemplateFromDir.jsx": {
+    "mtime": 1771736470.0,
+    "hash": "f0ebb846b235c0f1ddc5262c2cddf50b"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\TemplateGenerator\\steps\\StepTemplateFromZip.jsx": {
+    "mtime": 1774251088.8603482,
+    "hash": "7fa2e4ef01c37e1bb58d91ae60b1e15b"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\TemplateGenerator\\steps\\StepTemplateInfo.jsx": {
+    "mtime": 1771736470.0,
+    "hash": "743b4cb63feaa6ab4afece2317e69b91"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\TemplateGenerator\\steps\\StepTemplateReview.jsx": {
+    "mtime": 1773276141.6934757,
+    "hash": "cee66e4352bfbac62bd880eedaff32cc"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\ui\\AccountVerificationBanner.jsx": {
+    "mtime": 1771908980.0,
+    "hash": "b9d18134daeac84890b7b588ee4af1ff"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\ui\\badge.tsx": {
+    "mtime": 1771736470.0,
+    "hash": "b8722c3d7208e3b96b708d35fdfa30a3"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\ui\\button.tsx": {
+    "mtime": 1774501177.0718389,
+    "hash": "902d9a7ad0d5e81e8529f0af3af1e986"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\ui\\card.tsx": {
+    "mtime": 1771736470.0,
+    "hash": "6bd0c1b433f6a5b333f42fc4d0be0d98"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\ui\\dot.tsx": {
+    "mtime": 1771736470.0,
+    "hash": "5b7febd39e67ec96956f6f4846622f9b"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\ui\\field.tsx": {
+    "mtime": 1771736470.0,
+    "hash": "aed6f148e6dc35ee3762a54e150ef7c2"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\ui\\input-field.tsx": {
+    "mtime": 1771736470.0,
+    "hash": "e57ea5e5f3cd8bb48d5cd7b0ce8e259c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\ui\\input.tsx": {
+    "mtime": 1771736470.0,
+    "hash": "f9fa12c49cd2eaab46897a5749bf5204"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\ui\\mock-phone.tsx": {
+    "mtime": 1772938647.6844585,
+    "hash": "c96b42aa386a476004968d31930e5801"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\ui\\table.tsx": {
+    "mtime": 1771874412.0,
+    "hash": "97d6eb861183e7e4b8f837f3f931f641"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\ui\\tabs.tsx": {
+    "mtime": 1771874420.0,
+    "hash": "86820654d642f0f7374ce3a83131bd04"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\ui\\theme-toggle.tsx": {
+    "mtime": 1771803076.0,
+    "hash": "7e119c7b057ce2c61d3272a7648c5a4c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\ui\\toast.tsx": {
+    "mtime": 1771736470.0,
+    "hash": "78d3f71c1ba62b4c2160f49137eb2c1c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\Wizard\\index.js": {
+    "mtime": 1774616458.512248,
+    "hash": "b7e4cfa7b5e0b63955b8af4098b3115f"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\Wizard\\PreviewModal.jsx": {
+    "mtime": 1774251088.861924,
+    "hash": "53aebc2cbea560efb3ba613653b443e2"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\Wizard\\PreviewModal.test.jsx": {
+    "mtime": 1774031095.4749188,
+    "hash": "97ca98a457d69f11ab03294f2c37ff5d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\Wizard\\step-mapper.js": {
+    "mtime": 1774031075.094566,
+    "hash": "8f2bf59a3ea67f6d930a4dafff66cc46"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\Wizard\\StepBrand.jsx": {
+    "mtime": 1774297068.1854675,
+    "hash": "8a4afbffa77977097020a93154f0e034"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\Wizard\\StepCopy.jsx": {
+    "mtime": 1776016507.9024172,
+    "hash": "cd2b7473a2c5bbb16e80401344cdceda"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\Wizard\\StepDesign.jsx": {
+    "mtime": 1775616760.9587839,
+    "hash": "2eb99cd02ff9d2ba0dff4b00a50128dc"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\Wizard\\StepProduct.jsx": {
+    "mtime": 1774413121.003147,
+    "hash": "0a8dbea71db8b1168e2bd19e8723e473"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\Wizard\\StepReview.jsx": {
+    "mtime": 1774420222.6578329,
+    "hash": "f2821557e949bb633ca772aa19b1eec6"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\Wizard\\StepTemplate.jsx": {
+    "mtime": 1774580961.1039624,
+    "hash": "f223b57f5e353c34168df880bcfc25cd"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\Wizard\\StepTemplateDesign.jsx": {
+    "mtime": 1775616760.9597325,
+    "hash": "c6fba43d62299fdc5ddae7c88872c7e4"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\Wizard\\StepTracking.jsx": {
+    "mtime": 1774580961.1039624,
+    "hash": "314f89a3e8c6df3fa205d66b5cf4b374"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\Wizard\\template-utils.js": {
+    "mtime": 1774413121.0041993,
+    "hash": "d257e70d86460318448d46cf1c6c2404"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\Wizard\\__tests__\\preview-e2e.test.jsx": {
+    "mtime": 1774031095.7837281,
+    "hash": "68426b45a95b0244a88322352f19643e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\Wizard\\__tests__\\step-mapper.test.js": {
+    "mtime": 1774031075.094566,
+    "hash": "eea24d23c181d2581e228199a5086c3c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\Wizard\\__tests__\\wizard-capability.test.jsx": {
+    "mtime": 1774413121.003675,
+    "hash": "425d76fb27a970fe10cc398556048e10"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\Wizard\\__tests__\\wizard-preview-integration.test.jsx": {
+    "mtime": 1774031095.6760776,
+    "hash": "c19de994eb883075f8640a157e7b2140"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\__tests__\\StepReview.test.jsx": {
+    "mtime": 1774031075.1277025,
+    "hash": "7e716e2639ce7507a274c3b769512f48"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\constants\\index.js": {
+    "mtime": 1775372767.6159618,
+    "hash": "84cd1adb6b6c1e280dbe8ebd0b1ec78a"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\constants\\site-fields.js": {
+    "mtime": 1775372767.6159618,
+    "hash": "7b11cce7373fb94eec040b1356ebfee4"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\hooks\\usePreviewDebounce.js": {
+    "mtime": 1774031095.4488266,
+    "hash": "13f86df5e01a2c87664c72404a06bcd7"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\hooks\\usePreviewDebounce.test.js": {
+    "mtime": 1774031095.4488266,
+    "hash": "6601592838bd0a3ee418439296af3833"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\lib\\utils.ts": {
+    "mtime": 1771736470.0,
+    "hash": "e3f848f1b39f863e6164cf58b5a8e752"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\pages\\robots.txt.ts": {
+    "mtime": 1774251088.863735,
+    "hash": "4b136eabc6bf7cba8f2712cfac99e065"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\account-lock.js": {
+    "mtime": 1774580961.1059546,
+    "hash": "96bd73b6739cc081519a92557346d6d5"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\adspower.js": {
+    "mtime": 1774546324.260449,
+    "hash": "e076f2d7477a4c6f52a857a6fd13d42b"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\AntiFingerprint.js": {
+    "mtime": 1774031075.2831328,
+    "hash": "5c4f254aaae93831fbeb65c24f3b4277"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\AntiFingerprint.test.js": {
+    "mtime": 1774031094.8115816,
+    "hash": "8c4730a70b61906b36ad6f078582fc29"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\api.js": {
+    "mtime": 1775616760.9597325,
+    "hash": "0bdb32a146327265a2de4ae3a8a8f68e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\auth.js": {
+    "mtime": 1774580961.1059546,
+    "hash": "89ad64dcc8a08b5ba7bea23a00f05c1d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\cloudflare-dns.js": {
+    "mtime": 1776015509.4532804,
+    "hash": "a0c0bc915d9242f4e415f7970597a4e7"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\cloudflare-zone.js": {
+    "mtime": 1771734350.0,
+    "hash": "de49039f2e7c60f10aa4e1f41a791cbe"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\d1.js": {
+    "mtime": 1774580961.1069622,
+    "hash": "5989046a8739c76c3c587254c7a872a2"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\event-randomization.js": {
+    "mtime": 1774031096.5659304,
+    "hash": "744c1a56f51688b659632d1577ba1758"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\ip-quality-pipeline.js": {
+    "mtime": 1774512550.7469885,
+    "hash": "6e21484bb2c5fad377eaf11d33744e7e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\leadingCards.js": {
+    "mtime": 1773646912.8244092,
+    "hash": "b4d143b441067807b720814b26370ad5"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\lendingcard.js": {
+    "mtime": 1771769918.0,
+    "hash": "c52987528cbc7f53e6a212f6ac990f66"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\multilogin.js": {
+    "mtime": 1774512309.4631765,
+    "hash": "f3e523bdf7bb883e21d186265bd41554"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\neon.js": {
+    "mtime": 1774031074.8404882,
+    "hash": "fd067af4fe6dfe77514d2af690331be5"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\network-randomization.js": {
+    "mtime": 1774031096.2676694,
+    "hash": "23d71b0226dccecdcee9df9dcfb5fe43"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\nodemaven.js": {
+    "mtime": 1774580961.1069622,
+    "hash": "60fdd99c2f261a312882742263c115d1"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\obfuscation-transform.js": {
+    "mtime": 1774031096.3357663,
+    "hash": "d06c19be4cddc8e44fa5bcae5f2b684e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\profile-linker.js": {
+    "mtime": 1774501177.0733845,
+    "hash": "395487e21d57e51cd6c7c742bd2c0ebe"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\proxy-checker.js": {
+    "mtime": 1774501177.0733845,
+    "hash": "34612ddda175937a1142338aa5655e8d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\proxy-preflight.js": {
+    "mtime": 1774501177.0739021,
+    "hash": "16f33f8f888ba79f98131b32a16c87d9"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\proxy-providers.js": {
+    "mtime": 1774512420.9838552,
+    "hash": "edcc5c78fafecfd77faa0357d57cdc6d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\registrar.js": {
+    "mtime": 1771736470.0,
+    "hash": "dda2a17e543fa1a7fdf5a0977dcdcf71"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\sentry.js": {
+    "mtime": 1773385747.1086295,
+    "hash": "0ab5b63694459a90d5f6e543e441e5bf"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\voluum.js": {
+    "mtime": 1774580961.1069622,
+    "hash": "05ca7b933a052c82f075391cd15f0e6e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\quality-check\\QualityChecker.js": {
+    "mtime": 1774031095.064632,
+    "hash": "884026b3f4f6430132817ec6b8edebd0"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\quality-check\\validators\\astro-leak-validator.js": {
+    "mtime": 1774031094.9624796,
+    "hash": "589a08661cc1416cfb86e7257ec2b57c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\quality-check\\validators\\google-ads-validator.js": {
+    "mtime": 1774031094.9624796,
+    "hash": "2ae625d112617c400cd3b725c6256f02"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\quality-check\\validators\\lighthouse-validator.js": {
+    "mtime": 1774031095.0656326,
+    "hash": "ec25acee8b86a6f24040de6d0da8a81e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\quality-check\\validators\\pixel-validator.js": {
+    "mtime": 1774031094.9624796,
+    "hash": "0234162b288894fb839ffab18158c3d5"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\quality-check\\validators\\viewport-validator.js": {
+    "mtime": 1774031094.9624796,
+    "hash": "dda91b07ea8660d432b1d7125a74ae46"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\quality-check\\__tests__\\astro-leak-validator.test.js": {
+    "mtime": 1774031094.96148,
+    "hash": "5521eb0085b271a1710ed4a6833abfad"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\quality-check\\__tests__\\google-ads-validator.test.js": {
+    "mtime": 1774031094.96148,
+    "hash": "d55c7664b40f56a42cd96acbe1ddb145"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\quality-check\\__tests__\\lighthouse-validator.test.js": {
+    "mtime": 1774031095.064632,
+    "hash": "547f3c397940a2cd3def0de38402d17d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\quality-check\\__tests__\\pixel-validator.test.js": {
+    "mtime": 1774031094.96148,
+    "hash": "7dba509cb99a0fd601555afe79821de1"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\quality-check\\__tests__\\quality-check-e2e.test.js": {
+    "mtime": 1774031095.1116323,
+    "hash": "be522a4ffd052af6e7dece2653b6ddea"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\quality-check\\__tests__\\quality-checker.test.js": {
+    "mtime": 1774031094.96148,
+    "hash": "a9fe16c84969db83509f0b8bfa30e31e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\quality-check\\__tests__\\viewport-validator.test.js": {
+    "mtime": 1774031094.9624796,
+    "hash": "7715591c26954248693a11dcc3a91fbc"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\__tests__\\event-randomization.test.js": {
+    "mtime": 1774031096.1800725,
+    "hash": "db8c655ea57ec168b194bf9ad937bbd5"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\__tests__\\network-randomization.test.js": {
+    "mtime": 1774031096.1810725,
+    "hash": "92ac1678c10580dc23eec342589e90a6"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\__tests__\\obfuscation-transform.test.js": {
+    "mtime": 1774031096.1810725,
+    "hash": "a38002c0f8609599fb082f287df51b8c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\services\\__tests__\\proxy-providers-fallback.test.js": {
+    "mtime": 1774501177.0723474,
+    "hash": "c2020698ee5337c84afc11c1fa58ced3"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\api-proxy.js": {
+    "mtime": 1772853393.4510124,
+    "hash": "ef37d4365d9cdac77c7e1b50521f2d12"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\astro-generator.jsx": {
+    "mtime": 1775372767.61998,
+    "hash": "e9c8642a733ba05034a18b40a1aa5f27"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\capability-detector.js": {
+    "mtime": 1774031074.9674733,
+    "hash": "7aa697d9d0dd0d98a6e48967e88d2338"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\capability-resolver.js": {
+    "mtime": 1774031074.9874728,
+    "hash": "750cdc162f7c4afcc6f1200c94a5a7ff"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\contact-gen.js": {
+    "mtime": 1772898962.3842745,
+    "hash": "b6f73999ae206aff17bad222acb7e7f0"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\env-preprocessor.js": {
+    "mtime": 1774031074.9258897,
+    "hash": "0156992d485889b180b4a29bd1b942d9"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\fingerprint-seeder.js": {
+    "mtime": 1774031075.2851336,
+    "hash": "2c0493666aaef197c974aa8ad64467ef"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\fingerprint-seeder.test.js": {
+    "mtime": 1774031094.7930539,
+    "hash": "6b502142452554a0c5fe4e25baa46642"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\html-diff.js": {
+    "mtime": 1774031095.4984322,
+    "hash": "62abdbe49809a2ac4af2db42bbbfa605"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\html-diff.test.js": {
+    "mtime": 1774031095.5244403,
+    "hash": "59826026dbdd338309464b1283116547"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\html-expression-replacer.js": {
+    "mtime": 1774031074.9464736,
+    "hash": "bace95c8bc8d84f3c790006bb7432dd0"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\image-gen.js": {
+    "mtime": 1772855583.6725616,
+    "hash": "6bec4633be447ecb39021840989117c0"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\index.js": {
+    "mtime": 1772568705.6586337,
+    "hash": "cb7b1ee6afab9689fb15133786625974"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\lp-generator.js": {
+    "mtime": 1775372767.6205304,
+    "hash": "d8ebdee7cbdbce95dee0556fd80f6f46"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\manifest-loader.js": {
+    "mtime": 1774031074.9063478,
+    "hash": "a06829374747dc84df586380c582babc"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\phone-gen.js": {
+    "mtime": 1772759882.378178,
+    "hash": "3e46390d0e399cbe6f32cb81a7f0463b"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\risk-engine.js": {
+    "mtime": 1773385747.1091309,
+    "hash": "7b9820e8a3db23205cd2c53529c9f3ba"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\template-analyzer.js": {
+    "mtime": 1774420222.6588516,
+    "hash": "6dd9e8348c6caaaee4380f83fe87bfbd"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\template-normalizer.js": {
+    "mtime": 1774031075.054051,
+    "hash": "edb1378cafff987837cbbbd01a65b1f7"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\template-preview-runtime.js": {
+    "mtime": 1775616760.9607623,
+    "hash": "e30f107854f4272807003e129fcc7581"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\template-registry.js": {
+    "mtime": 1775616760.9617665,
+    "hash": "d110c6258eca9b398d1984a24dc58f96"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\template-router.js": {
+    "mtime": 1775616760.9627662,
+    "hash": "20ccc5706538abf20964fb795f705026"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\template-standard.js": {
+    "mtime": 1773211926.3377266,
+    "hash": "c929663a0cf3b96b5ed93ef19b6afec8"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\template-thumbnail-preview.js": {
+    "mtime": 1774420222.6598907,
+    "hash": "3041bbc04d7558590844517711f3d74d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\wizard-template-capabilities.js": {
+    "mtime": 1774413407.8804822,
+    "hash": "32a17703aa099481665596ade813c8f1"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\deployers\\cf-pages.js": {
+    "mtime": 1775616760.9607623,
+    "hash": "351ba236fd76674bb5e1081eb62ef7c1"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\deployers\\cf-workers.js": {
+    "mtime": 1776015509.4527712,
+    "hash": "2833ad421aa42104a5e7435804e68e4b"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\deployers\\git-push.js": {
+    "mtime": 1774251088.864954,
+    "hash": "5cc63483090cd2465ce1ee8ae8b793fc"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\deployers\\github-actions.js": {
+    "mtime": 1775372767.61998,
+    "hash": "2921f6c956a91e73229e7c579c2541a7"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\deployers\\github-status.js": {
+    "mtime": 1774102437.6698399,
+    "hash": "208f37bd4736028db2625cfc64dea337"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\deployers\\index.js": {
+    "mtime": 1774297068.1865218,
+    "hash": "888d4261e5f0cf5b04524b6141afc13e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\deployers\\netlify.js": {
+    "mtime": 1772584696.2741098,
+    "hash": "154208b0c524c9a36721e4c8d63d5b98"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\deployers\\s3-cloudfront.js": {
+    "mtime": 1774031026.986845,
+    "hash": "16c3f8f2bc2903e24f68c81255204339"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\deployers\\vercel.js": {
+    "mtime": 1771736470.0,
+    "hash": "eee01151a5b3a64fd1682a440e8eff91"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\deployers\\vps-ssh.js": {
+    "mtime": 1771747312.0,
+    "hash": "a43fb8d0c114b1b32269f13637d43fbd"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\__tests__\\alpha-consolidate-monitoring.test.js": {
+    "mtime": 1774031095.876317,
+    "hash": "4a180a722f55f76333ff99e016630448"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\__tests__\\alpha-monitor.test.js": {
+    "mtime": 1774031095.8432474,
+    "hash": "e6ffbdaf8298e683be650469ad7e8211"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\__tests__\\capability-detector.test.js": {
+    "mtime": 1774031074.9664729,
+    "hash": "da5d9a2b9f68df566f586ed502dd525f"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\__tests__\\capability-resolver.test.js": {
+    "mtime": 1774031074.9874728,
+    "hash": "dc1d11479518b391a3450bbd29ba8d54"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\__tests__\\env-injection-integration.test.js": {
+    "mtime": 1774031075.0230503,
+    "hash": "905ad28b7424a43942d80da8cf8da299"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\__tests__\\env-preprocessor.test.js": {
+    "mtime": 1774031074.9258897,
+    "hash": "f984026169ab1c05b429fe048650fe40"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\__tests__\\html-expression-replacer.test.js": {
+    "mtime": 1774031074.9464736,
+    "hash": "cc0a763369f054ac842dc9b8e4e9cfdd"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\__tests__\\manifest-loader.test.js": {
+    "mtime": 1774031074.9063478,
+    "hash": "4a3270cdf6f62a5e7d3e0c77abbf561c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\__tests__\\template-analyzer.test.js": {
+    "mtime": 1774420222.6583426,
+    "hash": "c822db81870ac75cadf016bd912a7b84"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\__tests__\\template-normalizer.test.js": {
+    "mtime": 1774031075.05305,
+    "hash": "95305789d3c4e1a7c907e0b494566bbd"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\__tests__\\template-preview-runtime.test.js": {
+    "mtime": 1774031075.2476556,
+    "hash": "28b4c18d3d092785d781e885488758de"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\__tests__\\template-registry.test.js": {
+    "mtime": 1773385746.9651937,
+    "hash": "26e0cfb49b749fc14f335e6da9979b7f"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\__tests__\\template-router.integration.test.js": {
+    "mtime": 1772568690.5500112,
+    "hash": "b47b7041adcb799431ab134e1eab63cf"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\__tests__\\wizard-template-capabilities.test.js": {
+    "mtime": 1774413407.879965,
+    "hash": "3d1e2dfe461d65ca9d0a3a7f61f82359"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\__tests__\\build-pipeline.test.js": {
+    "mtime": 1774031075.282133,
+    "hash": "75941b1559123437f9fa79b3bd666567"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\__tests__\\class-name-transform.test.js": {
+    "mtime": 1778500696.1623046,
+    "hash": "13648c0916de7d680cfef47b0cb8a9cd"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\__tests__\\determinism-verification.test.js": {
+    "mtime": 1774031094.8442514,
+    "hash": "26eedf3e7ed54edd6d3e68a360fb4a72"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\__tests__\\determinism.test.js": {
+    "mtime": 1774031075.282133,
+    "hash": "7a3cf8fe057f6bfdb20277e2d9b2b622"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\__tests__\\dom-attribute-transform.test.js": {
+    "mtime": 1774251088.8587253,
+    "hash": "7df624ca3370856edf9debf411cf59e7"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\__tests__\\format-isolation.test.js": {
+    "mtime": 1774031095.1899655,
+    "hash": "9e04c9b9ef2531d70945bc9fcd3fc304"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\__tests__\\meta-tag-variation.test.js": {
+    "mtime": 1774031095.1713614,
+    "hash": "09675f3b99d53e7d8193f097659ed5e6"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\__tests__\\phase1-regression.test.js": {
+    "mtime": 1774031094.8452506,
+    "hash": "5c48dd5812f42738fcb768bb190d312d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\__tests__\\structural-variation.test.js": {
+    "mtime": 1774031075.2831328,
+    "hash": "f5c745264f319e15bddc2a6fd47120b3"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\__tests__\\integration\\phase1-phase2-compat.test.js": {
+    "mtime": 1774031075.2831328,
+    "hash": "58480dfb1e0c76fa45a60c27854a0af8"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\e2e-wizard-voluum.spec.js": {
+    "mtime": 1773385747.0046923,
+    "hash": "2752e86fb772cff7f8a485233b56e5bc"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\e2e\\global-setup.ts": {
+    "mtime": 1771736470.0,
+    "hash": "37a75c850096dda713ea4d63420e67d8"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\e2e\\suite.spec.ts": {
+    "mtime": 1773032065.608127,
+    "hash": "4abc02e93fdf02f524ff03a7709fb4b9"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\e2e\\deploy\\deploy-flow.spec.ts": {
+    "mtime": 1774297068.1870475,
+    "hash": "baada6ec465225e8b7f463ef7391d438"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\e2e\\fixtures\\fixtures.ts": {
+    "mtime": 1771736470.0,
+    "hash": "0c831a63ad5f12ea3b0d6c5c24b9c67a"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\e2e\\fixtures\\wizard-data.ts": {
+    "mtime": 1773032065.111142,
+    "hash": "113820362dabcb98cff9343eb8319d4a"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\e2e\\ops-center\\ops-center-save.spec.ts": {
+    "mtime": 1771734350.0,
+    "hash": "7cea48bc6587cafca0273cf575ff1b32"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\e2e\\pages\\BasePage.ts": {
+    "mtime": 1774413121.0057483,
+    "hash": "ab7e8a15ed38bb683c8327c886a13729"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\e2e\\pages\\DashboardPage.ts": {
+    "mtime": 1774413121.0057483,
+    "hash": "8b4d531e1d25fa7df23d8e52dfb988dc"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\e2e\\pages\\WizardPage.ts": {
+    "mtime": 1774413121.006271,
+    "hash": "4dc4cd2c1c8b22370270220ee6470a1b"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\e2e\\settings\\settings.spec.ts": {
+    "mtime": 1773032065.5668232,
+    "hash": "07780b22bc04b18fdabbefad20497e3f"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\e2e\\sites\\sites-management.spec.ts": {
+    "mtime": 1773032065.5679622,
+    "hash": "7a8116cb3d76032e5a459ec161e2f1aa"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\e2e\\utils\\test-helpers.ts": {
+    "mtime": 1774413121.006271,
+    "hash": "fc1b5acaf636a6391fda3e6416d463e6"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\e2e\\wizard\\wizard-basic.spec.ts": {
+    "mtime": 1774413121.00689,
+    "hash": "7accb4e4bc38beb508582f0a1193e18c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\e2e\\wizard\\wizard-complete.spec.ts": {
+    "mtime": 1774413121.00689,
+    "hash": "5d68d44daf0328af2683acec6a99fb3a"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\e2e\\wizard\\wizard-flow.spec.ts": {
+    "mtime": 1774413121.0074155,
+    "hash": "f505d557b861f0582777c9caa5a2471f"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\e2e\\wizard\\wizard-tracking.spec.ts": {
+    "mtime": 1773032065.2698147,
+    "hash": "09602b69cfc9b8a38f51ce266152c9a0"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\fixtures\\api-mocks.ts": {
+    "mtime": 1771734350.0,
+    "hash": "b9737e3a7e4058154e0dc3773c20e343"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\pages\\OpsCenterPage.ts": {
+    "mtime": 1771734350.0,
+    "hash": "5090fb6886aa9721f5218d0b70136974"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\unit\\setup.ts": {
+    "mtime": 1771734350.0,
+    "hash": "444c5aedff06dd66c45efceaec1de235"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\unit\\test-utils.tsx": {
+    "mtime": 1771734350.0,
+    "hash": "41fa3966d405a0bba6216c4839885ee0"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\unit\\lander\\tracking-observability.spec.ts": {
+    "mtime": 1774031027.0008495,
+    "hash": "f57d90957ab5c6113f1db089fff771c3"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\unit\\scripts\\astro-shell-resolve.spec.ts": {
+    "mtime": 1774501177.0926301,
+    "hash": "ef9575eca0ac0d2762924073968b0f57"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\unit\\scripts\\db-template-validate.spec.ts": {
+    "mtime": 1774501177.0926301,
+    "hash": "48cc72e17e0ce0c9d1b4eb7c4e11f744"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\unit\\utils\\deployers.spec.ts": {
+    "mtime": 1774297068.1875706,
+    "hash": "b37b46952d8a7815d15d96e05e4db576"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\unit\\utils\\functions.spec.ts": {
+    "mtime": 1771734350.0,
+    "hash": "0018c1922dc804d64f15e2cd1abbb9c4"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\unit\\utils\\index.spec.ts": {
+    "mtime": 1771734350.0,
+    "hash": "122c8e3369b0e757780aefa0bd7134ce"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\unit\\workers\\api-worker-pixel.spec.ts": {
+    "mtime": 1778505671.7892883,
+    "hash": "fbbe9dbdf5b66a03d1d58d27f0c8abb4"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\unit\\workers\\api-worker-postback.spec.ts": {
+    "mtime": 1778505671.7892883,
+    "hash": "598c4697266cf74cf2e6268c73842ed7"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\unit\\workers\\callback-idempotency.spec.ts": {
+    "mtime": 1774031027.0008495,
+    "hash": "e42bda016b79e36643394c27a896e450"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\unit\\workers\\callback-observability.spec.ts": {
+    "mtime": 1774031027.0008495,
+    "hash": "eba08f597ac5ed0ee1a0ee08129b50ea"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\unit\\workers\\callback-security.spec.ts": {
+    "mtime": 1774031027.0008495,
+    "hash": "a94d5cee1aef4c7c20fabf4b7de7ebde"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\unit\\workers\\performance-delay-free.spec.ts": {
+    "mtime": 1774031027.0008495,
+    "hash": "4665da9c6fb574e1e24702138d10f796"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\unit\\workers\\pixel-security.spec.ts": {
+    "mtime": 1774031027.0008495,
+    "hash": "cc9c3ed3b7bdd06ef4a36f0f10134cb7"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\unit\\workers\\worker-observability.spec.ts": {
+    "mtime": 1774031027.0008495,
+    "hash": "e7b21bf3156dbdf4667164464410d0fa"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\utils\\api-proxy.js": {
+    "mtime": 1771830154.0,
+    "hash": "3b40712082dbf4b4fe3604423dde2c3c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\utils\\astro-generator.jsx": {
+    "mtime": 1774194869.055005,
+    "hash": "6d593c4b28024b789f2c1c15ef0c04b7"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\utils\\image-gen.js": {
+    "mtime": 1771895594.0,
+    "hash": "76379a96f4f98de15857c21950dad308"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\utils\\index.js": {
+    "mtime": 1771915616.0,
+    "hash": "9ecb7a6e0d54783e22e45371b8304678"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\utils\\lp-generator.js": {
+    "mtime": 1774031027.0018494,
+    "hash": "183e3c20e5de3b35a43ca0657ff24a22"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\utils\\risk-engine.js": {
+    "mtime": 1771830154.0,
+    "hash": "b48e584d301dd67244ecc3828b7e5db9"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\utils\\template-analyzer.js": {
+    "mtime": 1774031075.2486556,
+    "hash": "8e3ac885deb96f84ad2a19e9b250aec7"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\utils\\template-db-loader.js": {
+    "mtime": 1773445956.5486822,
+    "hash": "4c36f4c07b793c3b1d3fa68e49581b07"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\utils\\template-preview-runtime.js": {
+    "mtime": 1774031075.2496557,
+    "hash": "aa784c27a282809789c669709f1663cb"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\utils\\template-registry.js": {
+    "mtime": 1774031075.2496557,
+    "hash": "ef9253a6dfc3c1ea6667894a54773a91"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\utils\\template-router.js": {
+    "mtime": 1774031075.2496557,
+    "hash": "606c361ef33b1784cf9426dc430f40d3"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\utils\\deployers\\cf-pages.js": {
+    "mtime": 1771736470.0,
+    "hash": "2aa258a3ac4e2a5cf2945267d8cefd66"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\utils\\deployers\\cf-workers.js": {
+    "mtime": 1771931194.0,
+    "hash": "f3877068017fcfe49811b22121f5a3d6"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\utils\\deployers\\git-push.js": {
+    "mtime": 1774251088.8936095,
+    "hash": "5cc63483090cd2465ce1ee8ae8b793fc"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\utils\\deployers\\github-actions.js": {
+    "mtime": 1775372744.7701297,
+    "hash": "5db5c2c210c4c298efc8cd82b33e283a"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\utils\\deployers\\index.js": {
+    "mtime": 1774297068.1880918,
+    "hash": "888d4261e5f0cf5b04524b6141afc13e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\utils\\deployers\\netlify.js": {
+    "mtime": 1771736470.0,
+    "hash": "62faf88d9d56b3a5cdd618bd2424f9c3"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\utils\\deployers\\s3-cloudfront.js": {
+    "mtime": 1771747184.0,
+    "hash": "4d612b0f1bb8a68b3ffbdd14967c5a06"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\utils\\deployers\\vercel.js": {
+    "mtime": 1771736470.0,
+    "hash": "eee01151a5b3a64fd1682a440e8eff91"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\utils\\deployers\\vps-ssh.js": {
+    "mtime": 1771747312.0,
+    "hash": "a43fb8d0c114b1b32269f13637d43fbd"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\utils\\__tests__\\template-registry.test.js": {
+    "mtime": 1771736470.0,
+    "hash": "59e76a5413cc6ff50652d4449a6ada2f"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\utils\\__tests__\\template-router.integration.test.js": {
+    "mtime": 1771758910.0,
+    "hash": "b47b7041adcb799431ab134e1eab63cf"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\AGENTS.md": {
+    "mtime": 1778897705.2374074,
+    "hash": "f83552acd9c42e59a1cb070c74effee7"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\astro_check.txt": {
+    "mtime": 1771873512.0,
+    "hash": "805a076470f34e7535b73d41655e3731"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\astro_check_v2.txt": {
+    "mtime": 1771874546.0,
+    "hash": "4c681e04835db5d134df611ff551747c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\astro_check_v3.txt": {
+    "mtime": 1771874890.0,
+    "hash": "04d32a64e8c769639764992149905628"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\BUG_FIX_SUMMARY.md": {
+    "mtime": 1771893588.0,
+    "hash": "174cd46e167bd2c01d5d10c360af9e3d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\CHANGELOG.md": {
+    "mtime": 1778505590.5629363,
+    "hash": "f5b63b7628f9bb63d7a5d7286f89ae93"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\CLAUDE.md": {
+    "mtime": 1778903932.9892402,
+    "hash": "6fea7af1e70010fbfe82e24b1b048376"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\DEPLOY-FIX-SUMMARY.md": {
+    "mtime": 1778505671.6737597,
+    "hash": "32a99ea843ff377bd498da5dee795a51"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\DEPLOYMENT_SUMMARY.md": {
+    "mtime": 1773008372.896553,
+    "hash": "3ac85d0be9ba22153d638e2117aa5dc2"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\deploy_output.txt": {
+    "mtime": 1771744144.0,
+    "hash": "db0b608eba06c9ad9b10c1294b14006f"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\deploy_output_v2.txt": {
+    "mtime": 1778505671.692757,
+    "hash": "1893525de85529f93cf0244468193b4c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\DEPLOY_PAGES.md": {
+    "mtime": 1771987690.0,
+    "hash": "0299b8fb938ce16499b5f15354186902"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\deploy_proxy_v2.txt": {
+    "mtime": 1771744064.0,
+    "hash": "3eb08ebd981006520dde154ed567a724"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\gen-lp.md": {
+    "mtime": 1771830154.0,
+    "hash": "6456ce6e27add34b4f8e4a44c8bcd674"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\HERMES_FBIS_AUDIT.txt": {
+    "mtime": 1778903874.1341414,
+    "hash": "29d2c86d5572a731a2e1aa6a1ea54ec0"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\IMPLEMENTATION_PLAN.md": {
+    "mtime": 1778505671.6747582,
+    "hash": "160d26aa98eeb074af84706bd069d96f"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\INFRASTRUCTURE_SETUP.md": {
+    "mtime": 1774580961.0938747,
+    "hash": "2571975f78c52649326c943ed7786a3e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\mockup-step3.html": {
+    "mtime": 1774616458.510673,
+    "hash": "747308607a5cbd9726edc00e8aee2592"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\PRODUCTION_READY.md": {
+    "mtime": 1778505671.6747582,
+    "hash": "5185a60559319107f0693ab9604251d6"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\PRODUCTION_STATUS.md": {
+    "mtime": 1778505671.6747582,
+    "hash": "9625193aff7b46d782761f0904ab6254"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\README.md": {
+    "mtime": 1778508389.785199,
+    "hash": "14834c53be81e8ba1db746d38a434cd3"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\SECURITY_AUDIT_DEEP.md": {
+    "mtime": 1778505671.6757603,
+    "hash": "fd6b9c50d00f9601d2876c5903d90f5e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\SYSTEM_TEST_REPORT.md": {
+    "mtime": 1773009768.1134624,
+    "hash": "5989f2a46784fc6148689c8c9874c124"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\TEMPLATE-GUIDE.md": {
+    "mtime": 1772980789.224265,
+    "hash": "a98ee8855d07c50518cda13549aab604"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\TEMPLATE-QUICK-REFERENCE.md": {
+    "mtime": 1772980796.5190172,
+    "hash": "e9ceae3bc004b9e0154decc1a7481186"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tmp_check.html": {
+    "mtime": 1772842689.163456,
+    "hash": "08b0b44b41e1d2cdcadffbae1accca5c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\Tracking & Conversion.md": {
+    "mtime": 1774031075.1922169,
+    "hash": "6629bca2f4fc935419835d4e8f1fd34c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\v4_d1_list.txt": {
+    "mtime": 1778505671.7902975,
+    "hash": "43370d7af14a26900fc683166de7215b"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\v5_d1_list.txt": {
+    "mtime": 1771744026.0,
+    "hash": "e316ec7fd1ea94085607dc5c83f1a498"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\verify_output.txt": {
+    "mtime": 1771734350.0,
+    "hash": "4afc46e66acf718de28467211ef73a24"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\README.md": {
+    "mtime": 1771830155.0,
+    "hash": "a1397ae18b3adc4f5be8aa26fb3ad93a"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\api-worker\\docs\\openapi.yaml": {
+    "mtime": 1771830155.0,
+    "hash": "24f3678753c896efaadcbcd7a38f60c5"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\browser-use-api\\requirements.txt": {
+    "mtime": 1778500443.7976408,
+    "hash": "b79ca6e3c4ae868da49352e860aa6d33"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\cf-proxy\\deploy_proxy.txt": {
+    "mtime": 1778505671.685757,
+    "hash": "9a8de807bb0026b85ab40f298e269357"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\fbis-mcp-server\\requirements.txt": {
+    "mtime": 1778903874.1361506,
+    "hash": "811176d241ac2eec3ae073f4d7ab9ac9"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\lander\\dist-test-domain.com\\index.html": {
+    "mtime": 1771736470.0,
+    "hash": "ee19d4f9d976c40d30ac4122d84a5842"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\lander\\dist-test-domain.com\\core\\index.html": {
+    "mtime": 1771736470.0,
+    "hash": "4661ceabccb2d20443d034ad1f692299"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\proxy-gateway\\ops-proxy-gateway\\render.yaml": {
+    "mtime": 1774580961.0969634,
+    "hash": "375c5caa14efc28a50e4b26ccb285b9e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\worker\\deploy_worker.txt": {
+    "mtime": 1778505671.685757,
+    "hash": "293d7acbd0b80e078980621b881ea826"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\worker\\deploy_worker_v10.txt": {
+    "mtime": 1778505671.6867568,
+    "hash": "4273911c39d2247555b8277a731fc39d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\worker\\deploy_worker_v2.txt": {
+    "mtime": 1778505671.6867568,
+    "hash": "4e01d1ebd0120b425e6c29b24b483dc6"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\worker\\deploy_worker_v3.txt": {
+    "mtime": 1778505671.6867568,
+    "hash": "80440ed6d6ce16354ae49322ff60305e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\worker\\deploy_worker_v4.txt": {
+    "mtime": 1771744307.0,
+    "hash": "c5a75cd25e49d6be7d96acc9067d47fa"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\worker\\deploy_worker_v5.txt": {
+    "mtime": 1771743544.0,
+    "hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\worker\\deploy_worker_v6.txt": {
+    "mtime": 1778505671.6867568,
+    "hash": "2201fbeaf3a42dd72d27c12921cb7bc4"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\worker\\deploy_worker_v7.txt": {
+    "mtime": 1778505671.6867568,
+    "hash": "fbc3438c1783b114aa60cb0185b2a69a"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\worker\\deploy_worker_v8.txt": {
+    "mtime": 1778505671.687757,
+    "hash": "500c147653f21be844fabb40dbf5435f"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\worker\\deploy_worker_v9.txt": {
+    "mtime": 1778505671.687757,
+    "hash": "acb56d83fe4eebc422d67490655a38cd"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\apps\\worker\\worker_d1_list.txt": {
+    "mtime": 1771760735.0,
+    "hash": "8962b128f4edd0b161c4b203e5f61cf1"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\bolt-template-monitoring.md": {
+    "mtime": 1773446476.3303216,
+    "hash": "8c489726e39abe767f6a0e978e3b0935"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\bolt-windsurf-link-setup.md": {
+    "mtime": 1773385747.026715,
+    "hash": "c4fae1c69723aa5388f2793ab7e2722c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\CONTRIBUTING.md": {
+    "mtime": 1778508389.7861996,
+    "hash": "2c662de7272a2f67b8a77e736f7ab0cf"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\DATABASES.md": {
+    "mtime": 1778508389.7861996,
+    "hash": "9db183d94141a16eaf2e7c49fbe1f6d4"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\employee-access-plan.md": {
+    "mtime": 1773211926.3303354,
+    "hash": "ca28d7d02aafb4070e3f5f0f3053fbe1"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\FBIS-MONITORING-2026-05-16.md": {
+    "mtime": 1778902375.7247992,
+    "hash": "d09be1f8da854455ad9776603909209d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\FBIS-MONITORING-CHECKLIST.md": {
+    "mtime": 1778903763.791437,
+    "hash": "46b2f91374243b447de4bd9086ffdad1"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\FBIS-PHASE-3-SUMMARY.md": {
+    "mtime": 1778903763.7944372,
+    "hash": "8427ee8afc0eb8ad1ea9d28b2d0aaf1b"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\FBIS-QUICK-START.md": {
+    "mtime": 1778903763.7964377,
+    "hash": "f81595b5f0698ea9ce23fb238be19472"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\FBIS-RISK-WEIGHT-ANALYSIS.md": {
+    "mtime": 1778903763.8094683,
+    "hash": "cdead77b160bfe1233d9f611b4e38bb6"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\FBIS-TEST-REPORT.md": {
+    "mtime": 1778903763.8114674,
+    "hash": "5f3a504f9227fa82735beeba863a4a97"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\gen-template-verification-report.md": {
+    "mtime": 1771907660.0,
+    "hash": "471df7c6ff976a476c53c96962814660"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\GETTING-STARTED.md": {
+    "mtime": 1778508389.7861996,
+    "hash": "b42ce65abaede835a73da9fab40b17b4"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\MCP-IMPORT-GUIDE.md": {
+    "mtime": 1774102437.6635604,
+    "hash": "06e7b42bf2600958c6372933050b2f5e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\mcp-online-template-flow.md": {
+    "mtime": 1773385746.8974216,
+    "hash": "1e2d659c482a77272c9a96622bea0b71"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\Module2-Tracking-Implementation-Guide.md": {
+    "mtime": 1771830154.0,
+    "hash": "ab5e4429dced73f643b2c3c4afb85fb3"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\ONLINE_VITE_TO_ASTRO_CONVERSION.md": {
+    "mtime": 1774031026.9768445,
+    "hash": "8590a88e5367959fc2d186d26a21b8d6"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\openclaw-lp-factory-manual.md": {
+    "mtime": 1774501177.0613892,
+    "hash": "5b761717cf0ddb159eaf26001a1198d6"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\paid-component-normalization-spec.md": {
+    "mtime": 1772811542.4886825,
+    "hash": "7d58705a55d331eb9c57e0b2c2ccfedc"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\paid-fast-track-rollout-playbook.md": {
+    "mtime": 1772811542.4896834,
+    "hash": "3fb7cd8db48f20177a8249786c975614"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\proxy.md": {
+    "mtime": 1774501177.061911,
+    "hash": "d685b91604eaced2a93173b1e26c2eae"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\template-import-best-practices.md": {
+    "mtime": 1773523239.3644383,
+    "hash": "79bb60bff31f5dade0f3f4a893bdc218"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\TEMPLATE-PROMPT.md": {
+    "mtime": 1774251088.8499806,
+    "hash": "74fa29c6e2a2a4b188d46ef9124b565e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\template-system-flow.md": {
+    "mtime": 1772857024.4977028,
+    "hash": "ea37071dda73e747cc892ff111fd4338"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\template-worker-deploy-checklist.md": {
+    "mtime": 1772811542.4846828,
+    "hash": "3a9bd858a8623dfe343336003b55b061"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\Tracking_Conversion.md": {
+    "mtime": 1772575833.8388886,
+    "hash": "b60d25d7a19092387c48e4cff7f11230"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\voluum-tracking-template.md": {
+    "mtime": 1772165654.0,
+    "hash": "71d1a7426bf29b22b3f68e8dfe8e4491"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\\u0e04\u0e39\u0e48\u0e21\u0e37\u0e2d\u0e01\u0e32\u0e23\u0e43\u0e0a\u0e49\u0e07\u0e32\u0e19-FusionOps.md": {
+    "mtime": 1773211926.3303354,
+    "hash": "c1f413ad6969b36863861fc49dc382a3"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\CODEMAPS\\backend.md": {
+    "mtime": 1771734348.0,
+    "hash": "c5539f09189f4a22dbf88253358a755b"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\CODEMAPS\\data.md": {
+    "mtime": 1771734348.0,
+    "hash": "e815f23bc4704149fe2ffd23ba837b3d"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\CODEMAPS\\frontend.md": {
+    "mtime": 1771734348.0,
+    "hash": "9ee6dd56a5f7c6d31176d1ec52e5d71e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\CODEMAPS\\INDEX.md": {
+    "mtime": 1771830154.0,
+    "hash": "7317cb48cbf2fc0d7a71a806eed178c8"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\CODEMAPS\\integrations.md": {
+    "mtime": 1771830154.0,
+    "hash": "b060ae1fd76e5ef1eb639108803524f6"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\superpowers\\plans\\2026-05-08-google-ads-os-phase1-fbis.md": {
+    "mtime": 1778196606.1751766,
+    "hash": "988130caae0823db355562679cf9227a"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\docs\\superpowers\\specs\\2026-05-08-google-ads-os-prd.md": {
+    "mtime": 1778196279.8712034,
+    "hash": "f66fc7349c56a71fe5c35db431f8abfa"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\bearloannow-repo-specific.md": {
+    "mtime": 1773385747.0272143,
+    "hash": "d9745adaa86d02f92c4238bb4f37e4d8"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\bolt-prompts-collection.html": {
+    "mtime": 1773385747.0277143,
+    "hash": "a9f59aa098a75eeae93f0ce25c5535be"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\complete-workflow-guide.md": {
+    "mtime": 1773385747.0277143,
+    "hash": "04d647276aec78779ed370fc4c384e72"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\deploy-sites.yml": {
+    "mtime": 1771747312.0,
+    "hash": "2f2c93da688d9dd6a6d544da17411448"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\pre-import-checklist-prompt.md": {
+    "mtime": 1773385747.0282135,
+    "hash": "f91ba46dc1fd0b133954dea9bb01a295"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\preview-ruby-loanbridge.html": {
+    "mtime": 1770342122.0,
+    "hash": "3007214f5e010b8de5a4c2eaa8010450"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\Project_Fortified_Google_Ads_Summary.md": {
+    "mtime": 1777660683.9859817,
+    "hash": "d6cb8a64222634fb90a0731def5c2404"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\Spend Dashboard v2 \u2014 Full Accounting.md": {
+    "mtime": 1771799838.0,
+    "hash": "94b9d01f1d91126cd7d139bf2758b9e4"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\template-validation-prompt.md": {
+    "mtime": 1773385747.0282135,
+    "hash": "775b51ae020d0fc9b89217f49ac9c4e5"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\template.txt": {
+    "mtime": 1775372767.6143491,
+    "hash": "19f57671a4c1425b8bb237d9e84ffe89"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\tracking-validation-prompt.md": {
+    "mtime": 1773385747.0287132,
+    "hash": "1e1deb2ef233ae5fbe9e49d97a526445"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\gen\\lpops.html": {
+    "mtime": 1770345626.0,
+    "hash": "c6573a01c2d685596f4b5f9b6686cb1f"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\0_deploy (c00f0f47b7ce4d47).txt": {
+    "mtime": 1771747312.0,
+    "hash": "74b2e3901ab14f7630727c974574a8cf"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\1_validate-manifest (c00f0f47b7ce4d47).txt": {
+    "mtime": 1771736470.0,
+    "hash": "2a08eb0d3302cdb77ba9755ac5a9b05e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\2_detect-sites.txt": {
+    "mtime": 1771736470.0,
+    "hash": "d4cde3c0059839c8cb4ca2a3e197b903"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\deploy (c00f0f47b7ce4d47)\\10_Summary.txt": {
+    "mtime": 1771736470.0,
+    "hash": "bca024401f84c46ca141c1d362fb2377"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\deploy (c00f0f47b7ce4d47)\\11_Callback deployment status to API.txt": {
+    "mtime": 1771747312.0,
+    "hash": "3b2ae985e4e9afad4f3c4da963e5ff5a"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\deploy (c00f0f47b7ce4d47)\\1_Set up job.txt": {
+    "mtime": 1771736470.0,
+    "hash": "2a1515b9cb5e07b94529b49646b8ed32"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\deploy (c00f0f47b7ce4d47)\\21_Post Setup Node.txt": {
+    "mtime": 1771736470.0,
+    "hash": "702fbca1634a5069f46fbba30a1b2af0"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\deploy (c00f0f47b7ce4d47)\\22_Post Run actions_checkout@v4.txt": {
+    "mtime": 1771736470.0,
+    "hash": "872138b9168f3de0767bcda1814ff86f"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\deploy (c00f0f47b7ce4d47)\\23_Complete job.txt": {
+    "mtime": 1771736470.0,
+    "hash": "8ca0dd54ecc145e89b2e78ea20dbb4d6"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\deploy (c00f0f47b7ce4d47)\\2_Run actions_checkout@v4.txt": {
+    "mtime": 1771736470.0,
+    "hash": "3019130dc19554aec7844b63e7ef52c6"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\deploy (c00f0f47b7ce4d47)\\3_Parse targets.txt": {
+    "mtime": 1771736470.0,
+    "hash": "520bf9e0c09d1705d6b473b50547d303"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\deploy (c00f0f47b7ce4d47)\\4_Parse callback metadata.txt": {
+    "mtime": 1771736470.0,
+    "hash": "43c708be03d12f9e2b422ba2bfd05407"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\deploy (c00f0f47b7ce4d47)\\5_Setup Node.txt": {
+    "mtime": 1771736470.0,
+    "hash": "0358878d2fd48aa5a6ff4405d0fb5737"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\deploy (c00f0f47b7ce4d47)\\6_Install deploy CLIs.txt": {
+    "mtime": 1771736470.0,
+    "hash": "180bca49316564fa88231d99fd87a501"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\deploy (c00f0f47b7ce4d47)\\system.txt": {
+    "mtime": 1771736470.0,
+    "hash": "85451490275f777c15f43d32d3247e91"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\detect-sites\\1_Set up job.txt": {
+    "mtime": 1771736470.0,
+    "hash": "c42a29db9a8e7c379ea76d381eadd715"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\detect-sites\\2_Checkout.txt": {
+    "mtime": 1771736470.0,
+    "hash": "532122924d0a7dc50ea76d793ed0004f"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\detect-sites\\3_Detect changed site folders.txt": {
+    "mtime": 1771736470.0,
+    "hash": "65faf6641aea86f8b2fbf5f023cdb11f"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\detect-sites\\6_Post Checkout.txt": {
+    "mtime": 1771736470.0,
+    "hash": "cdfb6215fe5a23057e1e22cd7e726019"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\detect-sites\\7_Complete job.txt": {
+    "mtime": 1771736470.0,
+    "hash": "347b5e3d880638d46308c10b5ec224bd"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\detect-sites\\system.txt": {
+    "mtime": 1771736470.0,
+    "hash": "7a35600f721afd662ec6436af6309eff"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\validate-manifest (c00f0f47b7ce4d47)\\11_Post Run actions_setup-node@v4.txt": {
+    "mtime": 1771736470.0,
+    "hash": "f9fbc7d88029cf1cb3b387eaf6434723"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\validate-manifest (c00f0f47b7ce4d47)\\12_Post Run actions_checkout@v4.txt": {
+    "mtime": 1771736470.0,
+    "hash": "7b014bbbe7c979fc6772329f4b7434e6"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\validate-manifest (c00f0f47b7ce4d47)\\13_Complete job.txt": {
+    "mtime": 1771736470.0,
+    "hash": "c4246c3081736c6b277a391a34620bef"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\validate-manifest (c00f0f47b7ce4d47)\\1_Set up job.txt": {
+    "mtime": 1771736470.0,
+    "hash": "1bbe90d152acea19c448a1c46e3f09c4"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\validate-manifest (c00f0f47b7ce4d47)\\2_Run actions_checkout@v4.txt": {
+    "mtime": 1771736470.0,
+    "hash": "a037c5af0a2b54a20e4c999b955feaeb"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\validate-manifest (c00f0f47b7ce4d47)\\3_Run actions_setup-node@v4.txt": {
+    "mtime": 1771736470.0,
+    "hash": "ee794ab5c238094d4697326e47110500"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\validate-manifest (c00f0f47b7ce4d47)\\4_Install schema validator.txt": {
+    "mtime": 1771736470.0,
+    "hash": "ac6d46e07ece167eace61e3dbfcdea03"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\validate-manifest (c00f0f47b7ce4d47)\\5_Validate deploy manifest.txt": {
+    "mtime": 1771736470.0,
+    "hash": "b7d1ef2f07d28229e8708d52c23316ea"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\validate-manifest (c00f0f47b7ce4d47)\\6_Ensure required files exist.txt": {
+    "mtime": 1771736470.0,
+    "hash": "fc8aab096bcb3cbe88d8f2dfa53f8d78"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\files\\logs_58141251928\\validate-manifest (c00f0f47b7ce4d47)\\system.txt": {
+    "mtime": 1771736470.0,
+    "hash": "7bc4a27f36659118c167c6e76728497e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\hermes\\paperclip\\company.yaml": {
+    "mtime": 1778505677.043781,
+    "hash": "7c0135a6cd90ddf8798eafead2a226a4"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\hermes\\skills\\ads-reporter.skill.md": {
+    "mtime": 1778505677.0443137,
+    "hash": "b2c4f8d77a61c444ba2e0c0ec3c19bb3"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\hermes\\skills\\argus.skill.md": {
+    "mtime": 1778505677.0443137,
+    "hash": "8e05a9118ef43f0b4a6ffb2e90ec5cf9"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\hermes\\skills\\browser-login.skill.md": {
+    "mtime": 1778500117.4532273,
+    "hash": "1ed06b57eca387fb63961d87346685fb"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\hermes\\skills\\chrono.skill.md": {
+    "mtime": 1778505677.044836,
+    "hash": "7b60132e1e4ae1d2f4f55c01ae4f3ad6"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\hermes\\skills\\gmail-creator.skill.md": {
+    "mtime": 1778505677.044836,
+    "hash": "b714c112c01bbb33b5cb061be0b20bd7"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\hermes\\skills\\gmail-warmer.skill.md": {
+    "mtime": 1778505677.044836,
+    "hash": "46c4f69d6b259c9349558de6c12a3de9"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\hermes\\skills\\iris.skill.md": {
+    "mtime": 1778604680.8997169,
+    "hash": "57a2376cf2e0c99c4d6d96fd181c2752"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\hermes\\skills\\lifecycle.skill.md": {
+    "mtime": 1778562963.3307357,
+    "hash": "d1e10514147711d0f292efc2f0f5452a"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\hermes\\skills\\lp-builder.skill.md": {
+    "mtime": 1778505677.044836,
+    "hash": "0db0e10c13df096e616e5b80099002a5"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\hermes\\skills\\nexus.skill.md": {
+    "mtime": 1778505677.044836,
+    "hash": "0dbe15bb9fde806ef870c30ce22b3d09"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\hermes\\skills\\verdict.skill.md": {
+    "mtime": 1778903932.9903102,
+    "hash": "cad9de4b0d155eadf0e4ed56f00b5045"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\infra\\docker-compose.yml": {
+    "mtime": 1778903874.1401503,
+    "hash": "d7af50d7bcb8cdc8937ae3561d90fa30"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\infra\\dashclaw\\policies.spec.md": {
+    "mtime": 1778903874.1401503,
+    "hash": "3f0cdc2e91a191b1ea396b036f708f6e"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\infra\\dashclaw\\POLICY-FIXES.md": {
+    "mtime": 1778903874.1401503,
+    "hash": "6e0427d1e8716357cfad9fc72d6f48c3"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\infra\\dashclaw\\POLICY-REGISTRATION-GUIDE.md": {
+    "mtime": 1778903874.1401503,
+    "hash": "5a3367cb885960cd1558c352055b4372"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\infra\\hermes\\config.yaml": {
+    "mtime": 1778903874.1411505,
+    "hash": "3674c3d02185d033f708de2d23c15615"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\infra\\hermes\\SOUL.md": {
+    "mtime": 1778505677.0458393,
+    "hash": "6f3b0ce59410debe3bbe734d1fe909ec"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\openclaw\\README.md": {
+    "mtime": 1774405733.9053464,
+    "hash": "1ee763b9ee5bd76935c6f936b8bb83e1"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\openclaw\\skills\\ads-watchdog\\SKILL.md": {
+    "mtime": 1774102437.6646602,
+    "hash": "1ba6ab00eb201f0fc692701b722e40f7"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\openclaw\\skills\\cf-cleanup\\SKILL.md": {
+    "mtime": 1774102437.6646602,
+    "hash": "2af7e863a1967eb54101e7741773b48b"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\openclaw\\skills\\deploy-monitor\\SKILL.md": {
+    "mtime": 1774102437.6651795,
+    "hash": "d6d5bffb02142673b41864bdd1095b93"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\openclaw\\skills\\domain-health\\SKILL.md": {
+    "mtime": 1774102437.6651795,
+    "hash": "5b70baf9a4835b807f49dee2aaf23b3c"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\openclaw\\skills\\lp-ci-local-triage\\SKILL.md": {
+    "mtime": 1774405733.9053464,
+    "hash": "7a65b27968c2872f172c4085e7a7959a"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\openclaw\\skills\\lp-dev-session-delegate\\SKILL.md": {
+    "mtime": 1774405733.9058673,
+    "hash": "47c34e6fe99c1033d0af49aaea003a52"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\openclaw\\skills\\lp-github-workflow-triage\\SKILL.md": {
+    "mtime": 1774405733.9063935,
+    "hash": "6065219fac4746aea27b1b3cba7cd62b"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\openclaw\\skills\\lp-live-tracking-verify\\SKILL.md": {
+    "mtime": 1774405733.9063935,
+    "hash": "93a5d4b63acec0b3d20c46912ca163b8"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\openclaw\\skills\\lp-ops-daily-brief\\SKILL.md": {
+    "mtime": 1774405733.9069188,
+    "hash": "c5ee33a32435960081d32920e6fef310"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\openclaw\\skills\\lp-planning-runbook\\SKILL.md": {
+    "mtime": 1774405733.9074442,
+    "hash": "bc9bdfc06a5afcbc7e606409db6fabfd"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\openclaw\\skills\\lp-template-pipeline\\SKILL.md": {
+    "mtime": 1774405733.9079626,
+    "hash": "a860e4bdacdcf63a607c4c50d22d81e1"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\openclaw\\skills\\quality-gate-reporter\\SKILL.md": {
+    "mtime": 1774102437.6651795,
+    "hash": "ad4a50453bae4959e7805e25028fc370"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\openclaw\\skills\\spend-alert\\SKILL.md": {
+    "mtime": 1774102437.6656885,
+    "hash": "11b58e10487cb321717a3f68de788254"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\openclaw\\skills\\template-scout\\SKILL.md": {
+    "mtime": 1774102437.6662066,
+    "hash": "82f94b7f5d8450eadb62f2c027f63dfb"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\packages\\lp-template-generator\\README.md": {
+    "mtime": 1771830154.0,
+    "hash": "0ddf7ce5d6fd4eff29154308cc54def7"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\new 15.txt": {
+    "mtime": 1774501177.0666645,
+    "hash": "b40d5aa4c9a95cdadb755f16281a9460"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\scripts\\README-TEMPLATES.md": {
+    "mtime": 1771889312.0,
+    "hash": "0ec5ea6181b5e59e7033c957565d49a5"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\template-pages\\README.md": {
+    "mtime": 1775372767.6174707,
+    "hash": "83a9d9fd8e6c308f5c4c23e5217d4d69"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\template-pages\\bolt-loan-pastel-optimized-01\\PATCH-NOTES.md": {
+    "mtime": 1775372767.6174707,
+    "hash": "0b5532aac4f1ce178169e7e4b2c2ffe3"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\e2e\\E2E_TEST_REPORT.md": {
+    "mtime": 1776016508.036195,
+    "hash": "af44b09756581938207920cc0930b077"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\e2e\\FINAL_REPORT.md": {
+    "mtime": 1773276141.6954756,
+    "hash": "21946055688ef01a9808f88e57845851"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\tests\\e2e\\README.md": {
+    "mtime": 1773276141.6954756,
+    "hash": "3ba578fefd60c6e216380cd5d02252d1"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\wiki\\overview.md": {
+    "mtime": 1778505677.0488398,
+    "hash": "1df63dd518bf200b164da4931dc0e308"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\public\\vite.svg": {
+    "mtime": 1771734350.0,
+    "hash": "8e3a10e157f75ada21ab742c022d5430"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\public\\vendor-icons\\adspower-favicon.svg": {
+    "mtime": 1774501177.065589,
+    "hash": "2f12029553556e03f5c06feaca3b5c04"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\assets\\react.svg": {
+    "mtime": 1771734350.0,
+    "hash": "f0402b67b6ce880f65666bb49e841696"
+  }
+}

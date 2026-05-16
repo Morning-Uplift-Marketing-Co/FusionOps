@@ -232,7 +232,17 @@ jobs:
 
       - name: Validate Voluum DNS (pre-deploy)
         run: |
-          DOMAIN=$(node -e "const c=require('./${{ steps.config.outputs.file }}');console.log(c.domain||'')")
+          CONFIG_FILE="${{ steps.config.outputs.file }}"
+          DOMAIN=$(node -e "const c=require('./$CONFIG_FILE');const d=String(c.domain||'').trim().toLowerCase().replace(/^https?:\/\//,'').replace(/^\/\//,'').replace(/[/?#].*$/,'').replace(/\.+$/,'').replace(/^www\./,'');console.log(d)")
+          HAS_VOLUUM=$(node -e "const c=require('./$CONFIG_FILE');const has=Boolean(String(c.voluumDomain||'').trim()||String(c.voluumClickUrl||'').trim()||String(c.voluumId||'').trim());process.stdout.write(has?'1':'')")
+          if [ -z "$HAS_VOLUUM" ]; then
+            echo "Skipping Voluum DNS validation: no Voluum config in $CONFIG_FILE"
+            exit 0
+          fi
+          if [ -z "$DOMAIN" ]; then
+            echo "Skipping Voluum DNS validation: domain missing after normalization"
+            exit 0
+          fi
           echo "Validating DNS for: $DOMAIN"
           node scripts/validate-voluum-dns.mjs --domain "$DOMAIN"
         env:

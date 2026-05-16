@@ -82,6 +82,41 @@ export async function handleAnalysisRoutes(path, method, request, env) {
     return json({ ok: true, data: results });
   }
 
+  // POST /api/analysis/ban-events  — log a new ban
+  if (path === '/api/analysis/ban-events' && method === 'POST') {
+    const authError = denyUnlessTrustedOrBearer(request, url, env);
+    if (authError) return authError;
+
+    const body = await request.json();
+    const { account_id, domain, ban_reason, ban_date,
+            days_active, risk_score_at_ban, notes } = body;
+    if (!account_id) return json({ ok: false, error: 'account_id required' }, 400);
+    if (!ban_reason) return json({ ok: false, error: 'ban_reason required' }, 400);
+    const date = ban_date || new Date().toISOString().slice(0, 10);
+    await db.prepare(Q.WRITE_BAN_EVENT)
+      .bind(
+        uid(), account_id, domain || '', ban_reason, date,
+        days_active ?? null, risk_score_at_ban ?? null, notes || ''
+      )
+      .run();
+    return json({ ok: true });
+  }
+
+  // GET /api/analysis/spend-history/:account_id
+  if (path.startsWith('/api/analysis/spend-history/') && method === 'GET') {
+    const accountId = path.split('/api/analysis/spend-history/')[1];
+    const url = new URL(request.url);
+    const limit = parseInt(url.searchParams.get('limit') || '90', 10);
+    try {
+      const { results } = await db.prepare(Q.GET_SPEND_HISTORY)
+        .bind(accountId, limit)
+        .all();
+      return json({ ok: true, account_id: accountId, data: results });
+    } catch {
+      return json({ ok: true, account_id: accountId, data: [] });
+    }
+  }
+
   // POST /api/analysis/risk-score (FBIS MCP writes risk verdicts)
   if (path === '/api/analysis/risk-score' && method === 'POST') {
     // Require Bearer token authentication (FBIS_API_KEY / API_SECRET)
@@ -100,6 +135,17 @@ export async function handleAnalysisRoutes(path, method, request, env) {
     return json({ ok: true });
   }
 
+  // GET /api/analysis/agent-kpis — latest KPI per agent per metric
+  if (path === '/api/analysis/agent-kpis' && method === 'GET') {
+    const url = new URL(request.url);
+    const agent = url.searchParams.get('agent') || null;
+    const limit = parseInt(url.searchParams.get('limit') || '50', 10);
+    const { results } = await db.prepare(Q.LATEST_AGENT_KPIS)
+      .bind(agent, limit)
+      .all();
+    return json({ ok: true, data: results });
+  }
+
   // POST /api/analysis/agent-kpi (Hermes agents report KPIs)
   if (path === '/api/analysis/agent-kpi' && method === 'POST') {
     // Require Bearer token authentication (FBIS_API_KEY / API_SECRET)
@@ -114,6 +160,62 @@ export async function handleAnalysisRoutes(path, method, request, env) {
             kpi_target ?? 0, kpi_unit ?? '')
       .run();
     return json({ ok: true });
+  }
+
+  // POST /api/analysis/accounts/sync  — from Google Ads Script
+  if (path === '/api/analysis/accounts/sync' && method === 'POST') {
+    const body = await request.json();
+    // Accept single object OR array
+    const rows = Array.isArray(body) ? body : [body];
+    if (rows.length === 0) return json({ ok: false, error: 'empty payload' }, 400);
+    if (rows.length > 200) return json({ ok: false, error: 'max 200 accounts per sync' }, 400);
+
+    let upserted = 0;
+    const errors = [];
+
+    for (const row of rows) {
+      const { account_id, label, email, status, site_domain, spend_30d,
+              spend_24h, daily_budget_total, campaign_count, active_campaign_count } = row;
+      if (!account_id) { errors.push('missing account_id'); continue; }
+
+      // Normalise: strip dashes from Google customer ID (123-456-7890 → 1234567890)
+      const id = String(account_id).replace(/-/g, '');
+
+      try {
+        await db.prepare(Q.UPSERT_ACCOUNT)
+          .bind(
+            id,
+            label   || '',
+            email   || '',
+            status  || 'active',
+            site_domain || '',
+            Math.round(spend_30d ?? 0),
+          )
+          .run();
+
+        // Log spend history (one row per account per day, upsert)
+        if (spend_30d != null || spend_24h != null) {
+          try {
+            await db.prepare(Q.WRITE_SPEND_HISTORY)
+              .bind(
+                uid(), id,
+                spend_24h ?? 0,
+                spend_30d ?? 0,
+                daily_budget_total ?? 0,
+                campaign_count ?? 0,
+                active_campaign_count ?? 0,
+              )
+              .run();
+          } catch { /* spend_history table might not exist yet */ }
+        }
+
+        upserted++;
+      } catch (e) {
+        errors.push(`${id}: ${e.message}`);
+      }
+    }
+
+    return json({ ok: true, upserted, errors });
   }
 
   return null; // not handled

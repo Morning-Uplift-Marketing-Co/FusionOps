@@ -4,5 +4,5 @@
 set -e
 
 echo "=== Starting FBIS nightly analysis $(date) ==="
-hermes "run argus and nexus and iris and chrono in parallel, then run verdict, then update wiki overview"
-echo "=== Analysis complete ==="
+hermes chat -q "run argus and nexus and iris and chrono in parallel, then run verdict, then update wiki overview"
+echo "=== Analysis complete $(date) ==="

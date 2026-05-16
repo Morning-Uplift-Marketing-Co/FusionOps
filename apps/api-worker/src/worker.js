@@ -8,6 +8,7 @@
 // here (or extend an existing handler's route table).
 
 import { handleAnalysisRoutes } from './analysis/routes.js';
+import { handleLifecycleRoutes } from './analysis/lifecycle.js';
 import { corsHeaders, json } from './lib/http.js';
 import { isTrustedOriginRequest } from './lib/auth.js';
 import { getNeonSql, ensureNeonTables } from './lib/neon-sync.js';
@@ -46,6 +47,9 @@ export default {
     // --- FBIS Analysis routes ---
     const analysisResponse = await handleAnalysisRoutes(path, request.method, request, env);
     if (analysisResponse) return analysisResponse;
+    // --- Lifecycle Engine routes ---
+    const lifecycleResponse = await handleLifecycleRoutes(request, env);
+    if (lifecycleResponse) return lifecycleResponse;
     // --- end FBIS ---
     const method = request.method;
     const hostname = url.hostname;
