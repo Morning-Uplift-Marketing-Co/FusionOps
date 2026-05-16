@@ -1,12 +1,14 @@
 import os
 import httpx
 
-API_BASE = os.getenv("FBIS_API_BASE", "").rstrip("/")
-API_KEY = os.getenv("FBIS_API_KEY", "")
+# Env var names match what the Cloudflare Worker expects (API_SECRET → Bearer token)
+API_BASE = os.getenv("FUSIONOPS_API_URL", os.getenv("FBIS_API_BASE", "")).rstrip("/")
+API_KEY = os.getenv("FUSIONOPS_API_KEY", os.getenv("FBIS_API_KEY", ""))
 
 def get_headers() -> dict:
     h = {"Content-Type": "application/json"}
     if API_KEY:
+        # Worker auth guard requires Authorization: Bearer; keep x-api-key for older tools.
         h["Authorization"] = f"Bearer {API_KEY}"
         h["x-api-key"] = API_KEY
     return h

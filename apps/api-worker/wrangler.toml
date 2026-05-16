@@ -100,3 +100,8 @@ bucket_name = "lp-factory-thumbs"
 # If the frontend uses another workers.dev name (e.g. ip-factory.*), set PROXY_RESOLVE_RELAY_URL on THAT worker too — vars are per-worker.
 [vars]
 PROXY_RESOLVE_RELAY_URL = "https://proxy-gateway-hrld.onrender.com"
+
+# API_SECRET for Bearer token validation on /api/analysis/* endpoints (FBIS MCP integration)
+# Set via: wrangler secret put API_SECRET
+# OR in dashboard: Workers → lp-factory-api → Settings → Secrets
+# Value: Same as FBIS_API_KEY (used by fbis-mcp-server)

@@ -1,6 +1,7 @@
 // apps/api-worker/src/analysis/routes.js
 
 import { Q } from './queries.js';
+import { denyUnlessTrustedOrBearer } from '../lib/auth.js';
 
 function uid() {
   return crypto.randomUUID().replace(/-/g, '').slice(0, 12);
@@ -17,6 +18,7 @@ function json(data, status = 200) {
 }
 
 export async function handleAnalysisRoutes(path, method, request, env) {
+  const url = new URL(request.url);
   const db = env.DB;
 
   // GET /api/analysis/accounts
@@ -82,6 +84,9 @@ export async function handleAnalysisRoutes(path, method, request, env) {
 
   // POST /api/analysis/ban-events  — log a new ban
   if (path === '/api/analysis/ban-events' && method === 'POST') {
+    const authError = denyUnlessTrustedOrBearer(request, url, env);
+    if (authError) return authError;
+
     const body = await request.json();
     const { account_id, domain, ban_reason, ban_date,
             days_active, risk_score_at_ban, notes } = body;
@@ -112,8 +117,12 @@ export async function handleAnalysisRoutes(path, method, request, env) {
     }
   }
 
-  // POST /api/analysis/risk-score
+  // POST /api/analysis/risk-score (FBIS MCP writes risk verdicts)
   if (path === '/api/analysis/risk-score' && method === 'POST') {
+    // Require Bearer token authentication (FBIS_API_KEY / API_SECRET)
+    const authError = denyUnlessTrustedOrBearer(request, url, env);
+    if (authError) return authError;
+
     const body = await request.json();
     const { account_id, proxy_risk, isolation_score, traffic_quality,
             timeline_risk, verdict_score, verdict_status } = body;
@@ -137,8 +146,12 @@ export async function handleAnalysisRoutes(path, method, request, env) {
     return json({ ok: true, data: results });
   }
 
-  // POST /api/analysis/agent-kpi
+  // POST /api/analysis/agent-kpi (Hermes agents report KPIs)
   if (path === '/api/analysis/agent-kpi' && method === 'POST') {
+    // Require Bearer token authentication (FBIS_API_KEY / API_SECRET)
+    const authError = denyUnlessTrustedOrBearer(request, url, env);
+    if (authError) return authError;
+
     const body = await request.json();
     const { agent_name, kpi_name, kpi_value, kpi_target, kpi_unit } = body;
     if (!agent_name || !kpi_name) return json({ ok: false, error: 'agent_name and kpi_name required' }, 400);

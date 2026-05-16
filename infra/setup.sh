@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # infra/setup.sh — One-command setup on Hetzner CX22 (Ubuntu 24.04)
 # Run as root: bash setup.sh
-set -e
+# Updated: 2026-05-16 (Phase 6 — DashClaw + ecosystem integration)
+set -euo pipefail
 
-PROJECT_REPO="https://github.com/YOUR_USER/ppc-claude-web-V1.git"  # แก้ตรงนี้
+PROJECT_REPO="https://github.com/YOUR_USER/ppc-claude-web-V1.git"
 PROJECT_DIR="/opt/fusionops"
 
 echo "=== FusionOps Automation Stack Setup ==="
@@ -12,7 +13,7 @@ echo "Server: $(hostname) | $(date)"
 # ─── System packages ────────────────────────────────────────────────────────
 apt-get update -qq
 apt-get install -y -qq git curl wget docker.io docker-compose-v2 \
-  python3 python3-pip python3-venv nodejs npm
+  python3 python3-pip python3-venv nodejs npm jq
 
 # Docker daemon
 systemctl enable --now docker
@@ -24,7 +25,7 @@ fi
 cd "$PROJECT_DIR"
 
 # ─── Install Hermes Agent ─────────────────────────────────────────────────
-echo "Installing Hermes Agent..."
+echo "Installing Hermes Agent v0.13.0+"
 curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash
 
 # ─── Configure Hermes ─────────────────────────────────────────────────────
@@ -32,38 +33,61 @@ mkdir -p ~/.hermes
 cp infra/hermes/config.yaml ~/.hermes/config.yaml
 cp infra/hermes/SOUL.md ~/.hermes/SOUL.md
 
-echo "⚠️  Copy infra/.env.example to infra/.env and fill in secrets first!"
-echo "   Then run: cp infra/.env.example infra/.env && nano infra/.env"
+# Enable disk-cleanup plugin
+hermes plugins enable disk-cleanup
 
-# ─── Docker Compose ───────────────────────────────────────────────────────
+# ─── Phase 5: Ecosystem Plugins ────────────────────────────────────────────
+echo "Setting up Phase 5 ecosystem plugins..."
+
+# Install Caveman compression middleware
+curl -fsSL https://raw.githubusercontent.com/karpathy/caveman/main/install.sh | bash
+
+# Install Graphify dependency visualization
+pip3 install -q graphify
+mkdir -p /opt/fusionops/logs
+nohup python3 -m graphify.serve --port 8767 --dir /opt/fusionops > /opt/fusionops/logs/graphify.log 2>&1 &
+sleep 2
+echo "✅ Graphify MCP server started on http://localhost:8767"
+
+echo ""
+echo "⚠️  REQUIRED: Set environment variables before starting Hermes"
+echo "   Copy infra/.env.example to infra/.env:"
+echo "   cp infra/.env.example infra/.env && nano infra/.env"
+echo ""
+echo "   Required variables:"
+echo "   - TELEGRAM_BOT_TOKEN (for cron alerts)"
+echo "   - TELEGRAM_CHAT_ID"
+echo "   - DASHCLAW_API_KEY (for Phase 4 HITL approval flows)"
+echo "   - MEM0_API_KEY (optional, for memory persistence)"
+echo "   - MC_API_KEY (optional, for mission-control dashboard)"
+
+# ─── Docker Compose — Services ────────────────────────────────────────────────
+# Services: fbis-mcp (8765), dashclaw (3100), browser-mcp (8766), mission-control (3001)
 if [ -f "infra/.env" ]; then
   echo "Starting Docker services..."
   cd infra
   docker compose up -d
-  echo "✅ Services started:"
+  sleep 10
+  echo "✅ Services status:"
   docker compose ps
 else
   echo "⏭️  Skipping Docker start — .env not found"
 fi
 
-# ─── Hermes cron setup ───────────────────────────────────────────────────
-# Add to crontab after hermes is configured
-echo "
-# FusionOps automation schedule
-# 22:00 Bangkok (15:00 UTC) — FBIS nightly
-0 15 * * * cd $PROJECT_DIR && hermes --print 'run FBIS analysis: argus, nexus, iris, chrono, then verdict' >> /var/log/fbis.log 2>&1
-# 08:00 Bangkok (01:00 UTC) — Ads daily report
-0 1 * * * cd $PROJECT_DIR && hermes --print 'run ads-reporter' >> /var/log/ads-report.log 2>&1
-# 09:00 Bangkok (02:00 UTC) — Gmail warming
-0 2 * * * cd $PROJECT_DIR && hermes --print 'run gmail-warmer for all accounts with status warming' >> /var/log/gmail-warm.log 2>&1
-" | crontab -
-
 echo ""
 echo "=== Setup Complete ==="
 echo ""
+echo "Phases deployed:"
+echo "  ✅ Phase 1: Hermes v0.13.0"
+echo "  ✅ Phase 2: Kanban orchestrator"
+echo "  ✅ Phase 3: Health check gates"
+echo "  ✅ Phase 4: DashClaw HITL wiring"
+echo "  ✅ Phase 5: Ecosystem plugins"
+echo "  ✅ Phase 6: Config synced"
+echo ""
 echo "Next steps:"
-echo "  1. Fill in infra/.env"
-echo "  2. Run: hermes setup  (configure OpenRouter + Telegram)"
-echo "  3. Run: docker compose -f infra/docker-compose.yml up -d"
-echo "  4. Open Mission Control: http://$(curl -s ifconfig.me):3001"
-echo "  5. Test: hermes 'run ads-reporter'"
+echo "  1. nano infra/.env  (fill in secrets)"
+echo "  2. docker compose -f infra/docker-compose.yml up -d"
+echo "  3. hermes setup  (configure OpenRouter + Telegram)"
+echo "  4. Login to DashClaw (http://$(hostname -I | awk '{print $1}'):3100) and register policies"
+echo "  5. Test: hermes 'run FBIS analysis'"

@@ -1,29 +1,46 @@
 #!/usr/bin/env python3
 """
 HERMES — FusionOps FBIS Nightly Analysis Runner
+
 Runs standalone on Hetzner server via system cron (no Claude session needed).
 Calls Cloudflare Workers API directly, writes KPIs + risk scores, sends Telegram alert.
+
+v2 (2026-05-16):
+  - Adds Kanban task tracking on board `fbis-nightly` — each agent phase
+    gets a durable task row with success/failure and structured metadata.
+  - Kanban failures are non-fatal (observability layer, not critical path).
 """
 
-import os, sys, json, httpx, datetime
+import os, sys, json, subprocess, httpx, datetime
+from contextlib import contextmanager
 from collections import defaultdict
 
 API   = os.getenv("FBIS_API_BASE", "https://lp-factory-api.misty-feather-556e.workers.dev")
+API_KEY = os.getenv("FUSIONOPS_API_KEY", os.getenv("FBIS_API_KEY", ""))
+API_ORIGIN = os.getenv("FBIS_API_ORIGIN", "https://fusionops-web.pages.dev")
 TG_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TG_CHAT  = os.getenv("TELEGRAM_CHAT_ID", "")
 TODAY    = datetime.date.today().isoformat()
+KANBAN_BOARD = "fbis-nightly"
+KANBAN_ENABLED = os.getenv("HERMES_KANBAN", "1") != "0"
 
 client = httpx.Client(timeout=30)
 
-# ── helpers ──────────────────────────────────────────────────────────────────
+# ── HTTP helpers ─────────────────────────────────────────────────────────────
+
+def headers():
+    h = {"Origin": API_ORIGIN} if API_ORIGIN else {}
+    if not API_KEY:
+        return h
+    return {**h, "Authorization": f"Bearer {API_KEY}"}
 
 def get(path, **params):
-    r = client.get(f"{API}{path}", params=params)
+    r = client.get(f"{API}{path}", params=params, headers=headers())
     r.raise_for_status()
     return r.json()
 
 def post(path, body):
-    r = client.post(f"{API}{path}", json=body)
+    r = client.post(f"{API}{path}", json=body, headers=headers())
     r.raise_for_status()
     return r.json()
 
@@ -44,7 +61,57 @@ def telegram(msg):
         timeout=10,
     )
 
-# ── ARGUS — proxy & IP risk ───────────────────────────────────────────────────
+# ── Kanban tracking (non-fatal observability layer) ──────────────────────────
+
+def _kanban(*args):
+    """Invoke hermes kanban CLI. Returns stdout (str) or None on failure."""
+    if not KANBAN_ENABLED:
+        return None
+    try:
+        r = subprocess.run(
+            ["hermes", "kanban", "--board", KANBAN_BOARD, *args],
+            check=True, capture_output=True, text=True, timeout=15,
+        )
+        return r.stdout.strip()
+    except Exception as e:
+        print(f"  [kanban] non-fatal: {e}")
+        return None
+
+@contextmanager
+def kanban_phase(agent_name, title):
+    """Create a Kanban task; on success, complete with metadata; on failure, comment + leave open for retry visibility."""
+    if not KANBAN_ENABLED:
+        yield None
+        return
+
+    out = _kanban(
+        "create", f"[{agent_name}] {title}",
+        "--body", f"Phase started at {datetime.datetime.utcnow().isoformat()}Z",
+        "--assignee", "default",
+        "--idempotency-key", f"fbis-{TODAY}-{agent_name}",
+        "--max-runtime", "600",
+        "--json",
+    )
+    task_id = None
+    if out:
+        try:
+            task_id = json.loads(out).get("id") or json.loads(out).get("task_id")
+        except Exception:
+            pass
+
+    error = None
+    try:
+        yield task_id
+    except Exception as e:
+        error = e
+        if task_id:
+            _kanban("comment", task_id, f"FAILED: {type(e).__name__}: {e}")
+        raise
+    else:
+        if task_id:
+            _kanban("complete", task_id, "--result", f"{agent_name} OK")
+
+# ── ARGUS — proxy & IP risk ──────────────────────────────────────────────────
 
 def run_argus(accounts):
     print("\n[ARGUS] proxy & IP risk analysis...")
@@ -53,7 +120,6 @@ def run_argus(accounts):
     clean = sum(1 for p in proxies if (p.get("fraud_score") or 0) < 20)
     clean_rate = round(clean / len(proxies) * 100, 1) if proxies else 0
 
-    # /24 subnet collision
     subnet_map = defaultdict(list)
     for a in accounts:
         ip = a.get("proxy_ip") or ""
@@ -70,27 +136,42 @@ def run_argus(accounts):
     kpi("argus", "proxy_pool_size",     len(proxies), 0,  "count")
     return {"clean_rate": clean_rate, "collisions": collisions, "low_trust": low_trust}
 
-# ── NEXUS — traffic quality ───────────────────────────────────────────────────
+# ── NEXUS — traffic quality ──────────────────────────────────────────────────
 
 def run_nexus(accounts):
     print("\n[NEXUS] traffic quality analysis...")
     scores = []
-    for a in accounts[:20]:  # cap at 20 to avoid rate limits
+    analyzed = min(len(accounts), 20)
+    for a in accounts[:analyzed]:
         try:
             d = get(f"/api/analysis/pixel-events/{a.get('site_domain','')}", days=30)
             events = d.get("data", [])
             if events:
-                total = sum(e.get("event_count", 0) for e in events)
-                scores.append(min(100, total))
+                total = sum(e.get("count", 0) for e in events)
+                conversion_events = {
+                    "conversion", "lead", "qualified_lead", "submit",
+                    "application", "application_complete", "purchase",
+                }
+                conversions = sum(
+                    e.get("count", 0)
+                    for e in events
+                    if str(e.get("event", "")).lower() in conversion_events
+                )
+                unique_sessions = sum(e.get("unique_sessions", 0) for e in events)
+                unique_gclids = sum(e.get("unique_gclids", 0) for e in events)
+                gclid_rate = min(100, unique_gclids / max(unique_sessions, 1) * 100)
+                conversion_rate = min(100, conversions / max(total, 1) * 100)
+                quality_score = conversion_rate * 0.5 + gclid_rate * 0.5
+                scores.append(quality_score)
         except Exception:
             pass
 
     avg_quality = round(sum(scores) / len(scores), 1) if scores else 0
     kpi("nexus", "avg_traffic_quality", avg_quality, 70,  "score")
-    kpi("nexus", "accounts_analyzed",   len(accounts), len(accounts), "count")
+    kpi("nexus", "accounts_analyzed",   analyzed, analyzed, "count")
     return {"avg_quality": avg_quality}
 
-# ── IRIS — link health ────────────────────────────────────────────────────────
+# ── IRIS — link health ───────────────────────────────────────────────────────
 
 def run_iris(accounts):
     print("\n[IRIS] link health analysis...")
@@ -119,36 +200,48 @@ def run_chrono(accounts):
     bans = get("/api/analysis/ban-events", days=30).get("data", [])
 
     ban_count = len(bans)
-    # accounts with ban in last 30d
-    banned_ids = set(b.get("account_id") for b in bans)
+    banned_ids = {b.get("account_id") for b in bans}
     at_risk = len([a for a in accounts if a.get("id") in banned_ids])
+
+    days_to_ban = []
+    for b in bans:
+        ban_date = b.get("ban_date") or TODAY
+        days_ago = (datetime.date.today() - datetime.date.fromisoformat(ban_date[:10])).days
+        if 0 < days_ago <= 90:
+            days_to_ban.append(days_ago)
+
+    avg_days_to_ban = round(sum(days_to_ban) / len(days_to_ban), 1) if days_to_ban else 90
 
     kpi("chrono", "ban_rate_30d",              ban_count, 0, "count")
     kpi("chrono", "accounts_at_timeline_risk", at_risk,   0, "count")
-    return {"bans": ban_count, "at_risk": at_risk}
+    kpi("chrono", "avg_days_to_ban",          avg_days_to_ban, 30, "days")
+    return {"bans": ban_count, "at_risk": at_risk, "days_to_ban": avg_days_to_ban}
 
-# ── VERDICT — aggregate risk score ──────────────────────────────────────────
+# ── VERDICT — aggregate risk score ───────────────────────────────────────────
 
 def run_verdict(accounts, argus, nexus, iris, chrono):
     print("\n[VERDICT] computing risk scores...")
     critical, at_risk, watch_count, healthy_count = 0, 0, 0, 0
+
+    bans = get("/api/analysis/ban-events", days=30).get("data", [])
+    banned_ids = {b.get("account_id") for b in bans}
 
     for a in accounts:
         acc_id = a.get("id")
         if not acc_id:
             continue
 
-        # Simple weighted formula
-        proxy_risk     = 100 - (a.get("proxy_trust_score") or 100)
-        isolation_score = 50 if argus["collisions"] > 0 else 0
+        proxy_trust     = a.get("trust_score") or a.get("last_trust_score") or 100
+        proxy_risk      = 100 - proxy_trust
+        isolation_score = 50 if argus["collisions"] > 0 else 100
         traffic_quality = nexus["avg_quality"]
-        timeline_risk   = 80 if a.get("id") in {b.get("account_id") for b in []} else 0
+        timeline_risk   = 80 if acc_id in banned_ids else 20
 
         verdict_score = round(
-            proxy_risk      * 0.30 +
-            isolation_score * 0.20 +
+            proxy_risk      * 0.25 +
+            (100 - isolation_score) * 0.30 +
             (100 - traffic_quality) * 0.25 +
-            timeline_risk   * 0.25
+            timeline_risk   * 0.20
         )
         verdict_score = max(0, min(100, verdict_score))
 
@@ -179,27 +272,27 @@ def run_verdict(accounts, argus, nexus, iris, chrono):
         "risk": at_risk, "critical": critical,
     }
 
-# ── main ──────────────────────────────────────────────────────────────────────
+# ── main ─────────────────────────────────────────────────────────────────────
 
 def main():
     print(f"\n{'='*60}")
     print(f"  HERMES nightly run — {TODAY}")
     print(f"{'='*60}")
 
-    # Load accounts
     accounts = get("/api/analysis/accounts").get("data", [])
     print(f"\n[hermes] {len(accounts)} accounts loaded")
 
-    # Phase 1 — run all 4 agents
-    argus  = run_argus(accounts)
-    nexus  = run_nexus(accounts)
-    iris   = run_iris(accounts)
-    chrono = run_chrono(accounts)
+    with kanban_phase("argus",  "Proxy & IP risk analysis"):
+        argus = run_argus(accounts)
+    with kanban_phase("nexus",  "Traffic quality analysis"):
+        nexus = run_nexus(accounts)
+    with kanban_phase("iris",   "Link health analysis"):
+        iris = run_iris(accounts)
+    with kanban_phase("chrono", "Ban pattern analysis"):
+        chrono = run_chrono(accounts)
+    with kanban_phase("verdict", "Aggregate risk score + auto-pause eval"):
+        dist = run_verdict(accounts, argus, nexus, iris, chrono)
 
-    # Phase 2 — verdict
-    dist = run_verdict(accounts, argus, nexus, iris, chrono)
-
-    # Phase 3 — Telegram
     print("\n[hermes] sending Telegram report...")
     msg = (
         f"🌙 <b>HERMES</b> nightly run — {TODAY}\n\n"
