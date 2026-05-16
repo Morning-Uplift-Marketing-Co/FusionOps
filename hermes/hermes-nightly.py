@@ -16,6 +16,7 @@ from contextlib import contextmanager
 from collections import defaultdict
 
 API   = os.getenv("FBIS_API_BASE", "https://lp-factory-api.misty-feather-556e.workers.dev")
+API_KEY = os.getenv("FUSIONOPS_API_KEY", os.getenv("FBIS_API_KEY", ""))
 TG_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TG_CHAT  = os.getenv("TELEGRAM_CHAT_ID", "")
 TODAY    = datetime.date.today().isoformat()
@@ -26,13 +27,18 @@ client = httpx.Client(timeout=30)
 
 # ── HTTP helpers ─────────────────────────────────────────────────────────────
 
+def headers():
+    if not API_KEY:
+        return {}
+    return {"Authorization": f"Bearer {API_KEY}"}
+
 def get(path, **params):
-    r = client.get(f"{API}{path}", params=params)
+    r = client.get(f"{API}{path}", params=params, headers=headers())
     r.raise_for_status()
     return r.json()
 
 def post(path, body):
-    r = client.post(f"{API}{path}", json=body)
+    r = client.post(f"{API}{path}", json=body, headers=headers())
     r.raise_for_status()
     return r.json()
 
