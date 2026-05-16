@@ -17,6 +17,7 @@ from collections import defaultdict
 
 API   = os.getenv("FBIS_API_BASE", "https://lp-factory-api.misty-feather-556e.workers.dev")
 API_KEY = os.getenv("FUSIONOPS_API_KEY", os.getenv("FBIS_API_KEY", ""))
+API_ORIGIN = os.getenv("FBIS_API_ORIGIN", "https://fusionops-web.pages.dev")
 TG_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TG_CHAT  = os.getenv("TELEGRAM_CHAT_ID", "")
 TODAY    = datetime.date.today().isoformat()
@@ -28,9 +29,10 @@ client = httpx.Client(timeout=30)
 # ── HTTP helpers ─────────────────────────────────────────────────────────────
 
 def headers():
+    h = {"Origin": API_ORIGIN} if API_ORIGIN else {}
     if not API_KEY:
-        return {}
-    return {"Authorization": f"Bearer {API_KEY}"}
+        return h
+    return {**h, "Authorization": f"Bearer {API_KEY}"}
 
 def get(path, **params):
     r = client.get(f"{API}{path}", params=params, headers=headers())
