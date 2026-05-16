@@ -62,6 +62,20 @@ security:
   redact_secrets: true
   tirith_enabled: true
 
+# ─── Agent Scheduling (Phase 8: Parallel Execution) ─────────────────────────
+scheduling:
+  enabled: true
+  max_parallel_agents: 4
+  strategy: load-balanced
+  timeout_ms: 60000
+
+  agent_groups:
+    fbis_parallel:
+      agents: [argus, nexus, iris, chrono]
+      mode: parallel
+      timeout_ms: 45000
+      wait_for_all: true
+
 cron:
   wrap_response: true
   max_parallel_jobs: null
