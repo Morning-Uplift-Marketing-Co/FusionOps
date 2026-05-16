@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-05-16T01:28:53.693Z
-> Files: 41 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-05-16T01:30:17.874Z
+> Files: 43 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../
 
@@ -34,6 +34,7 @@
 
 - `COMPRESSION_TUNING.md` — Caveman Compression Tuning Guide (Phase 5) (~2494 tok)
 - `DASHCLAW_POLICY_CHECKLIST.md` — DashClaw Policy Configuration Checklist (Phase 4g Completion) (~1514 tok)
+- `DEPLOYMENT_CHECKLIST.md` — Phase 5 Deployment Checklist (~1607 tok)
 - `FBIS_SECURITY_FIX_DEPLOYMENT.md` — FBIS Security Fix Deployment Guide (Phase 4g) (~980 tok)
 - `PHASE_5_ECOSYSTEM_SETUP.md` — Phase 5: Ecosystem Plugins Setup Guide (~2848 tok)
 
@@ -49,6 +50,7 @@
 - `2026-05-16-phase4-progress.md` — Phase 4 Progress: DashClaw HITL Wiring (IN PROGRESS) (~1056 tok)
 - `2026-05-16-phase5-progress.md` — Phase 5 Progress: Ecosystem Plugins (~90% Complete) (~906 tok)
 - `2026-05-16-phase6-complete.md` — Phase 6 Complete: Repo↔VPS Config Sync (✅ DONE) (~1603 tok)
+- `2026-05-16-phases-4g-5-complete.md` — Phases 4g + 5 Complete: HITL Integration + Ecosystem Plugins (~2194 tok)
 
 ## .claude/rules/
 
