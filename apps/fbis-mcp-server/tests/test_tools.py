@@ -4,6 +4,21 @@ Formula tests run without HTTP. Registration tests require server running.
 """
 import pytest
 
+from tools import _client
+
+
+class TestApiClientHeaders:
+    """HTTP auth headers for the Worker API."""
+
+    def test_api_key_sets_bearer_and_legacy_header(self, monkeypatch):
+        monkeypatch.setattr(_client, "API_KEY", "test-secret")
+
+        headers = _client.get_headers()
+
+        assert headers["Authorization"] == "Bearer test-secret"
+        assert headers["x-api-key"] == "test-secret"
+        assert headers["Content-Type"] == "application/json"
+
 
 class TestVerdictScoreFormula:
     """Pure formula tests — no HTTP required."""

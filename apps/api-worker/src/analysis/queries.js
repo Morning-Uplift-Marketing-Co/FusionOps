@@ -75,6 +75,50 @@ export const Q = {
     VALUES (?1, ?2, ?3, ?4, ?5, ?6, datetime('now'))
   `,
 
+  LATEST_AGENT_KPIS: `
+    SELECT k1.*
+    FROM agent_kpis k1
+    INNER JOIN (
+      SELECT agent_name, kpi_name, MAX(recorded_at) as latest
+      FROM agent_kpis
+      WHERE (?1 IS NULL OR agent_name = ?1)
+      GROUP BY agent_name, kpi_name
+    ) k2 ON k1.agent_name = k2.agent_name
+         AND k1.kpi_name = k2.kpi_name
+         AND k1.recorded_at = k2.latest
+    ORDER BY k1.agent_name, k1.kpi_name
+    LIMIT ?2
+  `,
+
+  WRITE_SPEND_HISTORY: `
+    INSERT INTO spend_history
+      (id, account_id, recorded_at, spend_24h, spend_30d,
+       daily_budget, campaign_count, active_campaigns)
+    VALUES (?1, ?2, date('now'), ?3, ?4, ?5, ?6, ?7)
+    ON CONFLICT(account_id, recorded_at) DO UPDATE SET
+      spend_24h       = excluded.spend_24h,
+      spend_30d       = excluded.spend_30d,
+      daily_budget    = excluded.daily_budget,
+      campaign_count  = excluded.campaign_count,
+      active_campaigns = excluded.active_campaigns
+  `,
+
+  GET_SPEND_HISTORY: `
+    SELECT account_id, recorded_at, spend_24h, spend_30d,
+           daily_budget, campaign_count, active_campaigns
+    FROM spend_history
+    WHERE account_id = ?1
+    ORDER BY recorded_at DESC
+    LIMIT ?2
+  `,
+
+  WRITE_BAN_EVENT: `
+    INSERT INTO ban_events
+      (id, account_id, domain, ban_reason, ban_date,
+       days_active, risk_score_at_ban, notes, created_at)
+    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, datetime('now'))
+  `,
+
   // Upsert from Google Ads Script sync
   UPSERT_ACCOUNT: `
     INSERT INTO ops_accounts

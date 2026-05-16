@@ -80,6 +80,38 @@ export async function handleAnalysisRoutes(path, method, request, env) {
     return json({ ok: true, data: results });
   }
 
+  // POST /api/analysis/ban-events  — log a new ban
+  if (path === '/api/analysis/ban-events' && method === 'POST') {
+    const body = await request.json();
+    const { account_id, domain, ban_reason, ban_date,
+            days_active, risk_score_at_ban, notes } = body;
+    if (!account_id) return json({ ok: false, error: 'account_id required' }, 400);
+    if (!ban_reason) return json({ ok: false, error: 'ban_reason required' }, 400);
+    const date = ban_date || new Date().toISOString().slice(0, 10);
+    await db.prepare(Q.WRITE_BAN_EVENT)
+      .bind(
+        uid(), account_id, domain || '', ban_reason, date,
+        days_active ?? null, risk_score_at_ban ?? null, notes || ''
+      )
+      .run();
+    return json({ ok: true });
+  }
+
+  // GET /api/analysis/spend-history/:account_id
+  if (path.startsWith('/api/analysis/spend-history/') && method === 'GET') {
+    const accountId = path.split('/api/analysis/spend-history/')[1];
+    const url = new URL(request.url);
+    const limit = parseInt(url.searchParams.get('limit') || '90', 10);
+    try {
+      const { results } = await db.prepare(Q.GET_SPEND_HISTORY)
+        .bind(accountId, limit)
+        .all();
+      return json({ ok: true, account_id: accountId, data: results });
+    } catch {
+      return json({ ok: true, account_id: accountId, data: [] });
+    }
+  }
+
   // POST /api/analysis/risk-score
   if (path === '/api/analysis/risk-score' && method === 'POST') {
     const body = await request.json();
@@ -99,20 +131,9 @@ export async function handleAnalysisRoutes(path, method, request, env) {
     const url = new URL(request.url);
     const agent = url.searchParams.get('agent') || null;
     const limit = parseInt(url.searchParams.get('limit') || '50', 10);
-    const { results } = await db.prepare(`
-      SELECT k1.*
-      FROM agent_kpis k1
-      INNER JOIN (
-        SELECT agent_name, kpi_name, MAX(recorded_at) as latest
-        FROM agent_kpis
-        ${agent ? "WHERE agent_name = ?" : ""}
-        GROUP BY agent_name, kpi_name
-      ) k2 ON k1.agent_name = k2.agent_name
-           AND k1.kpi_name = k2.kpi_name
-           AND k1.recorded_at = k2.latest
-      ORDER BY k1.agent_name, k1.kpi_name
-      LIMIT ?
-    `).bind(...(agent ? [agent, limit] : [limit])).all();
+    const { results } = await db.prepare(Q.LATEST_AGENT_KPIS)
+      .bind(agent, limit)
+      .all();
     return json({ ok: true, data: results });
   }
 
@@ -140,7 +161,8 @@ export async function handleAnalysisRoutes(path, method, request, env) {
     const errors = [];
 
     for (const row of rows) {
-      const { account_id, label, email, status, site_domain, spend_30d } = row;
+      const { account_id, label, email, status, site_domain, spend_30d,
+              spend_24h, daily_budget_total, campaign_count, active_campaign_count } = row;
       if (!account_id) { errors.push('missing account_id'); continue; }
 
       // Normalise: strip dashes from Google customer ID (123-456-7890 → 1234567890)
@@ -157,6 +179,23 @@ export async function handleAnalysisRoutes(path, method, request, env) {
             Math.round(spend_30d ?? 0),
           )
           .run();
+
+        // Log spend history (one row per account per day, upsert)
+        if (spend_30d != null || spend_24h != null) {
+          try {
+            await db.prepare(Q.WRITE_SPEND_HISTORY)
+              .bind(
+                uid(), id,
+                spend_24h ?? 0,
+                spend_30d ?? 0,
+                daily_budget_total ?? 0,
+                campaign_count ?? 0,
+                active_campaign_count ?? 0,
+              )
+              .run();
+          } catch { /* spend_history table might not exist yet */ }
+        }
+
         upserted++;
       } catch (e) {
         errors.push(`${id}: ${e.message}`);

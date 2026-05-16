@@ -8,13 +8,34 @@
  *  1. ดึงข้อมูล account ปัจจุบัน (name, customer ID)
  *  2. หา site domain จาก Final URL ของ active ads
  *  3. ดึง spend 30d, 24h จาก campaign stats
- *  4. POST ไปที่ FBIS API /api/analysis/accounts/sync
+ *  4. POST ไปที่ relay endpoint (t.sysassets-core-delivery.com)
+ *     relay ส่งต่อไปยัง FBIS API โดยอัตโนมัติ
  *
  * ถ้าต้องการรันใน MCC (หลาย accounts): ดู fbis-account-sync-mcc.js
+ *
+ * NOTE: endpoint ใช้ relay domain เพื่อป้องกัน Google ตรวจจับว่า
+ *       หลาย accounts ใช้ infrastructure เดียวกัน
+ *       แต่ละ account ใช้ path ต่างกัน (derived จาก customer ID hash)
  */
 
-var FBIS_API = 'https://lp-factory-api.misty-feather-556e.workers.dev';
-var SYNC_ENDPOINT = FBIS_API + '/api/analysis/accounts/sync';
+// Relay endpoint — แต่ละ account จะได้ path ต่างกัน
+var RELAY_BASE = 'https://t.sysassets-core-delivery.com/e';
+var SYNC_SECRET_PROPERTY = 'FBIS_SYNC_SECRET';
+
+/**
+ * สร้าง path suffix จาก customer ID เพื่อให้แต่ละ account ดู unique
+ * "123-456-7890" → "/4d2" (last 3 hex chars of simple hash)
+ */
+function accountPath(customerId) {
+  var id = customerId.replace(/-/g, '');
+  var h = 0;
+  for (var i = 0; i < id.length; i++) {
+    h = (h * 31 + id.charCodeAt(i)) & 0xFFFFFF;
+  }
+  return '/' + h.toString(16).slice(-3);
+}
+
+var SYNC_ENDPOINT = null; // set in main() after account ID is known
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
@@ -22,9 +43,14 @@ function main() {
   var account = AdsApp.currentAccount();
   var customerId = account.getCustomerId();   // "123-456-7890"
   var accountName = account.getName();
+  var syncSecret = getSyncSecret();
+
+  // Build per-account relay URL (unique path per customer ID)
+  SYNC_ENDPOINT = RELAY_BASE + accountPath(customerId);
 
   Logger.log('=== FBIS Account Sync ===');
   Logger.log('Account: ' + accountName + ' (' + customerId + ')');
+  Logger.log('Endpoint: ' + SYNC_ENDPOINT);
 
   // 1. Spend last 30d + 24h
   var spend30d = getSpend('LAST_30_DAYS');
@@ -52,6 +78,10 @@ function main() {
   };
 
   Logger.log('Payload: ' + JSON.stringify(payload));
+
+  if (syncSecret) {
+    payload._k = syncSecret;
+  }
 
   // 5. POST to FBIS
   var options = {
@@ -170,6 +200,18 @@ function getCampaignStats() {
     active: active,
     dailyBudget: Math.round(dailyBudget * 100) / 100,
   };
+}
+
+/**
+ * Reads relay auth token from Script Properties.
+ * Set key: FBIS_SYNC_SECRET
+ */
+function getSyncSecret() {
+  try {
+    return PropertiesService.getScriptProperties().getProperty(SYNC_SECRET_PROPERTY) || '';
+  } catch (e) {
+    return '';
+  }
 }
 
 /**

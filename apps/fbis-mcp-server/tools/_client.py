@@ -7,6 +7,7 @@ API_KEY = os.getenv("FBIS_API_KEY", "")
 def get_headers() -> dict:
     h = {"Content-Type": "application/json"}
     if API_KEY:
+        h["Authorization"] = f"Bearer {API_KEY}"
         h["x-api-key"] = API_KEY
     return h
 
