@@ -329,3 +329,68 @@
 | 05:50 | Edited apps/fbis-mcp-server/tools/risk.py | 11→13 lines | ~209 |
 | 05:51 | Edited apps/fbis-mcp-server/tools/risk.py | modified _send_telegram() | ~164 |
 | 05:51 | Edited apps/fbis-mcp-server/tools/risk.py | "Authorization" → "x-api-key" | ~16 |
+| 05:51 | Session end: 14 writes across 9 files (policies.spec.md, docker-compose.yml, requirements.txt, 2026-05-16-phase4-complete.md, 2026-05-16-phase5-progress.md) | 8 reads | ~14647 tok |
+| 05:52 | Session end: 14 writes across 9 files (policies.spec.md, docker-compose.yml, requirements.txt, 2026-05-16-phase4-complete.md, 2026-05-16-phase5-progress.md) | 8 reads | ~14647 tok |
+
+## Session: 2026-05-15 05:59
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 05:59 | Edited apps/fbis-mcp-server/tools/risk.py | modified _claw_create_action() | ~316 |
+| 05:59 | Edited apps/fbis-mcp-server/tools/risk.py | modified _claw_wait_for_approval() | ~223 |
+| 06:00 | Created infra/dashclaw/POLICY-FIXES.md | — | ~1285 |
+| 06:01 | Created .claude/handoff/2026-05-16-phase4g-fixes.md | — | ~1760 |
+| 06:02 | Created infra/dashclaw/POLICY-REGISTRATION-GUIDE.md | — | ~1703 |
+| 06:02 | Created .claude/handoff/2026-05-16-phase4g-status.md | — | ~1673 |
+| 06:02 | Session end: 6 writes across 5 files (risk.py, POLICY-FIXES.md, 2026-05-16-phase4g-fixes.md, POLICY-REGISTRATION-GUIDE.md, 2026-05-16-phase4g-status.md) | 1 reads | ~9271 tok |
+| 06:23 | Session end: 6 writes across 5 files (risk.py, POLICY-FIXES.md, 2026-05-16-phase4g-fixes.md, POLICY-REGISTRATION-GUIDE.md, 2026-05-16-phase4g-status.md) | 5 reads | ~9271 tok |
+| 06:32 | Edited apps/fbis-mcp-server/tools/risk.py | modified in() | ~48 |
+| 06:33 | Edited apps/fbis-mcp-server/tools/risk.py | modified in() | ~80 |
+
+## Session: 2026-05-15 06:37
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 06:52 | Edited apps/fbis-mcp-server/tools/risk.py | modified _claw_wait_for_approval() | ~432 |
+| 06:54 | Created .claude/handoff/2026-05-16-phase4g-complete.md | — | ~1180 |
+| 06:54 | Session end: 2 writes across 2 files (risk.py, 2026-05-16-phase4g-complete.md) | 1 reads | ~5031 tok |
+| 06:57 | Session end: 2 writes across 2 files (risk.py, 2026-05-16-phase4g-complete.md) | 1 reads | ~5031 tok |
+| 06:58 | Session end: 2 writes across 2 files (risk.py, 2026-05-16-phase4g-complete.md) | 1 reads | ~5031 tok |
+| 06:59 | Session end: 2 writes across 2 files (risk.py, 2026-05-16-phase4g-complete.md) | 1 reads | ~5031 tok |
+| 07:01 | Session end: 2 writes across 2 files (risk.py, 2026-05-16-phase4g-complete.md) | 1 reads | ~5031 tok |
+| 07:21 | Created .claude/handoff/2026-05-16-phase4g-production-results.md | — | ~1414 |
+| 07:21 | Session end: 3 writes across 3 files (risk.py, 2026-05-16-phase4g-complete.md, 2026-05-16-phase4g-production-results.md) | 1 reads | ~6546 tok |
+| 07:22 | Session end: 3 writes across 3 files (risk.py, 2026-05-16-phase4g-complete.md, 2026-05-16-phase4g-production-results.md) | 1 reads | ~6546 tok |
+| 07:51 | Session end: 3 writes across 3 files (risk.py, 2026-05-16-phase4g-complete.md, 2026-05-16-phase4g-production-results.md) | 1 reads | ~6546 tok |
+| 07:52 | Session end: 3 writes across 3 files (risk.py, 2026-05-16-phase4g-complete.md, 2026-05-16-phase4g-production-results.md) | 1 reads | ~6546 tok |
+| 07:54 | Session end: 3 writes across 3 files (risk.py, 2026-05-16-phase4g-complete.md, 2026-05-16-phase4g-production-results.md) | 1 reads | ~6546 tok |
+| 07:56 | Created .claude/test-mcp-sse.py | — | ~898 |
+| 07:56 | Created .claude/test-mcp-debug.py | — | ~297 |
+| 07:56 | Created .claude/test-mcp-fixed.py | — | ~1250 |
+| 07:56 | Created .claude/test-mcp-session.py | — | ~1240 |
+| 07:57 | Created .claude/test-mcp-sse-stream.py | — | ~1426 |
+| 07:58 | Created .claude/test-mcp-debug-full.py | — | ~546 |
+
+## Session: 2026-05-16 08:01
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 08:02 | Edited apps/api-worker/src/analysis/routes.js | added 1 import(s) | ~154 |
+| 08:02 | Edited apps/api-worker/src/analysis/routes.js | added 2 condition(s) | ~448 |
+| 08:02 | Edited apps/api-worker/wrangler.toml | 4→9 lines | ~155 |
+| 08:02 | Edited HERMES_FBIS_AUDIT.txt | expanded (+22 lines) | ~343 |
+| 08:03 | Created .claude/guides/FBIS_SECURITY_FIX_DEPLOYMENT.md | — | ~1046 |
+| 08:03 | Created .claude/guides/DASHCLAW_POLICY_CHECKLIST.md | — | ~1615 |
+| 08:04 | Created .claude/handoff/2026-05-16-phase4g-final-summary.md | — | ~2470 |
+| 08:05 | Session end: 7 writes across 6 files (routes.js, wrangler.toml, HERMES_FBIS_AUDIT.txt, FBIS_SECURITY_FIX_DEPLOYMENT.md, DASHCLAW_POLICY_CHECKLIST.md) | 9 reads | ~10202 tok |
+| 08:05 | Session end: 7 writes across 6 files (routes.js, wrangler.toml, HERMES_FBIS_AUDIT.txt, FBIS_SECURITY_FIX_DEPLOYMENT.md, DASHCLAW_POLICY_CHECKLIST.md) | 9 reads | ~10202 tok |
+| 08:10 | Session end: 7 writes across 6 files (routes.js, wrangler.toml, HERMES_FBIS_AUDIT.txt, FBIS_SECURITY_FIX_DEPLOYMENT.md, DASHCLAW_POLICY_CHECKLIST.md) | 9 reads | ~10202 tok |
+| 08:17 | Created C:/Users/Barbara/.claude/plans/concurrent-riding-cook.md | — | ~2132 |
+| 08:19 | Edited infra/hermes/config.yaml | expanded (+9 lines) | ~193 |
+| 08:19 | Edited infra/hermes/config.yaml | expanded (+6 lines) | ~128 |
+| 08:20 | Edited infra/setup.sh | expanded (+13 lines) | ~267 |
+| 08:20 | Edited infra/docker-compose.yml | expanded (+22 lines) | ~316 |
+| 08:20 | Created infra/Dockerfile.graphify | — | ~176 |
+| 08:25 | Created .claude/guides/PHASE_5_ECOSYSTEM_SETUP.md | — | ~3038 |
+| 08:28 | Created .claude/guides/COMPRESSION_TUNING.md | — | ~2661 |
+| 08:28 | Edited HERMES_FBIS_AUDIT.txt | modified Steps() | ~432 |

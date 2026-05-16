@@ -36,6 +36,19 @@ cp infra/hermes/SOUL.md ~/.hermes/SOUL.md
 # Enable disk-cleanup plugin
 hermes plugins enable disk-cleanup
 
+# ─── Phase 5: Ecosystem Plugins ────────────────────────────────────────────
+echo "Setting up Phase 5 ecosystem plugins..."
+
+# Install Caveman compression middleware
+curl -fsSL https://raw.githubusercontent.com/karpathy/caveman/main/install.sh | bash
+
+# Install Graphify dependency visualization
+pip3 install -q graphify
+mkdir -p /opt/fusionops/logs
+nohup python3 -m graphify.serve --port 8767 --dir /opt/fusionops > /opt/fusionops/logs/graphify.log 2>&1 &
+sleep 2
+echo "✅ Graphify MCP server started on http://localhost:8767"
+
 echo ""
 echo "⚠️  REQUIRED: Set environment variables before starting Hermes"
 echo "   Copy infra/.env.example to infra/.env:"

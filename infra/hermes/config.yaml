@@ -25,11 +25,20 @@ terminal:
 
 compression:
   enabled: true
-  threshold: 0.3
-  target_ratio: 0.2
+  threshold: 0.3          # Compress responses if >30% overhead (token efficiency)
+  target_ratio: 0.2       # Target 20% of original size
+  middleware: caveman-shrink  # Phase 5: Use Caveman compression
   protect_last_n: 20
   hygiene_hard_message_limit: 400
   protect_first_n: 3
+
+  # CRITICAL: Exclude DashClaw audit output from compression
+  # Preserves governance trail visibility for compliance and debugging
+  exclude_patterns:
+    - "decisions"          # decisions table (approval audit)
+    - "approval_events"    # approval event logs
+    - "action_audit"       # action audit trail
+    - "dashclaw"           # DashClaw responses (any)
 
 prompt_caching:
   cache_ttl: 5m
@@ -118,6 +127,12 @@ mcp_servers:
       Authorization: Bearer ${MC_API_KEY}
     enabled: true
     description: Sub-agent orchestration and execution dashboard
+
+  # Graphify — Codebase dependency graph visualization (Phase 5)
+  graphify:
+    url: http://localhost:8767/mcp
+    enabled: true
+    description: Dependency graph analysis and visualization for codebase
 
 # ─── Plugins ──────────────────────────────────────────────────────────────────
 plugins:

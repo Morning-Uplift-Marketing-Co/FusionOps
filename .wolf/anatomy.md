@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-05-15T22:51:07.393Z
-> Files: 20 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-05-16T01:28:53.693Z
+> Files: 41 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../
 
@@ -12,7 +12,7 @@
 ## ./
 
 - `CLAUDE.md` — CLAUDE.md (~4626 tok)
-- `HERMES_FBIS_AUDIT.txt` — Declares Queries (~1805 tok)
+- `HERMES_FBIS_AUDIT.txt` — Declares Queries (~2381 tok)
 
 ## .astro/
 
@@ -23,11 +23,29 @@
 - `DASHCLAW_SUMMARY.txt` (~1338 tok)
 - `HERMES_FBIS_SYSTEM.md` — HERMES + FBIS System Overview (~3204 tok)
 - `SYSTEM_VERIFICATION_REPORT.md` — HERMES + FBIS System Verification Report (~3040 tok)
+- `test-mcp-debug-full.py` — Debug full MCP response. (~546 tok)
+- `test-mcp-debug.py` — Debug MCP 406 error — read full response body. (~297 tok)
+- `test-mcp-fixed.py` — test_mcp_write_risk_score (~1250 tok)
+- `test-mcp-session.py` — test_mcp_with_session (~1240 tok)
+- `test-mcp-sse.py` — test_mcp_write_risk_score (~898 tok)
+- `test-mcp-sse-stream.py` — parse_sse_stream, test_mcp_with_sse (~1426 tok)
+
+## .claude/guides/
+
+- `COMPRESSION_TUNING.md` — Caveman Compression Tuning Guide (Phase 5) (~2494 tok)
+- `DASHCLAW_POLICY_CHECKLIST.md` — DashClaw Policy Configuration Checklist (Phase 4g Completion) (~1514 tok)
+- `FBIS_SECURITY_FIX_DEPLOYMENT.md` — FBIS Security Fix Deployment Guide (Phase 4g) (~980 tok)
+- `PHASE_5_ECOSYSTEM_SETUP.md` — Phase 5: Ecosystem Plugins Setup Guide (~2848 tok)
 
 ## .claude/handoff/
 
 - `2026-05-16-phase1-resume.md` — Resume: Phase 1 Hermes Update (~516 tok)
 - `2026-05-16-phase4-complete.md` — Phase 4 Complete: DashClaw HITL Wiring (✅ DONE) (~1426 tok)
+- `2026-05-16-phase4g-complete.md` — Phase 4g Complete: HITL Integration Validated (~1106 tok)
+- `2026-05-16-phase4g-final-summary.md` — Phase 4g Final Summary: HITL Integration Complete (with Caveats) (~2315 tok)
+- `2026-05-16-phase4g-fixes.md` — Phase 4g Fixes: HITL Integration Critical Issues (~1650 tok)
+- `2026-05-16-phase4g-production-results.md` — Phase 4g Production Validation Results (~1325 tok)
+- `2026-05-16-phase4g-status.md` — Phase 4g Status: HITL Integration Critical Issues (Updated) (~1568 tok)
 - `2026-05-16-phase4-progress.md` — Phase 4 Progress: DashClaw HITL Wiring (IN PROGRESS) (~1056 tok)
 - `2026-05-16-phase5-progress.md` — Phase 5 Progress: Ecosystem Plugins (~90% Complete) (~906 tok)
 - `2026-05-16-phase6-complete.md` — Phase 6 Complete: Repo↔VPS Config Sync (✅ DONE) (~1603 tok)
@@ -209,6 +227,7 @@
 
 ## C:/Users/Barbara/.claude/plans/
 
+- `concurrent-riding-cook.md` — Phase 5: Ecosystem Plugins Implementation Plan (~1999 tok)
 - `rosy-mapping-bentley.md` — Claude + Codex Collaboration Plan — FBIS/Hermes Work (~4969 tok)
 
 ## apps/
@@ -216,6 +235,7 @@
 
 ## apps/api-worker/
 
+- `wrangler.toml` — CF_ACCOUNT_ID_REMOVED***/..." because (~1163 tok)
 
 ## apps/api-worker/.wrangler/state/v3/d1/miniflare-D1DatabaseObject/
 
@@ -241,6 +261,10 @@
 ## apps/api-worker/src/
 
 
+## apps/api-worker/src/analysis/
+
+- `routes.js` — apps/api-worker/src/analysis/routes.js (~1324 tok)
+
 ## apps/cf-proxy/
 
 
@@ -250,7 +274,7 @@
 
 ## apps/fbis-mcp-server/tools/
 
-- `risk.py` — register, write_risk_score, write_agent_kpi (~3286 tok)
+- `risk.py` — register, write_risk_score, write_agent_kpi (~3547 tok)
 
 ## apps/lander/
 
@@ -333,16 +357,19 @@
 
 ## infra/
 
-- `docker-compose.yml` — Docker Compose services (~440 tok)
-- `setup.sh` — infra/setup.sh — One-command setup on Hetzner CX22 (Ubuntu 24.04) (~774 tok)
+- `docker-compose.yml` — Docker Compose services (~635 tok)
+- `Dockerfile.graphify` — Dockerfile for Graphify dependency visualization MCP server (~176 tok)
+- `setup.sh` — infra/setup.sh — One-command setup on Hetzner CX22 (Ubuntu 24.04) (~919 tok)
 
 ## infra/dashclaw/
 
 - `policies.spec.md` — DashClaw Governance Policies (~1853 tok)
+- `POLICY-FIXES.md` — DashClaw Policy Configuration Fixes (~1205 tok)
+- `POLICY-REGISTRATION-GUIDE.md` — DashClaw Policy Registration Guide (~1596 tok)
 
 ## infra/hermes/
 
-- `config.yaml` — ~/.hermes/config.yaml — FusionOps Hermes Agent Configuration (~1031 tok)
+- `config.yaml` — ~/.hermes/config.yaml — FusionOps Hermes Agent Configuration (~1246 tok)
 
 ## scripts/
 

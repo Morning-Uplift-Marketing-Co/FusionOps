@@ -453,11 +453,136 @@
         "approval",
         "phase4g",
         "py",
-        "e2e-validated"
+        "e2e-validated",
+        "prod-validated"
       ],
-      "related_bugs": ["bug-phase4g-001", "bug-phase4g-002", "bug-phase4g-003"],
+      "related_bugs": [
+        "bug-phase4g-001",
+        "bug-phase4g-002",
+        "bug-phase4g-003"
+      ],
       "occurrences": 1,
       "last_seen": "2026-05-16T00:00:00.000Z"
+    },
+    {
+      "id": "security-fbis-unauthenticated-d1",
+      "timestamp": "2026-05-16T00:01:00.000Z",
+      "error_message": "CRITICAL: /api/analysis/* endpoints bypass auth gate, accept unauthenticated writes to D1",
+      "file": "apps/fbis-mcp-server/tools/_client.py",
+      "root_cause": "POST /api/analysis/risk-score mounted in FastMCP before global auth middleware. FBIS_API_KEY missing in fbis-mcp container env. Route accepts writes without Bearer token validation.",
+      "fix": "1) Add FBIS_API_KEY to fbis-mcp container environment. 2) Implement Bearer token validation in /api/analysis/* route handlers. 3) Verify all D1 writes require authentication. Production test shows risk_score persisted without any auth token (security gap, not clean).",
+      "tags": [
+        "security",
+        "critical",
+        "auth",
+        "d1",
+        "fbis-mcp",
+        "prod-blocker"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-16T00:01:00.000Z"
+    },
+    {
+      "id": "phase4g-policy-audit-fail",
+      "timestamp": "2026-05-16T00:02:00.000Z",
+      "error_message": "Risk Decision Audit Trail policy not populating decisions table",
+      "file": "infra/dashclaw/POLICY-REGISTRATION-GUIDE.md",
+      "root_cause": "Policy 2 (Risk Decision Audit Trail) configured but decisions table remains empty after write_risk_score. Either policy trigger not matching or audit_log policy not wired to D1 persistence.",
+      "fix": "Verify Policy 2 trigger conditions match actual action context. Check DashClaw UI for policy execution logs. May need to re-register policy with corrected trigger rules.",
+      "tags": [
+        "dashclaw",
+        "policy",
+        "audit",
+        "phase4g",
+        "prod-finding"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-16T00:02:00.000Z"
+    },
+    {
+      "id": "phase4g-freeze-policy-fail",
+      "timestamp": "2026-05-16T00:03:00.000Z",
+      "error_message": "Account Freeze Authority policy not blocking non-verdict agent transition_account",
+      "file": "infra/dashclaw/POLICY-REGISTRATION-GUIDE.md",
+      "root_cause": "Policy 3 configured to block transition_account from agent != fbis-verdict. Production test: POST transition_account from agent=hermes-argus returned allow (policy not enforced). Either policy trigger not matching or agent_id check misconfigured.",
+      "fix": "Verify Policy 3 trigger rules and allowed_agents restriction. Test with actual transition_account action from rogue agent. May need manual re-registration in DashClaw UI with corrected agent whitelist.",
+      "tags": [
+        "dashclaw",
+        "policy",
+        "account-freeze",
+        "phase4g",
+        "security",
+        "prod-finding"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-16T00:03:00.000Z"
+    },
+    {
+      "id": "bug-032",
+      "timestamp": "2026-05-16T01:02:27.372Z",
+      "error_message": "Significant refactor of ",
+      "file": "apps/api-worker/src/analysis/routes.js",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 25→33 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-16T01:02:27.372Z"
+    },
+    {
+      "id": "bug-033",
+      "timestamp": "2026-05-16T01:02:47.496Z",
+      "error_message": "Significant refactor of ",
+      "file": "HERMES_FBIS_AUDIT.txt",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 6→28 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "txt"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-16T01:02:47.496Z"
+    },
+    {
+      "id": "bug-034",
+      "timestamp": "2026-05-16T01:19:41.152Z",
+      "error_message": "Significant refactor of ",
+      "file": "infra/hermes/config.yaml",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 7→16 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-16T01:19:41.152Z"
+    },
+    {
+      "id": "bug-035",
+      "timestamp": "2026-05-16T01:28:53.701Z",
+      "error_message": "Significant refactor of ",
+      "file": "HERMES_FBIS_AUDIT.txt",
+      "root_cause": "7 lines replaced/restructured",
+      "fix": "Rewrote 8→34 lines (7 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "txt"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-16T01:28:53.701Z"
     }
   ]
 }
