@@ -1,7 +1,7 @@
 # Graph Report - ppc-claude-web-V1  (2026-05-16)
 
 ## Corpus Check
-- 518 files · ~619,069 words
+- 500 files · ~611,939 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
