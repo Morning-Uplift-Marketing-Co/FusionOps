@@ -86,7 +86,7 @@ def kanban_phase(agent_name, title):
 
     out = _kanban(
         "create", f"[{agent_name}] {title}",
-        "--body", f"Phase started at {datetime.datetime.utcnow().isoformat()}Z",
+        "--body", f"Phase started at {datetime.datetime.now(datetime.UTC).isoformat()}",
         "--assignee", "default",
         "--idempotency-key", f"fbis-{TODAY}-{agent_name}",
         "--max-runtime", "600",
