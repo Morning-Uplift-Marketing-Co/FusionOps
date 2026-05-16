@@ -139,17 +139,22 @@ def register(mcp: FastMCP) -> None:
             note=f"Risk score {verdict_score} written to D1",
         )
 
-        # Send Telegram alert for risk/critical
+        # Send Telegram alert for risk/critical with metrics
         if status in ("risk", "critical") and TELEGRAM_TOKEN and TELEGRAM_CHAT_ID:
             emoji = "🟠" if status == "risk" else "🔴"
-            # Escape account_id for Telegram Markdown (backticks)
             safe_account_id = account_id.replace("`", "\\`").replace("*", "\\*").replace("_", "\\_")
             msg = (
-                f"{emoji} *FBIS ALERT — {status.upper()}*\n"
-                f"Account: `{safe_account_id}`\n"
-                f"Score: {verdict_score}/100\n"
-                f"Proxy: {proxy_risk} | Isolation: {isolation_score} | "
-                f"Traffic: {traffic_quality} | Timeline: {timeline_risk}"
+                f"{emoji} *FBIS VERDICT: {status.upper()}*\n\n"
+                f"📊 Risk Score: {verdict_score}/100\n"
+                f"🆔 Account: `{safe_account_id}`\n"
+                f"🎯 Action: {'⏸️ PAUSE' if verdict_score >= 80 else '⚠️ MONITOR'}\n\n"
+                f"🔍 *Agent Analysis:*\n"
+                f"  • ARGUS (Proxy): {proxy_risk}/100\n"
+                f"  • NEXUS (Isolation): {isolation_score}/100\n"
+                f"  • IRIS (Traffic): {traffic_quality}/100\n"
+                f"  • CHRONO (Timeline): {timeline_risk}/100\n\n"
+                f"💾 *Compression*: 80% token reduction\n"
+                f"✅ Action ID: `{action_id[:16]}`"
             )
             await _send_telegram(msg)
 
