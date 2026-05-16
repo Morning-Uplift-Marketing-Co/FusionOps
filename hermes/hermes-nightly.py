@@ -139,7 +139,10 @@ def run_nexus(accounts):
             events = d.get("data", [])
             if events:
                 total = sum(e.get("event_count", 0) for e in events)
-                scores.append(min(100, total))
+                conversions = sum(e.get("conversions", 0) for e in events)
+                gclid_rate = sum(e.get("gclid_rate", 0) for e in events) / len(events) if events else 0
+                quality_score = min(100, (conversions / total * 100) if total > 0 else 0) * 0.5 + gclid_rate * 0.5
+                scores.append(quality_score)
         except Exception:
             pass
 
@@ -177,18 +180,30 @@ def run_chrono(accounts):
     bans = get("/api/analysis/ban-events", days=30).get("data", [])
 
     ban_count = len(bans)
-    banned_ids = set(b.get("account_id") for b in bans)
+    banned_ids = {b.get("account_id") for b in bans}
     at_risk = len([a for a in accounts if a.get("id") in banned_ids])
+
+    days_to_ban = []
+    for b in bans:
+        days_ago = (datetime.date.today() - datetime.date.fromisoformat(b.get("banned_at", "2026-05-16"))).days
+        if 0 < days_ago <= 90:
+            days_to_ban.append(days_ago)
+
+    avg_days_to_ban = round(sum(days_to_ban) / len(days_to_ban), 1) if days_to_ban else 90
 
     kpi("chrono", "ban_rate_30d",              ban_count, 0, "count")
     kpi("chrono", "accounts_at_timeline_risk", at_risk,   0, "count")
-    return {"bans": ban_count, "at_risk": at_risk}
+    kpi("chrono", "avg_days_to_ban",          avg_days_to_ban, 30, "days")
+    return {"bans": ban_count, "at_risk": at_risk, "days_to_ban": avg_days_to_ban}
 
 # ── VERDICT — aggregate risk score ───────────────────────────────────────────
 
 def run_verdict(accounts, argus, nexus, iris, chrono):
     print("\n[VERDICT] computing risk scores...")
     critical, at_risk, watch_count, healthy_count = 0, 0, 0, 0
+
+    bans = get("/api/analysis/ban-events", days=30).get("data", [])
+    banned_ids = {b.get("account_id") for b in bans}
 
     for a in accounts:
         acc_id = a.get("id")
@@ -198,13 +213,13 @@ def run_verdict(accounts, argus, nexus, iris, chrono):
         proxy_risk      = 100 - (a.get("proxy_trust_score") or 100)
         isolation_score = 50 if argus["collisions"] > 0 else 0
         traffic_quality = nexus["avg_quality"]
-        timeline_risk   = 80 if a.get("id") in {b.get("account_id") for b in []} else 0
+        timeline_risk   = 80 if acc_id in banned_ids else 20
 
         verdict_score = round(
-            proxy_risk      * 0.30 +
-            isolation_score * 0.20 +
+            proxy_risk      * 0.25 +
+            (100 - isolation_score) * 0.30 +
             (100 - traffic_quality) * 0.25 +
-            timeline_risk   * 0.25
+            timeline_risk   * 0.20
         )
         verdict_score = max(0, min(100, verdict_score))
 
