@@ -37,18 +37,13 @@ services:
       DISPLAY: ":99"
     shm_size: "2gb"
 
-  # ─── Mission Control — Orchestration Dashboard ─────────────────────────────
+  # ─── FBIS Status Dashboard — Uptime Kuma (replaces unavailable Mission Control)
   mission-control:
-    image: builderzlabs/mission-control:latest
+    image: louislam/uptime-kuma:1
     container_name: mission-control
     restart: unless-stopped
     ports:
-      - "3001:3000"
-    environment:
-      AUTH_USER: ${MC_USER:-admin}
-      AUTH_PASS: ${MC_PASS}
-      API_KEY: ${MC_API_KEY}
-      NEXT_PUBLIC_GATEWAY_OPTIONAL: "true"
+      - "3001:3001"
     volumes:
       - mc_data:/app/data
 

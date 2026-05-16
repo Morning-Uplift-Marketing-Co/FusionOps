@@ -282,12 +282,14 @@ async def _claw_wait_for_approval(action_id: str, poll_interval: float = 5.0, ma
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             while time.monotonic() < deadline:
+                # Correct endpoint: /api/actions/{id} (not /api/approvals/{id})
                 resp = await client.get(
                     f"{DASHCLAW_BASE}/api/actions/{action_id}",
                     headers={"x-api-key": DASHCLAW_API_KEY},
                 )
                 if resp.status_code == 200:
-                    action = resp.json().get("action", {})
+                    data = resp.json()
+                    action = data.get("action", data)  # handle both {action:{}} and flat response
                     status = action.get("status", "")
                     if status == "running":
                         return {"ok": True, "approved": True}
