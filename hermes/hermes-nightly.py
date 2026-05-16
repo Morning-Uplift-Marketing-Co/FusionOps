@@ -138,10 +138,21 @@ def run_nexus(accounts):
             d = get(f"/api/analysis/pixel-events/{a.get('site_domain','')}", days=30)
             events = d.get("data", [])
             if events:
-                total = sum(e.get("event_count", 0) for e in events)
-                conversions = sum(e.get("conversions", 0) for e in events)
-                gclid_rate = sum(e.get("gclid_rate", 0) for e in events) / len(events) if events else 0
-                quality_score = min(100, (conversions / total * 100) if total > 0 else 0) * 0.5 + gclid_rate * 0.5
+                total = sum(e.get("count", 0) for e in events)
+                conversion_events = {
+                    "conversion", "lead", "qualified_lead", "submit",
+                    "application", "application_complete", "purchase",
+                }
+                conversions = sum(
+                    e.get("count", 0)
+                    for e in events
+                    if str(e.get("event", "")).lower() in conversion_events
+                )
+                unique_sessions = sum(e.get("unique_sessions", 0) for e in events)
+                unique_gclids = sum(e.get("unique_gclids", 0) for e in events)
+                gclid_rate = min(100, unique_gclids / max(unique_sessions, 1) * 100)
+                conversion_rate = min(100, conversions / max(total, 1) * 100)
+                quality_score = conversion_rate * 0.5 + gclid_rate * 0.5
                 scores.append(quality_score)
         except Exception:
             pass
@@ -185,7 +196,8 @@ def run_chrono(accounts):
 
     days_to_ban = []
     for b in bans:
-        days_ago = (datetime.date.today() - datetime.date.fromisoformat(b.get("banned_at", "2026-05-16"))).days
+        ban_date = b.get("ban_date") or TODAY
+        days_ago = (datetime.date.today() - datetime.date.fromisoformat(ban_date[:10])).days
         if 0 < days_ago <= 90:
             days_to_ban.append(days_ago)
 
@@ -210,8 +222,9 @@ def run_verdict(accounts, argus, nexus, iris, chrono):
         if not acc_id:
             continue
 
-        proxy_risk      = 100 - (a.get("proxy_trust_score") or 100)
-        isolation_score = 50 if argus["collisions"] > 0 else 0
+        proxy_trust     = a.get("trust_score") or a.get("last_trust_score") or 100
+        proxy_risk      = 100 - proxy_trust
+        isolation_score = 50 if argus["collisions"] > 0 else 100
         traffic_quality = nexus["avg_quality"]
         timeline_risk   = 80 if acc_id in banned_ids else 20
 
