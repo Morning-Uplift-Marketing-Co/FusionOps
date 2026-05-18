@@ -1,18 +1,31 @@
 #!/usr/bin/env python3
-"""SCOUT — Competitor Ad Copy Intelligence"""
+"""SCOUT — Competitor Ad Copy Intelligence
+
+State (snapshots + diffs) lives in D1 via the agent state API.
+See .agents/debates/hermes-state-20260518-231225/SYNTHESIS-R2.md.
+"""
 
 import os
+import sys
 import json
 import base64
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, List, Any
 import requests
-from pathlib import Path
 from difflib import SequenceMatcher
+
+# Make sibling _lib importable when run as `python3 SCOUT/run.py`
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from _lib.agent_state import AgentStateClient, AgentStateError  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [SCOUT] %(message)s')
 logger = logging.getLogger(__name__)
+
+# Lookback window for "previous creatives" — must exceed SCOUT cron cadence (daily).
+# 26h gives a 2h safety margin so a creative seen yesterday is still in `prev`.
+PREV_WINDOW_HOURS = 26
+
 
 class SCOUTAdCopyIntel:
     def __init__(self):
@@ -22,11 +35,7 @@ class SCOUTAdCopyIntel:
         self.telegram_chat_id = os.getenv('SCOUT_TELEGRAM_CHAT_ID')
         self.telegram_bot_token = os.getenv('SCOUT_TELEGRAM_BOT_TOKEN')
 
-        self.state_dir = Path.home() / '.hermes' / 'scout-state'
-        self.state_dir.mkdir(parents=True, exist_ok=True)
-        self.snapshots_file = self.state_dir / 'snapshots.json'
-        self.diffs_file = self.state_dir / 'diffs.jsonl'
-
+        self.state = AgentStateClient()
         self.dataforseo_base_url = 'https://api.dataforseo.com/v3'
         self.similarity_threshold = 0.75  # 75% identical = no change
 
@@ -35,15 +44,45 @@ class SCOUTAdCopyIntel:
         encoded = base64.b64encode(credentials.encode()).decode()
         return f"Basic {encoded}"
 
-    def _get_snapshots(self) -> Dict[str, Dict[str, Any]]:
-        if self.snapshots_file.exists():
-            with open(self.snapshots_file) as f:
-                return json.load(f)
-        return {}
+    def _get_prev_creatives(self, competitor_domain: str) -> Dict[str, Dict[str, Any]]:
+        """Fetch creatives seen on this competitor's domain within the lookback window.
 
-    def _save_snapshots(self, snapshots: Dict[str, Dict[str, Any]]):
-        with open(self.snapshots_file, 'w') as f:
-            json.dump(snapshots, f, indent=2)
+        Returns: {creative_id: creative_dict}
+        """
+        since = int((datetime.utcnow() - timedelta(hours=PREV_WINDOW_HOURS)).timestamp())
+        rows = self.state.list_fingerprints(
+            agent='SCOUT', scope=competitor_domain, since=since, limit=500
+        )
+        out: Dict[str, Dict[str, Any]] = {}
+        for r in rows:
+            cid = r.get('fingerprint_key')
+            if not cid:
+                continue
+            payload = r.get('payload')
+            if isinstance(payload, str):
+                try:
+                    payload = json.loads(payload)
+                except (json.JSONDecodeError, TypeError):
+                    payload = {}
+            out[cid] = payload or {'creative_id': cid}
+        return out
+
+    def _save_current_creatives(
+        self, competitor_domain: str, creatives: Dict[str, Dict[str, Any]]
+    ):
+        """Upsert current creatives so their last_seen_at advances to now."""
+        if not creatives:
+            return
+        self.state.upsert_fingerprints([
+            {
+                'agent': 'SCOUT',
+                'scope': competitor_domain,
+                'fingerprint_key': cid,
+                'fingerprint_hash': cid,
+                'payload': creative,
+            }
+            for cid, creative in creatives.items()
+        ])
 
     def _text_similarity(self, text1: str, text2: str) -> float:
         """Calculate similarity ratio between two texts (0-1)"""
@@ -91,11 +130,16 @@ class SCOUTAdCopyIntel:
             return []
 
     def detect_ad_copy_changes(self, competitor_domain: str):
-        """Detect ad creative changes for a competitor domain"""
+        """Detect ad creative changes for a competitor domain.
+
+        Strategy: load creatives seen in the last PREV_WINDOW_HOURS hours from D1
+        as `prev`, diff against the current SERP query, emit alerts for new
+        creatives, then upsert all current creatives so their last_seen_at
+        advances. Removed creatives age out via last_seen_at on the next read.
+        """
         current_items = self.query_ads_by_target(competitor_domain)
         logger.info(f"{competitor_domain}: {len(current_items)} active ads")
 
-        # Build map: creative_id → ad info
         current_creatives = {
             item.get('creative_id'): {
                 'creative_id': item.get('creative_id'),
@@ -105,54 +149,31 @@ class SCOUTAdCopyIntel:
                 'format': item.get('format', ''),
                 'first_shown': item.get('first_shown'),
                 'last_shown': item.get('last_shown'),
-                'preview_image_url': (item.get('preview_image') or {}).get('url')
+                'preview_image_url': (item.get('preview_image') or {}).get('url'),
             }
             for item in current_items if item.get('creative_id')
         }
 
-        snapshots = self._get_snapshots()
-        snapshot_key = competitor_domain
+        prev_creatives = self._get_prev_creatives(competitor_domain)
 
-        if snapshot_key not in snapshots:
-            snapshots[snapshot_key] = {
-                'timestamp': datetime.utcnow().isoformat(),
-                'creatives': current_creatives
-            }
-            self._save_snapshots(snapshots)
-            logger.info(f"First snapshot: {snapshot_key} ({len(current_creatives)} creatives)")
+        if not prev_creatives:
+            self._save_current_creatives(competitor_domain, current_creatives)
+            logger.info(f"First snapshot: {competitor_domain} ({len(current_creatives)} creatives)")
             return
 
-        prev_creatives = snapshots[snapshot_key].get('creatives', {})
-
-        # Diff: new creatives, removed creatives
         new_ids = set(current_creatives.keys()) - set(prev_creatives.keys())
-        removed_ids = set(prev_creatives.keys()) - set(current_creatives.keys())
 
-        if new_ids:
-            for cid in new_ids:
-                ad = current_creatives[cid]
-                logger.info(f"NEW AD on {competitor_domain}: {ad.get('title')} ({ad.get('format')})")
-                self._send_diff_alert(competitor_domain, 'NEW', None, ad, 0.0)
-                self._log_diff(competitor_domain, 'new_creative', None, ad)
+        for cid in new_ids:
+            ad = current_creatives[cid]
+            logger.info(f"NEW AD on {competitor_domain}: {ad.get('title')} ({ad.get('format')})")
+            self._send_diff_alert(competitor_domain, 'NEW', None, ad, 0.0)
+            self._record_new_creative(competitor_domain, ad)
 
-        if removed_ids:
-            for cid in removed_ids:
-                ad = prev_creatives[cid]
-                logger.info(f"PAUSED AD on {competitor_domain}: {ad.get('title')}")
-                self._log_diff(competitor_domain, 'paused_creative', ad, None)
+        # Note: paused creatives are NOT alerted (matches prior behavior — old code
+        # only wrote to diffs.jsonl, never paged Telegram). Pauses are discoverable
+        # in D1 by filtering on last_seen_at.
 
-        snapshots[snapshot_key] = {
-            'timestamp': datetime.utcnow().isoformat(),
-            'creatives': current_creatives
-        }
-        self._save_snapshots(snapshots)
-
-        # Update snapshot
-        snapshots[snapshot_key] = {
-            'timestamp': datetime.utcnow().isoformat(),
-            'ads_by_domain': current_ads
-        }
-        self._save_snapshots(snapshots)
+        self._save_current_creatives(competitor_domain, current_creatives)
 
     def _send_diff_alert(self, competitor: str, change_type: str, prev_ad: Dict, curr_ad: Dict, similarity: float):
         if not (self.telegram_chat_id and self.telegram_bot_token):
@@ -184,16 +205,19 @@ Last shown: {ad.get('last_shown', 'N/A')}
         except Exception as e:
             logger.error(f"Failed to send Telegram alert: {e}")
 
-    def _log_diff(self, competitor: str, change_type: str, prev_ad: Dict, curr_ad: Dict):
-        diff = {
-            'timestamp': datetime.utcnow().isoformat(),
-            'competitor': competitor,
-            'change_type': change_type,
-            'before': prev_ad,
-            'after': curr_ad
-        }
-        with open(self.diffs_file, 'a') as f:
-            f.write(json.dumps(diff) + '\n')
+    def _record_new_creative(self, competitor: str, ad: Dict[str, Any]):
+        """Record a new-creative finding to the D1 alerts inbox."""
+        self.state.create_alert(
+            agent='SCOUT',
+            severity='info',
+            title=f"New creative on {competitor}: {ad.get('title', '')[:80]}",
+            payload={
+                'timestamp': datetime.utcnow().isoformat(),
+                'competitor': competitor,
+                'change_type': 'new_creative',
+                'creative': ad,
+            },
+        )
 
     def monitor_competitors(self):
         """Main monitoring loop — query each competitor's domain"""
@@ -210,10 +234,34 @@ Last shown: {ad.get('last_shown', 'N/A')}
 
         logger.info("Competitor ad monitoring complete")
 
+def _notify_d1_failure(err: Exception):
+    chat = os.getenv('SCOUT_TELEGRAM_CHAT_ID')
+    token = os.getenv('SCOUT_TELEGRAM_BOT_TOKEN')
+    if not (chat and token):
+        return
+    try:
+        requests.post(
+            f'https://api.telegram.org/bot{token}/sendMessage',
+            json={
+                'chat_id': chat,
+                'text': f"🚨 SCOUT aborted: D1 agent state API unreachable\n{err}",
+            },
+            timeout=10,
+        )
+    except Exception:
+        pass
+
+
 def run():
-    """Entry point for Hermes"""
-    scout = SCOUTAdCopyIntel()
-    scout.monitor_competitors()
+    """Entry point for Hermes. Fail-fast on D1 errors (no degraded run)."""
+    try:
+        scout = SCOUTAdCopyIntel()
+        scout.monitor_competitors()
+    except AgentStateError as e:
+        logger.error(f"D1 agent state API unreachable — aborting this tick: {e}")
+        _notify_d1_failure(e)
+        sys.exit(2)
+
 
 if __name__ == '__main__':
     run()
