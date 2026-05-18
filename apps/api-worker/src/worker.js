@@ -34,6 +34,7 @@ import { handleBotRadarRoute } from './handlers/bot-radar.js';
 import { handleMiscRoute } from './handlers/misc.js';
 import { handleTemplateThumbnailRoute, handleTemplatesRoute } from './handlers/templates.js';
 import { handleAccountsRoute } from './handlers/accounts.js';
+import { handleAgentStateRoute } from './handlers/agent-state.js';
 import { handleDeploymentsRoute } from './handlers/deployments.js';
 
 export default {
@@ -174,6 +175,12 @@ export default {
       {
         const accountsRes = await handleAccountsRoute({ request, db, path, method });
         if (accountsRes) return accountsRes;
+      }
+
+      // ═══ HERMES AGENT STATE — D1-backed state for AEGIS/SCOUT/HERALD/ORACLE ═══
+      {
+        const agentStateRes = await handleAgentStateRoute({ request, env, url, path, method });
+        if (agentStateRes) return agentStateRes;
       }
 
       // ═══ OPS DEPLOYMENTS + DEPLOY-CONFIGS (git-push, stats, configs) ═══
