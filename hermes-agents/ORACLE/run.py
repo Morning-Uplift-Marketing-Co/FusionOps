@@ -1,18 +1,30 @@
 #!/usr/bin/env python3
-"""ORACLE — Keyword Discovery"""
+"""ORACLE — Keyword Discovery
+
+State (weekly baseline + discovered keywords) lives in D1 via the agent state API.
+See .agents/debates/hermes-state-20260518-231225/SYNTHESIS-R2.md.
+"""
 
 import os
-import json
+import sys
 import base64
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Set, Tuple, Any
+from typing import Dict, List, Set, Tuple
 import requests
-from pathlib import Path
-from collections import defaultdict
+
+# Make sibling _lib importable when run as `python3 ORACLE/run.py`
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from _lib.agent_state import AgentStateClient, AgentStateError  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [ORACLE] %(message)s')
 logger = logging.getLogger(__name__)
+
+BASELINE_SOURCE = 'weekly_baseline'
+DISCOVERED_SOURCE = 'suggestion'
+# ORACLE runs weekly (Mon 09:00 UTC). 9d window covers 1 missed run + safety margin.
+BASELINE_WINDOW_DAYS = 9
+
 
 class OracleKeywordDiscovery:
     def __init__(self):
@@ -22,16 +34,15 @@ class OracleKeywordDiscovery:
         self.telegram_chat_id = os.getenv('ORACLE_TELEGRAM_CHAT_ID')
         self.telegram_bot_token = os.getenv('ORACLE_TELEGRAM_BOT_TOKEN')
 
-        self.state_dir = Path.home() / '.hermes' / 'oracle-state'
-        self.state_dir.mkdir(parents=True, exist_ok=True)
-        self.keywords_file = self.state_dir / 'keywords.jsonl'
-        self.baseline_file = self.state_dir / 'weekly_baseline.json'
-
+        self.state = AgentStateClient()
         self.dataforseo_base_url = 'https://api.dataforseo.com/v3'
         self.min_search_volume = 100
 
         # Brand protection terms to filter out
         self.protection_filters = {'scam', 'complaint', 'reddit', 'reviews', 'fake', 'lawsuit', 'bad'}
+
+        # Buffer for log_keyword calls — flushed as a single batch upsert at end of run.
+        self._keyword_log_buffer: List[Dict[str, int]] = []
 
     def _auth_header(self) -> str:
         credentials = f"{self.dataforseo_login}:{self.dataforseo_password}"
@@ -212,33 +223,49 @@ class OracleKeywordDiscovery:
         return suggestions
 
     def get_baseline_keywords(self) -> Set[str]:
-        """Load previous week's keywords for dedup"""
-        if self.baseline_file.exists():
-            with open(self.baseline_file) as f:
-                data = json.load(f)
-                return set(data.get('keywords', []))
-        return set()
+        """Load previous week's keywords for dedup (from D1).
+
+        Reads with a 9-day lookback so stale baselines from 2+ weeks ago
+        age out naturally — no DELETE needed.
+        """
+        since = int((datetime.utcnow() - timedelta(days=BASELINE_WINDOW_DAYS)).timestamp())
+        rows = self.state.list_oracle_keywords(source=BASELINE_SOURCE, since=since, limit=500)
+        return {r['keyword'] for r in rows if r.get('keyword')}
 
     def save_baseline_keywords(self, keywords: Set[str]):
-        """Save current week's keywords as baseline"""
-        with open(self.baseline_file, 'w') as f:
-            json.dump({
-                'timestamp': datetime.utcnow().isoformat(),
-                'keywords': list(keywords)
-            }, f)
+        """Upsert current week's keywords as the new baseline.
+
+        Rows older than BASELINE_WINDOW_DAYS will age out from future reads
+        because get_baseline_keywords filters on last_seen_at.
+        """
+        if not keywords:
+            return
+        self.state.upsert_oracle_keywords([
+            {'keyword': kw, 'source': BASELINE_SOURCE, 'volume': 0, 'weekly_baseline_volume': 0}
+            for kw in keywords
+        ])
 
     def log_keyword(self, keyword: str, volume: int, intent: str, source: str, filtered_reason: str = None):
-        """Log discovered keyword"""
-        entry = {
-            'timestamp': datetime.utcnow().isoformat(),
+        """Buffer a discovered keyword for batched upsert at end of run.
+
+        Note: `intent` and `filtered_reason` are NOT stored in the oracle_keywords
+        table (no column for them). They're surfaced in the per-run report alert
+        instead. The pre-existing keywords.jsonl audit trail is replaced by
+        querying agent_alerts for the latest ORACLE run.
+        """
+        self._keyword_log_buffer.append({
             'keyword': keyword,
-            'search_volume': volume,
-            'intent': intent,
-            'source': source,
-            'filtered_reason': filtered_reason
-        }
-        with open(self.keywords_file, 'a') as f:
-            f.write(json.dumps(entry) + '\n')
+            'source': DISCOVERED_SOURCE,
+            'volume': int(volume or 0),
+        })
+
+    def _flush_keyword_log(self):
+        """Bulk-upsert all buffered keywords to D1 (single batch call)."""
+        if not self._keyword_log_buffer:
+            return
+        self.state.upsert_oracle_keywords(self._keyword_log_buffer)
+        logger.info(f"Flushed {len(self._keyword_log_buffer)} keywords to oracle_keywords")
+        self._keyword_log_buffer = []
 
     def _send_report(self, new_keywords: List[Dict], rising_volume: List[Dict], filtered_out: List[Dict]):
         if not (self.telegram_chat_id and self.telegram_bot_token):
@@ -335,16 +362,63 @@ NEW VARIANTS (Commercial Intent):
                 if curr_vol > 0 and prev_vol > 0 and curr_vol > prev_vol * 1.3:  # 30% growth
                     rising_volume.append({'keyword': kw, 'prev_vol': prev_vol, 'volume': curr_vol})
 
-        # Step 7: Save new baseline and send report
+        # Step 7: Save new baseline, flush keyword log to D1, send reports.
         self.save_baseline_keywords(set(brand_keywords))
+        self._flush_keyword_log()
+        self._record_run_report(new_keywords, rising_volume, filtered_out)
         self._send_report(new_keywords, rising_volume, filtered_out)
 
         logger.info("Keyword discovery complete")
 
+    def _record_run_report(self, new_keywords: List[Dict], rising_volume: List[Dict], filtered_out: List[Dict]):
+        """Persist the per-run discovery report as a single D1 alert entry.
+
+        Replaces the historical role of keywords.jsonl as a structured audit trail —
+        callers can query `GET /api/agents/state/alerts?agent=ORACLE` to see what
+        each weekly run discovered and filtered.
+        """
+        self.state.create_alert(
+            agent='ORACLE',
+            severity='info',
+            title=f"Weekly keyword discovery — {len(new_keywords)} new, {len(filtered_out)} filtered",
+            payload={
+                'timestamp': datetime.utcnow().isoformat(),
+                'period_start': (datetime.utcnow() - timedelta(days=7)).date().isoformat(),
+                'period_end': datetime.utcnow().date().isoformat(),
+                'new_keywords': new_keywords,
+                'rising_volume': rising_volume,
+                'filtered_out': filtered_out,
+            },
+        )
+
+def _notify_d1_failure(err: Exception):
+    chat = os.getenv('ORACLE_TELEGRAM_CHAT_ID')
+    token = os.getenv('ORACLE_TELEGRAM_BOT_TOKEN')
+    if not (chat and token):
+        return
+    try:
+        requests.post(
+            f'https://api.telegram.org/bot{token}/sendMessage',
+            json={
+                'chat_id': chat,
+                'text': f"🚨 ORACLE aborted: D1 agent state API unreachable\n{err}",
+            },
+            timeout=10,
+        )
+    except Exception:
+        pass
+
+
 def run():
-    """Entry point for Hermes"""
-    oracle = OracleKeywordDiscovery()
-    oracle.discover_keywords()
+    """Entry point for Hermes. Fail-fast on D1 errors (no degraded run)."""
+    try:
+        oracle = OracleKeywordDiscovery()
+        oracle.discover_keywords()
+    except AgentStateError as e:
+        logger.error(f"D1 agent state API unreachable — aborting this tick: {e}")
+        _notify_d1_failure(e)
+        sys.exit(2)
+
 
 if __name__ == '__main__':
     run()
