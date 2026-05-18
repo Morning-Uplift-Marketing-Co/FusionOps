@@ -1,17 +1,27 @@
 #!/usr/bin/env python3
-"""AEGIS — Brand-Jack Detection for Trademark Keywords"""
+"""AEGIS — Brand-Jack Detection for Trademark Keywords
+
+State (24h dedup window + alerts) lives in D1 via the agent state API.
+See .agents/debates/hermes-state-20260518-231225/SYNTHESIS-R2.md.
+"""
 
 import os
-import json
+import sys
 import base64
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any
+from typing import List, Dict, Any
 import requests
-from pathlib import Path
+
+# Make sibling _lib importable when run as `python3 AEGIS/run.py`
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from _lib.agent_state import AgentStateClient, AgentStateError  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [AEGIS] %(message)s')
 logger = logging.getLogger(__name__)
+
+DEDUP_WINDOW_HOURS = 24
+
 
 class AEGISBrandJackDetector:
     def __init__(self):
@@ -24,11 +34,7 @@ class AEGISBrandJackDetector:
         self.telegram_chat_id = os.getenv('AEGIS_TELEGRAM_CHAT_ID')
         self.telegram_bot_token = os.getenv('AEGIS_TELEGRAM_BOT_TOKEN')
 
-        self.state_dir = Path.home() / '.hermes' / 'aegis-state'
-        self.state_dir.mkdir(parents=True, exist_ok=True)
-        self.alerts_file = self.state_dir / 'alerts.jsonl'
-        self.seen_file = self.state_dir / 'seen.json'
-
+        self.state = AgentStateClient()
         self.dataforseo_base_url = 'https://api.dataforseo.com/v3'
 
     def _auth_header(self) -> str:
@@ -38,23 +44,32 @@ class AEGISBrandJackDetector:
         return f"Basic {encoded}"
 
     def _get_seen_advertisers(self) -> Dict[str, datetime]:
-        """Load 24h dedup window"""
-        if self.seen_file.exists():
-            with open(self.seen_file) as f:
-                data = json.load(f)
-                return {
-                    k: datetime.fromisoformat(v)
-                    for k, v in data.items()
-                }
-        return {}
+        """Load 24h dedup window from D1."""
+        since = int((datetime.utcnow() - timedelta(hours=DEDUP_WINDOW_HOURS)).timestamp())
+        rows = self.state.list_fingerprints(agent='AEGIS', since=since, limit=500)
+        return {
+            r['fingerprint_key']: datetime.utcfromtimestamp(r['last_seen_at'])
+            for r in rows
+            if r.get('fingerprint_key') and r.get('last_seen_at') is not None
+        }
 
     def _save_seen_advertisers(self, seen: Dict[str, datetime]):
-        """Save 24h dedup window"""
-        with open(self.seen_file, 'w') as f:
-            json.dump(
-                {k: v.isoformat() for k, v in seen.items()},
-                f
-            )
+        """Upsert 24h dedup window to D1.
+
+        Rows older than the window age out naturally on the next read (no DELETE).
+        """
+        if not seen:
+            return
+        self.state.upsert_fingerprints([
+            {
+                'agent': 'AEGIS',
+                'scope': '_global',
+                'fingerprint_key': key,
+                'fingerprint_hash': key,
+                'payload': {'last_seen_iso': ts.isoformat()},
+            }
+            for key, ts in seen.items()
+        ])
 
     def _is_authorized(self, advertiser_name: str) -> bool:
         """Check if advertiser title/domain matches approved list (fuzzy match)"""
@@ -155,18 +170,21 @@ Time: {datetime.utcnow().isoformat()} UTC
             logger.error(f"Failed to send Telegram alert: {e}")
 
     def log_alert(self, keyword: str, domain: str, advertiser: Dict[str, str]):
-        """Log alert to alerts.jsonl"""
-        alert = {
+        """Persist alert to D1 (replaces local alerts.jsonl)."""
+        payload = {
             'timestamp': datetime.utcnow().isoformat(),
             'keyword': keyword,
             'domain': domain,
             'title': advertiser.get('title'),
             'url': advertiser.get('url'),
-            'position': advertiser.get('position')
+            'position': advertiser.get('position'),
         }
-
-        with open(self.alerts_file, 'a') as f:
-            f.write(json.dumps(alert) + '\n')
+        self.state.create_alert(
+            agent='AEGIS',
+            severity='high',
+            title=f"Brand-jack: {keyword} → {domain}",
+            payload=payload,
+        )
         logger.info(f"Alert logged: {keyword} - {domain}")
 
     def detect_brand_jacks(self):
@@ -222,10 +240,35 @@ Time: {datetime.utcnow().isoformat()} UTC
         self._save_seen_advertisers(seen_advertisers)
         logger.info(f"Brand-jack detection complete: {new_alerts} new alerts")
 
+def _notify_d1_failure(err: Exception):
+    """Best-effort Telegram alert when the D1 agent state API is unreachable."""
+    chat = os.getenv('AEGIS_TELEGRAM_CHAT_ID')
+    token = os.getenv('AEGIS_TELEGRAM_BOT_TOKEN')
+    if not (chat and token):
+        return
+    try:
+        requests.post(
+            f'https://api.telegram.org/bot{token}/sendMessage',
+            json={
+                'chat_id': chat,
+                'text': f"🚨 AEGIS aborted: D1 agent state API unreachable\n{err}",
+            },
+            timeout=10,
+        )
+    except Exception:
+        pass  # already failing — don't cascade
+
+
 def run():
-    """Entry point for Hermes"""
-    detector = AEGISBrandJackDetector()
-    detector.detect_brand_jacks()
+    """Entry point for Hermes. Fail-fast on D1 errors (no degraded run)."""
+    try:
+        detector = AEGISBrandJackDetector()
+        detector.detect_brand_jacks()
+    except AgentStateError as e:
+        logger.error(f"D1 agent state API unreachable — aborting this tick: {e}")
+        _notify_d1_failure(e)
+        sys.exit(2)
+
 
 if __name__ == '__main__':
     run()
