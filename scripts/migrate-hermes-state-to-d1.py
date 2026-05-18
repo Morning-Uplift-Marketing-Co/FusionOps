@@ -98,12 +98,14 @@ def collect_scout(state_dir: Path):
         for creative_id, creative in creatives.items():
             if not creative_id:
                 continue
+            creative_payload = creative if isinstance(creative, dict) else {"raw": creative}
+            creative_payload.setdefault("creative_id", str(creative_id))
             fingerprints.append({
                 "agent": "SCOUT",
                 "scope": competitor_domain,
                 "fingerprint_key": str(creative_id),
-                "fingerprint_hash": str(creative.get("url") or creative.get("title") or creative_id),
-                "payload": creative,
+                "fingerprint_hash": str(creative_id),
+                "payload": creative_payload,
             })
 
     return fingerprints
