@@ -1,0 +1,60 @@
+# LiteLLM Proxy Configuration
+# Routes Hermes agent requests through OpenRouter with Langfuse tracing
+
+model_list:
+  # NousResearch models (Hermes agent defaults)
+  - model_name: "hermes-2-pro-llama-3-8b"
+    litellm_params:
+      model: "openrouter/nous-hermes-2-pro-8b"
+      api_key: "$OPENROUTER_API_KEY"
+      timeout: 120
+
+  - model_name: "hermes-2-mixtral-8x7b"
+    litellm_params:
+      model: "openrouter/nous-hermes-2-mixtral-8x7b-dpo"
+      api_key: "$OPENROUTER_API_KEY"
+      timeout: 120
+
+  # Claude models (for variety in agent team)
+  - model_name: "claude-3-5-sonnet"
+    litellm_params:
+      model: "openrouter/anthropic/claude-3.5-sonnet"
+      api_key: "$OPENROUTER_API_KEY"
+      timeout: 120
+
+  - model_name: "claude-3-opus"
+    litellm_params:
+      model: "openrouter/anthropic/claude-3-opus"
+      api_key: "$OPENROUTER_API_KEY"
+      timeout: 120
+
+  # Catch-all: default to Sonnet if model unknown
+  - model_name: "default"
+    litellm_params:
+      model: "openrouter/anthropic/claude-3.5-sonnet"
+      api_key: "$OPENROUTER_API_KEY"
+      timeout: 120
+
+router_settings:
+  # Enable Langfuse tracing for all requests
+  langfuse: true
+  langfuse_public_key: "$LANGFUSE_PUBLIC_KEY"
+  langfuse_secret_key: "$LANGFUSE_SECRET_KEY"
+  langfuse_host: "$LANGFUSE_HOST"
+
+  # Fallback model if primary fails
+  fallback_routes:
+    - model_name: "hermes-2-pro-llama-3-8b"
+      model_list:
+        - "claude-3-5-sonnet"
+
+  # Custom error handling
+  retry_after: 5
+  num_retries: 2
+  enable_logging: true
+
+# Proxy authentication (optional: set API key for proxy callers)
+general_settings:
+  master_key: "$LITELLM_MASTER_KEY"
+  log_level: "INFO"
+  database_url: null  # No persistence needed for stateless proxy
