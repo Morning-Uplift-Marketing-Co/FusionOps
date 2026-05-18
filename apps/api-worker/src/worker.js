@@ -30,6 +30,7 @@ import { handleIntegrationsAutomationRoute } from './handlers/automation/integra
 import { handleSitesRoute } from './handlers/sites.js';
 import { handleSettingsRoute } from './handlers/settings.js';
 import { handlePixelEventsRoute } from './handlers/pixel-events.js';
+import { handleBotRadarRoute } from './handlers/bot-radar.js';
 import { handleMiscRoute } from './handlers/misc.js';
 import { handleTemplateThumbnailRoute, handleTemplatesRoute } from './handlers/templates.js';
 import { handleAccountsRoute } from './handlers/accounts.js';
@@ -94,6 +95,12 @@ export default {
     {
       const pixelEventsRes = await handlePixelEventsRoute({ env, url, path, method });
       if (pixelEventsRes) return pixelEventsRes;
+    }
+
+    // ═══ BOT RADAR — Google Ads bot tracking + IP sync ═══
+    {
+      const botRadarRes = await handleBotRadarRoute({ request, env, url, path, method });
+      if (botRadarRes) return botRadarRes;
     }
 
     // ═══ PROXY ROUTES (no auth required — proxy forwards auth headers) ═══
