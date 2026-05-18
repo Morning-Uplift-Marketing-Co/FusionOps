@@ -66,6 +66,7 @@ export function Sidebar({ page, setPage, siteCount, startCreate, startTemplateGe
         { id: "variant", icon: "🧪", label: "Variant Studio" },
         { id: "ops", icon: "🏢", label: "Ops Center" },
         { id: "deploys", icon: "🚀", label: "Deploys" },
+        { id: "observability", icon: "🔭", label: "Observability" },
         { id: "error-log", icon: "🐛", label: "Error Log" },
         { id: "docs", icon: "📚", label: "API Docs", external: true, href: "/docs" },
         { id: "settings", icon: "⚙️", label: "Settings" },
