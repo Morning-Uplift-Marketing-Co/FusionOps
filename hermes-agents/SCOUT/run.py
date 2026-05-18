@@ -89,10 +89,11 @@ class SCOUTAdCopyIntel:
         if not isinstance(creative, dict):
             return ""
         title = " ".join(str(creative.get("title") or "").lower().split())
-        url = str(creative.get("url") or "").strip().lower()
         fmt = str(creative.get("format") or "").strip().lower()
         advertiser_id = str(creative.get("advertiser_id") or "").strip().lower()
-        return "||".join([advertiser_id, title, url, fmt])
+        # DataForSEO's ad transparency URL embeds the creative_id, so using the
+        # URL here would defeat churn matching. Prefer advertiser/title/format.
+        return "||".join([advertiser_id, title, fmt])
 
     def _split_new_creatives(
         self,

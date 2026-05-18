@@ -28,7 +28,7 @@ class ScoutReconciliationTests(unittest.TestCase):
                 "creative_id": "NEW1",
                 "advertiser_id": "ADV1",
                 "title": "Fig Loans Login",
-                "url": "https://www.figloans.com/login",
+                "url": "https://adstransparency.google.com/advertiser/ADV1/creative/NEW1?region=US",
                 "format": "text",
             },
             "NEW2": {
