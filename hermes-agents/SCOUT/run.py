@@ -84,6 +84,49 @@ class SCOUTAdCopyIntel:
             for cid, creative in creatives.items()
         ])
 
+    def _creative_signature(self, creative: Dict[str, Any]) -> str:
+        """Return a stable content signature for matching ID churn across runs."""
+        if not isinstance(creative, dict):
+            return ""
+        title = " ".join(str(creative.get("title") or "").lower().split())
+        fmt = str(creative.get("format") or "").strip().lower()
+        advertiser_id = str(creative.get("advertiser_id") or "").strip().lower()
+        # DataForSEO's ad transparency URL embeds the creative_id, so using the
+        # URL here would defeat churn matching. Prefer advertiser/title/format.
+        return "||".join([advertiser_id, title, fmt])
+
+    def _split_new_creatives(
+        self,
+        prev_creatives: Dict[str, Dict[str, Any]],
+        current_creatives: Dict[str, Dict[str, Any]],
+    ) -> tuple[List[str], List[str]]:
+        """Separate true new creatives from legacy/current ID churn.
+
+        During the D1 cutover we may inherit snapshots where the creative ID
+        changed but the ad body stayed the same. Matching on a content
+        signature lets the first post-migration run self-heal without paging a
+        false "new creative" alert for every carried-over ad.
+        """
+        prev_signatures = {
+            self._creative_signature(creative)
+            for creative in prev_creatives.values()
+            if self._creative_signature(creative)
+        }
+
+        matched_by_signature: List[str] = []
+        true_new_ids: List[str] = []
+
+        for cid, creative in current_creatives.items():
+            if cid in prev_creatives:
+                continue
+            signature = self._creative_signature(creative)
+            if signature and signature in prev_signatures:
+                matched_by_signature.append(cid)
+            else:
+                true_new_ids.append(cid)
+
+        return matched_by_signature, true_new_ids
+
     def _text_similarity(self, text1: str, text2: str) -> float:
         """Calculate similarity ratio between two texts (0-1)"""
         matcher = SequenceMatcher(None, text1.lower(), text2.lower())
@@ -161,7 +204,17 @@ class SCOUTAdCopyIntel:
             logger.info(f"First snapshot: {competitor_domain} ({len(current_creatives)} creatives)")
             return
 
-        new_ids = set(current_creatives.keys()) - set(prev_creatives.keys())
+        matched_by_signature, new_ids = self._split_new_creatives(
+            prev_creatives,
+            current_creatives,
+        )
+
+        if matched_by_signature:
+            logger.info(
+                "%s: suppressed %d duplicate alerts caused by creative_id churn",
+                competitor_domain,
+                len(matched_by_signature),
+            )
 
         for cid in new_ids:
             ad = current_creatives[cid]
