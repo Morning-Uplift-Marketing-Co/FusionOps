@@ -25,6 +25,7 @@ import { Settings } from "./components/Settings";
 import { DeployHistory } from "./components/DeployHistory";
 import { TemplateGeneratorModal } from "./components/TemplateGenerator";
 import { ErrorLog, logError } from "./components/ErrorLog";
+import { Observability } from "./components/Observability";
 import { SpendDashboard } from "./components/SpendDashboard";
 import { AccountMap } from "./components/AccountMap";
 import { TrackingDashboard } from "./components/TrackingDashboard";
@@ -1326,6 +1327,7 @@ useEffect(() => {
             />
           )}
           {page === "proxy-health" && <ProxyHealthTab profiles={ops.profiles} settings={settings} standalone />}
+          {page === "observability" && <Observability />}
           {page === "error-log" && <ErrorLog />}
           {page === "api-health" && <ApiHealthCheck />}
           {page === "settings" && <Settings settings={settings} setSettings={handleSaveSettings} stats={stats} apiOk={apiOk} neonOk={neonOk} sitesCount={sites.length} />}

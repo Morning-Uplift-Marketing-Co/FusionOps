@@ -69,5 +69,37 @@ services:
       timeout: 5s
       retries: 3
 
+  # ─── Clawmetry — Observability Dashboard (trial: Hermes detection) ──────────
+  # Reads Hermes/OpenClaw workspace (read-only). Full Hermes integration is
+  # roadmap, not GA — verify auto-detection works for our setup. Open at:
+  #   http://178.105.137.23:8900
+  # Verify:
+  #   curl -s http://localhost:8900/api/overview | jq .
+  # If empty → override workspace path via `command:` (see below)
+  # Repos: https://github.com/vivekchand/clawmetry
+  #        https://github.com/stritti/clawmetry-docker
+  clawmetry:
+    image: stritti/clawmetry:latest
+    container_name: clawmetry
+    restart: unless-stopped
+    ports:
+      - "8900:8900"
+    environment:
+      CLAWMETRY_NO_TELEMETRY: "1"
+      DO_NOT_TRACK: "1"
+    volumes:
+      # Mount BOTH possible workspace locations (Hermes inherits OpenClaw layout)
+      - ${HOME}/.hermes:/root/.hermes:ro
+      - ${HOME}/.openclaw:/root/.openclaw:ro
+      # Project workspace for skill discovery fallback
+      - /opt/fusionops:/workspace:ro
+    # If default ~/.openclaw detection fails, override:
+    # command: ["clawmetry", "--host", "0.0.0.0", "--port", "8900", "--workspace", "/root/.hermes"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8900/api/overview || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
 volumes:
   mc_data:

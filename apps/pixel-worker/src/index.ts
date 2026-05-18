@@ -5,7 +5,12 @@
 // Receives sendBeacon payloads from LP tracking-pixel.js
 // Stores events in D1 pixel_events table.
 // Deployed to t.{domain} via CNAME -> pixel-worker.{cf}.workers.dev
+//
+// Bot Detection: every /e POST also runs 4-signal bot detection
+// and records to bot_visits table for GUARDIAN agent analysis.
 // ============================================================
+
+import { detectBot, recordBotVisit } from './bot-detect';
 
 interface Env {
   DB: D1Database;
@@ -241,6 +246,32 @@ async function handlePixelEvent(
           domainValue,
           body
         ).run();
+
+        // ============================================================
+        // Bot Detection — runs on every pixel event (verbose mode)
+        // Records all confirmed bots (score >= 0.5) for GUARDIAN
+        // ============================================================
+        stage = 'bot_detection';
+        try {
+          const reqUrl = new URL(request.url);
+          const botResult = await detectBot(request, reqUrl, env);
+          // Record any visit with score >= 0.5 (medium confidence+)
+          if (botResult.composite_score >= 0.5) {
+            await recordBotVisit(env.DB, botResult, {
+              url: urlValue,
+              path: reqUrl.pathname,
+              site_domain: domainValue,
+              campaign_id: payload.campaign || payload.cid || '',
+              visit_id: payload.sid || payload.session_id || '',
+            });
+          }
+        } catch (botErr) {
+          // Bot detection failures should NOT block pixel writes
+          console.error('bot_detection_error', {
+            stage: 'bot_detection',
+            message: toErrorMessage(botErr),
+          });
+        }
       } catch (error) {
         logPixelWorkerError({
           stage,

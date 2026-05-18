@@ -1,0 +1,45 @@
+version: "3.9"
+
+# LiteLLM Proxy v1.x — OpenRouter → Langfuse instrumentation layer
+# Purpose: Intercept Hermes LLM calls, forward to OpenRouter, trace to Langfuse
+# Deployment: /opt/fusionops/infra/litellm
+# Access: http://localhost:4000/docs (OpenAPI)
+
+services:
+
+  litellm-proxy:
+    image: ghcr.io/berriai/litellm:main
+    restart: always
+    ports:
+      - "4000:4000"
+    environment:
+      # LiteLLM core
+      LITELLM_LOG: "DEBUG"
+      FLASK_ENV: "production"
+
+      # OpenRouter provider config
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+
+      # Langfuse tracing
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY}
+      LANGFUSE_HOST: ${LANGFUSE_HOST:-http://langfuse-web:3000}
+
+      # Proxy settings
+      ALLOWED_ROUTES: "["chatCompletions", "completions", "embeddings"]"
+
+    volumes:
+      - ./config.yaml:/app/config.yaml
+      - ./litellm_logs:/var/log/litellm
+    healthcheck:
+      test: curl -f http://localhost:4000/health || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - observability
+
+networks:
+  observability:
+    driver: bridge

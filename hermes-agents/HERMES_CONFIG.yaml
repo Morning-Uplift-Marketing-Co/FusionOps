@@ -1,0 +1,120 @@
+# Hermes Config — 4-Agent Trademark Monitoring Team
+# Add these cron entries to your ~/.hermes/config.yaml
+
+crons:
+  # AEGIS — Brand-Jack Detection (every 2 hours)
+  aegis-brand-jack:
+    schedule: "0 */2 * * *"   # Every 2 hours
+    skill: "trademark-monitoring/aegis"
+    enabled: true
+    env_file: /path/to/trademark-agents/.env
+
+  # SCOUT — Competitor Ad Copy Intelligence (daily 06:00 UTC)
+  scout-ad-copy:
+    schedule: "0 6 * * *"     # Daily 06:00 UTC
+    skill: "trademark-monitoring/scout"
+    enabled: true
+    env_file: /path/to/trademark-agents/.env
+
+  # HERALD — Trend & Reputation Monitor (daily 08:00 UTC)
+  herald-trends:
+    schedule: "0 8 * * *"     # Daily 08:00 UTC
+    skill: "trademark-monitoring/herald"
+    enabled: true
+    env_file: /path/to/trademark-agents/.env
+
+  # ORACLE — Keyword Discovery (weekly Monday 09:00 UTC)
+  oracle-keywords:
+    schedule: "0 9 * * 1"     # Weekly Monday 09:00 UTC
+    skill: "trademark-monitoring/oracle"
+    enabled: true
+    env_file: /path/to/trademark-agents/.env
+
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# SETUP INSTRUCTIONS:
+
+# 1. Copy .env.example → .env and fill in your credentials
+#    cd hermes-agents
+#    cp .env.example .env
+#    # Edit .env with your DataForSEO API key, trademark list, etc.
+
+# 2. Copy agent skills to Hermes skills directory
+#    mkdir -p ~/.hermes/skills/trademark-monitoring
+#    cp -r AEGIS SCOUT HERALD ORACLE ~/.hermes/skills/trademark-monitoring/
+
+# 3. Update the env_file path in this config to point to your .env
+#    (or source it globally in your shell before starting Hermes)
+
+# 4. Add these cron entries to ~/.hermes/config.yaml
+#    # Copy the 'crons:' section above into your config.yaml
+
+# 5. Verify Hermes can see the skills
+#    hermes skills list | grep trademark
+
+# 6. Test one agent manually
+#    hermes skill run trademark-monitoring/aegis
+
+# 7. View Langfuse traces (if observability is wired)
+#    http://178.105.137.23:3030
+
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# OBSERVABILITY (Optional but Recommended)
+
+# If you've deployed Langfuse + LiteLLM proxy, wire Hermes to send all agent
+# execution traces to Langfuse for cost/token tracking:
+
+# In ~/.hermes/config.yaml, add:
+#   model:
+#     provider: "openrouter"
+#     base_url: "http://localhost:4000/v1"  # LiteLLM proxy
+#     model: "claude-3-5-sonnet"
+#     api_key: ${OPENROUTER_API_KEY}   # Still needed for routing, but goes through proxy
+
+# Then all 4 agent runs will appear in Langfuse UI with token counts + costs.
+
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# STATE FILES
+
+# Each agent stores state in ~/.hermes/:
+#
+# AEGIS:
+#   ~/.hermes/aegis-state/alerts.jsonl         → All brand-jack alerts
+#   ~/.hermes/aegis-state/seen.json            → 24h dedup window
+#
+# SCOUT:
+#   ~/.hermes/scout-state/snapshots.json       → Previous ad copy by domain
+#   ~/.hermes/scout-state/diffs.jsonl          → Ad copy change history
+#
+# HERALD:
+#   ~/.hermes/herald-state/baselines.json      → Weekly trend/rating baselines
+#   ~/.hermes/herald-state/alerts.jsonl        → Trend surge/reputation alerts
+#
+# ORACLE:
+#   ~/.hermes/oracle-state/keywords.jsonl      → All discovered keywords
+#   ~/.hermes/oracle-state/weekly_baseline.json → Previous week's keywords (dedup)
+
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# TELEGRAM ALERTS
+
+# Each agent can send Telegram notifications when anomalies are detected.
+# Set TELEGRAM_CHAT_ID and TELEGRAM_BOT_TOKEN for each in .env.
+#
+# If not set, alerts are logged to .jsonl files only (still useful for dashboard).
+
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# TROUBLESHOOTING
+
+# View recent agent runs:
+#   tail -f ~/.hermes/agent.log | grep "AEGIS\|SCOUT\|HERALD\|ORACLE"
+
+# Test ad hoc:
+#   DATAFORSEO_LOGIN=... DATAFORSEO_PASSWORD=... python hermes-agents/AEGIS/run.py
+
+# Check Langfuse traces (if wired):
+#   curl http://178.105.137.23:3030/api/public/traces?projectId=<PROJECT_ID> \
+#     -H "Authorization: Bearer <API_KEY>"

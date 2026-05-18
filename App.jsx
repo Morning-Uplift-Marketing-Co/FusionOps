@@ -25,6 +25,7 @@ import { TemplateGeneratorModal } from "./components/TemplateGenerator";
 import { ErrorLog, logError } from "./components/ErrorLog";
 import { SpendDashboard } from "./components/SpendDashboard";
 import { AccountMap } from "./components/AccountMap";
+import { Observability } from "./components/Observability";
 import { AccountVerificationBanner } from "./components/ui/AccountVerificationBanner";
 
 // Neon connection string — stored in settings or hardcoded for now
@@ -652,6 +653,7 @@ export default function App() {
           {page === "variant" && <VariantStudio notify={notify} sites={sites} addSite={addSite} registry={registry} setRegistry={setRegistry} apiOk={apiOk} />}
           {page === "ops" && <OpsCenter data={ops} add={opsAdd} del={opsDel} upd={opsUpd} settings={settings} />}
           {page === "deploys" && <DeployHistory deploys={deploys} />}
+          {page === "observability" && <Observability />}
           {page === "error-log" && <ErrorLog />}
           {page === "settings" && <Settings settings={settings} setSettings={handleSaveSettings} stats={stats} apiOk={apiOk} neonOk={neonOk} />}
         </div>
