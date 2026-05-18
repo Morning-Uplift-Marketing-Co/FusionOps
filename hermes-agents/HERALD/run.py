@@ -1,17 +1,28 @@
 #!/usr/bin/env python3
-"""HERALD — Trend & Reputation Monitor"""
+"""HERALD — Trend & Reputation Monitor
+
+State (baselines + alerts) lives in D1 via the agent state API.
+See .agents/debates/hermes-state-20260518-231225/SYNTHESIS-R2.md.
+"""
 
 import os
-import json
+import sys
 import base64
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Any
+from typing import Dict, Any, Optional
 import requests
-from pathlib import Path
+
+# Make sibling _lib importable when run as `python3 HERALD/run.py`
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from _lib.agent_state import AgentStateClient, AgentStateError  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [HERALD] %(message)s')
 logger = logging.getLogger(__name__)
+
+BASELINE_WINDOW = '7d'  # nominal label stored in agent_baselines.window
+BASELINE_SCOPE = '_global'  # agent_baselines.scope
+
 
 class HERALDTrendMonitor:
     def __init__(self):
@@ -21,11 +32,7 @@ class HERALDTrendMonitor:
         self.telegram_chat_id = os.getenv('HERALD_TELEGRAM_CHAT_ID')
         self.telegram_bot_token = os.getenv('HERALD_TELEGRAM_BOT_TOKEN')
 
-        self.state_dir = Path.home() / '.hermes' / 'herald-state'
-        self.state_dir.mkdir(parents=True, exist_ok=True)
-        self.baselines_file = self.state_dir / 'baselines.json'
-        self.alerts_file = self.state_dir / 'alerts.jsonl'
-
+        self.state = AgentStateClient()
         self.dataforseo_base_url = 'https://api.dataforseo.com/v3'
         self.trend_threshold = 25  # Percentage point increase
         self.review_threshold = -0.5  # Rating drop
@@ -35,15 +42,29 @@ class HERALDTrendMonitor:
         encoded = base64.b64encode(credentials.encode()).decode()
         return f"Basic {encoded}"
 
-    def _get_baselines(self) -> Dict[str, Dict[str, Any]]:
-        if self.baselines_file.exists():
-            with open(self.baselines_file) as f:
-                return json.load(f)
-        return {}
+    def _load_baselines(self) -> Dict[str, Dict[str, Any]]:
+        """Fetch all HERALD baselines from D1 in a single round-trip.
 
-    def _save_baselines(self, baselines: Dict[str, Dict[str, Any]]):
-        with open(self.baselines_file, 'w') as f:
-            json.dump(baselines, f, indent=2)
+        Returns: {metric_key: {value, updated_at}} where metric_key matches
+        the legacy `{competitor}:trend` / `{competitor}:rating` format.
+        """
+        rows = self.state.list_baselines(agent='HERALD')
+        return {
+            r['metric']: {'value': float(r['value']), 'updated_at': r.get('updated_at')}
+            for r in rows
+            if r.get('metric') is not None
+        }
+
+    def _upsert_baseline(self, metric_key: str, value: float):
+        """Write a single baseline back to D1."""
+        self.state.upsert_baseline({
+            'agent': 'HERALD',
+            'metric': metric_key,
+            'scope': BASELINE_SCOPE,
+            'window': BASELINE_WINDOW,
+            'value': float(value),
+            'sample_count': 1,
+        })
 
     def query_google_trends(self, keyword: str) -> Dict[str, Any]:
         """Query Google Trends search interest"""
@@ -187,50 +208,57 @@ class HERALDTrendMonitor:
             logger.error(f"Failed to query CFPB: {e}")
             return 0
 
-    def check_trend_surge(self, competitor: str, current_trend: Dict) -> bool:
-        """Check for trend surge >threshold"""
-        baselines = self._get_baselines()
+    def check_trend_surge(
+        self, competitor: str, current_trend: Dict, baselines: Dict[str, Dict[str, Any]]
+    ) -> Optional[Dict[str, float]]:
+        """Check for trend surge ≥ threshold. Mutates `baselines` + upserts to D1.
+
+        Returns: {'prev': float, 'curr': float} on surge, None otherwise.
+        On first-ever baseline: seeds the value and returns None.
+        """
         baseline_key = f"{competitor}:trend"
+        curr_value = float(current_trend.get('interest', 0) or 0)
 
         if baseline_key not in baselines:
-            baselines[baseline_key] = {'value': current_trend.get('interest', 0), 'date': datetime.utcnow().isoformat()}
-            self._save_baselines(baselines)
-            return False
+            baselines[baseline_key] = {'value': curr_value, 'updated_at': None}
+            self._upsert_baseline(baseline_key, curr_value)
+            return None
 
-        prev_value = baselines[baseline_key].get('value', 0)
-        curr_value = current_trend.get('interest', 0)
-
+        prev_value = float(baselines[baseline_key].get('value', 0) or 0)
         if curr_value - prev_value >= self.trend_threshold:
             logger.info(f"Trend surge detected for {competitor}: {prev_value} → {curr_value}")
-            baselines[baseline_key] = {'value': curr_value, 'date': datetime.utcnow().isoformat()}
-            self._save_baselines(baselines)
-            return True
+            baselines[baseline_key] = {'value': curr_value, 'updated_at': None}
+            self._upsert_baseline(baseline_key, curr_value)
+            return {'prev': prev_value, 'curr': curr_value}
 
-        return False
+        return None
 
-    def check_reputation_decline(self, competitor: str, current_rating: Dict) -> bool:
-        """Check for reputation decline >threshold"""
+    def check_reputation_decline(
+        self, competitor: str, current_rating: Dict, baselines: Dict[str, Dict[str, Any]]
+    ) -> Optional[Dict[str, float]]:
+        """Check for reputation decline ≥ |threshold|. Mutates `baselines` + upserts.
+
+        Returns: {'prev': float, 'curr': float} on decline, None otherwise.
+        """
         if current_rating.get('avg_rating') is None:
-            return False
+            return None
 
-        baselines = self._get_baselines()
         baseline_key = f"{competitor}:rating"
+        curr_rating = float(current_rating['avg_rating'])
 
         if baseline_key not in baselines:
-            baselines[baseline_key] = {'value': current_rating['avg_rating'], 'date': datetime.utcnow().isoformat()}
-            self._save_baselines(baselines)
-            return False
+            baselines[baseline_key] = {'value': curr_rating, 'updated_at': None}
+            self._upsert_baseline(baseline_key, curr_rating)
+            return None
 
-        prev_rating = baselines[baseline_key].get('value', 0)
-        curr_rating = current_rating['avg_rating']
-
+        prev_rating = float(baselines[baseline_key].get('value', 0) or 0)
         if prev_rating - curr_rating >= abs(self.review_threshold):
             logger.info(f"Reputation decline detected for {competitor}: {prev_rating} → {curr_rating}")
-            baselines[baseline_key] = {'value': curr_rating, 'date': datetime.utcnow().isoformat()}
-            self._save_baselines(baselines)
-            return True
+            baselines[baseline_key] = {'value': curr_rating, 'updated_at': None}
+            self._upsert_baseline(baseline_key, curr_rating)
+            return {'prev': prev_rating, 'curr': curr_rating}
 
-        return False
+        return None
 
     def _send_alert(self, alert_type: str, details: Dict):
         if not (self.telegram_chat_id and self.telegram_bot_token):
@@ -272,49 +300,64 @@ CFPB Complaints: {details['complaints']} (past 30 days)
             logger.error(f"Failed to send Telegram alert: {e}")
 
     def _log_alert(self, alert_type: str, details: Dict):
-        alert = {
-            'timestamp': datetime.utcnow().isoformat(),
-            'type': alert_type,
-            'details': details
-        }
-        with open(self.alerts_file, 'a') as f:
-            f.write(json.dumps(alert) + '\n')
+        """Persist alert to D1 (replaces local alerts.jsonl)."""
+        severity = 'high' if alert_type == 'complaint_surge' else 'warn'
+        competitor = details.get('competitor', '?')
+        title = {
+            'trend_surge': f"Trend surge: {competitor}",
+            'reputation_decline': f"Reputation decline: {competitor}",
+            'complaint_surge': f"CFPB complaint surge: {competitor}",
+        }.get(alert_type, f"HERALD alert: {competitor}")
+        self.state.create_alert(
+            agent='HERALD',
+            severity=severity,
+            title=title,
+            payload={
+                'timestamp': datetime.utcnow().isoformat(),
+                'type': alert_type,
+                'details': details,
+            },
+        )
 
     def monitor_competitors(self):
         """Main monitoring loop"""
         logger.info(f"Monitoring {len(self.competitor_list)} competitors for trends/reputation")
+
+        # Single D1 read at start; per-baseline upserts happen inside check_* methods.
+        baselines = self._load_baselines()
 
         for competitor in self.competitor_list:
             competitor = competitor.strip()
 
             # Check trends
             trend_data = self.query_google_trends(competitor)
-            if self.check_trend_surge(competitor, trend_data):
+            surge = self.check_trend_surge(competitor, trend_data, baselines)
+            if surge:
                 details = {
                     'competitor': competitor,
-                    'increase': trend_data.get('interest', 0) - self._get_baselines().get(f"{competitor}:trend", {}).get('value', 0),
-                    'prev_value': self._get_baselines().get(f"{competitor}:trend", {}).get('value', 0),
-                    'curr_value': trend_data.get('interest', 0)
+                    'increase': surge['curr'] - surge['prev'],
+                    'prev_value': surge['prev'],
+                    'curr_value': surge['curr'],
                 }
                 self._send_alert('trend_surge', details)
                 self._log_alert('trend_surge', details)
 
             # Check reputation
             review_data = self.query_trustpilot_reviews(competitor)
-            if self.check_reputation_decline(competitor, review_data):
-                prev_rating = self._get_baselines().get(f"{competitor}:rating", {}).get('value', 0)
+            decline = self.check_reputation_decline(competitor, review_data, baselines)
+            if decline:
                 details = {
                     'competitor': competitor,
-                    'change': review_data['avg_rating'] - prev_rating,
-                    'prev_rating': prev_rating,
-                    'curr_rating': review_data['avg_rating'],
-                    'review_count': review_data['review_count'],
-                    'avg_recent': review_data['avg_rating']
+                    'change': decline['curr'] - decline['prev'],
+                    'prev_rating': decline['prev'],
+                    'curr_rating': decline['curr'],
+                    'review_count': review_data.get('review_count', 0),
+                    'avg_recent': decline['curr'],
                 }
                 self._send_alert('reputation_decline', details)
                 self._log_alert('reputation_decline', details)
 
-            # Check complaints
+            # Check complaints (stateless — no baseline involved)
             complaint_count = self.query_cfpb_complaints(competitor)
             if complaint_count > 50:
                 details = {'competitor': competitor, 'complaints': complaint_count}
@@ -323,10 +366,34 @@ CFPB Complaints: {details['complaints']} (past 30 days)
 
         logger.info("Trend and reputation monitoring complete")
 
+def _notify_d1_failure(err: Exception):
+    chat = os.getenv('HERALD_TELEGRAM_CHAT_ID')
+    token = os.getenv('HERALD_TELEGRAM_BOT_TOKEN')
+    if not (chat and token):
+        return
+    try:
+        requests.post(
+            f'https://api.telegram.org/bot{token}/sendMessage',
+            json={
+                'chat_id': chat,
+                'text': f"🚨 HERALD aborted: D1 agent state API unreachable\n{err}",
+            },
+            timeout=10,
+        )
+    except Exception:
+        pass
+
+
 def run():
-    """Entry point for Hermes"""
-    herald = HERALDTrendMonitor()
-    herald.monitor_competitors()
+    """Entry point for Hermes. Fail-fast on D1 errors (no degraded run)."""
+    try:
+        herald = HERALDTrendMonitor()
+        herald.monitor_competitors()
+    except AgentStateError as e:
+        logger.error(f"D1 agent state API unreachable — aborting this tick: {e}")
+        _notify_d1_failure(e)
+        sys.exit(2)
+
 
 if __name__ == '__main__':
     run()
