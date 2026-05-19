@@ -41,23 +41,23 @@
   "reviews": [
     {
       "name": "Michael D.",
-      "location": "Houston, TX",
+      "text": "My car broke down unexpectedly, and I needed funds fast for repairs to get back to work. Makwa Finance made the process quick and easy, getting me the money I needed within a day.",
       "rating": 5,
-      "text": "My car broke down unexpectedly, and I needed funds fast for repairs to get back to work. Makwa Finance made the process quick and easy, getting me the money I needed within a day."
+      "location": "Houston, TX"
     },
     {
       "name": "Sarah P.",
-      "location": "Denver, CO",
+      "text": "Our old refrigerator suddenly quit, and we needed to replace it ASAP. Makwa Finance helped us get the cash with a payment plan that fit our budget perfectly.",
       "rating": 5,
-      "text": "Our old refrigerator suddenly quit, and we needed to replace it ASAP. Makwa Finance helped us get the cash with a payment plan that fit our budget perfectly."
+      "location": "Denver, CO"
     },
     {
       "name": "Jessica R.",
-      "location": "Miami, FL",
+      "text": "An unexpected medical bill came up, and I didn't want to completely deplete my savings. Makwa Finance offered a great solution with clear terms, and I highly recommend them.",
       "rating": 5,
-      "text": "An unexpected medical bill came up, and I didn't want to completely deplete my savings. Makwa Finance offered a great solution with clear terms, and I highly recommend them."
+      "location": "Miami, FL"
     }
   ],
   "showReviews": true,
-  "deployedAt": "2026-05-19T09:40:50.400Z"
+  "deployedAt": "2026-05-19T09:43:14.841Z"
 }
