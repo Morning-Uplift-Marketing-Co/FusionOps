@@ -1,0 +1,244 @@
+---
+const brand    = import.meta.env.PUBLIC_BRAND   || '${brand}';
+const aprMin   = import.meta.env.PUBLIC_APRMIN  || '${aprMin}';
+const aprMax   = import.meta.env.PUBLIC_APRMAX  || '${aprMax}';
+const amtMin   = import.meta.env.PUBLIC_AMOUNTMIN || '${amountMin}';
+const amtMax   = import.meta.env.PUBLIC_AMOUNTMAX || '${amountMax}';
+const phone    = import.meta.env.PUBLIC_PHONE   || '${phone}';
+const email    = import.meta.env.PUBLIC_EMAIL   || '${email}';
+const redirectUrl = import.meta.env.PUBLIC_REDIRECT_URL || '${redirectUrl}';
+
+const popupContent: Record<string, { title: string; body: string }> = {
+  'Emergency Vet Care': {
+    title: 'Emergency Veterinary Care',
+    body: 'Unexpected emergencies — after-hours crises, sudden illness, traumatic injuries — often carry the largest and least predictable bills. Scratchpay\'s 60-second plan check is available around the clock, so you can see your payment plan options the moment you need them, not the morning after.',
+  },
+  'Routine & Preventive Care': {
+    title: 'Routine & Preventive Care',
+    body: 'Not every vet bill is an emergency, but routine care — dental cleanings, annual diagnostics, vaccinations, wellness exams — adds up over time. Scratchpay payment plans let you spread the cost of planned care across predictable monthly payments at a fixed rate, so preventive care stays within reach.',
+  },
+  'Specialist & Surgical Care': {
+    title: 'Specialist & Surgical Care',
+    body: 'Specialist referrals, orthopedic procedures, oncology treatment, and complex surgeries often involve multi-thousand-dollar estimates. Scratchpay offers payment plans up to $5,000 with terms designed to match the size of the bill to a manageable monthly obligation.',
+  },
+  'How It Works': {
+    title: 'How Scratchpay Works',
+    body: 'Step 1 — Enter your care plan amount and ZIP code to begin a 60-second soft-inquiry plan check that does not affect your credit score.\nStep 2 — Review your available payment plan options, including APR, term, and monthly payment for each.\nStep 3 — Select the plan that fits your budget and confirm at the clinic using Scratchpay\'s integrated system.\nStep 4 — Your veterinary practice receives confirmation and your pet\'s treatment proceeds.',
+  },
+  'Payment Calculator': {
+    title: 'Payment Plan Calculator',
+    body: 'The on-page calculator lets you adjust the care plan amount, repayment term, and estimated APR to see the resulting monthly payment before you check your options. Use it to identify a combination that fits comfortably within your monthly budget. Your actual plan options and rate are shown when you run your 60-second check.',
+  },
+  'APR & Rates': {
+    title: 'APR & Plan Rates',
+    body: `Scratchpay payment plans range from ${aprMin}% to ${aprMax}% APR. Certain plans carry a 0% promotional APR for qualified applicants. All rates are fixed — your monthly payment amount will not change during the life of the plan. No prepayment penalties apply. Every rate, fee, and payment amount is disclosed in full before you confirm any plan.`,
+  },
+  'FAQ': {
+    title: 'Common Questions',
+    body: 'Q: Does checking my plan options hurt my credit?\nA: No. Scratchpay uses a soft inquiry only — zero impact to your score.\n\nQ: Are there 0% APR options?\nA: Yes. 0% promotional APR plans are available for qualified applicants. Your available plans are shown in full before you confirm.\n\nQ: Is there a penalty for paying early?\nA: No. You may pay off the balance at any time at no additional cost.\n\nQ: What if I am not approved for a plan?\nA: You will be notified clearly. There is no penalty for checking your options.',
+  },
+  'About Us': {
+    title: 'About Scratchpay',
+    body: `${brand} is a veterinary payment plan platform that connects pet owners with financing options for veterinary care. We work directly with veterinary practices to offer transparent, fixed-rate payment plans at the point of care. We do not use hard credit inquiries to show you your plan options, and all costs are disclosed before you confirm anything.`,
+  },
+  'Privacy Policy': {
+    title: 'Privacy Policy',
+    body: 'We collect only the information necessary to process your plan check and confirm your selection with your veterinary practice. Your data is encrypted in transit using TLS 1.3 and encrypted at rest. We do not sell your personal information to advertisers or unaffiliated third parties. You may request access to or deletion of your data at any time by contacting our support team.',
+  },
+  'Terms of Service': {
+    title: 'Terms of Service',
+    body: `By submitting a plan inquiry through ${brand}, you acknowledge that ${brand} facilitates payment plan options for veterinary care and is not a direct lender in all markets. All plan approval decisions, rates, and repayment terms are subject to the terms of the specific plan selected. ${brand} does not guarantee approval or specific plan terms. Submitting a plan check does not constitute a binding agreement.`,
+  },
+  'Accessibility': {
+    title: 'Accessibility',
+    body: `${brand} is committed to providing a website experience that is accessible to all users, including those using assistive technologies. We follow WCAG 2.1 guidelines and continuously evaluate our pages for compliance. If you encounter any difficulty accessing content or completing a task on our site, please contact us at ${email} and we will work to resolve the issue promptly.`,
+  },
+};
+---
+
+<!-- Single lazy modal shell — populated by JS on demand -->
+<div
+  id="popup-modal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="popup-modal-title"
+  aria-hidden="true"
+  class="popup-overlay-bg fixed inset-0 z-[200] flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200"
+>
+  <div id="popup-modal-box" inert class="premium-card max-w-md w-full p-8 relative scale-95 transition-transform duration-200">
+    <button
+      id="popup-modal-close"
+      class="absolute top-4 right-4 w-8 h-8 rounded-lg flex items-center justify-center text-foreground/40 hover:text-foreground/80 hover:bg-border/50 transition-colors"
+      aria-label="Close"
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+        <path d="M18 6L6 18M6 6l12 12"/>
+      </svg>
+    </button>
+    <h3 id="popup-modal-title" class="font-display font-bold text-foreground text-lg mb-4"></h3>
+    <p id="popup-modal-body" class="text-foreground/55 text-sm leading-relaxed whitespace-pre-line"></p>
+  </div>
+</div>
+
+<!-- Pre-footer CTA -->
+<section class="py-16 px-6">
+  <div class="max-w-6xl mx-auto">
+    <div class="premium-card p-10 md:p-14 text-center relative overflow-hidden">
+      <div class="absolute inset-0 pointer-events-none prefooter-glow"></div>
+      <span class="section-label relative">Say Yes to Treatment Today.</span>
+      <h2 class="font-display font-bold text-3xl md:text-4xl text-foreground relative mb-4">
+        View Your Payment Plan Options — It Takes 60 Seconds
+      </h2>
+      <p class="text-foreground/70 text-base max-w-xl mx-auto mb-8 relative">
+        No hard credit inquiry. No application fees. Every rate, term, and monthly payment shown in full before you confirm anything.
+      </p>
+      <a href={redirectUrl} class="btn-primary text-base py-4 px-10 relative">
+        Get My Financing Options
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </a>
+
+      <!-- Trust row -->
+      <div class="flex flex-wrap justify-center gap-6 mt-8 text-foreground/60 text-xs">
+        {[
+          'Soft inquiry only — score unaffected',
+          '0% APR options for qualified applicants',
+          'Fixed payment amount for every month',
+          'Pay off early at no additional cost',
+        ].map(item => (
+          <div class="flex items-center gap-1.5">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="hsl(160 96% 30%)" stroke-width="2.5" stroke-linecap="round">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+            {item}
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Regulatory Disclosure -->
+<section id="disclosure" class="px-6 pb-10">
+  <div class="max-w-6xl mx-auto">
+    <div class="glass-card p-6 border-l-2 mb-8 disclosure-border">
+      <h3 class="font-display font-semibold text-foreground/70 text-sm mb-3 flex items-center gap-2">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="hsl(160 96% 30%)" stroke-width="2" stroke-linecap="round">
+          <circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>
+        </svg>
+        Important Regulatory Disclosures
+      </h3>
+      <div class="space-y-2 text-foreground/60 text-xs leading-relaxed">
+        <p><strong class="text-foreground/70">Loan Terms &amp; Amounts:</strong> Loan amounts range from ${amtMin} to ${amtMax}. Minimum repayment term: 61 days. Maximum repayment term: 60 months (5 years). All loan products offered through this platform require repayment in full in 61 days or longer.</p>
+        <p><strong class="text-foreground/70">Maximum APR:</strong> The maximum Annual Percentage Rate (APR) for payment plans available through this platform is {aprMax}%. APR is calculated in accordance with the Truth in Lending Act (TILA), 12 CFR Part 1026, and includes the interest rate plus all applicable fees. Minimum APR: {aprMin}%.</p>
+        <p><strong class="text-foreground/70">Representative Example:</strong> A care plan of $2,400 repaid over 12 months at a fixed APR of 0% results in 12 equal monthly payments of $200.00. Total amount repayable: $2,400.00. Total interest: $0.00. For plans outside the 0% promotional window: a plan of $2,400 repaid over 18 months at 14.99% APR results in 18 monthly payments of $148.17. Total amount repayable: $2,667.06. Your actual rate depends on credit profile, plan amount, and term selected. Not all applicants will qualify for 0% APR promotional plans.</p>
+        <p><strong class="text-foreground/70">No Guarantee of Approval:</strong> Submitting an inquiry or application does not guarantee loan approval or a specific loan offer. All applications are subject to credit review, identity verification, income verification, and lender underwriting criteria. Approval and final loan terms are at the sole discretion of the participating lender.</p>
+        <p><strong class="text-foreground/70">Credit Inquiry:</strong> Checking your rate uses a soft credit pull and will not affect your credit score. Proceeding with a full loan application may result in a hard credit inquiry, which may temporarily affect your credit score. State availability, loan terms, rates, and fees vary by lender and are subject to change without notice. Not available in all states.</p>
+        <p><strong class="text-foreground/70">Platform Disclosure:</strong> {brand} is a veterinary payment plan platform. {brand} facilitates payment plan options for veterinary care in partnership with licensed financial institutions. {brand} does not guarantee approval or specific plan terms, and plan availability may vary by state. {brand} may receive compensation in connection with plan originations, which does not influence the plan terms offered to you. Please review all plan terms, rates, and fees carefully before confirming any payment plan.</p>
+        <p><strong class="text-foreground/70">Risk Warning:</strong> Borrowing money involves financial risk. Failure to repay a loan on time may result in additional fees, negative credit reporting, and collections activity. Only borrow what you can comfortably repay. If you are experiencing financial difficulty, consider contacting a nonprofit credit counseling agency such as the NFCC (nfcc.org) for free guidance.</p>
+        <p><strong class="text-foreground/70">TCPA Notice:</strong> By submitting an inquiry, you consent to receive informational and account-related calls, emails, and SMS/text messages from {brand} and its partners at the phone number and email address provided. Message and data rates may apply. Message frequency varies. Reply STOP to opt out of text messages at any time. Reply HELP for help. Consent to receive marketing communications is not a condition of obtaining financing. See our <button data-popup="Privacy Policy" class="underline hover:text-foreground/80 transition-colors cursor-pointer">Privacy Policy</button> for full details.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="border-t border-border px-6 py-10">
+  <div class="max-w-6xl mx-auto">
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-8 mb-10">
+      <div class="col-span-2">
+        <div class="flex items-center gap-2.5 mb-4">
+          <div class="w-7 h-7 rounded-lg flex items-center justify-center brand-icon-bg">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="hsl(0 0% 100%)" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <span class="font-display font-bold text-foreground text-sm">{brand}</span>
+        </div>
+        <p class="text-foreground/60 text-xs leading-relaxed max-w-xs mb-4">
+          A veterinary payment plan platform connecting pet owners with transparent financing options for vet care. NMLS #123456.
+        </p>
+        <div class="flex items-center gap-1.5 text-foreground/60 text-xs">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="hsl(160 96% 30%)" stroke-width="2" stroke-linecap="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          256-bit SSL Encrypted
+        </div>
+      </div>
+
+      {[
+        { heading: 'Care Plans', links: ['Emergency Vet Care', 'Routine & Preventive Care', 'Specialist & Surgical Care'] },
+        { heading: 'Learn', links: ['How It Works', 'Payment Calculator', 'APR & Rates', 'FAQ'] },
+        { heading: 'Company', links: ['About Us', 'Privacy Policy', 'Terms of Service', 'Accessibility'] },
+      ].map(col => (
+        <div>
+          <h4 class="font-semibold text-foreground/70 text-xs uppercase tracking-widest mb-4">{col.heading}</h4>
+          <ul class="space-y-2.5">
+            {col.links.map(link => (
+              <li>
+                <button
+                  data-popup={link}
+                  class="text-foreground/60 text-xs hover:text-foreground/85 transition-colors text-left cursor-pointer"
+                >
+                  {link}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+
+    <div class="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
+      <p class="text-foreground/55 text-xs">&copy; {new Date().getFullYear()} {brand}. All rights reserved. NMLS #123456.</p>
+      <p class="text-foreground/55 text-xs">Loans subject to lender approval and applicable state and federal laws. Not available in all states. See <button data-popup="Terms of Service" class="underline hover:text-foreground/75 transition-colors cursor-pointer">Terms</button> and <button data-popup="Privacy Policy" class="underline hover:text-foreground/75 transition-colors cursor-pointer">Privacy Policy</button>.</p>
+    </div>
+  </div>
+</footer>
+
+<script define:vars={{ popupContent }}>
+  const modal    = document.getElementById('popup-modal');
+  const modalBox = document.getElementById('popup-modal-box');
+  const titleEl  = document.getElementById('popup-modal-title');
+  const bodyEl   = document.getElementById('popup-modal-body');
+  const closeBtn = document.getElementById('popup-modal-close');
+
+  let lastFocusedEl = null;
+
+  function openPopup(key, triggerEl) {
+    const entry = popupContent[key];
+    if (!entry || !modal) return;
+    lastFocusedEl = triggerEl || null;
+    titleEl.textContent = entry.title;
+    bodyEl.textContent  = entry.body;
+    modal.removeAttribute('aria-hidden');
+    modalBox.removeAttribute('inert');
+    modal.classList.remove('opacity-0', 'pointer-events-none');
+    modalBox.classList.remove('scale-95');
+    document.body.classList.add('overflow-hidden');
+    closeBtn && closeBtn.focus();
+  }
+
+  function closePopup() {
+    if (!modal) return;
+    modal.setAttribute('aria-hidden', 'true');
+    modalBox.setAttribute('inert', '');
+    modal.classList.add('opacity-0', 'pointer-events-none');
+    modalBox.classList.add('scale-95');
+    document.body.classList.remove('overflow-hidden');
+    if (lastFocusedEl) lastFocusedEl.focus();
+  }
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-popup]');
+    if (btn) { openPopup(btn.dataset.popup, btn); return; }
+    if (e.target === modal) closePopup();
+  });
+
+  closeBtn?.addEventListener('click', closePopup);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closePopup();
+  });
+</script>
