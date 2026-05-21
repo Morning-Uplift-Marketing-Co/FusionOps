@@ -1,0 +1,66 @@
+---
+const redirectUrl = import.meta.env.PUBLIC_REDIRECT_URL || '${redirectUrl}';
+
+const requirements = [
+  { title: '18+ Years Old',        desc: 'Legal adult status required to enter payment plan agreements in all U.S. jurisdictions.', icon: '01', color: 'hsl(0 72% 42%)' },
+  { title: 'U.S. Residency',         desc: 'U.S. citizen or permanent resident with valid Social Security Number.', icon: '02', color: 'hsl(0 72% 38%)' },
+  { title: 'Documented Income',      desc: 'Verifiable income from employment, self-employment, benefits, or other regular sources.', icon: '03', color: 'hsl(0 60% 45%)' },
+  { title: 'Active Bank Account',    desc: 'Checking or savings account at a U.S. financial institution for automated payments.', icon: '04', color: 'hsl(0 72% 42%)' },
+  { title: 'All Credit Profiles Considered', desc: 'Credit score is one factor—not the only factor. Income and capacity weigh heavily in approval decisions.', icon: '05', color: 'hsl(0 72% 38%)' },
+  { title: 'Valid Contact Details', desc: 'Working email and phone number for identity verification and plan communications.', icon: '06', color: 'hsl(0 60% 45%)' },
+];
+---
+
+<section id="eligibility" class="py-20 md:py-28 px-6">
+  <div class="max-w-6xl mx-auto">
+
+    <div class="grid md:grid-cols-2 gap-14 items-center">
+      <!-- Left -->
+      <div>
+        <span class="section-label">Eligibility Requirements</span>
+        <h2 class="section-title">Who Qualifies for Financing Plans</h2>
+        <p class="text-foreground/70 text-base leading-relaxed mb-8">
+          We approve a wide range of credit profiles. If you have documented income and an active bank account, you likely qualify. Check your options in 60 seconds—soft inquiry only.
+        </p>
+
+        <div class="premium-card p-6 mb-8">
+          <h3 class="font-display font-bold text-foreground text-base mb-5">Quick Eligibility Check</h3>
+          <div class="space-y-3">
+            {['18 years of age or older', 'U.S. citizen or permanent resident', 'Verifiable, regular income', 'Active checking or savings account'].map(item => (
+              <div class="flex items-center gap-3">
+                <div class="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                  style="background: hsl(0 72% 42% / 0.08);">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="hsl(0 72% 38%)" stroke-width="3" stroke-linecap="round">
+                    <path d="M20 6L9 17l-5-5"/>
+                  </svg>
+                </div>
+                <span class="text-foreground/65 text-sm">{item}</span>
+              </div>
+            ))}
+          </div>
+          <div class="mt-5 pt-4 border-t border-border">
+            <p class="text-foreground/60 text-xs">Meet all four criteria and you qualify for an approval check. Your specific plan options and rates depend on credit profile, income, and the financing amount. Checking options uses a soft inquiry—zero credit score impact.</p>
+          </div>
+        </div>
+
+        <a href={redirectUrl} class="btn-primary inline-flex">
+          Check My Eligibility—No Credit Impact →
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </div>
+
+      <!-- Right: requirements grid -->
+      <div class="grid grid-cols-2 gap-3">
+        {requirements.map(req => (
+          <div class="glass-card p-5 reveal hover:-translate-y-0.5 transition-transform duration-200">
+            <div class="font-mono text-xs font-bold mb-3" style={`color: ${req.color}; opacity: 0.6;`}>{req.icon}</div>
+            <h4 class="font-display font-bold text-foreground text-sm mb-2">{req.title}</h4>
+            <p class="text-foreground/65 text-xs leading-relaxed">{req.desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
