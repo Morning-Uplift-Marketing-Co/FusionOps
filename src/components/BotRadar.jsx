@@ -129,6 +129,7 @@ function TopIpsTable({ ips }) {
                         <th className="py-2 px-2 font-medium">Type</th>
                         <th className="py-2 px-2 font-medium">Org</th>
                         <th className="py-2 px-2 font-medium">Cty</th>
+                        <th className="py-2 px-2 font-medium">Sites / Accounts</th>
                         <th className="py-2 px-2 font-medium text-right">Visits</th>
                         <th className="py-2 px-2 font-medium text-right">Score</th>
                     </tr>
@@ -152,6 +153,19 @@ function TopIpsTable({ ips }) {
                                 AS{ip.asn} {ip.org}
                             </td>
                             <td className="py-1.5 px-2">{ip.country || "—"}</td>
+                            <td className="py-1.5 px-2 max-w-[200px]">
+                                {(ip.sites || []).map(s => (
+                                    <div key={s.domain} className="flex items-center gap-1 flex-wrap">
+                                        <span className="font-mono text-[10px] text-[hsl(var(--muted-foreground))]">{s.domain}</span>
+                                        {s.account && (
+                                            <span className="text-[10px] px-1 py-0 rounded bg-blue-500/10 text-blue-600 font-medium" title={s.account.email}>
+                                                {s.account.label || s.account.email || s.account.id}
+                                            </span>
+                                        )}
+                                    </div>
+                                ))}
+                                {(!ip.sites || ip.sites.length === 0) && <span className="text-[hsl(var(--muted-foreground))]">—</span>}
+                            </td>
                             <td className="py-1.5 px-2 text-right font-semibold">{ip.visits}</td>
                             <td className="py-1.5 px-2 text-right">
                                 <span className={cn(
@@ -167,6 +181,19 @@ function TopIpsTable({ ips }) {
                     ))}
                 </tbody>
             </table>
+        </div>
+    );
+}
+
+function AccountTags({ accounts }) {
+    if (!accounts || accounts.length === 0) return null;
+    return (
+        <div className="flex flex-wrap gap-1 mt-1.5">
+            {accounts.map(a => (
+                <span key={a.id} className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 font-medium" title={a.email}>
+                    {a.label || a.email || a.id}
+                </span>
+            ))}
         </div>
     );
 }
@@ -192,7 +219,7 @@ function PreBanList({ sites }) {
                         s.status === "normal" && "border-[hsl(var(--border))]"
                     )}
                 >
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center justify-between mb-1">
                         <div className="font-medium text-sm">{s.site_domain}</div>
                         <span className={cn(
                             "text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded",
@@ -203,7 +230,8 @@ function PreBanList({ sites }) {
                             {s.status}
                         </span>
                     </div>
-                    <div className="grid grid-cols-3 gap-3 text-[11px]">
+                    <AccountTags accounts={s.accounts} />
+                    <div className="grid grid-cols-3 gap-3 text-[11px] mt-2">
                         <div>
                             <div className="text-[hsl(var(--muted-foreground))]">Visits 1h</div>
                             <div className="font-bold">{s.recent_bot_visits_1h}</div>
