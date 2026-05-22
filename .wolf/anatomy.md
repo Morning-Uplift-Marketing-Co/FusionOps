@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-05-22T18:09:33.811Z
-> Files: 1 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-05-22T20:03:00.764Z
+> Files: 4 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../
 
@@ -200,7 +200,6 @@
 
 ## .github/workflows/
 
-- `fbis-nightly.yml` — CI: FBIS Nightly Analysis (~752 tok)
 
 ## apps/
 
@@ -234,6 +233,10 @@
 
 ## apps/api-worker/src/analysis/
 
+
+## apps/api-worker/src/handlers/
+
+- `bot-radar.js` — ============================================================ (~4318 tok)
 
 ## apps/cf-proxy/
 
@@ -319,6 +322,11 @@
 ## deploy-configs/
 
 
+## hermes-agents/BOT_RADAR_TEST/
+
+- `run.py` — ok, fail, warn, info (~3944 tok)
+- `SKILL.md` — BOT_RADAR_TEST — Google Ads Bot Detection Smoke Test (~558 tok)
+
 ## hermes/
 
 
@@ -333,6 +341,10 @@
 
 ## scripts/
 
+
+## src/components/
+
+- `BotRadar.jsx` — API_BASE — renders table (~5164 tok)
 
 ## templates/pet-bold-01a/src/components/
 

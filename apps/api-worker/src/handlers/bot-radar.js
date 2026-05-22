@@ -222,7 +222,8 @@ async function handleTopIps({ env, url }) {
         country,
         COUNT(*) AS visits,
         MAX(timestamp) AS last_seen,
-        AVG(composite_score) AS avg_score
+        AVG(composite_score) AS avg_score,
+        GROUP_CONCAT(DISTINCT site_domain) AS sites_visited
       FROM bot_visits
       WHERE timestamp >= ?
       GROUP BY ip
@@ -230,18 +231,43 @@ async function handleTopIps({ env, url }) {
       LIMIT ?
     `).bind(since, limit).all();
 
+    const ips = rows?.results || [];
+
+    // Enrich with account info for sites visited
+    let accountMap = {};
+    if (ips.length > 0 && env.DB) {
+      try {
+        const allDomains = [...new Set(
+          ips.flatMap(r => (r.sites_visited || '').split(',').filter(Boolean))
+        )];
+        if (allDomains.length > 0) {
+          const placeholders = allDomains.map(() => '?').join(',');
+          const accounts = await env.DB.prepare(
+            `SELECT site_domain, id, label, email FROM ops_accounts WHERE site_domain IN (${placeholders}) AND site_domain != ''`
+          ).bind(...allDomains).all();
+          for (const a of accounts?.results || []) {
+            accountMap[a.site_domain] = { id: a.id, label: a.label, email: a.email };
+          }
+        }
+      } catch (_) { /* main DB may not have ops_accounts yet */ }
+    }
+
     return json({
       success: true,
-      ips: (rows?.results || []).map(r => ({
-        ip: r.ip,
-        asn: r.asn,
-        org: r.org,
-        bot_type: r.bot_type,
-        country: r.country,
-        visits: r.visits,
-        last_seen: r.last_seen,
-        avg_score: Number(Number(r.avg_score).toFixed(3)),
-      })),
+      ips: ips.map(r => {
+        const domains = (r.sites_visited || '').split(',').filter(Boolean);
+        return {
+          ip: r.ip,
+          asn: r.asn,
+          org: r.org,
+          bot_type: r.bot_type,
+          country: r.country,
+          visits: r.visits,
+          last_seen: r.last_seen,
+          avg_score: Number(Number(r.avg_score).toFixed(3)),
+          sites: domains.map(d => ({ domain: d, account: accountMap[d] || null })),
+        };
+      }),
     });
   } catch (e) {
     return json({ success: false, error: e.message }, 500);
@@ -272,9 +298,30 @@ async function handlePreBan({ env }) {
       LIMIT 50
     `).all();
 
+    const sites = rows?.results || [];
+
+    // Enrich with Google Ads account info from main DB
+    let accountMap = {};
+    if (sites.length > 0 && env.DB) {
+      try {
+        const domains = sites.map(s => s.site_domain).filter(Boolean);
+        const placeholders = domains.map(() => '?').join(',');
+        const accounts = await env.DB.prepare(
+          `SELECT site_domain, id, label, email FROM ops_accounts WHERE site_domain IN (${placeholders}) AND site_domain != ''`
+        ).bind(...domains).all();
+        for (const a of accounts?.results || []) {
+          if (!accountMap[a.site_domain]) accountMap[a.site_domain] = [];
+          accountMap[a.site_domain].push({ id: a.id, label: a.label, email: a.email });
+        }
+      } catch (_) { /* main DB may not have ops_accounts yet */ }
+    }
+
     return json({
       success: true,
-      sites: (rows?.results || []),
+      sites: sites.map(s => ({
+        ...s,
+        accounts: accountMap[s.site_domain] || [],
+      })),
     });
   } catch (e) {
     return json({ success: false, error: e.message }, 500);

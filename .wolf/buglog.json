@@ -583,6 +583,54 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-05-16T01:28:53.701Z"
+    },
+    {
+      "id": "bug-036",
+      "timestamp": "2026-05-22T19:53:33.263Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "apps/api-worker/src/handlers/bot-radar.js",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-22T19:53:33.263Z"
+    },
+    {
+      "id": "bug-037",
+      "timestamp": "2026-05-22T19:53:51.758Z",
+      "error_message": "Missing guard clause",
+      "file": "src/components/BotRadar.jsx",
+      "root_cause": "No early return/throw for edge case: !accounts || accounts.length === 0",
+      "fix": "Added guard clause: if (!accounts || accounts.length === 0)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "jsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-22T19:53:51.758Z"
+    },
+    {
+      "id": "bug-038",
+      "timestamp": "2026-05-22T20:01:03.146Z",
+      "error_message": "Significant refactor of ",
+      "file": "hermes-agents/BOT_RADAR_TEST/run.py",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 16→37 lines (6 removed) | Also: # Pixel: try /health first, then POST /e as fallba; r = requests.get(f\"{pixel_url}/health\", timeout=5)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-05-22T20:02:11.954Z"
     }
   ]
 }
