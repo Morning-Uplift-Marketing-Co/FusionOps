@@ -22,6 +22,7 @@ import { handlePixelTrackingRoute } from './handlers/pixel-tracking.js';
 import { handleInitRoute } from './handlers/init.js';
 import { handleAiGenerationRoute } from './handlers/ai-generation.js';
 import { handleD1AutomationRoute } from './handlers/automation/d1.js';
+import { handleNeonAutomationRoute } from './handlers/automation/neon.js';
 import { handleRegistrarAutomationRoute } from './handlers/automation/registrar.js';
 import { handleCloudflareAutomationRoute } from './handlers/automation/cloudflare.js';
 import { handleDeployAutomationRoute } from './handlers/automation/deploy.js';
@@ -247,6 +248,12 @@ export default {
       {
         const d1Res = await handleD1AutomationRoute({ request, env, path, method });
         if (d1Res) return d1Res;
+      }
+
+      // ═══ NEON AUTOMATION (connectivity + D1 backfill) ═══
+      {
+        const neonRes = await handleNeonAutomationRoute({ env, path, method });
+        if (neonRes) return neonRes;
       }
 
       // ═══ AI GENERATION (copy / meta / description / reviews) ═══

@@ -25,6 +25,8 @@ import {
   neonDeleteSite,
   neonUpsertDeploy,
   neonDeleteDeploy,
+  buildNeonSitePayloadFromD1Row,
+  buildNeonDeployPayloadFromD1Row,
 } from '../lib/neon-sync.js';
 import {
   resolveCloudflareAccount,
@@ -145,7 +147,11 @@ async function sitesRoute({ request, db, neonSql, path, method }) {
       body.status || 'completed', body.cost || 0, body.createdBy || ''
     ).run();
 
-    if (neonSql) neonUpsertSite(neonSql, id, body).catch(() => {});
+    if (neonSql) {
+      const savedRow = await db.prepare('SELECT * FROM sites WHERE id = ?').bind(id).first();
+      const payload = buildNeonSitePayloadFromD1Row(savedRow);
+      if (payload) neonUpsertSite(neonSql, id, payload).catch(() => {});
+    }
     await createVersionSnapshot(db, id, body);
     const internetBsSync = await autoSyncInternetBsNameserversForSite(db, body);
     return json({ id, success: true, internetBsSync }, 201);
@@ -209,8 +215,9 @@ async function sitesRoute({ request, db, neonSql, path, method }) {
     await db.prepare(`UPDATE sites SET ${fields.join(', ')} WHERE id = ?`).bind(...values).run();
 
     if (neonSql) {
-      const merged = { ...body, id };
-      neonUpsertSite(neonSql, id, merged).catch(() => {});
+      const savedRow = await db.prepare('SELECT * FROM sites WHERE id = ?').bind(id).first();
+      const payload = buildNeonSitePayloadFromD1Row(savedRow);
+      if (payload) neonUpsertSite(neonSql, id, payload).catch(() => {});
     }
     await createVersionSnapshot(db, id, body);
     const internetBsSync = await autoSyncInternetBsNameserversForSite(db, body);
@@ -238,7 +245,11 @@ async function deploysRoute({ request, db, neonSql, path, method }) {
       VALUES (?, ?, ?, ?, ?, ?)
     `).bind(id, body.siteId || '', body.brand || '', body.url || '', body.type || 'new', body.deployedBy || '').run();
 
-    if (neonSql) neonUpsertDeploy(neonSql, id, body).catch(() => {});
+    if (neonSql) {
+      const savedRow = await db.prepare('SELECT * FROM deploys WHERE id = ?').bind(id).first();
+      const payload = buildNeonDeployPayloadFromD1Row(savedRow);
+      if (payload) neonUpsertDeploy(neonSql, id, payload).catch(() => {});
+    }
     return json({ id, success: true }, 201);
   }
 
