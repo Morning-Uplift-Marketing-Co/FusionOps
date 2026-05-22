@@ -154,18 +154,19 @@ async function handleProvisionDomainDns({ request, env, db }) {
     // Also set up Workers Route for t.{domain}/* → lp-factory-api
     let routeStatus = 'skipped';
     try {
+      const pattern = `t.${cleanDomain}/*`;
+      // Routes are account-level, not zone-level. CloudFlare API: /accounts/{id}/workers/routes
       const routeListRes = await fetch(
-        `${CF_API_BASE}/zones/${zoneId}/workers/routes`,
+        `${CF_API_BASE}/accounts/${cfAccountId}/workers/routes`,
         { headers: cfHeaders }
       );
       const routeListData = await routeListRes.json().catch(() => ({}));
-      const pattern = `t.${cleanDomain}/*`;
       const existingRoute = (routeListData?.result || []).find(r => r.pattern === pattern);
       if (existingRoute) {
         routeStatus = 'exists';
       } else {
         const routeRes = await fetch(
-          `${CF_API_BASE}/zones/${zoneId}/workers/routes`,
+          `${CF_API_BASE}/accounts/${cfAccountId}/workers/routes`,
           {
             method: 'POST', headers: cfHeaders,
             body: JSON.stringify({ pattern, script: 'lp-factory-api' }),
@@ -228,31 +229,45 @@ async function handleVpsDownload({ env, path }) {
 }
 
 async function handleAiGenerateAssets({ request, db }) {
-  const body = await request.json();
-  const settingsRes = await db.prepare("SELECT * FROM settings WHERE key = 'geminiKey'").first();
-  const key = settingsRes?.value;
-  if (!key) return json({ error: 'Gemini Key not configured' }, 400);
+  try {
+    const body = await request.json();
+    const brand = String(body?.brand || '').trim();
+    const style = String(body?.style || 'Modern & Clean').trim();
+    if (!brand) return json({ error: 'Missing brand name' }, 400);
 
-  const type = body.type || 'logo';
-  const promptGen = `Act as an expert AI prompt engineer.Create a highly detailed, professional prompt for an image generator(DALL - E 3 style).
-            Brand: "${body.brand}"
-          Context: "${type === 'logo' ? 'Fintech logo design' : 'High-converting hero background for loan site'}"
-          Style: "${body.style || 'Modern & Clean'}"
-          Requirements: ${type === 'logo' ? 'Flat vector, minimalist, white background, no text except brand' : 'Photorealistic, soft lighting, lots of copy space, 16:9'}
-          Output: ONLY the refined prompt text.No chatter.`;
+    const settingsRes = await db.prepare("SELECT * FROM settings WHERE key = 'geminiKey'").first();
+    const key = settingsRes?.value;
+    if (!key) return json({ error: 'Gemini Key not configured' }, 400);
 
-  // Pass key via x-goog-api-key header (URLs leak into logs / Referer / proxies).
-  const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-    body: JSON.stringify({ contents: [{ parts: [{ text: promptGen }] }] }),
-  });
-  const d = await res.json();
-  const refinedPrompt = d.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || 'Modern fintech visual';
+    const type = body.type || 'logo';
+    const promptGen = `Act as an expert AI prompt engineer. Create a highly detailed, professional prompt for an image generator (DALL-E 3 style).
+Brand: "${brand}"
+Context: ${type === 'logo' ? 'Fintech logo design' : 'High-converting hero background for loan site'}
+Style: "${style}"
+Requirements: ${type === 'logo' ? 'Flat vector, minimalist, white background, no text except brand' : 'Photorealistic, soft lighting, lots of copy space, 16:9'}
+Output: ONLY the refined prompt text. No chatter.`;
 
-  const imageUrl = `https://pollinations.ai/p/${encodeURIComponent(refinedPrompt)}?width=${type === 'logo' ? 512 : 1280}&height=${type === 'logo' ? 512 : 720}&nologo=true&seed=${Math.floor(Math.random() * 1000)}`;
+    // Pass key via x-goog-api-key header (URLs leak into logs / Referer / proxies).
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+      body: JSON.stringify({ contents: [{ parts: [{ text: promptGen }] }] }),
+    });
 
-  return json({ url: imageUrl, prompt: refinedPrompt });
+    let d = {};
+    try {
+      d = await res.json();
+    } catch {
+      return json({ error: 'Invalid response from Gemini API' }, 500);
+    }
+
+    const refinedPrompt = d.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || 'Modern fintech visual';
+    const imageUrl = `https://pollinations.ai/p/${encodeURIComponent(refinedPrompt)}?width=${type === 'logo' ? 512 : 1280}&height=${type === 'logo' ? 512 : 720}&nologo=true&seed=${Math.floor(Math.random() * 1000)}`;
+
+    return json({ url: imageUrl, prompt: refinedPrompt });
+  } catch (e) {
+    return json({ error: e.message }, 400);
+  }
 }
 
 /**

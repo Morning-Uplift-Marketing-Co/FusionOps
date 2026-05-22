@@ -303,13 +303,19 @@ async function variantsRoute({ request, db, path, method }) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 async function opsRoute({ request, db, path, method }) {
-  // ═══ OPS: DOMAINS ═══
-  if (path === '/api/ops/domains' && method === 'GET') {
-    const { results } = await db.prepare('SELECT * FROM ops_domains ORDER BY created_at DESC').all();
-    return json(results);
-  }
-  if (path === '/api/ops/domains' && method === 'POST') {
-    const body = await request.json();
+  try {
+    // ═══ OPS: DOMAINS ═══
+    if (path === '/api/ops/domains' && method === 'GET') {
+      const { results } = await db.prepare('SELECT * FROM ops_domains ORDER BY created_at DESC').all();
+      return json(results);
+    }
+    if (path === '/api/ops/domains' && method === 'POST') {
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return json({ error: 'Invalid JSON in request body' }, 400);
+      }
     const id = body.id || uid();
     await db.prepare('INSERT INTO ops_domains (id, domain, registrar, account_id, profile_id, cf_account_id, status) VALUES (?, ?, ?, ?, ?, ?, ?)')
       .bind(id, body.domain || '', body.registrar || '', body.accountId || '', body.profileId || '', body.cfAccountId || '', body.status || 'active').run();
@@ -325,7 +331,12 @@ async function opsRoute({ request, db, path, method }) {
   }
   if (path.match(/^\/api\/ops\/domains\/[\w-]+$/) && method === 'PUT') {
     const id = path.split('/').pop();
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return json({ error: 'Invalid JSON in request body' }, 400);
+    }
     const sets = [];
     const vals = [];
     for (const [key, value] of Object.entries(body)) {
@@ -353,7 +364,12 @@ async function opsRoute({ request, db, path, method }) {
     return json(results);
   }
   if (path === '/api/ops/accounts' && method === 'POST') {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return json({ error: 'Invalid JSON in request body' }, 400);
+    }
     const id = body.id || uid();
     await db.prepare('INSERT INTO ops_accounts (id, label, email, payment_id, budget, status, card_uuid, card_last4, card_status, profile_id, proxy_ip, monthly_spend) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
       .bind(id, body.label || '', body.email || '', body.paymentId || '', body.budget || '', body.status || 'active',
@@ -370,7 +386,12 @@ async function opsRoute({ request, db, path, method }) {
   }
   if (path.match(/^\/api\/ops\/accounts\/[\w-]+$/) && method === 'PUT') {
     const id = path.split('/').pop();
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return json({ error: 'Invalid JSON in request body' }, 400);
+    }
     const sets = [];
     const vals = [];
     for (const [key, value] of Object.entries(body)) {
@@ -392,7 +413,12 @@ async function opsRoute({ request, db, path, method }) {
     return json(results);
   }
   if (path === '/api/ops/profiles' && method === 'POST') {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return json({ error: 'Invalid JSON in request body' }, 400);
+    }
     const id = body.id || uid();
     await db.prepare('INSERT INTO ops_profiles (id, name, proxy_ip, browser_type, os, status, ml_profile_id, ml_folder_id, proxy_host, proxy_port, proxy_user, fingerprint_os) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
       .bind(id, body.name || '', body.proxyIp || '', body.browserType || '', body.os || '', body.status || 'active',
@@ -409,7 +435,12 @@ async function opsRoute({ request, db, path, method }) {
   }
   if (path.match(/^\/api\/ops\/profiles\/[\w-]+$/) && method === 'PUT') {
     const id = path.split('/').pop();
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return json({ error: 'Invalid JSON in request body' }, 400);
+    }
     const sets = [];
     const vals = [];
     for (const [key, value] of Object.entries(body)) {
@@ -431,7 +462,12 @@ async function opsRoute({ request, db, path, method }) {
     return json(results);
   }
   if (path === '/api/ops/payments' && method === 'POST') {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return json({ error: 'Invalid JSON in request body' }, 400);
+    }
     const id = body.id || uid();
     await db.prepare('INSERT INTO ops_payments (id, label, type, last4, bank_name, status, lc_card_uuid, lc_bin_uuid, card_limit, card_expiry, total_spend) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
       .bind(id, body.label || '', body.type || '', body.last4 || '', body.bankName || '', body.status || 'active',
@@ -448,7 +484,12 @@ async function opsRoute({ request, db, path, method }) {
   }
   if (path.match(/^\/api\/ops\/payments\/[\w-]+$/) && method === 'PUT') {
     const id = path.split('/').pop();
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return json({ error: 'Invalid JSON in request body' }, 400);
+    }
     const sets = [];
     const vals = [];
     for (const [key, value] of Object.entries(body)) {
@@ -471,6 +512,9 @@ async function opsRoute({ request, db, path, method }) {
   }
 
   return null;
+  } catch (e) {
+    return json({ error: e.message }, 500);
+  }
 }
 
 /**
