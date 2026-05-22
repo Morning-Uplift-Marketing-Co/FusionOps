@@ -101,6 +101,24 @@ jobs:
             echo "Missing ANTHROPIC_API_KEY secret"
             exit 1
           fi
+          # Belt-and-suspenders: ensure auth in the same step to avoid session loss between steps.
+          set +e
+          claude login --api-key "$ANTHROPIC_API_KEY" >/tmp/claude-auth-inline.log 2>&1
+          auth_code=$?
+          if [ "$auth_code" -ne 0 ]; then
+            claude auth login --api-key "$ANTHROPIC_API_KEY" >>/tmp/claude-auth-inline.log 2>&1
+            auth_code=$?
+          fi
+          if [ "$auth_code" -ne 0 ]; then
+            printf "%s" "$ANTHROPIC_API_KEY" | claude login --api-key-stdin >>/tmp/claude-auth-inline.log 2>&1
+            auth_code=$?
+          fi
+          set -e
+          if [ "$auth_code" -ne 0 ]; then
+            echo "Inline Claude auth failed"
+            tail -n 200 /tmp/claude-auth-inline.log || true
+            exit "$auth_code"
+          fi
           claude --version || true
           PROMPT="You are the FBIS orchestrator. Skills are in hermes/skills/. \
           Read hermes/skills/argus.skill.md, hermes/skills/nexus.skill.md, \
