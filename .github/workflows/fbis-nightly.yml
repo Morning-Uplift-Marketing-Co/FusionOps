@@ -10,7 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write       # สำหรับ commit wiki กลับ repo
-      id-token: write       # required by claude-code-action OIDC auth flow
 
     steps:
       - name: Checkout repo
@@ -45,34 +44,25 @@ jobs:
           source .venv/bin/activate
           nohup python server.py > /tmp/fbis-mcp.log 2>&1 &
           echo "Waiting for MCP server..."
-          status="000"
-          for i in {1..15}; do
-            status=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8765/mcp || true)
-            if [ "$status" = "406" ] || [ "$status" = "200" ]; then
-              break
-            fi
-            echo "Attempt $i/15: MCP not ready yet (status=$status), retrying..."
-            sleep 2
-          done
-          if [ "$status" != "406" ] && [ "$status" != "200" ]; then
-            echo "MCP readiness probe failed after retries, final status=$status"
-            cat /tmp/fbis-mcp.log
-            exit 1
-          fi
+          sleep 5
+          curl -sf -H "Accept: application/json, text/event-stream" -X POST http://127.0.0.1:8765/mcp || (cat /tmp/fbis-mcp.log && exit 1)
           echo "MCP server ready ✅"
 
-      - name: Run FBIS Analysis (Claude Code Action)
-        uses: anthropics/claude-code-action@beta
-        with:
-          mode: agent
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: |
-            You are the FBIS orchestrator. Skills are in hermes/skills/.
-            Read hermes/skills/argus.skill.md, hermes/skills/nexus.skill.md,
-            hermes/skills/iris.skill.md, hermes/skills/chrono.skill.md
-            in parallel and execute each skill fully.
-            Then read hermes/skills/verdict.skill.md and execute it.
-            Finally update wiki/overview.md with today's findings and date.
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Run FBIS Analysis
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1'
+        run: |
+          claude --print \
+            "You are the FBIS orchestrator. Skills are in hermes/skills/. \
+            Read hermes/skills/argus.skill.md, hermes/skills/nexus.skill.md, \
+            hermes/skills/iris.skill.md, hermes/skills/chrono.skill.md \
+            in parallel and execute each skill fully. \
+            Then read hermes/skills/verdict.skill.md and execute it. \
+            Finally update wiki/overview.md with today's findings and date."
 
       - name: Commit wiki updates
         run: |
@@ -80,32 +70,5 @@ jobs:
           git config user.email "fbis-bot@fusionops.dev"
           git add wiki/
           git diff --staged --quiet || git commit -m "chore(fbis): nightly analysis $(date +'%Y-%m-%d')"
+          git pull --rebase origin main
           git push
-
-      - name: Telegram Notify (always)
-        if: always()
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          JOB_STATUS: ${{ job.status }}
-          REPO: ${{ github.repository }}
-          RUN_ID: ${{ github.run_id }}
-        run: |
-          if [ -z "${TELEGRAM_BOT_TOKEN:-}" ] || [ -z "${TELEGRAM_CHAT_ID:-}" ]; then
-            echo "Telegram secret missing; skip notify"
-            exit 0
-          fi
-
-          RUN_URL="https://github.com/${REPO}/actions/runs/${RUN_ID}"
-          if [ "${JOB_STATUS}" = "success" ]; then
-            ICON="✅"
-          else
-            ICON="❌"
-          fi
-
-          TEXT="${ICON} FBIS Nightly ${JOB_STATUS}%0ARepo: ${REPO}%0ARun: ${RUN_URL}"
-          curl -sS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-            -d "chat_id=${TELEGRAM_CHAT_ID}" \
-            -d "text=${TEXT}" \
-            -d "parse_mode=HTML" >/dev/null
-          echo "Telegram notification sent"

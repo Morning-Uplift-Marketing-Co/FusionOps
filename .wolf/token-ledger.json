@@ -2,12 +2,12 @@
   "version": 1,
   "created_at": "2026-04-05T01:06:32.811Z",
   "lifetime": {
-    "total_tokens_estimated": 630541,
-    "total_reads": 859,
-    "total_writes": 519,
-    "total_sessions": 37,
+    "total_tokens_estimated": 630677,
+    "total_reads": 873,
+    "total_writes": 521,
+    "total_sessions": 40,
     "anatomy_hits": 50,
-    "anatomy_misses": 672,
+    "anatomy_misses": 686,
     "repeated_reads_blocked": 108,
     "estimated_savings_vs_bare_cli": 91550
   },
@@ -9382,6 +9382,165 @@
         "writes_count": 16,
         "repeated_reads_blocked": 5,
         "anatomy_lookups": 7
+      }
+    },
+    {
+      "id": "session-2026-05-22-2050",
+      "started": "2026-05-22T13:50:23.200Z",
+      "ended": "2026-05-22T13:53:59.016Z",
+      "reads": [
+        {
+          "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/gifted-poincare-a7cfa2/src/utils/deployers/vps-ssh.js",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/gifted-poincare-a7cfa2/.claude/handoff/2026-05-16-phase-8-complete.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "H:/Cache/Temp/claude/H--DEV-projects-ppc-project-ppc-claude-web-V1--claude-worktrees-gifted-poincare-a7cfa2/32fd430b-aeca-4e4d-8315-dadd5378574b/tasks/b92oshfyu.output",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/gifted-poincare-a7cfa2/infra/docker-compose.yml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 0,
+        "reads_count": 4,
+        "writes_count": 0,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-05-22-0042",
+      "started": "2026-05-22T17:42:11.608Z",
+      "ended": "2026-05-22T18:02:06.668Z",
+      "reads": [
+        {
+          "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/gifted-poincare-a7cfa2/.claude/HERMES_FBIS_SYSTEM.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/gifted-poincare-a7cfa2/hermes-agents/HERMES_CONFIG.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/gifted-poincare-a7cfa2/HERMES_FBIS_AUDIT.txt",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 0,
+        "reads_count": 3,
+        "writes_count": 0,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-05-22-0042",
+      "started": "2026-05-22T17:42:11.608Z",
+      "ended": "2026-05-22T18:08:11.164Z",
+      "reads": [
+        {
+          "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/gifted-poincare-a7cfa2/.claude/HERMES_FBIS_SYSTEM.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/gifted-poincare-a7cfa2/hermes-agents/HERMES_CONFIG.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/gifted-poincare-a7cfa2/HERMES_FBIS_AUDIT.txt",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 0,
+        "reads_count": 3,
+        "writes_count": 0,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-05-22-0042",
+      "started": "2026-05-22T17:42:11.608Z",
+      "ended": "2026-05-22T18:09:42.632Z",
+      "reads": [
+        {
+          "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/gifted-poincare-a7cfa2/.claude/HERMES_FBIS_SYSTEM.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/gifted-poincare-a7cfa2/hermes-agents/HERMES_CONFIG.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/gifted-poincare-a7cfa2/HERMES_FBIS_AUDIT.txt",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/gifted-poincare-a7cfa2/.github/workflows/fbis-nightly.yml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/gifted-poincare-a7cfa2/.github/workflows/fbis-nightly.yml",
+          "tokens_estimated": 96,
+          "action": "edit"
+        },
+        {
+          "file": "H:/DEV/projects/ppc_project/ppc-claude-web-V1/.claude/worktrees/gifted-poincare-a7cfa2/.github/workflows/fbis-nightly.yml",
+          "tokens_estimated": 40,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 136,
+        "reads_count": 4,
+        "writes_count": 2,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 0
       }
     }
   ],

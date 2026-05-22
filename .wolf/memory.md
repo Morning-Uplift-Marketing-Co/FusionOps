@@ -397,3 +397,21 @@
 | 08:29 | Session end: 16 writes across 13 files (routes.js, wrangler.toml, HERMES_FBIS_AUDIT.txt, FBIS_SECURITY_FIX_DEPLOYMENT.md, DASHCLAW_POLICY_CHECKLIST.md) | 21 reads | ~23447 tok |
 | 08:29 | Created .claude/guides/DEPLOYMENT_CHECKLIST.md | — | ~1714 |
 | 08:30 | Created .claude/handoff/2026-05-16-phases-4g-5-complete.md | — | ~2341 |
+
+## Session: 2026-05-22 20:50
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-05-22 23:01
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-05-22 00:42
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 01:09 | Edited .github/workflows/fbis-nightly.yml | modified chore() | ~96 |
+| 01:09 | Edited .github/workflows/fbis-nightly.yml | inline fix | ~40 |
+| 01:09 | Session end: 2 writes across 1 files (fbis-nightly.yml) | 4 reads | ~136 tok |
