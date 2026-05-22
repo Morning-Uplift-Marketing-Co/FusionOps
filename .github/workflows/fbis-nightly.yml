@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write       # สำหรับ commit wiki กลับ repo
+      id-token: write       # required by claude-code-action OIDC auth flow
 
     steps:
       - name: Checkout repo
