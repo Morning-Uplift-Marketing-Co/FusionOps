@@ -9,6 +9,7 @@
 // ============================================================
 
 import { neon } from '@neondatabase/serverless';
+import { snakeToCamel } from './case-utils.js';
 
 export function getNeonSql(env) {
   const connStr = env?.NEON_DATABASE_URL;
@@ -52,13 +53,13 @@ export async function ensureNeonTables(sql) {
       )
     `;
     await sql`
-      CREATE TABLE IF NOT EXISTS deploys (
+      CREATE TABLE IF NOT EXISTS deploy_history (
         id TEXT PRIMARY KEY,
         site_id TEXT,
-        brand TEXT,
+        target TEXT,
         url TEXT,
-        type TEXT,
-        deployed_by TEXT,
+        status TEXT,
+        brand TEXT,
         created_at TIMESTAMPTZ DEFAULT now()
       )
     `;
@@ -95,20 +96,108 @@ export async function neonDeleteSite(sql, id) {
 export async function neonUpsertDeploy(sql, id, body) {
   if (!sql) return;
   await sql`
-    INSERT INTO deploys (id, site_id, brand, url, type, deployed_by, created_at)
+    INSERT INTO deploy_history (id, site_id, target, url, status, brand, created_at)
     VALUES (
-      ${id}, ${body?.siteId || ''}, ${body?.brand || ''}, ${body?.url || ''}, ${body?.type || 'new'}, ${body?.deployedBy || ''}, now()
+      ${id},
+      ${body?.siteId || ''},
+      ${body?.target || body?.type || 'netlify'},
+      ${body?.url || ''},
+      ${body?.status || 'success'},
+      ${body?.brand || ''},
+      now()
     )
     ON CONFLICT (id) DO UPDATE SET
       site_id = EXCLUDED.site_id,
-      brand = EXCLUDED.brand,
+      target = EXCLUDED.target,
       url = EXCLUDED.url,
-      type = EXCLUDED.type,
-      deployed_by = EXCLUDED.deployed_by
+      status = EXCLUDED.status,
+      brand = EXCLUDED.brand
   `;
 }
 
 export async function neonDeleteDeploy(sql, id) {
   if (!sql) return;
-  await sql`DELETE FROM deploys WHERE id = ${id}`;
+  await sql`DELETE FROM deploy_history WHERE id = ${id}`;
+}
+
+export function buildNeonSitePayloadFromD1Row(row) {
+  if (!row) return null;
+  const site = snakeToCamel(row);
+  delete site.createdAt;
+  delete site.updatedAt;
+  return site;
+}
+
+export function buildNeonDeployPayloadFromD1Row(row) {
+  if (!row) return null;
+  const deploy = snakeToCamel(row);
+  return {
+    id: deploy.id,
+    siteId: deploy.siteId || '',
+    target: deploy.target || deploy.type || 'netlify',
+    status: deploy.status || 'success',
+    brand: deploy.brand || '',
+    url: deploy.url || '',
+  };
+}
+
+function coerceD1SettingValue(value) {
+  if (typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  if (!trimmed) return value;
+  if (trimmed === 'true') return true;
+  if (trimmed === 'false') return false;
+  if (trimmed === 'null') return null;
+  if (/^-?\d+(\.\d+)?$/.test(trimmed)) return Number(trimmed);
+  if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+    try {
+      return JSON.parse(trimmed);
+    } catch (_e) {
+      return value;
+    }
+  }
+  return value;
+}
+
+export async function syncD1ToNeon(db, sql) {
+  if (!db || !sql) {
+    return {
+      settings: 0,
+      sites: 0,
+      deploys: 0,
+    };
+  }
+
+  await ensureNeonTables(sql);
+
+  const [settingsRows, sitesRows, deployRows] = await Promise.all([
+    db.prepare('SELECT key, value FROM settings').all(),
+    db.prepare('SELECT * FROM sites ORDER BY created_at DESC').all(),
+    db.prepare('SELECT * FROM deploys ORDER BY created_at DESC LIMIT 100').all(),
+  ]);
+
+  const settings = {};
+  for (const row of settingsRows?.results || []) {
+    settings[row.key] = coerceD1SettingValue(row.value);
+  }
+
+  if (Object.keys(settings).length > 0) {
+    await neonUpsertSettings(sql, settings);
+  }
+
+  for (const row of sitesRows?.results || []) {
+    const payload = buildNeonSitePayloadFromD1Row(row);
+    await neonUpsertSite(sql, row.id, payload);
+  }
+
+  for (const row of deployRows?.results || []) {
+    const payload = buildNeonDeployPayloadFromD1Row(row);
+    await neonUpsertDeploy(sql, row.id, payload);
+  }
+
+  return {
+    settings: settingsRows?.results?.length || 0,
+    sites: sitesRows?.results?.length || 0,
+    deploys: deployRows?.results?.length || 0,
+  };
 }
