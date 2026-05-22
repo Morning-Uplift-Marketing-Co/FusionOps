@@ -64,6 +64,7 @@ jobs:
       - name: Run FBIS Analysis (Claude Code Action)
         uses: anthropics/claude-code-action@beta
         with:
+          mode: agent
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
             You are the FBIS orchestrator. Skills are in hermes/skills/.
