@@ -42,6 +42,7 @@ import { KpiDashboard } from "./components/KpiDashboard";
 import { UserManager } from "./components/UserManager";
 import { TaskManager } from "./components/TaskManager";
 import RiskDashboard from "./components/RiskDashboard";
+import TrademarkDashboard from "./components/TrademarkDashboard";
 
 // Neon connection string — stored in settings or hardcoded for now
 const NEON_URL = import.meta.env.VITE_NEON_URL || "";
@@ -1335,6 +1336,7 @@ useEffect(() => {
           {page === "users" && isAdmin(user) && <UserManager currentUser={user} />}
           {page === "tasks" && <TaskManager tasks={tasks} sites={sites} users={users} addTask={addTask} updateTask={updateTask} deleteTask={deleteTask} user={user} setPage={setPage} auditLog={auditLog} />}
           {page === "risk-dashboard" && <RiskDashboard />}
+          {page === "trademark" && <TrademarkDashboard />}
         </div>
       </main>
 

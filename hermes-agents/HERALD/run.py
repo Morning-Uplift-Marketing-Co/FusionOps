@@ -9,6 +9,7 @@ import os
 import sys
 import base64
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
 import requests
@@ -22,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 BASELINE_WINDOW = '7d'  # nominal label stored in agent_baselines.window
 BASELINE_SCOPE = '_global'  # agent_baselines.scope
+BATCH_SIZE = 25  # competitors per cron tick (3 API calls each); full list rotates
 
 
 class HERALDTrendMonitor:
@@ -63,6 +65,24 @@ class HERALDTrendMonitor:
             'scope': BASELINE_SCOPE,
             'window': BASELINE_WINDOW,
             'value': float(value),
+            'sample_count': 1,
+        })
+
+    def _get_batch_offset(self) -> int:
+        """Load the rotating batch offset from D1."""
+        rows = self.state.list_baselines(agent='HERALD')
+        for r in rows:
+            if r.get('metric') == 'batch_offset':
+                return int(r.get('value', 0))
+        return 0
+
+    def _save_batch_offset(self, offset: int):
+        self.state.upsert_baseline({
+            'agent': 'HERALD',
+            'metric': 'batch_offset',
+            'scope': BASELINE_SCOPE,
+            'window': 'rolling',
+            'value': float(offset),
             'sample_count': 1,
         })
 
@@ -319,52 +339,61 @@ CFPB Complaints: {details['complaints']} (past 30 days)
             },
         )
 
+    def _monitor_one(self, competitor: str, baselines: Dict[str, Any]):
+        """Run all three checks for a single competitor (thread-safe: each writes its own baseline key)."""
+        trend_data = self.query_google_trends(competitor)
+        surge = self.check_trend_surge(competitor, trend_data, baselines)
+        if surge:
+            details = {
+                'competitor': competitor,
+                'increase': surge['curr'] - surge['prev'],
+                'prev_value': surge['prev'],
+                'curr_value': surge['curr'],
+            }
+            self._send_alert('trend_surge', details)
+            self._log_alert('trend_surge', details)
+
+        review_data = self.query_trustpilot_reviews(competitor)
+        decline = self.check_reputation_decline(competitor, review_data, baselines)
+        if decline:
+            details = {
+                'competitor': competitor,
+                'change': decline['curr'] - decline['prev'],
+                'prev_rating': decline['prev'],
+                'curr_rating': decline['curr'],
+                'review_count': review_data.get('review_count', 0),
+                'avg_recent': decline['curr'],
+            }
+            self._send_alert('reputation_decline', details)
+            self._log_alert('reputation_decline', details)
+
+        complaint_count = self.query_cfpb_complaints(competitor)
+        if complaint_count > 50:
+            details = {'competitor': competitor, 'complaints': complaint_count}
+            self._send_alert('complaint_surge', details)
+            self._log_alert('complaint_surge', details)
+
     def monitor_competitors(self):
-        """Main monitoring loop"""
-        logger.info(f"Monitoring {len(self.competitor_list)} competitors for trends/reputation")
+        """Main monitoring loop — processes BATCH_SIZE competitors per tick, rotating."""
+        competitors = [c.strip() for c in self.competitor_list if c.strip()]
+        total = len(competitors)
+
+        offset = self._get_batch_offset()
+        if offset >= total:
+            offset = 0
+        batch = competitors[offset:offset + BATCH_SIZE]
+        next_offset = (offset + BATCH_SIZE) % total if total else 0
+
+        logger.info(f"Monitoring batch {offset}–{offset + len(batch)} of {total} competitors")
 
         # Single D1 read at start; per-baseline upserts happen inside check_* methods.
         baselines = self._load_baselines()
 
-        for competitor in self.competitor_list:
-            competitor = competitor.strip()
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            list(executor.map(lambda c: self._monitor_one(c, baselines), batch))
 
-            # Check trends
-            trend_data = self.query_google_trends(competitor)
-            surge = self.check_trend_surge(competitor, trend_data, baselines)
-            if surge:
-                details = {
-                    'competitor': competitor,
-                    'increase': surge['curr'] - surge['prev'],
-                    'prev_value': surge['prev'],
-                    'curr_value': surge['curr'],
-                }
-                self._send_alert('trend_surge', details)
-                self._log_alert('trend_surge', details)
-
-            # Check reputation
-            review_data = self.query_trustpilot_reviews(competitor)
-            decline = self.check_reputation_decline(competitor, review_data, baselines)
-            if decline:
-                details = {
-                    'competitor': competitor,
-                    'change': decline['curr'] - decline['prev'],
-                    'prev_rating': decline['prev'],
-                    'curr_rating': decline['curr'],
-                    'review_count': review_data.get('review_count', 0),
-                    'avg_recent': decline['curr'],
-                }
-                self._send_alert('reputation_decline', details)
-                self._log_alert('reputation_decline', details)
-
-            # Check complaints (stateless — no baseline involved)
-            complaint_count = self.query_cfpb_complaints(competitor)
-            if complaint_count > 50:
-                details = {'competitor': competitor, 'complaints': complaint_count}
-                self._send_alert('complaint_surge', details)
-                self._log_alert('complaint_surge', details)
-
-        logger.info("Trend and reputation monitoring complete")
+        self._save_batch_offset(next_offset)
+        logger.info(f"Trend and reputation monitoring complete (next offset: {next_offset})")
 
 def _notify_d1_failure(err: Exception):
     chat = os.getenv('HERALD_TELEGRAM_CHAT_ID')

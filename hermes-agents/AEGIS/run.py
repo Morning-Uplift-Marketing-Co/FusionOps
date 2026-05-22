@@ -9,6 +9,7 @@ import os
 import sys
 import base64
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 import requests
@@ -21,6 +22,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s [AEGIS] %(message)s'
 logger = logging.getLogger(__name__)
 
 DEDUP_WINDOW_HOURS = 24
+BATCH_SIZE = 50  # keywords per cron tick; full list rotates across runs
 
 
 class AEGISBrandJackDetector:
@@ -86,53 +88,63 @@ class AEGISBrandJackDetector:
                 return True
         return False
 
-    def query_serp_ads(self) -> List[Dict[str, Any]]:
-        """Query SERP Google Ads Advertisers Live endpoint (one keyword per request)"""
+    def _get_batch_offset(self) -> int:
+        """Load the rotating batch offset from D1."""
+        rows = self.state.list_baselines(agent='AEGIS')
+        for r in rows:
+            if r.get('metric') == 'batch_offset':
+                return int(r.get('value', 0))
+        return 0
+
+    def _save_batch_offset(self, offset: int):
+        self.state.upsert_baseline({
+            'agent': 'AEGIS',
+            'metric': 'batch_offset',
+            'scope': '_global',
+            'window': 'rolling',
+            'value': float(offset),
+            'sample_count': 1,
+        })
+
+    def _fetch_keyword(self, keyword: str) -> List[Dict[str, Any]]:
+        """Query one keyword against the SERP Ads Advertisers endpoint."""
         headers = {
             'Authorization': self._auth_header(),
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
         }
+        payload = [{'keyword': keyword, 'location_code': 2840}]
+        try:
+            response = requests.post(
+                f'{self.dataforseo_base_url}/serp/google/ads_advertisers/live/advanced',
+                json=payload,
+                headers=headers,
+                timeout=30,
+            )
+            response.raise_for_status()
+            data = response.json()
+            if data.get('status_code') != 20000:
+                logger.warning(f"API status {data.get('status_code')} for '{keyword}': {data.get('status_message')}")
+                return []
+            results = []
+            for task in data.get('tasks', []) or []:
+                if task.get('status_code') == 20000:
+                    for result in task.get('result', []) or []:
+                        result['keyword'] = keyword
+                        results.append(result)
+                else:
+                    logger.warning(f"Task error for '{keyword}': {task.get('status_message')}")
+            return results
+        except Exception as e:
+            logger.error(f"Failed to query SERP ads for '{keyword}': {e}")
+            return []
 
-        all_results = []
-
-        for keyword in self.trademark_list:
-            keyword = keyword.strip()
-            if not keyword:
-                continue
-
-            payload = [
-                {
-                    'keyword': keyword,
-                    'location_code': 2840  # United States
-                }
-            ]
-
-            try:
-                response = requests.post(
-                    f'{self.dataforseo_base_url}/serp/google/ads_advertisers/live/advanced',
-                    json=payload,
-                    headers=headers,
-                    timeout=30
-                )
-                response.raise_for_status()
-
-                data = response.json()
-                if data.get('status_code') != 20000:
-                    logger.warning(f"API returned status {data.get('status_code')}: {data.get('status_message')}")
-                    continue
-
-                for task in data.get('tasks', []) or []:
-                    if task.get('status_code') == 20000:
-                        for result in task.get('result', []) or []:
-                            result['keyword'] = keyword
-                            all_results.append(result)
-                    else:
-                        logger.warning(f"Task error for '{keyword}': {task.get('status_message')}")
-
-            except Exception as e:
-                logger.error(f"Failed to query SERP ads for '{keyword}': {e}")
-                continue
-
+    def query_serp_ads(self, keywords: List[str]) -> List[Dict[str, Any]]:
+        """Query a batch of keywords in parallel (10 workers)."""
+        all_results: List[Dict[str, Any]] = []
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = {executor.submit(self._fetch_keyword, kw): kw for kw in keywords}
+            for future in as_completed(futures):
+                all_results.extend(future.result())
         return all_results
 
     def send_telegram_alert(self, keyword: str, advertiser: Dict[str, str]):
@@ -188,10 +200,18 @@ Time: {datetime.utcnow().isoformat()} UTC
         logger.info(f"Alert logged: {keyword} - {domain}")
 
     def detect_brand_jacks(self):
-        """Main detection loop"""
-        logger.info(f"Starting brand-jack detection for {len(self.trademark_list)} keywords")
+        """Main detection loop — processes BATCH_SIZE keywords per tick, rotating."""
+        keywords = [kw.strip() for kw in self.trademark_list if kw.strip()]
+        total = len(keywords)
 
-        ads_results = self.query_serp_ads()
+        offset = self._get_batch_offset()
+        if offset >= total:
+            offset = 0
+        batch = keywords[offset:offset + BATCH_SIZE]
+        next_offset = (offset + BATCH_SIZE) % total if total else 0
+
+        logger.info(f"Brand-jack detection: batch {offset}–{offset + len(batch)} of {total} keywords")
+        ads_results = self.query_serp_ads(batch)
         if not ads_results:
             logger.warning("No SERP results received")
             return
@@ -238,7 +258,8 @@ Time: {datetime.utcnow().isoformat()} UTC
                     new_alerts += 1
 
         self._save_seen_advertisers(seen_advertisers)
-        logger.info(f"Brand-jack detection complete: {new_alerts} new alerts")
+        self._save_batch_offset(next_offset)
+        logger.info(f"Brand-jack detection complete: {new_alerts} new alerts (next offset: {next_offset})")
 
 def _notify_d1_failure(err: Exception):
     """Best-effort Telegram alert when the D1 agent state API is unreachable."""
