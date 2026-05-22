@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { cn } from "../lib/utils";
 
-const API_BASE = (import.meta.env.VITE_API_BASE || "").replace(/\/api$/, "");
+const API_BASE = (import.meta.env.VITE_API_BASE || "https://lp-factory-api.misty-feather-556e.workers.dev/api").replace(/\/api$/, "");
 
 async function apiGet(path) {
     const url = `${API_BASE}${path}`;
