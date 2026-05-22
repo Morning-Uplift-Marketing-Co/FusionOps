@@ -44,8 +44,20 @@ jobs:
           source .venv/bin/activate
           nohup python server.py > /tmp/fbis-mcp.log 2>&1 &
           echo "Waiting for MCP server..."
-          sleep 5
-          curl -sf http://127.0.0.1:8765/mcp || (cat /tmp/fbis-mcp.log && exit 1)
+          status="000"
+          for i in {1..15}; do
+            status=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8765/mcp || true)
+            if [ "$status" = "406" ] || [ "$status" = "200" ]; then
+              break
+            fi
+            echo "Attempt $i/15: MCP not ready yet (status=$status), retrying..."
+            sleep 2
+          done
+          if [ "$status" != "406" ] && [ "$status" != "200" ]; then
+            echo "MCP readiness probe failed after retries, final status=$status"
+            cat /tmp/fbis-mcp.log
+            exit 1
+          fi
           echo "MCP server ready ✅"
 
       - name: Install Claude Code
