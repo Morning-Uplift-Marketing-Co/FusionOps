@@ -44,9 +44,20 @@ jobs:
           source .venv/bin/activate
           nohup python server.py > /tmp/fbis-mcp.log 2>&1 &
           echo "Waiting for MCP server..."
-          sleep 5
-          curl -sf -H "Accept: application/json, text/event-stream" -X POST http://127.0.0.1:8765/mcp || (cat /tmp/fbis-mcp.log && exit 1)
-          echo "MCP server ready ✅"
+          for i in {1..15}; do
+            status=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8765/mcp 2>/dev/null || echo "000")
+            if [ "$status" != "000" ]; then
+              echo "MCP server ready (HTTP $status) ✅"
+              break
+            fi
+            echo "Attempt $i/15: not ready yet, retrying..."
+            sleep 2
+          done
+          if [ "$status" = "000" ]; then
+            echo "MCP server failed to start"
+            cat /tmp/fbis-mcp.log
+            exit 1
+          fi
 
       - name: Install Claude Code
         run: npm install -g @anthropic-ai/claude-code
