@@ -60,86 +60,17 @@ jobs:
           fi
           echo "MCP server ready ✅"
 
-      - name: Install Claude Code
-        run: npm install -g @anthropic-ai/claude-code
-
-      - name: Authenticate Claude Code (CI)
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: |
-          set -euo pipefail
-          if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
-            echo "Missing ANTHROPIC_API_KEY secret"
-            exit 1
-          fi
-          # Claude CLI auth UX differs by version. Try common non-interactive forms.
-          set +e
-          claude login --api-key "$ANTHROPIC_API_KEY" >/tmp/claude-auth.log 2>&1
-          code=$?
-          if [ "$code" -ne 0 ]; then
-            claude auth login --api-key "$ANTHROPIC_API_KEY" >>/tmp/claude-auth.log 2>&1
-            code=$?
-          fi
-          if [ "$code" -ne 0 ]; then
-            printf "%s" "$ANTHROPIC_API_KEY" | claude login --api-key-stdin >>/tmp/claude-auth.log 2>&1
-            code=$?
-          fi
-          set -e
-          if [ "$code" -ne 0 ]; then
-            echo "Claude non-interactive auth failed"
-            tail -n 200 /tmp/claude-auth.log || true
-            exit "$code"
-          fi
-
-      - name: Run FBIS Analysis
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1'
-        run: |
-          set -euo pipefail
-          if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
-            echo "Missing ANTHROPIC_API_KEY secret"
-            exit 1
-          fi
-          # Belt-and-suspenders: ensure auth in the same step to avoid session loss between steps.
-          set +e
-          claude login --api-key "$ANTHROPIC_API_KEY" >/tmp/claude-auth-inline.log 2>&1
-          auth_code=$?
-          if [ "$auth_code" -ne 0 ]; then
-            claude auth login --api-key "$ANTHROPIC_API_KEY" >>/tmp/claude-auth-inline.log 2>&1
-            auth_code=$?
-          fi
-          if [ "$auth_code" -ne 0 ]; then
-            printf "%s" "$ANTHROPIC_API_KEY" | claude login --api-key-stdin >>/tmp/claude-auth-inline.log 2>&1
-            auth_code=$?
-          fi
-          set -e
-          if [ "$auth_code" -ne 0 ]; then
-            echo "Inline Claude auth failed"
-            tail -n 200 /tmp/claude-auth-inline.log || true
-            exit "$auth_code"
-          fi
-          claude --version || true
-          PROMPT="You are the FBIS orchestrator. Skills are in hermes/skills/. \
-          Read hermes/skills/argus.skill.md, hermes/skills/nexus.skill.md, \
-          hermes/skills/iris.skill.md, hermes/skills/chrono.skill.md \
-          in parallel and execute each skill fully. \
-          Then read hermes/skills/verdict.skill.md and execute it. \
-          Finally update wiki/overview.md with today's findings and date."
-          set +e
-          claude --print "$PROMPT" 2>&1 | tee /tmp/fbis-claude.log
-          code=${PIPESTATUS[0]}
-          if [ "$code" -ne 0 ]; then
-            echo "claude --print failed with code=$code, retrying with -p..."
-            claude -p "$PROMPT" 2>&1 | tee -a /tmp/fbis-claude.log
-            code=${PIPESTATUS[0]}
-          fi
-          set -e
-          if [ "$code" -ne 0 ]; then
-            echo "FBIS Analysis failed. Last logs:"
-            tail -n 200 /tmp/fbis-claude.log || true
-            exit "$code"
-          fi
+      - name: Run FBIS Analysis (Claude Code Action)
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            You are the FBIS orchestrator. Skills are in hermes/skills/.
+            Read hermes/skills/argus.skill.md, hermes/skills/nexus.skill.md,
+            hermes/skills/iris.skill.md, hermes/skills/chrono.skill.md
+            in parallel and execute each skill fully.
+            Then read hermes/skills/verdict.skill.md and execute it.
+            Finally update wiki/overview.md with today's findings and date.
 
       - name: Commit wiki updates
         run: |
