@@ -63,6 +63,34 @@ jobs:
       - name: Install Claude Code
         run: npm install -g @anthropic-ai/claude-code
 
+      - name: Authenticate Claude Code (CI)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+            echo "Missing ANTHROPIC_API_KEY secret"
+            exit 1
+          fi
+          # Claude CLI auth UX differs by version. Try common non-interactive forms.
+          set +e
+          claude login --api-key "$ANTHROPIC_API_KEY" >/tmp/claude-auth.log 2>&1
+          code=$?
+          if [ "$code" -ne 0 ]; then
+            claude auth login --api-key "$ANTHROPIC_API_KEY" >>/tmp/claude-auth.log 2>&1
+            code=$?
+          fi
+          if [ "$code" -ne 0 ]; then
+            printf "%s" "$ANTHROPIC_API_KEY" | claude login --api-key-stdin >>/tmp/claude-auth.log 2>&1
+            code=$?
+          fi
+          set -e
+          if [ "$code" -ne 0 ]; then
+            echo "Claude non-interactive auth failed"
+            tail -n 200 /tmp/claude-auth.log || true
+            exit "$code"
+          fi
+
       - name: Run FBIS Analysis
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
