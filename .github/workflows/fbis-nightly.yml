@@ -68,13 +68,32 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1'
         run: |
-          claude --print \
-            "You are the FBIS orchestrator. Skills are in hermes/skills/. \
-            Read hermes/skills/argus.skill.md, hermes/skills/nexus.skill.md, \
-            hermes/skills/iris.skill.md, hermes/skills/chrono.skill.md \
-            in parallel and execute each skill fully. \
-            Then read hermes/skills/verdict.skill.md and execute it. \
-            Finally update wiki/overview.md with today's findings and date."
+          set -euo pipefail
+          if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+            echo "Missing ANTHROPIC_API_KEY secret"
+            exit 1
+          fi
+          claude --version || true
+          PROMPT="You are the FBIS orchestrator. Skills are in hermes/skills/. \
+          Read hermes/skills/argus.skill.md, hermes/skills/nexus.skill.md, \
+          hermes/skills/iris.skill.md, hermes/skills/chrono.skill.md \
+          in parallel and execute each skill fully. \
+          Then read hermes/skills/verdict.skill.md and execute it. \
+          Finally update wiki/overview.md with today's findings and date."
+          set +e
+          claude --print "$PROMPT" 2>&1 | tee /tmp/fbis-claude.log
+          code=${PIPESTATUS[0]}
+          if [ "$code" -ne 0 ]; then
+            echo "claude --print failed with code=$code, retrying with -p..."
+            claude -p "$PROMPT" 2>&1 | tee -a /tmp/fbis-claude.log
+            code=${PIPESTATUS[0]}
+          fi
+          set -e
+          if [ "$code" -ne 0 ]; then
+            echo "FBIS Analysis failed. Last logs:"
+            tail -n 200 /tmp/fbis-claude.log || true
+            exit "$code"
+          fi
 
       - name: Commit wiki updates
         run: |
