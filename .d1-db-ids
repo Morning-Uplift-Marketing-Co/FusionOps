@@ -1,12 +1,13 @@
 # Cloudflare D1 Database IDs for FusionOps
-# Generated: 2026-02-22T06:30:34.773Z
+# Updated: 2026-05-23 — sync'd to production wrangler.toml values
+# ⚠️  These IDs must match apps/api-worker/wrangler.toml at all times.
 
-D1_MAIN_ID="8ff4ce71-0711-4e7a-b300-3a811b52a9f6"
-D1_PIXEL_ID="96ec2b4b-7a83-4007-b6ce-bd48e6a28646"
-D1_CALLBACK_ID="85dbce87-6c4e-4099-8c3f-6fc82657f6d0"
+D1_MAIN_ID="4eaee76d-10fb-42a7-bb9d-50737c3da785"
+D1_PIXEL_ID="99437cde-5e7c-4b58-97ad-69e43019c6ff"
+D1_CALLBACK_ID="5219aeec-c6d8-42e4-9a40-15573c6e53a4"
 
-D1_MAIN_NAME="fusionops-main"
-D1_PIXEL_NAME="fusionops-pixel"
-D1_CALLBACK_NAME="fusionops-callback"
+D1_MAIN_NAME="fusionops-main-new-v2"
+D1_PIXEL_NAME="fusionops-pixel-new-v2"
+D1_CALLBACK_NAME="fusionops-callback-new-v2"
 
 CF_ACCOUNT_ID=""

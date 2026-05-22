@@ -5,6 +5,15 @@
  * ============================================================
  * Creates fresh D1 databases for FusionOps project
  *
+ * ⚠️  WARNING: This script CREATES NEW databases and OVERWRITES
+ * database_id values in all wrangler.toml files.
+ * DO NOT run against production unless intentionally migrating
+ * to new databases.
+ * Production IDs (as of 2026-05-23):
+ *   fusionops-main-new-v2     = 4eaee76d-10fb-42a7-bb9d-50737c3da785
+ *   fusionops-pixel-new-v2   = 99437cde-5e7c-4b58-97ad-69e43019c6ff
+ *   fusionops-callback-new-v2 = 5219aeec-c6d8-42e4-9a40-15573c6e53a4
+ *
  * Usage:
  *   node scripts/create-new-databases.js
  * ============================================================
