@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { cn } from "../lib/utils";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "/api";
+const API_BASE = (import.meta.env.VITE_API_BASE || "").replace(/\/api$/, "");
 
 async function apiGet(path) {
-    const url = path.startsWith("/api") ? path : `${API_BASE}${path}`;
+    const url = `${API_BASE}${path}`;
     const r = await fetch(url, { headers: { Accept: "application/json" } });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     return r.json();
