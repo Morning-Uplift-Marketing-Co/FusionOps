@@ -55,6 +55,33 @@ bucket_name = "lp-factory-thumbs"
 pattern = "t.loanbearfunds.com/*"
 zone_name = "loanbearfunds.com"
 
+[[routes]]
+pattern = "t.bearlendlng.com/*"
+zone_name = "bearlendlng.com"
+
+[[routes]]
+pattern = "t.myfairlendingloan.com/*"
+zone_name = "myfairlendingloan.com"
+
+[[routes]]
+pattern = "t.gotogetherloans.com/*"
+zone_name = "gotogetherloans.com"
+
+[[routes]]
+pattern = "t.possiblefinence.com/*"
+zone_name = "possiblefinence.com"
+
+# Zones not on active CF account — add DNS/zone first, then uncomment:
+# [[routes]]
+# pattern = "t.lendlngbuddies.com/*"
+# zone_name = "lendlngbuddies.com"
+# [[routes]]
+# pattern = "t.fastfundalendlng.com/*"
+# zone_name = "fastfundalendlng.com"
+# [[routes]]
+# pattern = "t.sunnydayalendlng.com/*"
+# zone_name = "sunnydayalendlng.com"
+
 # [[routes]]
 # pattern = "t.scratchpetlending.com/*"
 # zone_name = "scratchpetlending.com"
