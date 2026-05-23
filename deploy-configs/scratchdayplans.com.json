@@ -19,8 +19,8 @@
   "amountMax": 5000,
   "aprMin": 5.99,
   "aprMax": 35.99,
-  "primaryColor": "#3b5bdb",
-  "accentColor": "#f97316",
+  "primaryColor": "",
+  "accentColor": "",
   "conversionId": "AW-18035183117",
   "gtagFormStartLabel": "Bme1CKuetakcEI2c7JdD",
   "gtagFormSubmitLabel": "LFclCK6etakcEI2c7JdD",
@@ -41,23 +41,23 @@
   "reviews": [
     {
       "name": "Sarah P.",
-      "location": "Austin, TX",
+      "text": "My dog needed an emergency procedure, and the vet bill was intimidating. ScratchPay made it possible to get him the urgent care he needed without financial stress.",
       "rating": 5,
-      "text": "My dog needed an emergency procedure, and the vet bill was intimidating. ScratchPay made it possible to get him the urgent care he needed without financial stress."
+      "location": "Austin, TX"
     },
     {
       "name": "Michael R.",
-      "location": "Denver, CO",
+      "text": "We adopted a new puppy, and the initial vet visits and vaccinations added up fast. ScratchPay offered a flexible payment plan that helped us manage the costs easily.",
       "rating": 5,
-      "text": "We adopted a new puppy, and the initial vet visits and vaccinations added up fast. ScratchPay offered a flexible payment plan that helped us manage the costs easily."
+      "location": "Denver, CO"
     },
     {
       "name": "Jessica L.",
-      "location": "Miami, FL",
+      "text": "My cat developed an unexpected health issue, and I needed quick financing for her treatment. The application was simple, and I was approved fast, getting her better in no time.",
       "rating": 5,
-      "text": "My cat developed an unexpected health issue, and I needed quick financing for her treatment. The application was simple, and I was approved fast, getting her better in no time."
+      "location": "Miami, FL"
     }
   ],
   "showReviews": true,
-  "deployedAt": "2026-05-08T11:33:01.245Z"
+  "deployedAt": "2026-05-23T12:01:50.590Z"
 }
