@@ -11,6 +11,15 @@
  * Persistable Wizard keys live in src/constants/site-fields.js (SITE_FIELD_KEYS).
  */
 
+import { ensurePixelSubdomain } from '../../services/cloudflare-dns.js';
+import {
+  resolvePixelScriptName,
+  evaluateDeployTrackingGate,
+  trackingRequiredForDomain,
+  resolveCfCredentials,
+  checkPixelEndpointHealth,
+} from './deploy-tracking-gate.js';
+
 const GITHUB_API = 'https://api.github.com';
 
 function isMaskedSecret(v) {
@@ -237,6 +246,63 @@ export async function deploy(assets, site, settings) {
 
   const commitMsg = `deploy: ${domain} via GitHub Actions (Astro Build)`;
 
+  const siteDomain = String(site.domain || config.domain || '').trim().toLowerCase();
+  const { cfAccountId, cfApiToken } = resolveCfCredentials(site, settings);
+  let pixelProvisioned = false;
+  let pixelError = null;
+  let pixelHealthOk = false;
+  let pixelHealthError = null;
+
+  if (trackingRequiredForDomain(siteDomain)) {
+    if (!cfAccountId || !cfApiToken) {
+      return {
+        success: false,
+        error: 'Deploy blocked — tracking not ready: Cloudflare API Token and Account ID are required in Settings to provision t.{domain} before GitHub Actions deploy.',
+      };
+    }
+
+    const pixelScriptName = resolvePixelScriptName(settings);
+    try {
+      const pixelResult = await ensurePixelSubdomain({
+        domain: siteDomain,
+        cfAccountId,
+        cfApiToken,
+        pixelScriptName,
+      });
+      pixelProvisioned = pixelResult.success;
+      pixelError = pixelResult.error || null;
+    } catch (e) {
+      pixelError = e?.message || 'Pixel provisioning failed';
+    }
+
+    const health = await checkPixelEndpointHealth(siteDomain);
+    pixelHealthOk = health.ok;
+    if (!health.ok) {
+      pixelHealthError = health.error || `Pixel endpoint returned HTTP ${health.status || 0}`;
+    }
+
+    const gate = evaluateDeployTrackingGate({
+      domain: siteDomain,
+      pixelProvisioned,
+      pixelError,
+      pixelHealthOk,
+      pixelHealthError,
+    });
+
+    if (!gate.success) {
+      return {
+        success: false,
+        error: gate.error,
+        target: 'github-actions',
+        pixelProvisioned,
+        pixelError,
+        pixelHealthOk: gate.pixelHealthOk,
+        pixelHealthError: gate.pixelHealthError,
+        trackingError: gate.trackingError,
+      };
+    }
+  }
+
   try {
     const { url: commitUrl, sha: commitSha } = await pushFile({
       githubToken,
@@ -257,6 +323,10 @@ export async function deploy(assets, site, settings) {
       target: 'github-actions',
       message: `Pushed config → GitHub Actions building Astro. Track: https://github.com/${githubRepo}/actions`,
       actionsUrl: `https://github.com/${githubRepo}/actions`,
+      pixelProvisioned,
+      pixelError,
+      pixelHealthOk,
+      pixelHealthError,
     };
   } catch (e) {
     return { success: false, error: e.message };

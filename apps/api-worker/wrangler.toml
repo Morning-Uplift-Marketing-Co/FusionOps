@@ -48,8 +48,10 @@ bucket_name = "lp-factory-thumbs"
 # a non-zero exit. Routes still resolve correctly because they were attached
 # in earlier deploys / via the dashboard.
 #
-# To add a new t.{domain}/* route: do it via the dashboard, OR re-enable the
-# block below for that domain only after confirming zone ownership.
+# Canonical route source for NEW domains: deploy flow upserts t.{domain}/* via
+# Cloudflare Workers Routes API (cf-workers / cf-pages / ensurePixelSubdomain).
+# Blocks below are legacy/bootstrap for domains already on this worker before
+# automation — OR re-enable when a zone is confirmed on this CF account.
 #
 [[routes]]
 pattern = "t.loanbearfunds.com/*"

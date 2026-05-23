@@ -15,6 +15,7 @@
 
 import { getCfApiBase } from "../api-proxy.js";
 import { updateDnsAfterDeploy as updateCfDns, ensurePixelSubdomain } from "../../services/cloudflare-dns.js";
+import { resolvePixelScriptName, evaluateDeployTrackingGate } from "./deploy-tracking-gate.js";
 
 /* ── MD5 implementation (browser-compatible) ─────────────────────── */
 function md5(data) {
@@ -196,7 +197,7 @@ async function cfFetchWithRateLimitRetry(url, opts = {}, maxAttempts = 4) {
 export async function deploy(content, site, settings) {
   const cfApiToken = (settings.cfApiToken || "").trim();
   const cfAccountId = (settings.cfAccountId || "").trim();
-  const pixelScriptName = (settings.pixelWorkerScriptName || settings.cfPixelWorkerScriptName || "lp-factory-pixel").trim();
+  const pixelScriptName = resolvePixelScriptName(settings);
   if (!cfApiToken || !cfAccountId) {
     return { success: false, error: "Missing Cloudflare API Token or Account ID. Configure in Settings." };
   }
@@ -476,8 +477,17 @@ export async function deploy(content, site, settings) {
       }
     }
 
+    const gate = evaluateDeployTrackingGate({
+      domain: site.domain,
+      pixelRouteCreated: pixelRouteCreated || pixelProvisioned,
+      pixelRouteError: pixelRouteError || pixelError,
+      pixelHealthOk,
+      pixelHealthError,
+    });
+
     return {
-      success: true,
+      success: gate.success,
+      error: gate.error,
       url,
       deployId,
       target: "cf-pages",
@@ -489,8 +499,9 @@ export async function deploy(content, site, settings) {
       pixelError,
       pixelRouteCreated,
       pixelRouteError,
-      pixelHealthOk,
-      pixelHealthError,
+      pixelHealthOk: gate.pixelHealthOk,
+      pixelHealthError: gate.pixelHealthError,
+      trackingError: gate.trackingError,
     };
   } catch (e) {
     return { success: false, error: e.message };

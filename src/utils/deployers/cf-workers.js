@@ -13,6 +13,11 @@
 import { getCfApiBase } from "../api-proxy.js";
 import { updateDnsAfterDeploy } from "../../services/cloudflare-dns.js";
 import { api } from "../../services/api.js";
+import {
+  resolvePixelScriptName,
+  evaluateDeployTrackingGate,
+  normalizeTrackingVerifyResponse,
+} from "./deploy-tracking-gate.js";
 
 function buildWorkerScript(assets) {
   // assets is { "/index.html": "content", "/style.css": "content", ... }
@@ -157,7 +162,7 @@ export async function deploy(assets, site, settings) {
   const slug = (site.domain || site.brand || "lp")
     .toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").slice(0, 40);
   const scriptName = `lp-worker-${slug}-${(site.id || "x").slice(0, 6)}`;
-  const pixelScriptName = (settings.pixelWorkerScriptName || settings.cfPixelWorkerScriptName || "lp-factory-pixel").trim();
+  const pixelScriptName = resolvePixelScriptName(settings);
   const auth = { Authorization: `Bearer ${cfApiToken}` };
   const cfBase = getCfApiBase();
 
@@ -375,17 +380,26 @@ export async function deploy(assets, site, settings) {
     let trackingVerification = null;
     if (site?.domain) {
       try {
-        trackingVerification = await api.post("/automation/tracking/verify", {
+        const verifyRaw = await api.post("/automation/tracking/verify", {
           domain: site.domain,
           workerUrl: url,
         });
+        trackingVerification = normalizeTrackingVerifyResponse(verifyRaw);
       } catch (e) {
         trackingVerification = { success: false, error: e?.message || "Tracking verification call failed" };
       }
     }
 
+    const gate = evaluateDeployTrackingGate({
+      domain: site.domain,
+      routeCreated,
+      routeError,
+      trackingVerification,
+    });
+
     return {
-      success: true,
+      success: gate.success,
+      error: gate.error,
       url,
       deployId: scriptName,
       target: "cf-workers",
@@ -394,6 +408,9 @@ export async function deploy(assets, site, settings) {
       routeCreated,
       routeError,
       trackingVerification,
+      pixelHealthOk: gate.pixelHealthOk,
+      pixelHealthError: gate.pixelHealthError,
+      trackingError: gate.trackingError,
     };
   } catch (e) {
     return { success: false, error: e.message };

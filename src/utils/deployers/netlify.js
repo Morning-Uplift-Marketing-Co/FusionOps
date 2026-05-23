@@ -4,6 +4,7 @@
  */
 
 import { updateDnsAfterDeploy, ensurePixelSubdomain } from "../../services/cloudflare-dns.js";
+import { resolvePixelScriptName, evaluateDeployTrackingGate } from "./deploy-tracking-gate.js";
 
 // Helper function to generate slug candidates
 const generateSlugCandidates = (site) => {
@@ -35,7 +36,7 @@ const createAuthHeaders = (netlifyToken, netlifyTeamSlug) => {
 
 export async function deploy(content, site, settings) {
   const { netlifyToken, netlifyTeamSlug, cfAccountId, cfApiToken } = settings;
-  const pixelScriptName = (settings.pixelWorkerScriptName || settings.cfPixelWorkerScriptName || "lp-factory-pixel").trim();
+  const pixelScriptName = resolvePixelScriptName(settings);
   if (!netlifyToken) {
     return { success: false, error: "Missing Netlify token. Configure in Settings." };
   }
@@ -209,8 +210,32 @@ export async function deploy(content, site, settings) {
       }
     }
 
+    let pixelHealthOk = false;
+    let pixelHealthError = null;
+    if (site.domain) {
+      try {
+        const pixelUrl = `https://t.${site.domain}/e?e=healthcheck&ts=${Date.now()}`;
+        const hc = await fetch(pixelUrl, { method: "GET", signal: AbortSignal.timeout(5000) });
+        pixelHealthOk = hc.status < 400;
+        if (!pixelHealthOk) {
+          pixelHealthError = `Pixel endpoint returned HTTP ${hc.status}. Ensure Workers Route t.${site.domain}/* → ${pixelScriptName} is set.`;
+        }
+      } catch (e) {
+        pixelHealthError = `Pixel endpoint unreachable: ${e.message}. Ensure Workers Route t.${site.domain}/* → ${pixelScriptName} is set.`;
+      }
+    }
+
+    const gate = evaluateDeployTrackingGate({
+      domain: site.domain,
+      pixelProvisioned,
+      pixelError,
+      pixelHealthOk,
+      pixelHealthError,
+    });
+
     return {
-      success: true,
+      success: gate.success,
+      error: gate.error,
       url: siteData.ssl_url || siteData.url,
       deployId: siteData.id,
       target: "netlify",
@@ -218,6 +243,9 @@ export async function deploy(content, site, settings) {
       dnsError,
       pixelProvisioned,
       pixelError,
+      pixelHealthOk: gate.pixelHealthOk,
+      pixelHealthError: gate.pixelHealthError,
+      trackingError: gate.trackingError,
     };
   } catch (e) {
     return { success: false, error: e.message };
