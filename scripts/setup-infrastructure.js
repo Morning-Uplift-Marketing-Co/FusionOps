@@ -531,10 +531,23 @@ For detailed instructions, see INFRASTRUCTURE_SETUP.md
 async function fullSetup() {
   log.step('FusionOps Infrastructure Setup');
 
+  // Guard: refuse to create new databases if production IDs already exist, unless --force
+  const PRODUCTION_MAIN_ID = '4eaee76d-10fb-42a7-bb9d-50737c3da785';
+  const currentToml = readFileSync(join(rootDir, 'apps/api-worker/wrangler.toml'), 'utf-8');
+  if (currentToml.includes(PRODUCTION_MAIN_ID)) {
+    log.warning('⚠️  wrangler.toml already has production IDs. Pass --force to overwrite.');
+    if (!process.argv.includes('--force')) {
+      log.warning('Aborting to protect production database bindings.');
+      process.exit(1);
+    }
+    log.warning('--force passed — overwriting production IDs.');
+  }
+
   const cfInfo = await preflightCheck();
   const accountId = cfInfo?.account ? Object.keys(cfInfo.account)[0] : getAccountId();
 
   const dbIds = await createAllD1Databases();
+
   await updateAllWranglerConfigs(dbIds, accountId);
   await runAllMigrations(dbIds);
   await deployAllWorkers();
