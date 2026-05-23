@@ -176,6 +176,14 @@ export async function handleVoluumPostbacksApiGet(env, url) {
 
 async function handlePixelEndpoint({ request, db, hostname, url, method }) {
   try {
+    // Uptime probes often use HEAD; do not write events or parse a body.
+    if (method === 'HEAD') {
+      return new Response(null, {
+        status: 200,
+        headers: { 'Content-Type': 'image/gif', 'Cache-Control': 'no-store', ...corsHeaders },
+      });
+    }
+
     // Ensure pixel_events table exists (idempotent)
     await db.prepare(`CREATE TABLE IF NOT EXISTS pixel_events (
       id TEXT PRIMARY KEY,
@@ -328,7 +336,7 @@ async function handleVoluumPostback({ request, env, db, hostname, url, method })
  * Route entry. Returns Response if path matches `/e` or `/v`; null otherwise.
  */
 export async function handlePixelTrackingRoute({ request, env, db, hostname, url, path, method }) {
-  if (path === '/e' && (method === 'POST' || method === 'GET')) {
+  if (path === '/e' && (method === 'POST' || method === 'GET' || method === 'HEAD')) {
     return handlePixelEndpoint({ request, db, hostname, url, method });
   }
   if (path === '/v' && (method === 'GET' || method === 'POST' || method === 'OPTIONS')) {
