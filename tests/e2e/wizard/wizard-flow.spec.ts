@@ -9,17 +9,10 @@ import { VALID_BRAND_DATA, INVALID_BRAND_DATA } from '../fixtures/wizard-data';
  * These tests verify the complete wizard flow for creating landing pages:
  * - Step 1: Brand Information (StepBrand.jsx)
  * - Step 2: Product Configuration (StepProduct.jsx)
- * - Step 3: Template Selection (StepTemplate.jsx)
- * - Step 4: Design Selection (StepDesign.jsx)
- * - Step 5: Copy & Content (StepCopy.jsx)
- * - Step 6: Tracking & Conversion (StepTracking.jsx)
- * - Step 7: Review & Build (StepReview.jsx)
- *
- * Test Strategy:
- * - Use Page Object Model pattern
- * - Test happy paths and error cases
- * - Include visual regression via screenshots
- * - Test keyboard navigation (Enter key)
+ * - Step 3: Template + Design Selection (StepDesign.jsx)
+ * - Step 4: Copy & Content (StepCopy.jsx)
+ * - Step 5: Tracking & Conversion (StepTracking.jsx)
+ * - Step 6: Review & Build (StepReview.jsx)
  *
  * Run: npx playwright test tests/e2e/wizard/wizard-flow.spec.ts
  */
@@ -39,7 +32,7 @@ test.describe('LP Wizard - Navigation', () => {
 
   test('should open wizard from dashboard', async ({ page }) => {
     await expect(wizardPage.title).toBeVisible();
-    await expect(wizardPage.stepIndicator).toContainText('Step 1/7');
+    await expect(wizardPage.stepIndicator).toContainText('Step 1/6');
     await expect(page.getByRole('heading', { name: /Brand Information/i })).toBeVisible();
   });
 
@@ -50,19 +43,19 @@ test.describe('LP Wizard - Navigation', () => {
 
   test('should show progress indicator', async ({ page }) => {
     await expect(wizardPage.stepIndicator).toBeVisible();
-    await expect(wizardPage.stepIndicator).toContainText('Step 1/7');
+    await expect(wizardPage.stepIndicator).toContainText('Step 1/6');
   });
 
   test('should navigate between steps using Next and Back', async ({ page }) => {
     await wizardPage.completeStepBrand(VALID_BRAND_DATA);
     await wizardPage.clickNext();
 
-    await expect(wizardPage.stepIndicator).toContainText('Step 2/7');
+    await expect(wizardPage.stepIndicator).toContainText('Step 2/6');
     await expect(page.getByText(/Loan Product|Product/i).first()).toBeVisible();
 
     await wizardPage.clickBack();
 
-    await expect(wizardPage.stepIndicator).toContainText('Step 1/7');
+    await expect(wizardPage.stepIndicator).toContainText('Step 1/6');
     await expect(page.getByRole('heading', { name: /Brand Information/i })).toBeVisible();
   });
 
@@ -132,7 +125,7 @@ test.describe('LP Wizard - Step 1: Brand Information', () => {
     await wizardPage.completeStepBrand(VALID_BRAND_DATA);
     await wizardPage.clickNext();
 
-    await expect(wizardPage.stepIndicator).toContainText('Step 2/7');
+    await expect(wizardPage.stepIndicator).toContainText('Step 2/6');
   });
 
   test('should complete step 1 with all fields', async ({ page }) => {
@@ -145,8 +138,7 @@ test.describe('LP Wizard - Step 1: Brand Information', () => {
 
     await wizardPage.clickNext();
 
-    await expect(wizardPage.stepIndicator).toContainText('Step 2/7');
-
+    await expect(wizardPage.stepIndicator).toContainText('Step 2/6');
     await page.screenshot({ path: 'test-artifacts/wizard/step2-product.png' });
   });
 });
@@ -186,13 +178,12 @@ test.describe('LP Wizard - Step 2: Product Configuration', () => {
     await wizardPage.completeStepProduct();
     await wizardPage.clickNext();
 
-    await expect(wizardPage.stepIndicator).toContainText('Step 3/7');
-
-    await page.screenshot({ path: 'test-artifacts/wizard/step3-template.png' });
+    await expect(wizardPage.stepIndicator).toContainText('Step 3/6');
+    await page.screenshot({ path: 'test-artifacts/wizard/step3-design.png' });
   });
 });
 
-test.describe('LP Wizard - Step 3: Template Selection', () => {
+test.describe('LP Wizard - Step 3: Template + Design', () => {
   let dashboardPage: DashboardPage;
   let wizardPage: WizardPage;
 
@@ -212,7 +203,8 @@ test.describe('LP Wizard - Step 3: Template Selection', () => {
   });
 
   test('should display template cards', async ({ page }) => {
-    await expect(page.getByText(/Classic LP|PDL Loans/i)).toBeVisible();
+    await expect(page.locator('input[placeholder*="Search templates"]').first()).toBeVisible();
+    await expect(page.locator('button').filter({ has: page.locator('img, iframe') }).first()).toBeVisible();
   });
 
   test('should select different templates', async ({ page }) => {
@@ -227,42 +219,9 @@ test.describe('LP Wizard - Step 3: Template Selection', () => {
     await expect(page.getByText(/All|Loan|Pet|Custom/i).first()).toBeVisible();
   });
 
-  test('should complete step 3', async ({ page }) => {
-    await wizardPage.completeStepTemplate();
-    await wizardPage.clickNext();
-
-    await expect(wizardPage.stepIndicator).toContainText('Step 4/7');
-
-    await page.screenshot({ path: 'test-artifacts/wizard/step4-design.png' });
-  });
-});
-
-test.describe('LP Wizard - Step 4: Design Selection', () => {
-  let dashboardPage: DashboardPage;
-  let wizardPage: WizardPage;
-
-  test.beforeEach(async ({ page }) => {
-    dashboardPage = new DashboardPage(page);
-    wizardPage = new WizardPage(page);
-
-    await dashboardPage.goto();
-    await dashboardPage.startCreateLP();
-    await wizardPage.waitForWizardToLoad();
-
-    await wizardPage.completeStepBrand(VALID_BRAND_DATA);
-    await wizardPage.clickNext();
-
-    await wizardPage.completeStepProduct();
-    await wizardPage.clickNext();
-
-    // Pick a template that exposes theme controls (first card order is not stable)
-    await wizardPage.completeStepTemplate('Classic');
-    await wizardPage.clickNext();
-  });
-
-  test('should display color scheme options', async ({ page }) => {
-    await expect(page.getByText(/Color Scheme/i).first()).toBeVisible();
-    await expect(page.getByText(/Ocean|Forest|Midnight/i).first()).toBeVisible();
+  test('should display brand asset controls', async ({ page }) => {
+    await expect(page.getByText(/Brand assets/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: /Generate Favicon .* OG Image/i })).toBeVisible();
   });
 
   test('should select color scheme', async ({ page }) => {
@@ -273,9 +232,10 @@ test.describe('LP Wizard - Step 4: Design Selection', () => {
     }
   });
 
-  test('should display font options', async ({ page }) => {
-    await expect(page.getByText(/Font/i).first()).toBeVisible();
-    await expect(page.getByText(/DM Sans|Inter|Outfit/i).first()).toBeVisible();
+  test('should display section-order helper or template capability note', async ({ page }) => {
+    await expect(
+      page.getByText(/Section order|Template-controlled look|Section reordering available in preview/i).first()
+    ).toBeVisible();
   });
 
   test('should show mobile preview', async ({ page }) => {
@@ -285,17 +245,17 @@ test.describe('LP Wizard - Step 4: Design Selection', () => {
     }
   });
 
-  test('should complete step 4', async ({ page }) => {
+  test('should complete combined template and design step', async ({ page }) => {
+    await wizardPage.completeStepTemplate();
     await wizardPage.completeStepDesign();
     await wizardPage.clickNext();
 
-    await expect(wizardPage.stepIndicator).toContainText('Step 5/7');
-
-    await page.screenshot({ path: 'test-artifacts/wizard/step5-copy.png' });
+    await expect(wizardPage.stepIndicator).toContainText('Step 4/6');
+    await page.screenshot({ path: 'test-artifacts/wizard/step4-copy.png' });
   });
 });
 
-test.describe('LP Wizard - Step 5: Copy & Content', () => {
+test.describe('LP Wizard - Step 4: Copy & Content', () => {
   let dashboardPage: DashboardPage;
   let wizardPage: WizardPage;
 
@@ -314,20 +274,19 @@ test.describe('LP Wizard - Step 5: Copy & Content', () => {
     await wizardPage.clickNext();
 
     await wizardPage.completeStepTemplate();
-    await wizardPage.clickNext();
-
     await wizardPage.completeStepDesign();
     await wizardPage.clickNext();
   });
 
   test('should display copy input fields', async ({ page }) => {
-    await expect(page.getByText(/H1|Headline/i).first()).toBeVisible();
-    await expect(page.getByText(/Badge/i).first()).toBeVisible();
-    await expect(page.getByText(/CTA/i).first()).toBeVisible();
+    await expect(page.locator('input[placeholder*="Get Cash Fast"]').first()).toBeVisible();
+    await expect(page.locator('input[placeholder*="No Credit Check Required"]')).toBeVisible();
+    await expect(page.locator('input[placeholder*="Check Your Rate"]')).toBeVisible();
   });
 
-  test('should display quick-start templates', async ({ page }) => {
-    await expect(page.getByText(/Quick-Start|Templates/i)).toBeVisible();
+  test('should display review controls', async ({ page }) => {
+    await expect(page.getByText(/Customer Reviews/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: /Gen Reviews/i })).toBeVisible();
   });
 
   test('should apply copy template', async ({ page }) => {
@@ -349,16 +308,15 @@ test.describe('LP Wizard - Step 5: Copy & Content', () => {
       await inputs.nth(1).fill('No Credit Check Required');
     }
 
-    await page.screenshot({ path: 'test-artifacts/wizard/step5-copy-filled.png' });
+    await page.screenshot({ path: 'test-artifacts/wizard/step4-copy-filled.png' });
   });
 
-  test('should complete step 5', async ({ page }) => {
+  test('should complete step 4', async ({ page }) => {
     await wizardPage.completeStepCopy();
     await wizardPage.clickNext();
 
-    await expect(wizardPage.stepIndicator).toContainText('Step 6/7');
-
-    await page.screenshot({ path: 'test-artifacts/wizard/step6-tracking.png' });
+    await expect(wizardPage.stepIndicator).toContainText('Step 5/6');
+    await page.screenshot({ path: 'test-artifacts/wizard/step5-tracking.png' });
   });
 });
 
@@ -371,11 +329,9 @@ test.describe('LP Wizard - Complete Flow', () => {
     await dashboardPage.startCreateLP();
 
     await wizardPage.completeMinimalWizard();
-
     await wizardPage.clickBuild();
 
     await page.waitForTimeout(3000);
-
     await expect(page.getByText(/Sites|Dashboard|My Sites/i).first()).toBeVisible({ timeout: 10000 });
 
     await page.screenshot({
@@ -392,8 +348,7 @@ test.describe('LP Wizard - Complete Flow', () => {
     await dashboardPage.startCreateLP();
 
     await wizardPage.completeMinimalWizard();
-
-    await expect(wizardPage.stepIndicator).toContainText('Step 7/7');
+    await expect(wizardPage.stepIndicator).toContainText('Step 6/6');
 
     await wizardPage.clickBuild();
 

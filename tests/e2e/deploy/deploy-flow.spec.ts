@@ -298,8 +298,9 @@ test.describe('Deploy Flow - Configuration Status', () => {
   });
 
   test('should display deployed URLs', async ({ page }) => {
-    // Look for deployed URLs on the sites page
-    const deployedLinks = page.locator('a[href^="https://"], a[href^="http://"]');
+    // Scope to the explicit "Live URL" row in site cards so we do not pick docs/devtool links
+    const liveUrlRows = page.locator('div').filter({ hasText: /Live URL:/i });
+    const deployedLinks = liveUrlRows.locator('a[href^="https://"], a[href^="http://"]');
     const count = await deployedLinks.count();
 
     if (count > 0) {
