@@ -105,7 +105,16 @@ export async function getOrCreateZone(domain, cfAccountId, cfApiToken) {
         url: res?.url,
       };
     }
-    const nameservers = res.zone?.name_servers || [];
+    const nameservers = res.zone?.name_servers || res.nameservers || [];
+    if (res.zoneId && res.exists) {
+      return {
+        success: true,
+        exists: true,
+        zoneId: res.zoneId,
+        nameservers: Array.isArray(nameservers) ? nameservers : [],
+        zone: res.zone,
+      };
+    }
     if (!Array.isArray(nameservers) || nameservers.length < 2) {
       return {
         success: false,
@@ -620,7 +629,7 @@ async function resolveIp(url) {
 ══════════════════════════════════════════════════════════════════════ */
 // Called after LP deploy to ensure t.{domain} is set up:
 //   1. DNS A record: t.{domain} → 192.0.2.1 (proxied)
-//   2. Worker Route: t.{domain}/* → lp-factory-pixel worker
+//   2. Worker Route: t.{domain}/* → lp-factory-api worker (pixel ingest on API worker)
 // Both are idempotent — safe to call on every deploy.
 
 /**
@@ -629,7 +638,8 @@ async function resolveIp(url) {
  * DEPRECATED: DNS records (A t.{domain} + CNAME trk.{domain}) and Workers Routes
  * are now created automatically by:
  *   - cloudflare-dns.js updateDnsAfterDeploy() → creates DNS records
- *   - cf-workers.js deploy() → creates Workers Routes
+ *   - github-actions.js deploy() → provisions t.{domain} before push + CI re-verifies
+ *   - cf-workers.js deploy() → creates Workers Routes (legacy direct deploy)
  *
  * Kept for backward compatibility; returns success immediately.
  */

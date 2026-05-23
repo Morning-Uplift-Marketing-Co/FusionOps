@@ -236,6 +236,9 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
                 if (result.dnsError) addLog(`DNS error: ${result.dnsError}`);
                 if (result.pixelProvisioned) addLog(`Pixel subdomain provisioned: t.${domain.domain} ✓`);
                 if (result.pixelError) addLog(`Pixel error: ${result.pixelError}`);
+                if (result.pixelHealthOk) addLog(`Pixel health check passed: t.${domain.domain}/e ✓`);
+                if (result.pixelHealthError) addLog(`Pixel health warning: ${result.pixelHealthError}`);
+                if (result.trackingError) addLog(`Tracking gate: ${result.trackingError}`);
 
                 // Update DNS if requested
                 if (updateDns && domain.domain && effectiveSettings.cfAccountId && effectiveSettings.cfApiToken) {

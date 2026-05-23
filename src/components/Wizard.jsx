@@ -466,7 +466,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
         // One-flow mode: save + deploy + DNS in one click
         if (finalConfig.deployOnBuild) {
             try {
-                const target = finalConfig.deployTarget || "cf-pages";
+                const target = finalConfig.deployTarget || "github-actions";
                 const targetConfig = deployTargets.find(t => t.id === target);
                 if (!targetConfig?.configured) {
                     notify(`Deploy target "${target}" is not configured in Settings`, "warning");
@@ -488,10 +488,14 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                             type: "deploy",
                             target,
                         });
-                        if (deployResult.pixelHealthOk) {
+                        if (deployResult.queued && deployResult.pixelHealthOk) {
+                            notify(`✅ Queued GitHub Actions — Pixel t.${sitePayload.domain}/e ✓`);
+                        } else if (deployResult.pixelHealthOk) {
                             notify(`✅ Save + Deploy complete (${target}) — Pixel t.${sitePayload.domain}/e ✓`);
                         } else if (deployResult.pixelHealthError) {
                             notify(`✅ Deploy done, but pixel not ready: ${deployResult.pixelHealthError}`, "warning");
+                        } else if (deployResult.queued) {
+                            notify(`✅ Queued ${target} — CI building. Track: ${deployResult.url}`);
                         } else {
                             notify(`✅ Save + Deploy complete (${target})`);
                         }
@@ -714,7 +718,7 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
                                     <span className="text-xs text-[hsl(var(--muted-foreground))]">Deploy target:</span>
                                     <select
                                         className="text-xs bg-[hsl(var(--input))] border border-[hsl(var(--border))] rounded px-2 py-1"
-                                        value={config.deployTarget || "cf-pages"}
+                                        value={config.deployTarget || "github-actions"}
                                         onChange={(e) => upd("deployTarget", e.target.value)}
                                         disabled={!config.deployOnBuild}
                                     >

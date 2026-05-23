@@ -152,6 +152,12 @@ export async function deployTo(target, html, site, settings) {
       error: result.error,
       dnsUpdated: result.dnsUpdated,
       dnsError: result.dnsError,
+      routeCreated: result.routeCreated ?? result.pixelRouteCreated ?? result.pixelProvisioned ?? undefined,
+      routeError: result.routeError ?? result.pixelRouteError ?? result.pixelError ?? undefined,
+      trackingVerification: result.trackingVerification ?? undefined,
+      pixelHealthOk: result.pixelHealthOk,
+      pixelHealthError: result.pixelHealthError,
+      trackingError: result.trackingError,
     };
     saveDeploymentRecord(deployRecord);
 

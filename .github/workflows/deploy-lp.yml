@@ -704,6 +704,118 @@ jobs:
           upsert_cname "$DOMAIN"
           upsert_cname "www.$DOMAIN"
 
+      - name: Provision pixel tracking (t.{domain} DNS + Worker route)
+        env:
+          CF_TOKEN_FROM_CONFIG: ${{ steps.template.outputs.cf_api_token }}
+          CF_ACCOUNT_FROM_CONFIG: ${{ steps.template.outputs.cf_account_id }}
+          CF_TOKEN_FROM_SECRET: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_FROM_SECRET: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          export CF_TOKEN="${CF_TOKEN_FROM_SECRET:-$CF_TOKEN_FROM_CONFIG}"
+          export CF_ACCOUNT="${CF_ACCOUNT_FROM_SECRET:-$CF_ACCOUNT_FROM_CONFIG}"
+          CONFIG_FILE="${{ steps.config.outputs.file }}"
+          DOMAIN=$(node -e "const c=require('./$CONFIG_FILE');const d=String(c.domain||'').trim().toLowerCase().replace(/^https?:\/\//,'').replace(/^\/\//,'').replace(/[/?#].*$/,'').replace(/\.+$/,'').replace(/^www\./,'');console.log(d)")
+          PIXEL_SCRIPT="lp-factory-api"
+
+          if [ -z "$DOMAIN" ]; then
+            echo "No domain in deploy config — skipping pixel provisioning"
+            exit 0
+          fi
+          if [ -z "$CF_TOKEN" ] || [ -z "$CF_ACCOUNT" ]; then
+            echo "::error::Missing CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID — cannot provision t.$DOMAIN tracking"
+            exit 1
+          fi
+
+          ZONE_RESP=$(curl -s -G "https://api.cloudflare.com/client/v4/zones" \
+            --data-urlencode "name=$DOMAIN" \
+            --data-urlencode "account.id=$CF_ACCOUNT" \
+            -H "Authorization: Bearer $CF_TOKEN" \
+            -H "Content-Type: application/json")
+          ZONE_ID=$(ZONE_RESP="$ZONE_RESP" node -e "const r=JSON.parse(process.env.ZONE_RESP||'{}');console.log((r.result&&r.result[0]&&r.result[0].id)||'')")
+          if [ -z "$ZONE_ID" ]; then
+            ZONE_RESP=$(curl -s -G "https://api.cloudflare.com/client/v4/zones" \
+              --data-urlencode "name=$DOMAIN" \
+              -H "Authorization: Bearer $CF_TOKEN" \
+              -H "Content-Type: application/json")
+            ZONE_ID=$(ZONE_RESP="$ZONE_RESP" node -e "const r=JSON.parse(process.env.ZONE_RESP||'{}');console.log((r.result&&r.result[0]&&r.result[0].id)||'')")
+          fi
+          if [ -z "$ZONE_ID" ]; then
+            echo "::error::No Cloudflare zone for $DOMAIN — cannot provision t.$DOMAIN tracking route"
+            exit 1
+          fi
+
+          T_FQDN="t.$DOMAIN"
+          DNS_LOOKUP=$(curl -s -G "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" \
+            --data-urlencode "name=$T_FQDN" \
+            -H "Authorization: Bearer $CF_TOKEN" \
+            -H "Content-Type: application/json")
+          DNS_ID=$(DNS_LOOKUP="$DNS_LOOKUP" node -e "const r=JSON.parse(process.env.DNS_LOOKUP||'{}');const row=(r.result||[]).find(x=>x.type==='A');console.log(row?.id||'')")
+          DNS_BODY='{"type":"A","name":"t","content":"192.0.2.1","ttl":1,"proxied":true}'
+          if [ -n "$DNS_ID" ]; then
+            DNS_RESP=$(curl -s -X PUT \
+              "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$DNS_ID" \
+              -H "Authorization: Bearer $CF_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "$DNS_BODY")
+          else
+            DNS_RESP=$(curl -s -X POST \
+              "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" \
+              -H "Authorization: Bearer $CF_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "$DNS_BODY")
+          fi
+          DNS_JSON="$DNS_RESP" node -e "const r=JSON.parse(process.env.DNS_JSON||'{}');if(!r.success){console.error('Pixel DNS upsert failed:', JSON.stringify(r));process.exit(1)};console.log('Pixel DNS OK:', JSON.stringify(r));"
+
+          ROUTES_RESP=$(curl -s -X GET \
+            "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/workers/routes" \
+            -H "Authorization: Bearer $CF_TOKEN" \
+            -H "Content-Type: application/json")
+          PATTERN="t.$DOMAIN/*"
+          ROUTE_ID=$(ROUTES_JSON="$ROUTES_RESP" PATTERN="$PATTERN" node -e "const r=JSON.parse(process.env.ROUTES_JSON||'{}');const p=process.env.PATTERN;const row=(r.result||[]).find(x=>x.pattern===p);console.log(row?.id||'')")
+          ROUTE_SCRIPT=$(ROUTES_JSON="$ROUTES_RESP" PATTERN="$PATTERN" node -e "const r=JSON.parse(process.env.ROUTES_JSON||'{}');const p=process.env.PATTERN;const row=(r.result||[]).find(x=>x.pattern===p);console.log(row?.script||'')")
+          ROUTE_BODY=$(PATTERN="$PATTERN" PIXEL_SCRIPT="$PIXEL_SCRIPT" node -p "JSON.stringify({pattern:process.env.PATTERN,script:process.env.PIXEL_SCRIPT})")
+          if [ -n "$ROUTE_ID" ] && [ "$ROUTE_SCRIPT" = "$PIXEL_SCRIPT" ]; then
+            echo "Worker route $PATTERN already points to $PIXEL_SCRIPT"
+          elif [ -n "$ROUTE_ID" ]; then
+            ROUTE_RESP=$(curl -s -X PUT \
+              "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/workers/routes/$ROUTE_ID" \
+              -H "Authorization: Bearer $CF_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "$ROUTE_BODY")
+          else
+            ROUTE_RESP=$(curl -s -X POST \
+              "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/workers/routes" \
+              -H "Authorization: Bearer $CF_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "$ROUTE_BODY")
+          fi
+          if [ -n "${ROUTE_RESP:-}" ]; then
+            ROUTE_JSON="$ROUTE_RESP" node -e "const r=JSON.parse(process.env.ROUTE_JSON||'{}');if(!r.success){console.error('Pixel worker route upsert failed:', JSON.stringify(r));process.exit(1)};console.log('Pixel worker route OK:', JSON.stringify(r));"
+          fi
+
+      - name: Verify pixel endpoint (t.{domain}/e)
+        env:
+          CF_TOKEN_FROM_CONFIG: ${{ steps.template.outputs.cf_api_token }}
+          CF_ACCOUNT_FROM_CONFIG: ${{ steps.template.outputs.cf_account_id }}
+          CF_TOKEN_FROM_SECRET: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_FROM_SECRET: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          CONFIG_FILE="${{ steps.config.outputs.file }}"
+          DOMAIN=$(node -e "const c=require('./$CONFIG_FILE');const d=String(c.domain||'').trim().toLowerCase().replace(/^https?:\/\//,'').replace(/^\/\//,'').replace(/[/?#].*$/,'').replace(/\.+$/,'').replace(/^www\./,'');console.log(d)")
+          if [ -z "$DOMAIN" ]; then
+            echo "No domain — skipping pixel verify"
+            exit 0
+          fi
+          echo "Verifying https://t.$DOMAIN/e ..."
+          curl -sfI "https://t.$DOMAIN/e" --max-time 20
+          curl -sf -X POST "https://t.$DOMAIN/e" \
+            -H "content-type: application/json" \
+            -d "{\"e\":\"deploy_verify\",\"d\":\"$DOMAIN\",\"source\":\"deploy-lp-ci\"}" \
+            --max-time 20 -o /dev/null
+          echo "Pixel endpoint OK for t.$DOMAIN"
+
       - name: Provision DNS via API Worker (fallback for multi-account)
         if: always()
         continue-on-error: true
