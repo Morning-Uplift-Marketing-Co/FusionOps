@@ -46,7 +46,7 @@ test.describe('Settings - Neon Database', () => {
   });
 
   test('should display Neon Postgres card', async ({ page }) => {
-    await expect(page.getByText(/Neon Postgres/i)).toBeVisible();
+    await expect(page.getByText(/Neon Postgres/i).first()).toBeVisible();
   });
 
   test('should have connection string input', async ({ page }) => {
@@ -218,8 +218,8 @@ test.describe('Settings - Deploy Targets', () => {
     }
   });
 
-  test('should display AWS S3 + CloudFront card', async ({ page }) => {
-    const count = await page.getByText(/AWS S3|CloudFront/i).count();
+  test('should display GitHub Actions deployment pipeline card', async ({ page }) => {
+    const count = await page.getByText(/Git Push Pipeline|GitHub Actions \(Astro Build\)/i).count();
     expect(count).toBeGreaterThan(0);
   });
 
@@ -247,9 +247,8 @@ test.describe('Settings - Deploy Targets', () => {
     }
   });
 
-  test('should display VPS card', async ({ page }) => {
-    // VPS card is in column 3 — may not be in viewport; check DOM presence
-    const count = await page.getByText(/VPS.*SSH|VPS \(SSH\)/i).count();
+  test('should display Cloudflare profiles card', async ({ page }) => {
+    const count = await page.getByText(/Cloudflare Profiles/i).count();
     expect(count).toBeGreaterThan(0);
   });
 

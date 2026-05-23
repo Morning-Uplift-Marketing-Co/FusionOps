@@ -49,9 +49,8 @@ export async function handleAnalysisRoutes(path, method, request, env) {
     const url = new URL(request.url);
     const days = parseInt(url.searchParams.get('days') || '30', 10);
     const daysBack = `-${days} days`;
-    const pixelDb = env.PIXEL_DB;
-    if (!pixelDb) return json({ ok: false, error: 'PIXEL_DB binding not configured' }, 500);
-    const { results } = await pixelDb.prepare(Q.PIXEL_EVENTS_SUMMARY)
+    // pixel-tracking.js writes to env.DB (main), not PIXEL_DB — read from same source.
+    const { results } = await db.prepare(Q.PIXEL_EVENTS_SUMMARY)
       .bind(domain, daysBack)
       .all();
     return json({ ok: true, domain, days, data: results });

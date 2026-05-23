@@ -62,6 +62,7 @@ vi.mock('../../../utils/template-router', () => ({
     'src/pages/index.astro': '',
     'src/components/Header.astro': '',
   }),
+  generateHtmlByTemplate: () => '<html><body><h1>Preview</h1></body></html>',
 }));
 
 describe('Wizard Preview Integration', () => {

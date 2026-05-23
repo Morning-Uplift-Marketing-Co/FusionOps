@@ -5,14 +5,13 @@ import { BasePage } from './BasePage';
 /**
  * WizardPage - Page Object for the LP Creation Wizard
  *
- * Based on Wizard.jsx component with 7 steps:
+ * Based on Wizard.jsx component with 6 steps:
  * 1. Brand (StepBrand.jsx)
  * 2. Product (StepProduct.jsx)
- * 3. Template (StepTemplate.jsx)
- * 4. Design (StepDesign.jsx)
- * 5. Copy (StepCopy.jsx)
- * 6. Tracking (StepTracking.jsx)
- * 7. Review (StepReview.jsx)
+ * 3. Design + Template selection (StepDesign.jsx)
+ * 4. Copy (StepCopy.jsx)
+ * 5. Tracking (StepTracking.jsx)
+ * 6. Review (StepReview.jsx)
  */
 export class WizardPage extends BasePage {
   // Header
@@ -46,12 +45,12 @@ export class WizardPage extends BasePage {
   readonly aprMinInput: Locator;
   readonly aprMaxInput: Locator;
 
-  // Step 3: Template
+  // Step 3: Template + Design
   readonly templateCards: Locator;
   readonly categoryButtons: Locator;
   readonly selectedTemplateSummary: Locator;
 
-  // Step 4: Design
+  // Step 3: Design controls
   readonly templateSelectorButtons: Locator;
   readonly colorSchemeButtons: Locator;
   readonly fontButtons: Locator;
@@ -60,7 +59,7 @@ export class WizardPage extends BasePage {
   readonly trustBadgeButtons: Locator;
   readonly generateAssetsButton: Locator;
 
-  // Step 5: Copy
+  // Step 4: Copy
   readonly copyTemplateButtons: Locator;
   readonly aiGenerateButton: Locator;
   readonly h1Input: Locator;
@@ -72,7 +71,7 @@ export class WizardPage extends BasePage {
   readonly aiMetaButton: Locator;
   readonly languageButtons: Locator;
 
-  // Step 6: Tracking
+  // Step 5: Tracking
   readonly trackingModeMinimal: Locator;
   readonly trackingModeVoluum: Locator;
   readonly voluumCampaignSelect: Locator;
@@ -86,7 +85,7 @@ export class WizardPage extends BasePage {
   readonly redirectUrlInput: Locator;
   readonly formEmbedTextarea: Locator;
 
-  // Step 7: Review
+  // Step 6: Review
   readonly configurationSummary: Locator;
   readonly astroProjectButton: Locator;
   readonly astroFileTree: Locator;
@@ -100,9 +99,9 @@ export class WizardPage extends BasePage {
 
     // Header elements
     this.title = page.getByText(/Create New LP|Create New Campaign/i);
-    this.stepIndicator = page.getByText(/Step \d\/7/i);
-    this.progressBar = page.getByText(/Step \d\/7/i).locator('xpath=..');
-    this.stepLabel = page.locator('.text-[hsl(var(--muted-foreground))], text=/Brand|Product|Template|Design|Copy|Tracking|Review/i');
+    this.stepIndicator = page.getByText(/Step \d\/6/i);
+    this.progressBar = page.getByText(/Step \d\/6/i).locator('xpath=..');
+    this.stepLabel = page.locator('.text-[hsl(var(--muted-foreground))], text=/Brand|Product|Design|Copy|Tracking|Review/i');
 
     // Navigation
     this.cancelButton = page.getByRole('button').filter({ hasText: /Cancel|Back/i }).first();
@@ -200,7 +199,7 @@ export class WizardPage extends BasePage {
    */
   async getCurrentStep(): Promise<number> {
     const text = await this.stepIndicator.textContent();
-    const match = text?.match(/Step (\d)\/7/);
+    const match = text?.match(/Step (\d)\/6/);
     return match ? parseInt(match[1]) : 1;
   }
 
@@ -293,7 +292,7 @@ export class WizardPage extends BasePage {
   }
 
   /**
-   * Complete Step 3: Template
+   * Complete Step 3: Template selection within the combined design step
    */
   async completeStepTemplate(templateName?: string) {
     if (templateName) {
@@ -311,7 +310,7 @@ export class WizardPage extends BasePage {
   }
 
   /**
-   * Complete Step 4: Design
+   * Complete Step 3: Design controls within the combined design step
    */
   async completeStepDesign(data: {
     colorScheme?: string;
@@ -334,7 +333,7 @@ export class WizardPage extends BasePage {
   }
 
   /**
-   * Complete Step 5: Copy
+   * Complete Step 4: Copy
    */
   async completeStepCopy(data: {
     h1?: string;
@@ -371,7 +370,7 @@ export class WizardPage extends BasePage {
   }
 
   /**
-   * Complete Step 6: Tracking
+   * Complete Step 5: Tracking
    */
   async completeStepTracking(data: {
     mode?: 'minimal' | 'voluum';
@@ -437,25 +436,22 @@ export class WizardPage extends BasePage {
     await this.completeStepProduct();
     await this.clickNext();
 
-    // Step 3: Template
+    // Step 3: Combined template + design
     await this.completeStepTemplate();
-    await this.clickNext();
-
-    // Step 4: Design
     await this.completeStepDesign();
     await this.clickNext();
 
-    // Step 5: Copy
+    // Step 4: Copy
     await this.completeStepCopy();
     await this.clickNext();
 
-    // Step 6: Tracking
+    // Step 5: Tracking
     await this.completeStepTracking({
       conversionId: 'AW-123456789',
     });
     await this.clickNext();
 
-    // Step 7: Review
+    // Step 6: Review
     await expect(this.configurationSummary).toBeVisible();
   }
 

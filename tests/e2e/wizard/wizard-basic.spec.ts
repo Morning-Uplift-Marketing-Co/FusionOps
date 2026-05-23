@@ -27,7 +27,7 @@ test.describe('LP Wizard - Basic Navigation', () => {
     await page.goto('/');
 
     // Wait for page to fully load including React hydration
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     // Take screenshot to see what's on the page
     await page.screenshot({ path: 'test-artifacts/screenshots/01-homepage-loaded.png' });
@@ -53,7 +53,7 @@ test.describe('LP Wizard - Basic Navigation', () => {
 
   test('should display wizard header with step indicator', async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await openLpWizardFromSidebar(page);
 
@@ -62,7 +62,7 @@ test.describe('LP Wizard - Basic Navigation', () => {
 
     // Check for wizard title
     const hasTitle = await page.getByText(/Create New LP/i).isVisible().catch(() => false);
-    const hasStepIndicator = await page.getByText(/Step \d\/7/i).isVisible().catch(() => false);
+    const hasStepIndicator = await page.getByText(/Step \d\/6/i).isVisible().catch(() => false);
 
     await page.screenshot({ path: 'test-artifacts/screenshots/03-wizard-step1.png' });
 
@@ -148,7 +148,7 @@ test.describe('LP Wizard - Step 1: Brand Information', () => {
 test.describe('LP Wizard - Multi-Step Flow', () => {
   test('should navigate through first 3 steps', async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await openLpWizardFromSidebar(page);
     await page.waitForTimeout(600);
@@ -198,7 +198,7 @@ test.describe('LP Wizard - Multi-Step Flow', () => {
 test.describe('LP Wizard - Screenshot Tour', () => {
   test('should capture screenshots of all major wizard states', async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     // Screenshot 1: Dashboard
     await page.screenshot({ path: 'test-artifacts/tour/01-dashboard.png', fullPage: true });
@@ -274,7 +274,7 @@ test.describe('LP Wizard - Screenshot Tour', () => {
     await nextBtn.first().click();
     await page.waitForTimeout(500);
 
-    // Screenshot 7: Wizard Step 6 (Tracking)
+    // Screenshot 7: Wizard Step 5 (Tracking)
     await page.screenshot({ path: 'test-artifacts/tour/07-wizard-step6.png', fullPage: true });
 
     // Fill conversion ID and proceed
@@ -286,7 +286,7 @@ test.describe('LP Wizard - Screenshot Tour', () => {
     await nextBtn.first().click();
     await page.waitForTimeout(500);
 
-    // Screenshot 8: Wizard Step 7 (Review)
+    // Screenshot 8: Wizard Step 6 (Review)
     await page.screenshot({ path: 'test-artifacts/tour/08-wizard-step7.png', fullPage: true });
 
     // Done - all screenshots captured
