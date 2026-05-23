@@ -119,6 +119,11 @@ function parseSteps(jobs) {
   const total = steps.length;
   const completed = steps.filter(s => s.status === 'completed').length;
   const current = steps.find(s => s.status === 'in_progress');
+  const trackingSteps = steps.filter(s => /pixel|tracking/i.test(s.name));
+  const trackingFailed = trackingSteps.find(s => s.conclusion === 'failure');
+  const trackingOk = trackingSteps.length > 0
+    && !trackingFailed
+    && trackingSteps.every(s => s.conclusion === 'success' || s.conclusion === 'skipped');
 
   return {
     steps,
@@ -126,6 +131,8 @@ function parseSteps(jobs) {
     completed,
     percent: total > 0 ? Math.round((completed / total) * 100) : 0,
     currentStep: current?.name || null,
+    trackingOk,
+    trackingFailedStep: trackingFailed?.name || null,
   };
 }
 
