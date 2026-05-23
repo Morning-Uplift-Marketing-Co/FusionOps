@@ -45,7 +45,12 @@ export async function handleAnalysisRoutes(path, method, request, env) {
 
   // GET /api/analysis/pixel-events/:domain
   if (path.startsWith('/api/analysis/pixel-events/') && method === 'GET') {
-    const domain = decodeURIComponent(path.split('/api/analysis/pixel-events/')[1]);
+    const domain = decodeURIComponent(path.split('/api/analysis/pixel-events/')[1] || '')
+      .split('?')[0]
+      .replace(/\/+$/, '')
+      .trim()
+      .toLowerCase();
+    if (!domain) return json({ ok: false, error: 'domain required' }, 400);
     const url = new URL(request.url);
     const days = parseInt(url.searchParams.get('days') || '30', 10);
     const daysBack = `-${days} days`;
