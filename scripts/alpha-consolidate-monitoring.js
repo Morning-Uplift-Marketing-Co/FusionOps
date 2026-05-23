@@ -7,6 +7,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import { pathToFileURL } from 'url';
 
 // Configuration
 const MONITORING_FILE = '.planning/alpha-test/daily-monitoring.jsonl';
@@ -431,20 +432,28 @@ export async function consolidateMonitoring() {
   return summary;
 }
 
-// CLI entry point
-const args = process.argv.slice(2);
-if (args.includes('--help') || args.includes('-h')) {
-  console.log(`
+async function runCli() {
+  const args = process.argv.slice(2);
+  if (args.includes('--help') || args.includes('-h')) {
+    console.log(`
 Usage: node alpha-consolidate-monitoring.js
 
 Reads daily monitoring data and generates:
 - monitoring-summary.json (statistics and timelines)
 - MONITORING-REPORT.md (human-readable report)
   `);
-  process.exit(0);
+    process.exit(0);
+  }
+
+  try {
+    await consolidateMonitoring();
+  } catch (error) {
+    console.error('Consolidation failed:', error);
+    process.exit(1);
+  }
 }
 
-consolidateMonitoring().catch(error => {
-  console.error('Consolidation failed:', error);
-  process.exit(1);
-});
+const invokedPath = process.argv[1] ? pathToFileURL(process.argv[1]).href : null;
+if (invokedPath && import.meta.url === invokedPath) {
+  runCli();
+}

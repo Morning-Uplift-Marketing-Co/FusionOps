@@ -13,7 +13,7 @@ import { FullConfig } from '@playwright/test';
 async function globalSetup(config: FullConfig) {
   console.log('🚀 Starting E2E test run...');
   console.log(`📁 Test directory: ${config.projects[0].use?.baseURL || 'default'}`);
-  console.log(`🌐 Base URL: ${process.env.BASE_URL || 'http://localhost:4323'}`);
+  console.log(`🌐 Base URL: ${process.env.BASE_URL || 'http://localhost:4321'}`);
 
   // Clean up previous test artifacts if needed
   // Note: This is handled by the test runner's outputDir configuration
