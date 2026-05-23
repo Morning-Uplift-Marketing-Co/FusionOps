@@ -189,9 +189,9 @@ export async function checkPixelEndpointHealth(domain, { timeoutMs = 8000 } = {}
   const d = normalizeDomain(domain);
   if (!d) return { ok: false, error: "Domain is required" };
   try {
-    const pixelUrl = `https://t.${d}/e?e=healthcheck&ts=${Date.now()}`;
+    const pixelUrl = `https://t.${d}/e`;
     const hc = await fetch(pixelUrl, {
-      method: "GET",
+      method: "HEAD",
       signal: AbortSignal.timeout(timeoutMs),
     });
     if (hc.status < 400) {

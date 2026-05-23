@@ -276,6 +276,9 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
                 onDeploy?.(result);
             } else {
                 addLog(`Deployment failed: ${result.error}`);
+                if (result.trackingError || /tracking not ready/i.test(result.error || '')) {
+                    addLog(`Tracking gate blocked deploy — fix t.${domain.domain || 'domain'}/e before retrying`);
+                }
                 setDeployStatus("error");
                 setDeployResult(result);
                 onStatusMessage?.(`Deployment failed: ${result.error}`, "error");
@@ -540,6 +543,24 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
                             </button>
                         </div>
                     )}
+                    {deployResult?.pixelHealthOk && selectedDomain?.domain && (
+                        <div style={{ ...S.urlResult, marginTop: 8, background: `${T.success}08` }}>
+                            <span style={{ color: T.success }}>📡</span>
+                            <a
+                                href={`https://t.${selectedDomain.domain}/e`}
+                                target="_blank"
+                                rel="noopener"
+                                style={{ color: T.text, textDecoration: "none", fontSize: 11 }}
+                            >
+                                Pixel pre-check OK: t.{selectedDomain.domain}/e
+                            </a>
+                        </div>
+                    )}
+                    {deployResult?.trackingError && (
+                        <div style={{ marginTop: 8, padding: 10, borderRadius: 6, background: `${T.danger}12`, border: `1px solid ${T.danger}40`, fontSize: 11, color: T.danger }}>
+                            {deployResult.trackingError}
+                        </div>
+                    )}
                 </Card>
             )}
 
@@ -549,6 +570,7 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
                     githubToken={settings.githubToken}
                     repo={trackingInfo.repo}
                     commitSha={trackingInfo.commitSha}
+                    domain={selectedDomain?.domain}
                     onClose={() => setTrackingInfo(null)}
                 />
             )}

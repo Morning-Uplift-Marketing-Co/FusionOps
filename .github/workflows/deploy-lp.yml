@@ -277,6 +277,10 @@ jobs:
         working-directory: ${{ steps.template.outputs.dir }}
         run: npm run build
 
+      - name: Validate built template tracking (post-build, blocking)
+        working-directory: ${{ steps.template.outputs.dir }}
+        run: node $GITHUB_WORKSPACE/scripts/validate-template-tracking.mjs .
+
       - name: Generate canonical apply.html (if missing from build)
         working-directory: ${{ steps.template.outputs.dir }}
         run: |

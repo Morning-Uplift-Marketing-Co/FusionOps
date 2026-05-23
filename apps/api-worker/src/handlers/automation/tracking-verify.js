@@ -50,6 +50,24 @@ export async function handleTrackingVerifyRoute({ request, path, method }) {
 
   const pixelUrl = `https://t.${domain}/e`;
   try {
+    const headRes = await fetch(pixelUrl, { method: 'HEAD' });
+    checks.pixelHead = {
+      ok: headRes.ok,
+      status: headRes.status,
+      url: pixelUrl,
+    };
+    if (!headRes.ok) allPassed = false;
+  } catch (e) {
+    checks.pixelHead = {
+      ok: false,
+      status: 0,
+      url: pixelUrl,
+      error: e?.message || 'pixel HEAD request failed',
+    };
+    allPassed = false;
+  }
+
+  try {
     const payload = {
       e: 'deploy_verify',
       d: domain,

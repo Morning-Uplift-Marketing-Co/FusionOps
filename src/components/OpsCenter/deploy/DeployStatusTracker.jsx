@@ -101,6 +101,15 @@ const S = {
     textDecoration: "none",
     fontSize: 11,
   },
+  trackingBanner: (ok) => ({
+    marginTop: 10,
+    padding: "10px 12px",
+    borderRadius: 8,
+    fontSize: 11,
+    background: ok ? `${T.success}12` : `${T.danger}12`,
+    border: `1px solid ${ok ? `${T.success}40` : `${T.danger}40`}`,
+    color: ok ? T.success : T.danger,
+  }),
   closeBtn: {
     background: "none",
     border: "none",
@@ -118,7 +127,7 @@ function formatDuration(sec) {
   return m > 0 ? `${m}m ${s}s` : `${s}s`;
 }
 
-export function DeployStatusTracker({ githubToken, repo, commitSha, onClose }) {
+export function DeployStatusTracker({ githubToken, repo, commitSha, domain, onClose }) {
   const [status, setStatus] = useState(null);
   const trackerRef = useRef(null);
 
@@ -147,6 +156,10 @@ export function DeployStatusTracker({ githubToken, repo, commitSha, onClose }) {
   const phase = PHASE_CONFIG[status.phase] || PHASE_CONFIG.not_found;
   const isDone = status.phase === "completed" || status.phase === "failed" || status.phase === "cancelled";
   const progressPct = status.steps?.percent ?? (isDone ? 100 : status.phase === "in_progress" ? 50 : 10);
+  const pixelHost = domain ? `t.${String(domain).trim().toLowerCase()}` : null;
+  const pixelUrl = pixelHost ? `https://${pixelHost}/e` : null;
+  const trackingOk = status.steps?.trackingOk === true;
+  const trackingFailed = Boolean(status.steps?.trackingFailedStep);
 
   return (
     <div style={{
@@ -189,11 +202,15 @@ export function DeployStatusTracker({ githubToken, repo, commitSha, onClose }) {
             const isDoneStep = step.status === "completed" && step.conclusion === "success";
             const isFailed = step.conclusion === "failure";
             const isSkipped = step.conclusion === "skipped";
+            const isTrackingStep = /pixel|tracking/i.test(step.name);
 
             if (isSkipped) return null;
 
             return (
-              <div key={i} style={S.step(isActive, isDoneStep, isFailed)}>
+              <div key={i} style={{
+                ...S.step(isActive, isDoneStep, isFailed),
+                ...(isTrackingStep ? { fontWeight: 600 } : {}),
+              }}>
                 <div style={S.stepDot(isActive, isDoneStep, isFailed)} />
                 <span>{step.name}</span>
                 {isDoneStep && <span style={{ color: T.success, fontSize: 10 }}>done</span>}
@@ -204,6 +221,17 @@ export function DeployStatusTracker({ githubToken, repo, commitSha, onClose }) {
           <div style={{ fontSize: 10, color: T.muted, marginTop: 4 }}>
             {status.steps.completed}/{status.steps.total} steps completed
           </div>
+        </div>
+      )}
+
+      {isDone && pixelUrl && status.phase === "completed" && trackingOk && (
+        <div style={S.trackingBanner(true)}>
+          Pixel tracking verified — <a href={pixelUrl} target="_blank" rel="noopener" style={S.link}>{pixelUrl}</a>
+        </div>
+      )}
+      {isDone && trackingFailed && (
+        <div style={S.trackingBanner(false)}>
+          Tracking step failed: {status.steps.trackingFailedStep}. Check Workers route {pixelHost ? `${pixelHost}/*` : 't.{domain}/*'} → lp-factory-api.
         </div>
       )}
 
