@@ -34,11 +34,11 @@ export const Q = {
       COUNT(*) as count,
       COUNT(DISTINCT session_id) as unique_sessions,
       COUNT(DISTINCT gclid) as unique_gclids,
-      MIN(created_at) as first_event,
-      MAX(created_at) as last_event
+      MIN(ts) as first_event,
+      MAX(ts) as last_event
     FROM pixel_events
     WHERE domain = ?1
-      AND created_at >= datetime('now', ?2)
+      AND ts >= unixepoch('now', ?2)
     GROUP BY domain, event
     ORDER BY count DESC
   `,

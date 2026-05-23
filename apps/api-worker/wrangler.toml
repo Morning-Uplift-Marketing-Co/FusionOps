@@ -51,6 +51,10 @@ bucket_name = "lp-factory-thumbs"
 # To add a new t.{domain}/* route: do it via the dashboard, OR re-enable the
 # block below for that domain only after confirming zone ownership.
 #
+[[routes]]
+pattern = "t.loanbearfunds.com/*"
+zone_name = "loanbearfunds.com"
+
 # [[routes]]
 # pattern = "t.scratchpetlending.com/*"
 # zone_name = "scratchpetlending.com"
