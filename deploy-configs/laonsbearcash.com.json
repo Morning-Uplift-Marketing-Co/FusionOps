@@ -19,8 +19,8 @@
   "amountMax": 5000,
   "aprMin": 5.99,
   "aprMax": 35.99,
-  "primaryColor": "#3b5bdb",
-  "accentColor": "#f97316",
+  "primaryColor": "",
+  "accentColor": "",
   "conversionId": "AW-18127176125",
   "gtagFormStartLabel": "h4SCCNOuu7AcEL2D28ND",
   "gtagFormSubmitLabel": "_9B3CNauu7AcEL2D28ND",
@@ -41,23 +41,23 @@
   "reviews": [
     {
       "name": "Sarah K.",
-      "location": "Austin, TX",
+      "text": "My car unexpectedly broke down, and I needed funds fast for repairs. Cash Loans Bear made the process incredibly easy and I got the money quickly to get back on the road.",
       "rating": 5,
-      "text": "My car unexpectedly broke down, and I needed funds fast for repairs. Cash Loans Bear made the process incredibly easy and I got the money quickly to get back on the road."
+      "location": "Austin, TX"
     },
     {
       "name": "David M.",
-      "location": "Miami, FL",
+      "text": "We had an urgent plumbing issue and needed quick financing. The terms were clear, and the customer service helped me understand everything without any hassle.",
       "rating": 5,
-      "text": "We had an urgent plumbing issue and needed quick financing. The terms were clear, and the customer service helped me understand everything without any hassle."
+      "location": "Miami, FL"
     },
     {
       "name": "Jessica R.",
-      "location": "Denver, CO",
+      "text": "Dealing with unexpected vet bills was stressful, but Cash Loans Bear offered a manageable installment plan. The application was straightforward and I really appreciate their help.",
       "rating": 5,
-      "text": "Dealing with unexpected vet bills was stressful, but Cash Loans Bear offered a manageable installment plan. The application was straightforward and I really appreciate their help."
+      "location": "Denver, CO"
     }
   ],
   "showReviews": true,
-  "deployedAt": "2026-05-20T13:24:24.512Z"
+  "deployedAt": "2026-05-23T12:55:42.220Z"
 }
