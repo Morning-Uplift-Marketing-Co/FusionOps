@@ -2,6 +2,7 @@
   "templateId": "bolt-loan-pastel-optimized-01",
   "cfPagesProject": "lp-scratchpaypet-tech",
   "cfZoneId": "",
+  "skipDnsUpsert": true,
   "cfApiToken": "",
   "cfAccountId": "",
   "brand": "Scratchpay",
@@ -9,6 +10,7 @@
   "h1": "Quick $100-$5000 for Your Pet's Care.",
   "sub": "Stress-free financing for unexpected pet expenses. Get the care your furry friend deserves.",
   "cta": "Apply for Pet Funding",
+  "title2": "",
   "phone": "1-800-SCRATCH-PAYPE",
   "email": "support@scratchpaypet.tech",
   "address": "108 West 13th St, Wilmington, DE 19801",
@@ -17,8 +19,8 @@
   "amountMax": 5000,
   "aprMin": 5.99,
   "aprMax": 35.99,
-  "primaryColor": "#3b5bdb",
-  "accentColor": "#f97316",
+  "primaryColor": "",
+  "accentColor": "",
   "conversionId": "AW-8888",
   "gtagFormStartLabel": "form_start",
   "gtagFormSubmitLabel": "form_submit",
@@ -57,5 +59,5 @@
     }
   ],
   "showReviews": true,
-  "deployedAt": "2026-04-05T04:18:46.567Z"
+  "deployedAt": "2026-05-23T12:53:01.616Z"
 }
