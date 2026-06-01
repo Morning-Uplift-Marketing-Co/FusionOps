@@ -87,24 +87,11 @@ async function pushFile({ githubToken, repo, branch, path, content, message }) {
   let { res } = await pushWithFreshSha();
 
   for (let attempt = 0; attempt < 5 && res.status === 409; attempt++) {
-    // Read body once — extract SHA GitHub says is current
-    let nextSha;
-    try {
-      const errText = await res.text();
-      // GitHub 409 body: {"message":"...does not match <sha>","status":"409"}
-      // SHA appears unquoted inside the message string — match any 40-char hex
-      const match = errText.match(/\b([0-9a-f]{40})\b/);
-      nextSha = match ? match[1] : null;
-    } catch (_) { nextSha = null; }
-
-    if (nextSha) {
-      // Use SHA from error body — closest to real-time, no extra round trip
-      res = await tryPush(nextSha);
-    } else {
-      // Fallback: re-fetch (adds latency but still correct)
-      await new Promise(r => setTimeout(r, 400));
-      ({ res } = await pushWithFreshSha());
-    }
+    // 409 body: "...does not match <sha>" — that hex is the *stale* SHA we sent, not the current blob.
+    // Always re-fetch blob SHA from Contents API before retrying.
+    await res.text().catch(() => '');
+    await new Promise((r) => setTimeout(r, 150 * (attempt + 1)));
+    ({ res } = await pushWithFreshSha());
   }
 
   if (!res.ok) {
