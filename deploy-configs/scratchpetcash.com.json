@@ -19,8 +19,8 @@
   "amountMax": 5000,
   "aprMin": 5.99,
   "aprMax": 35.99,
-  "primaryColor": "#3b5bdb",
-  "accentColor": "#f97316",
+  "primaryColor": "",
+  "accentColor": "",
   "conversionId": "AW-16550897590",
   "gtagFormStartLabel": "GnuQCPK63Z0cELbPitQ9",
   "gtagFormSubmitLabel": "M0JCCPW63Z0cELbPitQ9",
@@ -40,5 +40,5 @@
   "trustBadges": "",
   "reviews": [],
   "showReviews": true,
-  "deployedAt": "2026-06-01T21:16:58.778Z"
+  "deployedAt": "2026-06-01T21:32:23.500Z"
 }
