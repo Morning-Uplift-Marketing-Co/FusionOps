@@ -1,5 +1,5 @@
 {
-  "templateId": "pet-loans-01b",
+  "templateId": "pet-loans-evergreencare",
   "cfPagesProject": "lp-scratchcareday-com",
   "cfZoneId": "",
   "skipDnsUpsert": true,
@@ -7,12 +7,12 @@
   "cfAccountId": "",
   "brand": "Scratchpay",
   "domain": "scratchcareday.com",
-  "h1": "Your Pet's Care Shouldn't Wait",
-  "sub": "We make pet care affordable and stress-free. Apply in minutes.",
-  "cta": "Check Your Eligibility",
-  "title2": "for Your Bank's Approval",
+  "h1": "Unexpected Pet Bill? Fast 0% Stress Relief.",
+  "sub": "Quick form. No credit score impact. Care payments next day.",
+  "cta": "Claim My Pet Funding",
+  "title2": "Credit Score Safe Inquiry",
   "phone": "1-800-SCRATCH-CARED",
-  "email": "support@scratchcareday.com",
+  "email": "admin@scratchcareday.com",
   "address": "30 N Gould St, Ste R, Sheridan, WY 82801",
   "aid": "14881",
   "amountMin": 100,
@@ -21,7 +21,7 @@
   "aprMax": 35.99,
   "primaryColor": "",
   "accentColor": "",
-  "conversionId": "AW-16551193759",
+  "conversionId": "AW-8888",
   "gtagFormStartLabel": "SK-rCPiegY8cEJ_ZnNQ9",
   "gtagFormSubmitLabel": "E0P1CNPoh48cEJ_ZnNQ9",
   "formStartLabel": "SK-rCPiegY8cEJ_ZnNQ9",
@@ -39,6 +39,6 @@
   "radius": "rounded",
   "trustBadges": "",
   "reviews": [],
-  "showReviews": false,
-  "deployedAt": "2026-06-01T23:16:43.211Z"
+  "showReviews": true,
+  "deployedAt": "2026-06-02T00:52:20.278Z"
 }
