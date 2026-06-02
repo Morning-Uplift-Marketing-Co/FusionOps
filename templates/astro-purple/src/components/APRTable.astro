@@ -1,0 +1,113 @@
+---
+const aprMin = import.meta.env.PUBLIC_APRMIN || '${aprMin}';
+const aprMax = import.meta.env.PUBLIC_APRMAX || '${aprMax}';
+const redirectUrl = import.meta.env.PUBLIC_REDIRECT_URL || '${redirectUrl}';
+
+const rows = [
+  { credit: 'Excellent', score: '750+',    apr: '5.99–9.99%',   example: '$5,000 / 60mo = $97/mo',  total: '$5,810',  highlight: true  },
+  { credit: 'Good',      score: '700–749', apr: '10.99–14.99%', example: '$5,000 / 60mo = $109/mo', total: '$6,514',  highlight: false },
+  { credit: 'Fair',      score: '660–699', apr: '15.99–19.99%', example: '$5,000 / 60mo = $122/mo', total: '$7,290',  highlight: false },
+  { credit: 'Average',   score: '620–659', apr: '20.99–24.99%', example: '$5,000 / 60mo = $134/mo', total: '$8,066',  highlight: false },
+  { credit: 'Poor',      score: '560–619', apr: '25.99–34.99%', example: '$5,000 / 60mo = $152/mo', total: '$9,124',  highlight: false },
+];
+---
+
+<section id="rates" class="py-20 md:py-28 px-6">
+  <div class="max-w-6xl mx-auto">
+
+    <div class="grid md:grid-cols-2 gap-14 items-start">
+
+      <!-- Left: description -->
+      <div>
+        <span class="section-label">Complete Rate Transparency</span>
+        <h2 class="section-title">Payment Plan Rates<br/>by Credit Profile</h2>
+        <p class="text-foreground/70 text-base leading-relaxed mb-6">
+          Rates are determined by credit profile and plan term. This table shows representative APRs across credit tiers—no hidden fees, no surprises.
+        </p>
+
+        <div class="space-y-3 mb-8">
+          {[
+            'Fixed rate—never changes during your term',
+            'Zero prepayment penalties—pay early, save interest',
+            'No application or origination fees',
+            'Rate locked at approval—guaranteed pricing',
+          ].map(item => (
+            <div class="flex items-start gap-3">
+              <div class="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                style="background: hsl(270 35% 48% / 0.10);">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="hsl(270 35% 42%)" stroke-width="3" stroke-linecap="round">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+              </div>
+              <span class="text-foreground/75 text-sm">{item}</span>
+            </div>
+          ))}
+        </div>
+
+        <!-- Disclosure callout -->
+        <div class="glass-card p-4 border-l-2 flex gap-3" style="border-left-color: hsl(270 35% 48% / 0.30);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="hsl(270 35% 44%)" stroke-width="2" stroke-linecap="round" class="flex-shrink-0 mt-0.5">
+            <circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>
+          </svg>
+          <p class="text-foreground/70 text-xs leading-relaxed">
+            <strong class="text-foreground/70">Representative example: {aprMin}%–{aprMax}% APR.</strong> Based on $5,000 financed over 60 months. Your actual rate depends on credit profile, income verification, and underwriting approval. All rates shown before you sign.
+          </p>
+        </div>
+      </div>
+
+      <!-- Right: table -->
+      <div class="reveal">
+        <div class="premium-card overflow-hidden">
+          <table class="w-full text-left">
+            <thead>
+              <tr style="background: hsl(270 20% 96%);">
+                <th class="py-3.5 px-5 text-xs font-semibold text-foreground/60 uppercase tracking-wider">Credit</th>
+                <th class="py-3.5 px-5 text-xs font-semibold text-foreground/60 uppercase tracking-wider">Score</th>
+                <th class="py-3.5 px-5 text-xs font-semibold text-foreground/60 uppercase tracking-wider">APR Range</th>
+                <th class="py-3.5 px-5 text-xs font-semibold text-foreground/60 uppercase tracking-wider hidden sm:table-cell">Total Cost</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(row => (
+                <tr class={`apr-row transition-colors ${row.highlight ? 'bg-primary/5' : ''}`}>
+                  <td class="py-4 px-5 border-b border-border">
+                    <div class="flex items-center gap-2">
+                      {row.highlight && (
+                        <span class="w-1.5 h-1.5 rounded-full" style="background: hsl(270 35% 48%);"></span>
+                      )}
+                      <span class={`text-sm font-semibold ${row.highlight ? 'text-primary' : 'text-foreground/75'}`}>
+                        {row.credit}
+                      </span>
+                    </div>
+                  </td>
+                  <td class="py-4 px-5 border-b border-border">
+                    <span class="text-xs font-mono text-foreground/70">{row.score}</span>
+                  </td>
+                  <td class="py-4 px-5 border-b border-border">
+                    <span class={`text-sm font-bold mono-num ${row.highlight ? 'text-primary' : 'text-foreground/70'}`}>
+                      {row.apr}
+                    </span>
+                  </td>
+                  <td class="py-4 px-5 border-b border-border hidden sm:table-cell">
+                    <span class="text-sm mono-num text-foreground/70">{row.total}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div class="px-5 py-4" style="background: hsl(270 20% 96%);">
+            <p class="text-foreground/55 text-xs">Representative example: $5,000 financed over 60 months at {aprMin}% APR. Total repayment varies by approved rate. All costs disclosed before confirmation.</p>
+          </div>
+        </div>
+
+        <a href={redirectUrl} class="btn-primary w-full text-center mt-5 py-4">
+          Unlock 0% Financing Options →
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
