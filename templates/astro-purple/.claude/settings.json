@@ -1,0 +1,5 @@
+{
+  "rules": [
+    "Never touch site parameters — do not modify any PUBLIC_* environment variable references, site content/copy, brand names, URLs, redirect URLs, phone numbers, email addresses, APR values, loan amounts, review text, FAQ content, disclosure text, or any data-driven values in .astro component frontmatter or template content. Only modify styling, colors, CSS, and visual presentation."
+  ]
+}
