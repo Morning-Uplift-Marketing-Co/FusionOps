@@ -41,23 +41,23 @@
   "reviews": [
     {
       "name": "Sarah L.",
-      "location": "Austin, TX",
+      "text": "My dog suddenly needed emergency surgery. ScratchPay was a lifesaver, allowing me to focus on his recovery instead of the huge bill. The process was fast and so easy!",
       "rating": 5,
-      "text": "My dog suddenly needed emergency surgery. ScratchPay was a lifesaver, allowing me to focus on his recovery instead of the huge bill. The process was fast and so easy!"
+      "location": "Austin, TX"
     },
     {
       "name": "Mark T.",
-      "location": "Denver, CO",
+      "text": "Getting my cat's much-needed dental work felt impossible until I found ScratchPay. Their affordable plan helped me spread out the cost, making quality care accessible.",
       "rating": 5,
-      "text": "Getting my cat's much-needed dental work felt impossible until I found ScratchPay. Their affordable plan helped me spread out the cost, making quality care accessible."
+      "location": "Denver, CO"
     },
     {
       "name": "Jessica R.",
-      "location": "Miami, FL",
+      "text": "We brought home a new puppy and had unexpected vet costs for vaccinations and check-ups. ScratchPay helped us cover everything quickly and without any financial stress.",
       "rating": 5,
-      "text": "We brought home a new puppy and had unexpected vet costs for vaccinations and check-ups. ScratchPay helped us cover everything quickly and without any financial stress."
+      "location": "Miami, FL"
     }
   ],
   "showReviews": true,
-  "deployedAt": "2026-06-04T09:06:51.409Z"
+  "deployedAt": "2026-06-04T09:46:27.094Z"
 }
