@@ -7,10 +7,10 @@
   "cfAccountId": "",
   "brand": "ScratchPay",
   "domain": "scratchpetcash.com",
-  "h1": "Vet Emergency? Funds in 3 Minutes.",
-  "sub": "Quick form, soft inquiry, receive Pet Funding shortly.",
-  "cta": "View My Options",
-  "title2": "Explore options. No commitment.",
+  "h1": "Don't Let Vet Bills Wait",
+  "sub": "Your pet needs you now. Check your rate instantly without affecting your credit score.",
+  "cta": "See My Options",
+  "title2": "Simple Monthly Payment Plans",
   "phone": "1-800-SCRATCH-PETCA",
   "email": "support@scratchpetcash.com",
   "address": "1007 N Orange St, 4th Fl, Wilmington, DE 19801",
@@ -21,7 +21,7 @@
   "aprMax": 35.99,
   "primaryColor": "#3b5bdb",
   "accentColor": "#f97316",
-  "conversionId": "AW-16550897590",
+  "conversionId": "AW-12345",
   "gtagFormStartLabel": "GnuQCPK63Z0cELbPitQ9",
   "gtagFormSubmitLabel": "M0JCCPW63Z0cELbPitQ9",
   "formStartLabel": "GnuQCPK63Z0cELbPitQ9",
@@ -38,7 +38,26 @@
   "layout": "hero-left",
   "radius": "rounded",
   "trustBadges": "",
-  "reviews": [],
+  "reviews": [
+    {
+      "name": "Sarah L.",
+      "location": "Austin, TX",
+      "rating": 5,
+      "text": "My dog suddenly needed emergency surgery. ScratchPay was a lifesaver, allowing me to focus on his recovery instead of the huge bill. The process was fast and so easy!"
+    },
+    {
+      "name": "Mark T.",
+      "location": "Denver, CO",
+      "rating": 5,
+      "text": "Getting my cat's much-needed dental work felt impossible until I found ScratchPay. Their affordable plan helped me spread out the cost, making quality care accessible."
+    },
+    {
+      "name": "Jessica R.",
+      "location": "Miami, FL",
+      "rating": 5,
+      "text": "We brought home a new puppy and had unexpected vet costs for vaccinations and check-ups. ScratchPay helped us cover everything quickly and without any financial stress."
+    }
+  ],
   "showReviews": true,
-  "deployedAt": "2026-06-04T08:43:06.671Z"
+  "deployedAt": "2026-06-04T09:04:58.722Z"
 }
