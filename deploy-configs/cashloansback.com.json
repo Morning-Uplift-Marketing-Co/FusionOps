@@ -7,10 +7,10 @@
   "cfAccountId": "",
   "brand": "Cashback Loans",
   "domain": "cashloansback.com",
-  "h1": "Sudden Bill? Get $5,000 Fast.",
-  "sub": "Quick online form. Soft credit check. Funding in 24 hours.",
-  "cta": "Claim My Cash.",
-  "title2": "Soft Credit Check Only",
+  "h1": "$100–$5000 Quick Funding Now",
+  "sub": "Quick form, no hard credit pull. Get funds by tomorrow.",
+  "cta": "View My Funding",
+  "title2": "No Hard Credit Check",
   "phone": "1-800-CASHLOA-NSBAC",
   "email": "support@cashloansback.com",
   "address": "99 Wall St, Ste 5868, New York, NY 10005",
@@ -41,23 +41,23 @@
   "reviews": [
     {
       "name": "Sarah P.",
-      "text": "My car broke down unexpectedly, and I needed cash fast for repairs. Cashback Loans came through quickly, letting me get back on the road without stress. Super easy process!",
-      "rating": 5,
-      "location": "Phoenix, AZ"
-    },
-    {
-      "name": "Michael T.",
-      "text": "Had a utility bill due before my next paycheck. Cashback Loans helped bridge the gap without any hassle. The online application was straightforward and quick.",
-      "rating": 4,
-      "location": "Atlanta, GA"
-    },
-    {
-      "name": "Emily R.",
-      "text": "Our refrigerator suddenly died, and replacing it was a big unexpected expense. Cashback Loans made it possible to get a new one right away. Very grateful for their quick service.",
+      "text": "My car broke down unexpectedly, and I needed cash fast for repairs. Cashback Loans made it so simple to get approved and receive the funds quickly. Their process was a lifesaver!",
       "rating": 5,
       "location": "Denver, CO"
+    },
+    {
+      "name": "Mark T.",
+      "text": "I needed to replace an old appliance and Cashback Loans offered a great solution to cover the cost. The application was straightforward, and the payment plan was easy to understand. Good experience overall.",
+      "rating": 4,
+      "location": "Austin, TX"
+    },
+    {
+      "name": "Jessica R.",
+      "text": "Dealing with multiple small bills was stressful. Cashback Loans helped me consolidate everything into one manageable payment. It took a huge weight off my shoulders and was incredibly easy to set up.",
+      "rating": 5,
+      "location": "Miami, FL"
     }
   ],
   "showReviews": true,
-  "deployedAt": "2026-06-04T11:37:21.964Z"
+  "deployedAt": "2026-06-05T07:30:47.447Z"
 }
