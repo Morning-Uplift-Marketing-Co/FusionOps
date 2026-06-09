@@ -12,6 +12,8 @@ import { deployTo, getAvailableTargets, saveDeployConfig, getDeployConfig } from
 import cloudflareDns from "../../../services/cloudflare-dns";
 import { generateHtmlByTemplate, generateApplyPageByTemplate, generateDeployAssetsByTemplate } from "../../../utils/template-router";
 import { validateAccountId } from "../../../services/account-lock";
+import { siteRequiresGithubActionsBuild } from "../../../utils/deployers/deploy-target-guard.js";
+import { autoAssignDeployTarget } from "../../../utils/deployers/deploy-target-auto.js";
 import { DeployStatusTracker } from "./DeployStatusTracker";
 
 const S = {
@@ -93,6 +95,18 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
         }
         setSelectedTarget((prev) => (prev && availableTargets.some((t) => t.id === prev && t.configured) ? prev : preferred));
     }, [selectedDomainId, availableTargets]);
+
+    // Astro templates: force GitHub Actions (direct upload serves broken preview HTML)
+    useEffect(() => {
+        if (!selectedDomainId) return;
+        const domain = domains.find((d) => d.id === selectedDomainId);
+        if (!domain || !siteRequiresGithubActionsBuild(domain)) return;
+        const direct = ["cf-pages", "netlify", "vercel", "cf-workers"];
+        if (direct.includes(selectedTarget)) {
+            const gh = availableTargets.find((t) => t.id === "github-actions" && t.configured);
+            if (gh) setSelectedTarget("github-actions");
+        }
+    }, [selectedDomainId, selectedTarget, domains, availableTargets]);
 
     // Load deploy config when domain+target selected
     useEffect(() => {
@@ -176,6 +190,7 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
         try {
             addLog(`Starting deployment to ${targetInfo.label}...`);
             addLog(`Domain: ${domain.domain || domain.brand}`);
+            addLog(`Template: ${domain.templateId || "classic"}`);
             addLog(`Environment: ${selectedEnv}`);
             if (selectedTarget === "cf-pages" || selectedTarget === "cf-workers") {
                 const maskedCf = effectiveSettings.cfAccountId
@@ -216,9 +231,18 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
             setDeployProgress(100);
 
             if (result.success) {
+                if (result.redirectedFrom) {
+                    addLog(`⚠ Switched ${result.redirectedFrom} → ${result.target} (Astro needs CI build)`);
+                }
                 if (result.queued) {
                     addLog(`Deployment queued! ⏳`);
-                    addLog(`Workflow: ${result.url}`);
+                    if (result.templateId) addLog(`Config templateId: ${result.templateId}`);
+                    if (result.workflowDispatched === false && result.workflowDispatchError) {
+                        addLog(`⚠ CI dispatch: ${result.workflowDispatchError}`);
+                    } else if (result.workflowDispatched) {
+                        addLog(`GitHub Actions workflow dispatched ✓`);
+                    }
+                    addLog(`Workflow: ${result.actionsUrl || result.url}`);
                     // Start tracking GitHub Actions status
                     if (result.commitSha && result.repo) {
                         setTrackingInfo({ commitSha: result.commitSha, repo: result.repo });
@@ -333,6 +357,7 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
     };
 
     const selectedDomain = domains.find(d => d.id === selectedDomainId);
+    const needsCiBuild = selectedDomain ? siteRequiresGithubActionsBuild(selectedDomain) : false;
 
     return (
         <div style={S.section}>
@@ -384,7 +409,7 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
             {/* Deploy Target Selection */}
             {selectedDomainId && (
                 <>
-                    <div style={{ marginBottom: 12 }}>
+                    <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <label style={S.label}>
                             Deploy Target
                             {!selectedTarget && (
@@ -393,6 +418,29 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
                                 </span>
                             )}
                         </label>
+                        <button
+                            onClick={() => {
+                                const domain = domains.find(d => d.id === selectedDomainId);
+                                if (!domain) return;
+                                const result = autoAssignDeployTarget(domain, settings);
+                                if (result.target) {
+                                    setSelectedTarget(result.target);
+                                    onStatusMessage?.(`Auto-assigned: ${result.target} (${result.reason})`, 'info');
+                                } else {
+                                    onStatusMessage?.('No configured deploy targets available', 'error');
+                                }
+                            }}
+                            disabled={isDeploying || !selectedDomainId}
+                            style={{
+                                fontSize: 10, fontWeight: 600, padding: '4px 10px',
+                                borderRadius: 6, border: `1px solid ${T.primary}60`,
+                                background: `${T.primary}15`, color: T.primary,
+                                cursor: isDeploying ? 'not-allowed' : 'pointer',
+                                opacity: isDeploying || !selectedDomainId ? 0.5 : 1,
+                            }}
+                        >
+                            🎲 Auto-Distribute
+                        </button>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12, marginBottom: 16 }}>
                         {availableTargets.map(t => (
@@ -452,6 +500,17 @@ export function DeploySection({ domains, settings, cfAccounts = [], onDeploy, on
             {/* Deploy Settings */}
             {selectedDomainId && selectedTarget && (
                 <Card style={{ padding: 16, marginBottom: 16 }}>
+                    {needsCiBuild && (
+                        <div style={{
+                            marginBottom: 12, padding: "10px 12px", borderRadius: 8,
+                            background: `${T.warning || "#f59e0b"}18`,
+                            border: `1px solid ${T.warning || "#f59e0b"}55`,
+                            fontSize: 11, color: T.text, lineHeight: 1.5,
+                        }}>
+                            <strong>Astro template ({selectedDomain?.templateId})</strong> — ใช้ <strong>GitHub Actions</strong> เท่านั้น
+                            (build จริง). Cloudflare Pages direct จะทำให้หน้าเว็บเพี้ยน เห็นโค้ด {"{item}"} / {")}"} บน production
+                        </div>
+                    )}
                     <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 12 }}>
                         Deploy Settings
                     </div>
