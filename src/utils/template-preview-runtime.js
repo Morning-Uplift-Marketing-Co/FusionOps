@@ -241,6 +241,13 @@ export function substituteSiteVariables(html, site) {
     siteUrl:      String(site.siteUrl      || ('https://' + domain)),
     primaryColor: String(site.primaryColor || '#3b5bdb'),
     accentColor:  String(site.accentColor  || '#f97316'),
+    // Design variables
+    fontFamily:   String(site.fontFamily   || '"DM Sans", sans-serif'),
+    borderRadius: String(site.borderRadius  || '0.75rem'),
+    layout:       String(site.layout       || 'hero-left'),
+    secondaryColor: String(site.secondaryColor || '#64748b'),
+    bgColor:      String(site.bgColor      || '#f8fafc'),
+    textColor:    String(site.textColor    || '#1e293b'),
   };
 
   // Protect <style> blocks entirely and <script> BODIES (not attributes like src=)
