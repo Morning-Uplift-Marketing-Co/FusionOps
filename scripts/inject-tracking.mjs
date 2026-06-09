@@ -27,6 +27,46 @@ function normalizePixelSubdomain(value) {
   return String(value || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/^-+|-+$/g, '') || 't';
 }
 
+function fnv1a32(value) {
+  let hash = 2166136261;
+  for (const ch of String(value || '')) {
+    hash ^= ch.charCodeAt(0);
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+  return hash >>> 0;
+}
+
+function normalizeTrackingDomain(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  try {
+    return new URL(raw).hostname.toLowerCase().replace(/^www\./, '');
+  } catch {
+    return raw
+      .toLowerCase()
+      .replace(/^https?:\/\//, '')
+      .replace(/\/.*$/, '')
+      .replace(/^www\./, '');
+  }
+}
+
+function trackingWhitespaceVariantFromEnv(env) {
+  const seedDomain = normalizeTrackingDomain(
+    env?.PUBLIC_SITE_URL
+      || env?.PUBLIC_DOMAIN
+      || env?.VITE_SITE_URL
+      || env?.VITE_DOMAIN
+      || '',
+  );
+  const variants = [
+    { gap: '\n', tail: '\n' },
+    { gap: '\n\n', tail: '\n' },
+    { gap: '\n', tail: '\n\n' },
+    { gap: '\n\n', tail: '\n\n' },
+  ];
+  return variants[fnv1a32(seedDomain) % variants.length];
+}
+
 // ─── Detect template type ───
 // Loveable/Vite exports sometimes include orphan src/layouts/*.astro; if we prefer that over
 // index.html, the real app shell never gets Voluum/pixel/gtag (scratchpaypet-style bug).
@@ -154,7 +194,6 @@ const VOLUUM_HEAD_SNIPPET = `
 
 /** Early URL capture for pixels / embeds — must run before PIXEL_BODY_SNIPPET (see hasGclIdCapture). */
 const GCLID_CAPTURE_SNIPPET = `
-<!-- GCLID capture (auto-injected) -->
 <script data-cfasync="false">
 (function(){
   var SafeStorage = {
@@ -187,7 +226,6 @@ const GCLID_CAPTURE_SNIPPET = `
 `;
 
 const PIXEL_BODY_SNIPPET = `
-<!-- First-party pixel + Google Ads gtag (auto-injected) -->
 <script data-cfasync="false">
 (function(){
   function fpIsAdsPlaceholderVal(v) {
@@ -367,7 +405,6 @@ const PIXEL_BODY_SNIPPET = `
 // For Vite: reads VITE_* from import.meta.env at build time
 // For HTML: values are replaced by deploy pipeline
 const RUNTIME_CONFIG_VITE = `
-<!-- Runtime config (auto-injected) -->
 <script type="module">
   window.__VOLUUM_DOMAIN__ = import.meta.env.VITE_VOLUUM_DOMAIN || '';
   window.__CONVERSION_ID__ = import.meta.env.VITE_CONVERSION_ID || '';
@@ -574,13 +611,8 @@ const VOLUUM_CTA_PATCH_INLINE_JS = `
  * HTML comment for TrackingDashboard static analyzeHtml(); CTA rewrite is inlined in runtime script.
  */
 function voluumCtaMarkerAndRewriterSnippet(clickUrlForComment) {
-  const clickUrl = String(clickUrlForComment || '').trim();
-  const hasCommentUrl = clickUrl && /^https?:\/\//i.test(clickUrl);
-  const safeComment = clickUrl.replace(/-->/g, '--\\>');
-  const comment = hasCommentUrl
-    ? `<!-- lp-voluum-cta: ${safeComment} -->`
-    : '<!-- lp-voluum-cta: (runtime: window.__VOLUUM_CLICK_URL__) -->';
-  return `\n${comment}\n`;
+  void clickUrlForComment;
+  return '\n';
 }
 
 function runtimeConfigFromEnvHtml(env) {
@@ -592,7 +624,6 @@ function runtimeConfigFromEnvHtml(env) {
   const gtagRelayHost = env.PUBLIC_GTAGRELAYHOST || env.VITE_GTAG_RELAY_HOST || '';
   const pixelSubdomain = pixelSubdomainFromEnv(env);
   return `
-<!-- Runtime config from .env (auto-injected, static HTML) -->
 <script data-cfasync="false">
 (function(){
   window.__VOLUUM_DOMAIN__ = ${JSON.stringify(vol)};
@@ -617,7 +648,6 @@ function runtimeConfigFromEnvHtml(env) {
 }
 
 const RUNTIME_CONFIG_ASTRO = `
-<!-- Runtime config (auto-injected) -->
 <script is:inline>
   window.__VOLUUM_DOMAIN__ = '%%PUBLIC_VOLUUMDOMAIN%%';
   window.__CONVERSION_ID__ = '%%PUBLIC_CONVERSIONID%%';
@@ -689,7 +719,11 @@ function injectIntoHtmlOrVite(filePath, isVite, templateRoot) {
     runtimeConfig = RUNTIME_CONFIG_VITE;
   }
   const vClickEnv = voluumClickUrlFromEnv(env);
-  const headInject = runtimeConfig + VOLUUM_HEAD_SNIPPET + voluumCtaMarkerAndRewriterSnippet(vClickEnv);
+  const formatting = trackingWhitespaceVariantFromEnv(env);
+  const headInject = [runtimeConfig, VOLUUM_HEAD_SNIPPET, voluumCtaMarkerAndRewriterSnippet(vClickEnv)]
+    .filter(Boolean)
+    .join(formatting.gap)
+    + formatting.tail;
 
   // We enforce that Voluum snippet fires absolute first in <head>
   if (html.includes('<head>')) {
@@ -704,14 +738,14 @@ function injectIntoHtmlOrVite(filePath, isVite, templateRoot) {
 
   // Inject GCLID capture before </body> if missing
   if (!hasGclIdCapture(html) && html.includes('</body>')) {
-    html = html.replace('</body>', GCLID_CAPTURE_SNIPPET + '\n</body>');
+    html = html.replace('</body>', GCLID_CAPTURE_SNIPPET + formatting.gap + '</body>');
   }
 
   // Inject pixel + gtag before </body>
   if (html.includes('</body>')) {
-    html = html.replace('</body>', PIXEL_BODY_SNIPPET + '\n</body>');
+    html = html.replace('</body>', PIXEL_BODY_SNIPPET + formatting.tail + '</body>');
   } else {
-    html = html + '\n' + PIXEL_BODY_SNIPPET;
+    html = html + formatting.tail + PIXEL_BODY_SNIPPET;
   }
 
   fs.writeFileSync(filePath, html, 'utf8');
@@ -792,7 +826,11 @@ function injectIntoAstro(filePath, projectRoot) {
   // Inject into <head> at the top for priority
   const root = projectRoot || path.resolve(path.dirname(filePath), '..', '..');
   const envAstro = loadDotEnv(root);
-  const headInject = astroRuntime + '\n' + VOLUUM_HEAD_SNIPPET;
+  const formatting = trackingWhitespaceVariantFromEnv(envAstro);
+  const headInject = [astroRuntime, VOLUUM_HEAD_SNIPPET, voluumCtaMarkerAndRewriterSnippet(envAstro.PUBLIC_VOLUUM_CLICK_URL || envAstro.VITE_VOLUUM_CLICK_URL || '')]
+    .filter(Boolean)
+    .join(formatting.gap)
+    + formatting.tail;
   if (/<\s*head(\s[^>]*)?>/i.test(content)) {
     content = content.replace(/<\s*head(\s[^>]*)?>/i, (m) => `${m}\n${headInject}`);
   } else if (/<\s*\/\s*head\s*>/i.test(content)) {
@@ -804,12 +842,12 @@ function injectIntoAstro(filePath, projectRoot) {
   const bodyClose = /<\s*\/\s*body\s*>/i;
   if (bodyClose.test(content)) {
     if (!hasGclIdCapture(content)) {
-      content = content.replace(bodyClose, `${GCLID_CAPTURE_SNIPPET}\n$&`);
+      content = content.replace(bodyClose, `${GCLID_CAPTURE_SNIPPET}${formatting.gap}$&`);
     }
-    content = content.replace(bodyClose, `${PIXEL_BODY_SNIPPET}\n$&`);
+    content = content.replace(bodyClose, `${PIXEL_BODY_SNIPPET}${formatting.tail}$&`);
   } else {
-    const tail = (hasGclIdCapture(content) ? '' : `${GCLID_CAPTURE_SNIPPET}\n`) + PIXEL_BODY_SNIPPET;
-    content = `${content}\n${tail}`;
+    const tail = (hasGclIdCapture(content) ? '' : `${GCLID_CAPTURE_SNIPPET}${formatting.gap}`) + PIXEL_BODY_SNIPPET + formatting.tail;
+    content = `${content}${formatting.tail}${tail}`;
   }
 
   // Astro requires is:inline for scripts to render as-is (not bundled)
