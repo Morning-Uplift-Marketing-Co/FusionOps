@@ -22,6 +22,7 @@ import {
   identifyFramework,
   resolveEntryPoint,
 } from './template-analyzer.js';
+import { parameterizeHtmlString } from './generators/template-parameterizer.js';
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
@@ -64,7 +65,15 @@ export function buildPreviewHtml(files, site = {}, colors = null, basePath = '')
     return `<script${attrs}>${stripTypeScriptFromScript(body)}</script>`;
   });
 
-  // ─── 2c. Substitute ${varName} placeholders ─────────
+  // ─── 2c. Auto-parameterize hard-coded text (fallback for pre-parameterized templates) ───
+  // If the HTML still has hard-coded brand/domain but no ${variable} placeholders,
+  // convert them so substituteSiteVariables() can replace them.
+  const hasPlaceholders = /\$\{[a-zA-Z]+\}/.test(html);
+  if (!hasPlaceholders) {
+    html = parameterizeHtmlString(html);
+  }
+
+  // ─── 2d. Substitute ${varName} placeholders ─────────
   // Replaces ${brand}, ${h1}, ${sub}, ${cta}, ${title2}, ${amountMax}, etc.
   // with live wizard values so Bolt/HTML-static templates update in preview.
   html = substituteSiteVariables(html, site);
@@ -209,6 +218,7 @@ export function substituteSiteVariables(html, site) {
 
   const domain = String(site.domain || 'example.com');
   const vars = {
+    domain,
     brand:        String(site.brand        || ''),
     h1:           String(site.h1           || ''),
     sub:          String(site.sub          || ''),

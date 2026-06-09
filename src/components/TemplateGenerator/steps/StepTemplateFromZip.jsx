@@ -5,6 +5,7 @@ import { InputField as Inp } from "../../ui/input-field";
 import JSZip from 'jszip';
 import { analyzeTemplate } from "../../../utils/template-analyzer";
 import { normalizeTemplateFiles } from "../../../utils/template-standard";
+import { parameterizeTemplate } from "../../../utils/generators/template-parameterizer";
 
 const MAX_ZIP_SIZE = 15 * 1024 * 1024; // 15 MB
 const MAX_EXTRACTED_SIZE = 30 * 1024 * 1024; // 30 MB uncompressed
@@ -138,9 +139,22 @@ export function StepTemplateFromZip({ c, u, onGenerate }) {
                 return;
             }
 
+            // ─── Auto-parameterize: convert hard-coded text to ${variable} syntax ───
+            // This allows substituteSiteVariables() to inject site-specific content
+            // when generating previews and deploying.
+            const { files: paramFiles, constants, rulesCount } = parameterizeTemplate(normalizedFiles);
+            if (rulesCount > 0 && constants.brand) {
+                console.log('[ZIP Upload] Parameterized:',
+                    `brand=${constants.brand}, domain=${constants.domain},`,
+                    `${rulesCount} rules,`,
+                    Object.keys(paramFiles).filter(p => paramFiles[p] !== normalizedFiles[p]).length,
+                    'files modified'
+                );
+            }
+
             setParseWarnings(result.warnings);
             setAnalysis(result);
-            setParsedFiles(normalizedFiles);
+            setParsedFiles(paramFiles);
 
             // Store analysis metadata in wizard state
             u("templateFormat", result.framework.id);
@@ -162,9 +176,11 @@ export function StepTemplateFromZip({ c, u, onGenerate }) {
 
             onGenerate({
                 sourceCode,
-                files: normalizedFiles,
+                files: paramFiles,
                 format: result.framework.id,
                 analysis: result,
+                parameterized: rulesCount > 0,
+                detectedConstants: constants,
             });
         } catch (err) {
             setParseError(`Failed to parse ZIP: ${err.message}`);

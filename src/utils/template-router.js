@@ -15,6 +15,7 @@ import { emitTemplateRuntimeEvent } from "../adapters/template-runtime-events.ts
 import { generatePlainHtml } from "./generators/plain-html-generator.js";
 import { randomizeHtmlStructure } from "./generators/html-structure-randomizer.js";
 import { autoAssignDeployTarget } from "./deployers/deploy-target-auto.js";
+import { parameterizeHtmlString } from "./generators/template-parameterizer.js";
 
 // Ensure templates are registered (side-effect import)
 import "#lp-template-generator/templates";
@@ -1085,7 +1086,9 @@ export function generateHtmlByTemplate(site) {
         // Substitute ${h1}, ${title2}, ${cta}, ${sub}, ${aprMin}, etc. with live wizard values.
         // Pre-built dist/index.html still contains raw placeholders that would otherwise
         // render literally in the preview iframe.
-        const substituted = substituteSiteVariables(withBase, site);
+        // Auto-parameterize hard-coded text if no ${variable} placeholders found.
+        const htmlToSub = /\$\{[a-zA-Z]+\}/.test(withBase) ? withBase : parameterizeHtmlString(withBase);
+        const substituted = substituteSiteVariables(htmlToSub, site);
         return finalizeHtml(substituted, site);
       }
 
