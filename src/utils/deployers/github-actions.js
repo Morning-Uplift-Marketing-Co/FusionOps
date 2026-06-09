@@ -1,11 +1,9 @@
 /**
  * GitHub Actions LP Deployer
  *
- * Pushes deploy-configs/{domain}.json to the repo via GitHub Contents API.
- * This triggers .github/workflows/deploy-lp.yml (on: push: paths: deploy-configs/**.json)
- * which runs Astro build + CF Pages deploy via CI.
- *
- * Only needs PAT with "repo" scope — NO "workflow" scope required.
+ * Pushes deploy-configs/{domain}.json to the repo via GitHub Contents API,
+ * then dispatches deploy-lp.yml (Contents API pushes may not trigger push workflows).
+ * PAT needs repo scope; workflow dispatch requires actions:write (or classic workflow scope).
  *
  * Field mapping from Wizard → JSON keys is defined inline below (voluumCampaignId → voluumId, etc.).
  * Persistable Wizard keys live in src/constants/site-fields.js (SITE_FIELD_KEYS).
@@ -103,6 +101,29 @@ async function pushFile({ githubToken, repo, branch, path, content, message }) {
   const commitSha = data.commit?.sha || null;
   const commitUrl = data.commit?.html_url || `https://github.com/${repo}/commits/${branch}`;
   return { url: commitUrl, sha: commitSha };
+}
+
+async function dispatchDeployWorkflow({ githubToken, repo, branch, configFilePath }) {
+  const workflowFile = 'deploy-lp.yml';
+  const url = `${GITHUB_API}/repos/${repo}/actions/workflows/${encodeURIComponent(workflowFile)}/dispatches`;
+  const headers = {
+    Authorization: `Bearer ${githubToken}`,
+    Accept: 'application/vnd.github+json',
+    'Content-Type': 'application/json',
+    'X-GitHub-Api-Version': '2022-11-28',
+  };
+  const res = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      ref: branch,
+      inputs: { config_file: configFilePath },
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.text().catch(() => '');
+    throw new Error(`Workflow dispatch failed (${res.status}): ${err.slice(0, 300)}`);
+  }
 }
 
 /**
@@ -300,6 +321,25 @@ export async function deploy(assets, site, settings) {
       message: commitMsg,
     });
 
+    let workflowDispatched = false;
+    let workflowDispatchError = null;
+    try {
+      await dispatchDeployWorkflow({
+        githubToken,
+        repo: githubRepo,
+        branch,
+        configFilePath: filePath,
+      });
+      workflowDispatched = true;
+    } catch (e) {
+      workflowDispatchError = e?.message || 'Workflow dispatch failed';
+    }
+
+    const actionsUrl = `https://github.com/${githubRepo}/actions/workflows/deploy-lp.yml`;
+    const dispatchHint = workflowDispatched
+      ? 'CI workflow dispatched.'
+      : `CI not auto-started (${workflowDispatchError}). Run "Deploy Landing Page" manually in GitHub Actions, or add actions:write to your PAT.`;
+
     return {
       success: true,
       queued: true,
@@ -308,8 +348,11 @@ export async function deploy(assets, site, settings) {
       repo: githubRepo,
       deployId: `gh-actions-${Date.now()}`,
       target: 'github-actions',
-      message: `Pushed config → GitHub Actions building Astro. Track: https://github.com/${githubRepo}/actions`,
-      actionsUrl: `https://github.com/${githubRepo}/actions`,
+      templateId: config.templateId,
+      workflowDispatched,
+      workflowDispatchError,
+      message: `Pushed config (template: ${config.templateId}) → ${dispatchHint} Track: ${actionsUrl}`,
+      actionsUrl,
       pixelProvisioned,
       pixelError,
       pixelHealthOk,

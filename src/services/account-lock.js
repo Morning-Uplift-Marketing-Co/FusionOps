@@ -9,8 +9,98 @@
 export const LOCKED_CF_ACCOUNT_ID = import.meta.env.VITE_CF_ACCOUNT_ID || '';
 export const LOCKED_CF_API_TOKEN = import.meta.env.VITE_CF_API_TOKEN || '';
 
+/** Production CF account — keep in sync with team Cloudflare / CI secrets */
+export const PRODUCTION_CF_ACCOUNT_ID = 'ef771cfd6197dedb36bb3cea22ecf4fc';
+
 // Old account that should NEVER be used
 export const LEGACY_CF_ACCOUNT_ID = '9fa4d356e0c6fa0612b3da1e03c7e707';
+
+/** Pre-migration main D1 UUID (removed during fusionops-main-new-v2 cutover) */
+export const LEGACY_D1_MAIN_DATABASE_IDS = [
+  '7d31d941-f863-46f5-99c2-2179de821573',
+];
+
+/** Current production main D1 — keep in sync with apps/api-worker/wrangler.toml */
+export const PRODUCTION_D1_MAIN_DATABASE_ID = '4eaee76d-10fb-42a7-bb9d-50737c3da785';
+
+function normalizeD1Uuid(value) {
+  return String(value ?? '').trim().toLowerCase();
+}
+
+/** Build-time locked main D1 UUID (from .d1-db-ids / VITE_D1_MAIN_DATABASE_ID) */
+export const LOCKED_D1_MAIN_DATABASE_ID =
+  normalizeD1Uuid(import.meta.env.VITE_D1_MAIN_DATABASE_ID) ||
+  PRODUCTION_D1_MAIN_DATABASE_ID;
+
+/** When true, d1DatabaseId/cfD1DatabaseId cannot diverge from LOCKED_D1_MAIN_DATABASE_ID */
+export const D1_MAIN_DATABASE_ID_LOCKED = true;
+
+/** When true, CF account IDs in settings/profiles cannot diverge from locked production account */
+export const CF_ACCOUNT_ID_LOCKED = true;
+
+function normalizeCfAccountId(value) {
+  return String(value ?? '').trim().toLowerCase();
+}
+
+/** Resolved locked CF account (env wins, else production constant) */
+export function getLockedCfAccountId() {
+  return normalizeCfAccountId(LOCKED_CF_ACCOUNT_ID) || PRODUCTION_CF_ACCOUNT_ID;
+}
+
+/**
+ * Force cfProfiles[].accountId (and optional apiToken) to locked env values.
+ * Prevents stale Neon/localStorage profiles from drifting to legacy/wrong accounts.
+ */
+export function sanitizeCfProfiles(profiles) {
+  if (!Array.isArray(profiles)) return profiles;
+  const lockedAccount = getLockedCfAccountId();
+  return profiles.map((profile) => {
+    const next = { ...profile };
+    const accountId = normalizeCfAccountId(next.accountId);
+    if (accountId === LEGACY_CF_ACCOUNT_ID.toLowerCase() || CF_ACCOUNT_ID_LOCKED) {
+      next.accountId = lockedAccount;
+    }
+    if (CF_ACCOUNT_ID_LOCKED && LOCKED_CF_API_TOKEN) {
+      next.apiToken = LOCKED_CF_API_TOKEN;
+    }
+    return next;
+  });
+}
+
+export function isLegacyD1MainId(id) {
+  const normalized = normalizeD1Uuid(id);
+  return Boolean(
+    normalized && LEGACY_D1_MAIN_DATABASE_IDS.some((legacyId) => normalizeD1Uuid(legacyId) === normalized)
+  );
+}
+
+/**
+ * Merge d1DatabaseId + cfD1DatabaseId and migrate known deleted main DB UUIDs.
+ * Settings UI writes d1DatabaseId; Neon often stores cfD1DatabaseId only.
+ */
+export function resolveD1DatabaseIds(settings = {}) {
+  let d1DatabaseId = normalizeD1Uuid(settings.d1DatabaseId);
+  let cfD1DatabaseId = normalizeD1Uuid(settings.cfD1DatabaseId);
+
+  if (isLegacyD1MainId(d1DatabaseId)) d1DatabaseId = LOCKED_D1_MAIN_DATABASE_ID;
+  if (isLegacyD1MainId(cfD1DatabaseId)) cfD1DatabaseId = LOCKED_D1_MAIN_DATABASE_ID;
+
+  if (d1DatabaseId && cfD1DatabaseId && d1DatabaseId !== cfD1DatabaseId) {
+    // Settings UI is the explicit user edit path — do not let stale cf* overwrite it.
+    cfD1DatabaseId = d1DatabaseId;
+  } else if (d1DatabaseId && !cfD1DatabaseId) {
+    cfD1DatabaseId = d1DatabaseId;
+  } else if (cfD1DatabaseId && !d1DatabaseId) {
+    d1DatabaseId = cfD1DatabaseId;
+  }
+
+  if (D1_MAIN_DATABASE_ID_LOCKED && LOCKED_D1_MAIN_DATABASE_ID) {
+    d1DatabaseId = LOCKED_D1_MAIN_DATABASE_ID;
+    cfD1DatabaseId = LOCKED_D1_MAIN_DATABASE_ID;
+  }
+
+  return { d1DatabaseId, cfD1DatabaseId };
+}
 
 /**
  * Validate that a given account ID matches the locked account
@@ -102,11 +192,14 @@ export function sanitizeSettings(settings) {
   const sanitized = { ...settings };
 
   // CRITICAL: ALWAYS enforce the locked Cloudflare account
-  if (LOCKED_CF_ACCOUNT_ID) sanitized.cfAccountId = LOCKED_CF_ACCOUNT_ID;
+  if (CF_ACCOUNT_ID_LOCKED) {
+    sanitized.cfAccountId = getLockedCfAccountId();
+    if (!sanitized.d1AccountId) sanitized.d1AccountId = getLockedCfAccountId();
+  } else {
+    if (LOCKED_CF_ACCOUNT_ID) sanitized.cfAccountId = LOCKED_CF_ACCOUNT_ID;
+    if (!sanitized.d1AccountId && LOCKED_CF_ACCOUNT_ID) sanitized.d1AccountId = LOCKED_CF_ACCOUNT_ID;
+  }
   if (LOCKED_CF_API_TOKEN) sanitized.cfApiToken = LOCKED_CF_API_TOKEN;
-
-  // Auto-fill D1 credentials from locked Cloudflare credentials when missing
-  if (!sanitized.d1AccountId && LOCKED_CF_ACCOUNT_ID) sanitized.d1AccountId = LOCKED_CF_ACCOUNT_ID;
   if (!sanitized.d1ApiToken && LOCKED_CF_API_TOKEN) sanitized.d1ApiToken = LOCKED_CF_API_TOKEN;
 
   // Remove any legacy account references
@@ -139,6 +232,21 @@ export function sanitizeSettings(settings) {
   // Remove any legacy account references
   if (sanitized.d1AccountId === LEGACY_CF_ACCOUNT_ID) {
     delete sanitized.d1AccountId;
+  }
+
+  const d1Ids = resolveD1DatabaseIds(sanitized);
+  if (d1Ids.d1DatabaseId) sanitized.d1DatabaseId = d1Ids.d1DatabaseId;
+  else delete sanitized.d1DatabaseId;
+  if (d1Ids.cfD1DatabaseId) sanitized.cfD1DatabaseId = d1Ids.cfD1DatabaseId;
+  else delete sanitized.cfD1DatabaseId;
+
+  if (LOCKED_D1_MAIN_DATABASE_ID) {
+    sanitized.d1DatabaseId = LOCKED_D1_MAIN_DATABASE_ID;
+    sanitized.cfD1DatabaseId = LOCKED_D1_MAIN_DATABASE_ID;
+  }
+
+  if (Array.isArray(sanitized.cfProfiles)) {
+    sanitized.cfProfiles = sanitizeCfProfiles(sanitized.cfProfiles);
   }
 
   console.log('[AccountLock] Settings sanitized - critical values locked');
@@ -318,12 +426,11 @@ export function autoRecoverSettings(neonSettings, localStorageSettings = {}) {
     ),
   };
 
-  // Neon console often stores D1 UUID under cfD1DatabaseId; D1 REST + Settings UI use d1DatabaseId.
-  // If both rows exist but only cf* was updated, keep app + Sync Neon→D1 aligned with cf*.
-  const cfD1 = recovered.cfD1DatabaseId;
-  if (cfD1 != null && String(cfD1).trim() !== "") {
-    recovered.d1DatabaseId = String(cfD1).trim();
-  }
+  const d1Ids = resolveD1DatabaseIds(recovered);
+  if (d1Ids.d1DatabaseId) recovered.d1DatabaseId = d1Ids.d1DatabaseId;
+  else delete recovered.d1DatabaseId;
+  if (d1Ids.cfD1DatabaseId) recovered.cfD1DatabaseId = d1Ids.cfD1DatabaseId;
+  else delete recovered.cfD1DatabaseId;
 
   // CRITICAL: Always enforce locked values
   const sanitized = sanitizeSettings(recovered);

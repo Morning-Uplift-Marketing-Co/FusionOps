@@ -1,4 +1,25 @@
 // Simple logging utility
+import { resolveD1DatabaseIds, sanitizeSettings } from '../services/account-lock.js';
+
+function healSettingsIfNeeded(raw) {
+    if (!raw || typeof raw !== 'object') return raw;
+    const resolved = resolveD1DatabaseIds(raw);
+    const stale =
+        (raw.d1DatabaseId && resolved.d1DatabaseId && raw.d1DatabaseId !== resolved.d1DatabaseId) ||
+        (raw.cfD1DatabaseId && resolved.cfD1DatabaseId && raw.cfD1DatabaseId !== resolved.cfD1DatabaseId);
+    if (!stale) return sanitizeSettings(raw);
+    return sanitizeSettings({
+        ...raw,
+        d1DatabaseId: resolved.d1DatabaseId,
+        cfD1DatabaseId: resolved.cfD1DatabaseId,
+    });
+}
+
+function writeStorageKeys(k, serialized) {
+    localStorage.setItem(STORAGE_PREFIX + k, serialized);
+    localStorage.setItem(LEGACY_PREFIX + k, serialized);
+}
+
 const logger = {
     warn: (msg, ...args) => {
         if (import.meta.env?.DEV) {
@@ -28,7 +49,16 @@ export const LS = {
     get(k) {
         try {
             const item = localStorage.getItem(STORAGE_PREFIX + k) ?? localStorage.getItem(LEGACY_PREFIX + k);
-            return item ? JSON.parse(item) : null;
+            if (!item) return null;
+            const parsed = JSON.parse(item);
+            if (k !== 'settings') return parsed;
+            const healed = healSettingsIfNeeded(parsed);
+            if (JSON.stringify(healed) !== JSON.stringify(parsed)) {
+                try {
+                    writeStorageKeys(k, JSON.stringify(healed));
+                } catch (_e) { /* quota */ }
+            }
+            return healed;
         } catch (e) {
             logger.warn(`Failed to get "${k}":`, e.message);
             return null;
@@ -36,10 +66,10 @@ export const LS = {
     },
     set(k, v) {
         try {
-            const serialized = JSON.stringify(v);
+            const value = k === 'settings' ? healSettingsIfNeeded(v) : v;
+            const serialized = JSON.stringify(value);
             // Keep both namespaced and legacy keys in sync for backward compatibility.
-            localStorage.setItem(STORAGE_PREFIX + k, serialized);
-            localStorage.setItem(LEGACY_PREFIX + k, serialized);
+            writeStorageKeys(k, serialized);
             return true;
         } catch (e) {
             // Log quota exceeded or other storage errors

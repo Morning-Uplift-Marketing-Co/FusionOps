@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
 
 import { InputField as Inp, SelectField as Sel } from "./ui/input-field";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -12,7 +12,8 @@ function neonEndpointHost(conn) {
 }
 import { multiloginApi } from "../services/multilogin";
 import { getCfApiBase } from "../utils/api-proxy";
-import { detectIncompleteSettings } from "../services/account-lock";
+import { detectIncompleteSettings, CF_ACCOUNT_ID_LOCKED, D1_MAIN_DATABASE_ID_LOCKED, getLockedCfAccountId, isLegacyD1MainId, LOCKED_CF_ACCOUNT_ID, LOCKED_CF_API_TOKEN, LOCKED_D1_MAIN_DATABASE_ID, PRODUCTION_D1_MAIN_DATABASE_ID, resolveD1DatabaseIds, sanitizeCfProfiles } from "../services/account-lock";
+import { DEFAULT_MAIN_D1_NAME, listAllCfD1Databases, matchD1Database, normalizeUuid } from "../utils/d1-cloudflare-list";
 import { migrateSitesToD1 } from "../services/d1";
 import { loadSites } from "../services/neon";
 import { syncCloudflareRepoSecrets, isLikelyMaskedGithubSecret } from "../utils/github-repo-secrets";
@@ -163,10 +164,10 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk, sitesCou
     const [cfProfiles, setCfProfiles] = useState(() => {
         const saved = asArray(settings.cfProfiles);
         // Migrate legacy single-account into profiles if needed
-        if (saved.length === 0 && (settings.cfAccountId || settings.cfApiToken)) {
-            return [{ id: "legacy", name: "Default", accountId: settings.cfAccountId || "", apiToken: settings.cfApiToken || "" }];
-        }
-        return saved;
+        let profiles = saved.length === 0 && (settings.cfAccountId || settings.cfApiToken)
+            ? [{ id: "legacy", name: "Default", accountId: settings.cfAccountId || "", apiToken: settings.cfApiToken || "" }]
+            : saved;
+        return sanitizeCfProfiles(profiles);
     });
     const [editingProfile, setEditingProfile] = useState(null); // null | profile obj
     const [profileTestResult, setProfileTestResult] = useState({});
@@ -184,11 +185,29 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk, sitesCou
 
     // D1 Database credentials
     const [d1AccountId, setD1AccountId] = useState(settings.d1AccountId || "");
-    const [d1DatabaseId, setD1DatabaseId] = useState(settings.d1DatabaseId || "");
+    const [d1DatabaseId, setD1DatabaseId] = useState(() => resolveD1DatabaseIds(settings).d1DatabaseId || "");
     const [d1ApiToken, setD1ApiToken] = useState(settings.d1ApiToken || "");
     const [d1Result, setD1Result] = useState(null);
     const [d1MigrateResult, setD1MigrateResult] = useState(null);
     const [migrating, setMigrating] = useState(false);
+    const legacyD1HealAttempted = useRef(false);
+
+    useEffect(() => {
+        const resolved = resolveD1DatabaseIds(settings);
+        if (!resolved.d1DatabaseId) return;
+        setD1DatabaseId((prev) => (prev === resolved.d1DatabaseId ? prev : resolved.d1DatabaseId));
+    }, [settings.d1DatabaseId, settings.cfD1DatabaseId]);
+
+    useLayoutEffect(() => {
+        const resolved = resolveD1DatabaseIds(settings);
+        const hadLegacy =
+            isLegacyD1MainId(settings.d1DatabaseId) ||
+            isLegacyD1MainId(settings.cfD1DatabaseId) ||
+            isLegacyD1MainId(d1DatabaseId);
+        if (!hadLegacy || !resolved.d1DatabaseId) return;
+        if (normalizeUuid(d1DatabaseId) === resolved.d1DatabaseId) return;
+        setD1DatabaseId(resolved.d1DatabaseId);
+    }, [settings.d1DatabaseId, settings.cfD1DatabaseId, d1DatabaseId]);
 
     // NodeMaven Proxy Pre-flight
     const [nmProxyUser, setNmProxyUser] = useState(settings.nmProxyUser || "");
@@ -266,30 +285,49 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk, sitesCou
 
     // ── CF Profile helpers ──
     const saveCfProfiles = (profiles) => {
-        setCfProfiles(profiles);
+        const sanitized = sanitizeCfProfiles(profiles);
+        setCfProfiles(sanitized);
         // Also set legacy single fields to first profile for backward compat
-        const primary = profiles[0];
+        const primary = sanitized[0];
         save({
-            cfProfiles: profiles,
+            cfProfiles: sanitized,
             cfAccountId: primary?.accountId || "",
             cfApiToken: primary?.apiToken || "",
         });
     };
 
+    useEffect(() => {
+        if (!CF_ACCOUNT_ID_LOCKED) return;
+        const healed = sanitizeCfProfiles(cfProfiles);
+        if (JSON.stringify(healed) !== JSON.stringify(cfProfiles)) {
+            saveCfProfiles(healed);
+        }
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
     const addCfProfile = () => {
-        setEditingProfile({ id: `cf_${Date.now()}`, name: "", accountId: "", apiToken: "" });
+        setEditingProfile({
+            id: `cf_${Date.now()}`,
+            name: "",
+            accountId: CF_ACCOUNT_ID_LOCKED ? getLockedCfAccountId() : "",
+            apiToken: CF_ACCOUNT_ID_LOCKED && LOCKED_CF_API_TOKEN ? LOCKED_CF_API_TOKEN : "",
+        });
     };
 
     const saveEditingProfile = () => {
-        if (!editingProfile?.name?.trim() || !editingProfile?.accountId?.trim() || !editingProfile?.apiToken?.trim()) return;
-        const cleanId = editingProfile.accountId.trim();
+        if (!editingProfile?.name?.trim() || !editingProfile?.apiToken?.trim()) return;
+        const cleanId = CF_ACCOUNT_ID_LOCKED
+            ? getLockedCfAccountId()
+            : editingProfile.accountId.trim();
         if (!/^[0-9a-f]{32}$/i.test(cleanId)) return;
-        const updated = {
+        const updated = sanitizeCfProfiles([{
             ...editingProfile,
             accountId: cleanId,
+            apiToken: CF_ACCOUNT_ID_LOCKED && LOCKED_CF_API_TOKEN
+                ? LOCKED_CF_API_TOKEN
+                : editingProfile.apiToken.trim(),
             // Persist optional read-only token (trimmed; empty string drops the field cleanly)
             readApiToken: String(editingProfile.readApiToken || "").trim(),
-        };
+        }])[0];
         const exists = cfProfiles.find(p => p.id === updated.id);
         const newList = exists
             ? cfProfiles.map(p => p.id === updated.id ? updated : p)
@@ -304,14 +342,17 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk, sitesCou
     };
 
     const testCfProfile = async (profile) => {
-        const cleanId = profile.accountId?.trim();
+        const cleanId = (CF_ACCOUNT_ID_LOCKED ? getLockedCfAccountId() : profile.accountId)?.trim();
         if (!/^[0-9a-f]{32}$/i.test(cleanId)) {
             setProfileTestResult(p => ({ ...p, [profile.id]: { ok: false, msg: `Account ID must be 32 hex chars (got ${cleanId?.length})` } }));
             return;
         }
         const cfBase = getCfApiBase();
-        // Prefer the read-only token when present so Test clicks don't drain the deploy token's 10429 bucket.
-        const testToken = String(profile.readApiToken || "").trim() || profile.apiToken;
+        // Prefer read-only token, then profile token, then locked env token
+        const testToken =
+            String(profile.readApiToken || "").trim() ||
+            String(profile.apiToken || "").trim() ||
+            String(LOCKED_CF_API_TOKEN || "").trim();
         try {
             const r = await fetch(`${cfBase}/accounts/${cleanId}/pages/projects?per_page=1`, {
                 headers: { Authorization: `Bearer ${testToken}` },
@@ -550,11 +591,28 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk, sitesCou
         }
     };
 
+    const fixStaleD1Id = async () => {
+        const id = LOCKED_D1_MAIN_DATABASE_ID;
+        const cleanId = d1AccountId.trim();
+        setD1DatabaseId(id);
+        await save({
+            d1AccountId: cleanId,
+            d1DatabaseId: id,
+            cfD1DatabaseId: id,
+            d1ApiToken,
+        });
+        setD1Result({ success: true, database: { name: DEFAULT_MAIN_D1_NAME, uuid: id } });
+    };
+
+    const staleD1InSettings =
+        isLegacyD1MainId(d1DatabaseId) ||
+        isLegacyD1MainId(settings.d1DatabaseId) ||
+        isLegacyD1MainId(settings.cfD1DatabaseId);
+
     const testD1 = async () => {
         setTesting("d1");
         let requestUrl = "";
         try {
-            // Validate Account ID format
             const cleanId = d1AccountId.trim();
             if (!/^[0-9a-f]{32}$/i.test(cleanId)) {
                 setD1Result({ success: false, error: `Account ID must be exactly 32 hex characters (got ${cleanId.length})` });
@@ -562,31 +620,64 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk, sitesCou
                 return;
             }
 
-            // Test by listing D1 databases in the account
+            const effectiveIds = resolveD1DatabaseIds({
+                d1DatabaseId,
+                cfD1DatabaseId: settings.cfD1DatabaseId,
+            });
+            let effectiveDbId = effectiveIds.d1DatabaseId;
+            if (effectiveDbId && effectiveDbId !== String(d1DatabaseId || "").trim().toLowerCase()) {
+                setD1DatabaseId(effectiveDbId);
+            }
+
             const cfBase = getCfApiBase();
             requestUrl = `${cfBase}/accounts/${cleanId}/d1/database`;
-            const res = await fetch(requestUrl, {
-                headers: { Authorization: `Bearer ${d1ApiToken}` },
-            });
+            const dbList = await listAllCfD1Databases(cfBase, cleanId, d1ApiToken);
 
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({}));
-                const msg = err.errors?.[0]?.message || `HTTP ${res.status}`;
-                setD1Result({ success: false, error: msg, url: requestUrl });
-            } else {
-                const data = await res.json();
-                // Verify the specific database exists if databaseId is provided
-                if (d1DatabaseId) {
-                    const dbExists = data.result?.some(db => db.uuid === d1DatabaseId || db.id === d1DatabaseId);
-                    if (dbExists) {
-                        const dbInfo = data.result.find(db => db.uuid === d1DatabaseId || db.id === d1DatabaseId);
-                        setD1Result({ success: true, database: dbInfo });
-                    } else {
-                        setD1Result({ success: false, error: `Database ID ${d1DatabaseId} not found in account` });
-                    }
-                } else {
-                    setD1Result({ success: true, count: data.result?.length || 0 });
+            if (effectiveDbId) {
+                let dbInfo = matchD1Database(dbList, effectiveDbId, DEFAULT_MAIN_D1_NAME);
+                const matchedUuid = dbInfo ? normalizeUuid(dbInfo.uuid || dbInfo.id) : "";
+
+                if (dbInfo && matchedUuid && matchedUuid !== normalizeUuid(effectiveDbId)) {
+                    effectiveDbId = matchedUuid;
+                    setD1DatabaseId(matchedUuid);
+                    await setSettings({
+                        d1AccountId: cleanId,
+                        d1DatabaseId: matchedUuid,
+                        cfD1DatabaseId: matchedUuid,
+                        d1ApiToken,
+                    }).catch(() => { });
                 }
+
+                if (dbInfo) {
+                    setD1Result({ success: true, database: dbInfo });
+                } else {
+                    const mainByName = dbList.find(
+                        (db) => normalizeUuid(db.name) === normalizeUuid(DEFAULT_MAIN_D1_NAME)
+                    ) || dbList.find(
+                        (db) => normalizeUuid(db.uuid || db.id) === normalizeUuid(LOCKED_D1_MAIN_DATABASE_ID)
+                    );
+                    if (mainByName && (isLegacyD1MainId(effectiveDbId) || isLegacyD1MainId(d1DatabaseId))) {
+                        const healedUuid = normalizeUuid(mainByName.uuid || mainByName.id);
+                        setD1DatabaseId(healedUuid);
+                        await setSettings({
+                            d1AccountId: cleanId,
+                            d1DatabaseId: healedUuid,
+                            cfD1DatabaseId: healedUuid,
+                            d1ApiToken,
+                        }).catch(() => { });
+                        setD1Result({ success: true, database: mainByName, autoHealed: true });
+                    } else {
+                        const legacyHint = isLegacyD1MainId(effectiveDbId)
+                            ? ` (legacy ID — use ${PRODUCTION_D1_MAIN_DATABASE_ID} / ${DEFAULT_MAIN_D1_NAME})`
+                            : "";
+                        const availableHint = dbList.length > 0
+                            ? `. Available: ${dbList.slice(0, 5).map((db) => `${db.name || "?"}=${db.uuid || db.id}`).join(", ")}`
+                            : "";
+                        setD1Result({ success: false, error: `Database ID ${effectiveDbId} not found in account${legacyHint}${availableHint}` });
+                    }
+                }
+            } else {
+                setD1Result({ success: true, count: dbList.length });
             }
         } catch (e) {
             setD1Result({
@@ -688,6 +779,22 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk, sitesCou
             requestAnimationFrame(restore);
         }
     };
+
+    useEffect(() => {
+        if (legacyD1HealAttempted.current) return;
+        const hadLegacy =
+            isLegacyD1MainId(settings.d1DatabaseId) ||
+            isLegacyD1MainId(settings.cfD1DatabaseId);
+        const resolved = resolveD1DatabaseIds(settings);
+        if (!hadLegacy || !resolved.d1DatabaseId) return;
+        legacyD1HealAttempted.current = true;
+        setSettings({
+            d1AccountId: settings.d1AccountId || d1AccountId,
+            d1DatabaseId: resolved.d1DatabaseId,
+            cfD1DatabaseId: resolved.cfD1DatabaseId,
+            d1ApiToken: settings.d1ApiToken || d1ApiToken,
+        }).catch(() => { legacyD1HealAttempted.current = false; });
+    }, [settings, setSettings, d1AccountId, d1ApiToken]);
 
     const Lbl = ({ children }) => <span className="text-[10px] text-[hsl(var(--muted-foreground))] block mb-0.5">{children}</span>;
 
@@ -909,8 +1016,37 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk, sitesCou
                             <CardHeader><CardTitle>☁️ Cloudflare D1 Database</CardTitle></CardHeader>
                             <CardContent className="flex flex-col gap-2">
                                 <p className="text-[11px] text-[hsl(var(--muted-foreground))] -mt-2 mb-1">Edge SQL database for low-latency queries</p>
+                                {staleD1InSettings && (
+                                    <div className="rounded-md border border-[hsl(var(--destructive))]/40 bg-[hsl(var(--destructive))]/10 p-2.5 text-[11px] leading-relaxed">
+                                        <strong className="text-[hsl(var(--destructive))]">Legacy D1 ID detected</strong> — ค่าเก่า <code className="text-[10px]">7d31d941-...</code> ถูกลบจาก account แล้ว
+                                        <br />
+                                        ใช้ <code className="text-[10px]">{LOCKED_D1_MAIN_DATABASE_ID}</code> ({DEFAULT_MAIN_D1_NAME})
+                                    </div>
+                                )}
                                 <div><Lbl>Account ID <Hex32IdHint value={d1AccountId} /></Lbl><Inp value={d1AccountId} onChange={setD1AccountId} placeholder="32-char hex account ID" /></div>
-                                <div><Lbl>Database ID (UUID)</Lbl><Inp value={d1DatabaseId} onChange={setD1DatabaseId} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" /></div>
+                                <div>
+                                    <Lbl>Database ID (UUID){D1_MAIN_DATABASE_ID_LOCKED ? " 🔒 Locked" : ""}</Lbl>
+                                    {D1_MAIN_DATABASE_ID_LOCKED ? (
+                                        <div
+                                            className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))]/40 px-3 py-2 font-mono text-[12px] text-[hsl(var(--foreground))] opacity-80 select-text"
+                                            aria-readonly="true"
+                                            title={`Locked to ${DEFAULT_MAIN_D1_NAME} — ห้ามแก้`}
+                                        >
+                                            {LOCKED_D1_MAIN_DATABASE_ID}
+                                        </div>
+                                    ) : (
+                                        <Inp
+                                            value={d1DatabaseId}
+                                            onChange={setD1DatabaseId}
+                                            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                                        />
+                                    )}
+                                    {D1_MAIN_DATABASE_ID_LOCKED && (
+                                        <p className="text-[10px] text-[hsl(var(--muted-foreground))] mt-0.5">
+                                            🔒 {DEFAULT_MAIN_D1_NAME} — sync จาก wrangler.toml / .d1-db-ids (แก้ไม่ได้ใน UI)
+                                        </p>
+                                    )}
+                                </div>
                                 <div><Lbl>API Token</Lbl><Inp type="password" value={d1ApiToken} onChange={setD1ApiToken} placeholder="Cloudflare API Token with D1 permissions" /></div>
                                 {d1Result && (
                                     <div className={`text-[11px] ${d1Result.success ? "text-[hsl(var(--success))]" : "text-[hsl(var(--destructive))]"}`}>
@@ -926,7 +1062,10 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk, sitesCou
                                 )}
                                 <div className="flex gap-1.5 flex-wrap">
                                     <Button variant="ghost" onClick={testD1} disabled={!d1AccountId || !d1ApiToken || testing === "d1"} className="text-xs">{testing === "d1" ? "..." : "🔑 Test"}</Button>
-                                    <Button onClick={() => { const cleanId = d1AccountId.trim(); if (cleanId && !/^[0-9a-f]{32}$/i.test(cleanId)) { setD1Result({ success: false, error: `Account ID must be exactly 32 hex characters (got ${cleanId.length})` }); return; } save({ d1AccountId: cleanId, d1DatabaseId, d1ApiToken }); }} disabled={saving} className="text-xs">{saving ? "Saving..." : "💾 Save"}</Button>
+                                    {staleD1InSettings && (
+                                        <Button variant="ghost" onClick={fixStaleD1Id} disabled={saving} className="text-xs text-[hsl(var(--warning))]">🔧 Fix D1 ID</Button>
+                                    )}
+                                    <Button onClick={() => { const cleanId = d1AccountId.trim(); if (cleanId && !/^[0-9a-f]{32}$/i.test(cleanId)) { setD1Result({ success: false, error: `Account ID must be exactly 32 hex characters (got ${cleanId.length})` }); return; } const lockedDbId = LOCKED_D1_MAIN_DATABASE_ID; save({ d1AccountId: cleanId, d1DatabaseId: lockedDbId, cfD1DatabaseId: lockedDbId, d1ApiToken }); }} disabled={saving} className="text-xs">{saving ? "Saving..." : "💾 Save"}</Button>
                                     <Button variant="ghost" onClick={migrateNeonToD1} disabled={migrating || !neonOk} className="text-xs" title={!neonOk ? "Neon must be connected first" : "Copy all sites from Neon → D1"}>{migrating ? "⏳ Syncing..." : "🔄 Sync Neon→D1"}</Button>
                                 </div>
                             </CardContent>
@@ -1020,7 +1159,19 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk, sitesCou
                                             {cfProfiles.find(p => p.id === editingProfile.id) ? "Edit Profile" : "New Profile"}
                                         </div>
                                         <div><Lbl>Profile Name</Lbl><Inp value={editingProfile.name} onChange={v => setEditingProfile(p => ({...p, name: v}))} placeholder="e.g. MCC-Alpha, Pet Sites, Loan Sites" /></div>
-                                        <div><Lbl>Account ID <Hex32IdHint value={editingProfile.accountId} /></Lbl><Inp value={editingProfile.accountId} onChange={v => setEditingProfile(p => ({...p, accountId: v}))} placeholder="32-char hex ID" /></div>
+                                        <div>
+                                            <Lbl>Account ID{CF_ACCOUNT_ID_LOCKED ? " 🔒 Locked" : ""} <Hex32IdHint value={CF_ACCOUNT_ID_LOCKED ? getLockedCfAccountId() : editingProfile.accountId} /></Lbl>
+                                            {CF_ACCOUNT_ID_LOCKED ? (
+                                                <div
+                                                    className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))]/40 px-3 py-2 font-mono text-[12px] text-[hsl(var(--foreground))] opacity-80 select-text"
+                                                    aria-readonly="true"
+                                                >
+                                                    {getLockedCfAccountId()}
+                                                </div>
+                                            ) : (
+                                                <Inp value={editingProfile.accountId} onChange={v => setEditingProfile(p => ({...p, accountId: v}))} placeholder="32-char hex ID" />
+                                            )}
+                                        </div>
                                         <div><Lbl>API Token <span className="text-[9px] text-[hsl(var(--muted-foreground))]">(deploy — Pages:Edit, Workers:Edit, etc.)</span></Lbl><Inp type="password" value={editingProfile.apiToken} onChange={v => setEditingProfile(p => ({...p, apiToken: v}))} placeholder="Bearer token..." /></div>
                                         <div>
                                             <Lbl>
@@ -1035,7 +1186,7 @@ export function Settings({ settings, setSettings, stats, apiOk, neonOk, sitesCou
                                             />
                                         </div>
                                         <div className="flex gap-1.5 pt-1">
-                                            <Button onClick={saveEditingProfile} disabled={!editingProfile.name?.trim() || !editingProfile.accountId?.trim() || !editingProfile.apiToken?.trim()} className="text-xs">💾 Save Profile</Button>
+                                            <Button onClick={saveEditingProfile} disabled={!editingProfile.name?.trim() || (!CF_ACCOUNT_ID_LOCKED && !editingProfile.accountId?.trim()) || !editingProfile.apiToken?.trim()} className="text-xs">💾 Save Profile</Button>
                                             <Button variant="ghost" onClick={() => setEditingProfile(null)} className="text-xs">Cancel</Button>
                                         </div>
                                     </div>

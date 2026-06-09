@@ -47,6 +47,21 @@ if (!process.env.VITE_PROXY_RESOLVE_RELAY) {
 // Get API base URL from environment or use default
 const API_BASE = process.env.VITE_API_BASE || 'https://lp-factory-api.misty-feather-556e.workers.dev';
 
+function readD1MainIdFromRepoFile() {
+  try {
+    const raw = fs.readFileSync(path.resolve(process.cwd(), '.d1-db-ids'), 'utf8');
+    const match = raw.match(/D1_MAIN_ID="([^"]+)"/);
+    return match?.[1]?.trim() || '';
+  } catch {
+    return '';
+  }
+}
+
+const D1_MAIN_DATABASE_ID =
+  process.env.VITE_D1_MAIN_DATABASE_ID ||
+  readD1MainIdFromRepoFile() ||
+  '4eaee76d-10fb-42a7-bb9d-50737c3da785';
+
 export default defineConfig({
   integrations: [react()],
   // Pin dev port so Playwright webServer.url matches. Avoid 8888 on Windows: it often falls in
@@ -54,18 +69,23 @@ export default defineConfig({
   server: {
     port: 4321,
     strictPort: true,
+    host: true,
   },
   vite: {
     plugins: [tailwindcss()],
     // Playwright sets VITE_E2E=1 on the dev server process; Vite does not expose ad-hoc env to client by default
     define: {
       'import.meta.env.VITE_E2E': JSON.stringify(process.env.VITE_E2E || ''),
+      'import.meta.env.VITE_D1_MAIN_DATABASE_ID': JSON.stringify(D1_MAIN_DATABASE_ID),
     },
     server: {
       port: 4321,
       strictPort: true,
       host: true,
       fs: { allow: ['../..', '.'] },
+      watch: {
+        ignored: ['**/.claude/**', '**/coverage/**', '**/node_modules/**', '**/dist/**'],
+      },
       proxy: {
         '/api': {
           target: API_BASE.replace(/\/api$/, ''),

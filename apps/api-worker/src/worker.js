@@ -162,7 +162,7 @@ export default {
       // /api/stats: lightweight stats
       // /api/init: full bootstrap (handler dispatch below also matches both)
       {
-        const initRes = await handleInitRoute({ db, path, method });
+        const initRes = await handleInitRoute({ db, neonSql, path, method });
         if (initRes) return initRes;
       }
 

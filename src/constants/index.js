@@ -115,7 +115,7 @@ export const WIZARD_DEFAULTS = {
     voluumCampaignId: "", voluumCampaignName: "", voluumTrackingDomain: "",
     voluumLanderTrackingUrl: "", voluumLanderId: "", voluumOfferId: "",
     deployOnBuild: true,
-    deployTarget: "cf-pages",
+    deployTarget: "github-actions",
     aid: "14881", network: "LeadsGate",
     lang: "English",
     /** Landing page: show customer review cards (PUBLIC_REVIEWS). Set false to hide on deployed LP. */

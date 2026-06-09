@@ -97,18 +97,34 @@ async function cfFetch(url, opts = {}) {
   return { ok: res.ok, status: res.status, json };
 }
 
-function buildPagesProjectName(site) {
-  const slug = (site.domain || site.brand || "lp")
+/** Match github-actions deploy config: site.cfPagesProject || lp-{domain-slug} */
+export function resolvePagesProjectName(site) {
+  const fromSite = String(site?.cfPagesProject || "").trim();
+  if (fromSite) return fromSite;
+  const slug = (site?.domain || site?.brand || "lp")
     .toLowerCase()
     .replace(/[^a-z0-9]/g, "-")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 40);
-  return `lp-${slug}-${String(site.id || "x").slice(0, 6)}`;
+  return `lp-${slug}`;
+}
+
+/** CF Pages manifest: keep /index.html + /apply.html; drop bare / and /apply duplicates */
+export function normalizePagesFileEntries(fileEntries) {
+  const entries = { ...fileEntries };
+  if (entries["/index.html"] != null && entries["/"] != null) {
+    delete entries["/"];
+  }
+  if (entries["/apply.html"] != null && entries["/apply"] != null) {
+    delete entries["/apply"];
+  }
+  return entries;
 }
 
 function inferContentType(filePath) {
   const p = String(filePath || "").toLowerCase();
+  if (p === "/" || p === "/apply" || p.endsWith("/")) return "text/html; charset=utf-8";
   if (p.endsWith(".html") || p.endsWith(".htm")) return "text/html; charset=utf-8";
   if (p.endsWith(".js") || p.endsWith(".mjs")) return "application/javascript; charset=utf-8";
   if (p.endsWith(".css")) return "text/css; charset=utf-8";
@@ -206,13 +222,16 @@ export async function deploy(content, site, settings) {
   }
 
   // Normalize content: string → single file, object → multi-file
-  const fileEntries = typeof content === "string"
-    ? { "/index.html": content }
-    : Object.fromEntries(
-        Object.entries(content).map(([k, v]) => [k.startsWith("/") ? k : `/${k}`, v])
-      );
+  const fileEntries = normalizePagesFileEntries(
+    typeof content === "string"
+      ? { "/index.html": content }
+      : Object.fromEntries(
+          Object.entries(content).map(([k, v]) => [k.startsWith("/") ? k : `/${k}`, v])
+        )
+  );
 
-  const projectName = buildPagesProjectName(site);
+  const projectName = resolvePagesProjectName(site);
+
   const apiAuth = { Authorization: `Bearer ${cfApiToken}` };
   const cfBase = getCfApiBase();
   const projectsUrl = `${cfBase}/accounts/${cfAccountId}/pages/projects`;
@@ -268,8 +287,10 @@ export async function deploy(content, site, settings) {
     // ── Step 5: Upload missing files ───────────────────────────────
     if (missingHashes.length > 0) {
       const uploadPayload = [];
+      const seenHashes = new Set();
       for (const [filePath, file] of Object.entries(fileDataMap)) {
-        if (!missingHashes.includes(file.hash)) continue;
+        if (!missingHashes.includes(file.hash) || seenHashes.has(file.hash)) continue;
+        seenHashes.add(file.hash);
         // Convert file content to base64 safely (spread operator fails > 65KB)
         let b64 = "";
         const CHUNK = 0x8000; // 32KB chunks
@@ -291,7 +312,15 @@ export async function deploy(content, site, settings) {
           { method: "POST", headers: jwtAuth, body: JSON.stringify(uploadPayload) }
         );
         if (!uploadRes.ok) {
-          return { success: false, error: `File upload failed: ${uploadRes.json.errors?.[0]?.message || uploadRes.status}` };
+          const cfErr = uploadRes.json?.errors?.[0];
+          const detail =
+            cfErr?.message ||
+            cfErr?.code ||
+            (uploadRes.json && Object.keys(uploadRes.json).length
+              ? JSON.stringify(uploadRes.json).slice(0, 300)
+              : null) ||
+            uploadRes.status;
+          return { success: false, error: `File upload failed: ${detail}` };
         }
       }
     }
@@ -512,7 +541,7 @@ export async function checkDeployStatus(site, settings) {
   const { cfApiToken, cfAccountId } = settings;
   if (!cfApiToken || !cfAccountId) return { success: false, error: "Missing CF credentials" };
 
-  const projectName = buildPagesProjectName(site);
+  const projectName = resolvePagesProjectName(site);
 
   const cfBase = getCfApiBase();
   const authH = { Authorization: `Bearer ${cfApiToken}` };

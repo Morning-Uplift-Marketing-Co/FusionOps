@@ -7,6 +7,7 @@
 
 import { api } from "./api";
 import { LS } from "../utils";
+import { resolveD1DatabaseIds } from "./account-lock";
 
 const D1_API_BASE = "https://api.cloudflare.com/client/v4";
 
@@ -20,13 +21,11 @@ const D1_API_BASE = "https://api.cloudflare.com/client/v4";
  */
 async function getCredentials() {
   const settings = LS.get("settings") || {};
+  const { d1DatabaseId } = resolveD1DatabaseIds(settings);
 
   return {
     accountId: settings.d1AccountId || "",
-    databaseId:
-      (settings.d1DatabaseId && String(settings.d1DatabaseId).trim()) ||
-      (settings.cfD1DatabaseId && String(settings.cfD1DatabaseId).trim()) ||
-      "",
+    databaseId: d1DatabaseId || "",
     apiToken: settings.d1ApiToken || "",
   };
 }

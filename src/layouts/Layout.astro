@@ -1,5 +1,19 @@
 ---
 import "../styles/globals.css";
+import fs from "node:fs";
+import path from "node:path";
+
+/** Keep in sync with src/services/account-lock.js — do not import that module here (Vite env transform breaks SSR). */
+const legacyD1Ids = ["7d31d941-f863-46f5-99c2-2179de821573"];
+const productionD1Id = (() => {
+  try {
+    const raw = fs.readFileSync(path.join(process.cwd(), ".d1-db-ids"), "utf8");
+    const match = raw.match(/D1_MAIN_ID="([^"]+)"/);
+    return match?.[1]?.trim() || "4eaee76d-10fb-42a7-bb9d-50737c3da785";
+  } catch {
+    return "4eaee76d-10fb-42a7-bb9d-50737c3da785";
+  }
+})();
 
 interface Props {
   title?: string;
@@ -21,6 +35,35 @@ const { title = "FusionOps 3.0" } = Astro.props;
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
     />
+    <script is:inline define:vars={{ legacyD1Ids, productionD1Id }}>
+      (function () {
+        function norm(v) {
+          return String(v || "").trim().toLowerCase();
+        }
+        function isLegacy(id) {
+          var n = norm(id);
+          return (
+            n &&
+            legacyD1Ids.some(function (legacy) {
+              return norm(legacy) === n;
+            })
+          );
+        }
+        var host =
+          location.hostname + (location.port ? ":" + location.port : "");
+        ["lpf2:" + host + ":settings", "lpf2-settings"].forEach(function (key) {
+          try {
+            var raw = localStorage.getItem(key);
+            if (!raw) return;
+            var s = JSON.parse(raw);
+            if (!isLegacy(s.d1DatabaseId) && !isLegacy(s.cfD1DatabaseId)) return;
+            if (isLegacy(s.d1DatabaseId)) s.d1DatabaseId = productionD1Id;
+            if (isLegacy(s.cfD1DatabaseId)) s.cfD1DatabaseId = productionD1Id;
+            localStorage.setItem(key, JSON.stringify(s));
+          } catch (e) {}
+        });
+      })();
+    </script>
     <script is:inline>
       const theme = localStorage.getItem("theme");
       if (

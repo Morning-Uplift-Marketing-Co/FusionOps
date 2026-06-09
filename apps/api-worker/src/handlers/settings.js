@@ -18,6 +18,7 @@
 import { json } from '../lib/http.js';
 import { neonUpsertSettings } from '../lib/neon-sync.js';
 import { redactSettings, isMaskedSecret, SECRET_KEYS } from '../lib/case-utils.js';
+import { healD1SettingsInPlace, persistD1SettingsHeal, resolveD1DatabaseIds } from '../lib/d1-settings-heal.js';
 
 const ADSPOWER_ALLOWED_PATHS = new Set([
   '/status',
@@ -26,16 +27,28 @@ const ADSPOWER_ALLOWED_PATHS = new Set([
   '/api/v2/browser-profile/stop',
 ]);
 
-async function settingsGet(db) {
+async function settingsGet(db, neonSql) {
   const { results } = await db.prepare('SELECT * FROM settings').all();
   const obj = {};
   results.forEach(r => { obj[r.key] = r.value; });
+  const healed = healD1SettingsInPlace(obj);
+  if (healed) {
+    await persistD1SettingsHeal(db, neonSql, obj);
+  }
   return json(redactSettings(obj));
 }
 
 async function settingsPost({ request, db, neonSql }) {
   const body = await request.json();
-  for (const [key, value] of Object.entries(body)) {
+  const merged = { ...body };
+  if (merged.d1DatabaseId != null || merged.cfD1DatabaseId != null) {
+    const resolved = resolveD1DatabaseIds(merged);
+    if (resolved.d1DatabaseId) {
+      merged.d1DatabaseId = resolved.d1DatabaseId;
+      merged.cfD1DatabaseId = resolved.cfD1DatabaseId;
+    }
+  }
+  for (const [key, value] of Object.entries(merged)) {
     // Skip if the frontend sent back a masked placeholder for a secret key —
     // this prevents '••••' from being persisted as the real credential.
     if (SECRET_KEYS.has(key) && isMaskedSecret(value)) continue;
@@ -46,7 +59,7 @@ async function settingsPost({ request, db, neonSql }) {
   }
 
   if (neonSql) {
-    neonUpsertSettings(neonSql, body).catch(() => {});
+    neonUpsertSettings(neonSql, merged).catch(() => {});
   }
   return json({ success: true });
 }
@@ -134,7 +147,7 @@ async function adspowerProxy({ request, db }) {
  * Route entry. Returns Response if path matches; null otherwise.
  */
 export async function handleSettingsRoute({ request, db, neonSql, path, method }) {
-  if (path === '/api/settings' && method === 'GET') return settingsGet(db);
+  if (path === '/api/settings' && method === 'GET') return settingsGet(db, neonSql);
   if (path === '/api/settings' && method === 'POST') return settingsPost({ request, db, neonSql });
   if (path === '/api/adspower/proxy' && method === 'POST') return adspowerProxy({ request, db });
   return null;

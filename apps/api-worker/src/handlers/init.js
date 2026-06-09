@@ -14,6 +14,7 @@
 
 import { json } from '../lib/http.js';
 import { snakeToCamel, redactSettings } from '../lib/case-utils.js';
+import { healD1SettingsInPlace, persistD1SettingsHeal } from '../lib/d1-settings-heal.js';
 
 // Credential fields that must never appear in /api/init responses.
 // These rows are returned to the browser and their plaintext tokens must be masked.
@@ -36,7 +37,7 @@ function redactRegistrarAccount(row) {
   return obj;
 }
 
-async function handleInitLegacy(db) {
+async function handleInitLegacy(db, neonSql) {
   const [settingsRows, sitesRows, deploysRows] = await Promise.all([
     db.prepare('SELECT key, value FROM settings').all(),
     db.prepare('SELECT * FROM sites ORDER BY updated_at DESC').all(),
@@ -45,6 +46,10 @@ async function handleInitLegacy(db) {
 
   const settingsRaw = {};
   settingsRows.results.forEach(r => { settingsRaw[r.key] = r.value; });
+  const legacyHealed = healD1SettingsInPlace(settingsRaw);
+  if (legacyHealed) {
+    persistD1SettingsHeal(db, neonSql, settingsRaw).catch(() => {});
+  }
 
   // Ops data
   const [domains, accounts, profiles, payments, logs] = await Promise.all([
@@ -102,7 +107,7 @@ async function handleStats(db) {
   });
 }
 
-async function handleInit(db) {
+async function handleInit(db, neonSql) {
   const safeAll = async (sql, fallback = []) => {
     try {
       const r = await db.prepare(sql).all();
@@ -152,6 +157,10 @@ async function handleInit(db) {
 
   const settingsObj = {};
   settingsRows.forEach(r => { settingsObj[r.key] = r.value; });
+  const d1Healed = healD1SettingsInPlace(settingsObj);
+  if (d1Healed) {
+    persistD1SettingsHeal(db, neonSql, settingsObj).catch(() => {});
+  }
 
   const revenueSeries = (revenueSeriesRows || []).map((r) => ({
     date: r.date,
@@ -191,9 +200,9 @@ async function handleInit(db) {
 /**
  * Route entry. Returns Response for /api/init, /api/init-legacy, /api/stats; null otherwise.
  */
-export async function handleInitRoute({ db, path, method }) {
-  if (path === '/api/init-legacy' && method === 'GET') return handleInitLegacy(db);
+export async function handleInitRoute({ db, neonSql, path, method }) {
+  if (path === '/api/init-legacy' && method === 'GET') return handleInitLegacy(db, neonSql);
   if (path === '/api/stats' && method === 'GET') return handleStats(db);
-  if (path === '/api/init' && method === 'GET') return handleInit(db);
+  if (path === '/api/init' && method === 'GET') return handleInit(db, neonSql);
   return null;
 }

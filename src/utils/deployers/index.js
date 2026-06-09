@@ -10,6 +10,7 @@ import * as vercel from "./vercel.js";
 import * as cfWorkers from "./cf-workers.js";
 import * as gitPush from "./git-push.js";
 import * as githubActions from "./github-actions.js";
+import { resolveDeployTargetForSite } from "./deploy-target-guard.js";
 import { LS } from "../index.js";
 
 const DEPLOYERS = {
@@ -69,9 +70,21 @@ export const DEPLOY_TARGETS = [
  * @returns {Promise<{success: boolean, url?: string, deployId?: string, target: string, error?: string}>}
  */
 export async function deployTo(target, html, site, settings) {
-  const deployer = DEPLOYERS[target];
+  const resolved = resolveDeployTargetForSite(site, target);
+  const effectiveTarget = resolved.target;
+
+  if (resolved.redirected && !isTargetConfigured(effectiveTarget, settings)) {
+    return {
+      success: false,
+      target: effectiveTarget,
+      redirectedFrom: target,
+      error: `${resolved.reason} GitHub Actions is not configured — add GitHub Token + Repo in Settings.`,
+    };
+  }
+
+  const deployer = DEPLOYERS[effectiveTarget];
   if (!deployer) {
-    return { success: false, target, error: `Unknown deploy target: ${target}` };
+    return { success: false, target: effectiveTarget, error: `Unknown deploy target: ${effectiveTarget}` };
   }
 
   const startTime = Date.now();
@@ -144,7 +157,8 @@ export async function deployTo(target, html, site, settings) {
       timestamp: new Date().toISOString(),
       domain: site.domain || site.brand || "unknown",
       siteId: site.id,
-      target,
+      target: effectiveTarget,
+      redirectedFrom: resolved.redirected ? target : undefined,
       status: finalStatus,
       url: result.url,
       deployId: result.deployId,
@@ -161,7 +175,12 @@ export async function deployTo(target, html, site, settings) {
     };
     saveDeploymentRecord(deployRecord);
 
-    return { ...result, target };
+    return {
+      ...result,
+      target: effectiveTarget,
+      redirectedFrom: resolved.redirected ? target : undefined,
+      redirectReason: resolved.reason,
+    };
   } catch (e) {
     // Update deployment record with failure
     if (deployId) {

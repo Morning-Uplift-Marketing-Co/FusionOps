@@ -12,7 +12,7 @@ const logger = {
 
 function getStoragePrefix() {
     try {
-        if (typeof window !== "undefined" && window.location) {
+        if (typeof window !== "undefined" && window.location) {sprite-waiter1.png
             const host = `${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}`;
             return `lpf2:${host}:`;
         }

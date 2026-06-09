@@ -7,7 +7,7 @@ import { SITE_FIELDS } from "./constants/site-fields";
 import { uid, now, LS } from "./utils";
 import { refreshCustomTemplates } from "./utils/template-router";
 import { setSentryContext, addBreadcrumb } from "./services/sentry";
-import { sanitizeSettings, validateSettingsAccount, autoRecoverSettings, detectIncompleteSettings } from "./services/account-lock";
+import { sanitizeSettings, validateSettingsAccount, autoRecoverSettings, detectIncompleteSettings, isLegacyD1MainId, resolveD1DatabaseIds } from "./services/account-lock";
 import { login as authLogin, logout as authLogout, getMe, isAdmin, sanitizeForEmployee, refreshSession } from "./services/auth";
 
 // Custom event for template refresh
@@ -462,7 +462,35 @@ useEffect(() => {
         setShowAccountBanner(false);
       }
     }
-  }, [settings]);
+
+    const resolved = resolveD1DatabaseIds(settings || {});
+    const needsD1Heal =
+      (settings?.d1DatabaseId && resolved.d1DatabaseId && settings.d1DatabaseId !== resolved.d1DatabaseId) ||
+      (settings?.cfD1DatabaseId && resolved.cfD1DatabaseId && settings.cfD1DatabaseId !== resolved.cfD1DatabaseId) ||
+      isLegacyD1MainId(settings?.d1DatabaseId) ||
+      isLegacyD1MainId(settings?.cfD1DatabaseId);
+
+    if (needsD1Heal && resolved.d1DatabaseId) {
+      const healed = sanitizeSettings({
+        ...(settings || {}),
+        d1DatabaseId: resolved.d1DatabaseId,
+        cfD1DatabaseId: resolved.cfD1DatabaseId,
+      });
+      if (JSON.stringify(healed) !== JSON.stringify(settings)) {
+        console.warn("[AccountLock] Auto-healing stale D1 database ID");
+        setSettings(healed);
+        LS.set("settings", healed);
+        if (neonOk) db.saveSettings({
+          d1DatabaseId: healed.d1DatabaseId,
+          cfD1DatabaseId: healed.cfD1DatabaseId,
+        }).catch(() => { });
+        if (apiOk) api.post("/settings", {
+          d1DatabaseId: healed.d1DatabaseId,
+          cfD1DatabaseId: healed.cfD1DatabaseId,
+        }).catch(() => { });
+      }
+    }
+  }, [settings, neonOk, apiOk]);
 
   // CRITICAL: Sync sites to ops.domains whenever sites change
   // This ensures DeploySection always has access to current sites
@@ -574,16 +602,23 @@ useEffect(() => {
 
               // Use auto-recovery to merge and sanitize
               const recovered = autoRecoverSettings(neonSettings, localSettings);
+              const hadLegacyD1 =
+                isLegacyD1MainId(neonSettings?.d1DatabaseId) ||
+                isLegacyD1MainId(neonSettings?.cfD1DatabaseId);
 
               // Apply recovered settings
-              setSettings(prev => {
-                const merged = { ...prev, ...recovered };
-                LS.set("settings", merged);
-                console.log('[boot] ✅ Settings recovered from Neon:', Object.keys(merged).filter(k =>
-                  k !== 'cfApiToken' // Don't log token
-                ));
-                return merged;
-              });
+              setSettings(recovered);
+              LS.set("settings", recovered);
+
+              if (hadLegacyD1 && recovered.d1DatabaseId) {
+                const healPatch = {
+                  d1DatabaseId: recovered.d1DatabaseId,
+                  cfD1DatabaseId: recovered.cfD1DatabaseId,
+                };
+                db.saveSettings(healPatch).catch(() => { });
+                api.post("/settings", healPatch).catch(() => { });
+                console.warn("[boot] Healed legacy D1 database ID in Neon + Worker settings");
+              }
             }
 
             // Sites from Neon (+ snapshot for merge after /init await)
@@ -722,9 +757,9 @@ useEffect(() => {
                 db.loadCfAccounts(),
               ]);
               if (ns) {
-                const m = { ...localSettings, ...data.settings, ...ns };
-                setSettings(m);
-                LS.set("settings", m);
+                const recovered = autoRecoverSettings(ns, { ...localSettings, ...(data.settings || {}) });
+                setSettings(recovered);
+                LS.set("settings", recovered);
               }
               if (Array.isArray(nsi) && nsi.length > 0) {
                 neonSitesMergeBaseline = nsi;
@@ -774,9 +809,9 @@ useEffect(() => {
             }));
           }
           if (data.settings) {
-            const merged = { ...localSettings, ...data.settings };
-            setSettings(merged);
-            LS.set("settings", merged);
+            const recovered = sanitizeSettings({ ...localSettings, ...data.settings });
+            setSettings(recovered);
+            LS.set("settings", recovered);
           }
           if (data.deploys) setDeploys(data.deploys);
           if (data.variants) setRegistry(data.variants);
@@ -1193,13 +1228,21 @@ useEffect(() => {
   const handleSaveSettings = async (s) => {
     addBreadcrumb("settings", "Save settings", { keys: Object.keys(s) });
     const prevStored = LS.get("settings") || {};
-    const fresh = sanitizeSettings({ ...prevStored, ...s });
+    const savePatch = { ...s };
+    if (savePatch.d1DatabaseId != null) {
+      const trimmedD1 = String(savePatch.d1DatabaseId).trim();
+      savePatch.d1DatabaseId = trimmedD1;
+      savePatch.cfD1DatabaseId = trimmedD1;
+    }
 
-    setSettings(prev => sanitizeSettings({ ...(prev || {}), ...s }));
+    const fresh = sanitizeSettings({ ...prevStored, ...savePatch });
+
+    setSettings(prev => sanitizeSettings({ ...(prev || {}), ...savePatch }));
     LS.set("settings", fresh);
 
     // Persist only keys the user saved, but values after env locks (VITE_NEON_URL / VITE_API_BASE / CF lock, etc.)
-    const persistPatch = Object.fromEntries(Object.keys(s).map((k) => [k, fresh[k]]));
+    const persistKeys = new Set([...Object.keys(savePatch), ...(savePatch.d1DatabaseId != null ? ['cfD1DatabaseId'] : [])]);
+    const persistPatch = Object.fromEntries([...persistKeys].map((k) => [k, fresh[k]]));
 
     // If neonUrl changed, re-init Neon
     if (s.neonUrl != null && String(s.neonUrl).includes("@")) {

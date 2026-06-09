@@ -8,6 +8,7 @@ import { api } from "../services/api";
 import { getIbsApiBase } from "../utils/api-proxy";
 import { getOrCreateZone, upsertDnsRecord, ensurePixelSubdomain } from "../services/cloudflare-dns";
 import { deployTo, getAvailableTargets } from "../utils/deployers";
+import { resolveDeployTargetForSite } from "../utils/deployers/deploy-target-guard.js";
 import { MockPhone } from "./ui/mock-phone";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
@@ -466,7 +467,12 @@ export function Wizard({ config, setConfig, addSite, addDeploy, setPage, setting
         // One-flow mode: save + deploy + DNS in one click
         if (finalConfig.deployOnBuild) {
             try {
-                const target = finalConfig.deployTarget || "github-actions";
+                const requested = finalConfig.deployTarget || "github-actions";
+                const resolved = resolveDeployTargetForSite(sitePayload, requested);
+                const target = resolved.target;
+                if (resolved.redirected) {
+                    notify(resolved.reason, "warning");
+                }
                 const targetConfig = deployTargets.find(t => t.id === target);
                 if (!targetConfig?.configured) {
                     notify(`Deploy target "${target}" is not configured in Settings`, "warning");
