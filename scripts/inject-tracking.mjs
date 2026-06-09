@@ -7,7 +7,7 @@
  *
  * Injects:
  *   1. Voluum dtpCallback (Direct Tracking Pixel) — reads VOLUUM_DOMAIN from env
- *   2. First-party pixel (fpPixel) — sends to t.{domain}/e
+ *   2. First-party pixel (fpPixel) — sends to <pixelSubdomain>.{domain}/e
  *   3. Google Ads gtag — reads CONVERSION_ID from env
  *
  * Usage: node scripts/inject-tracking.mjs <template-dir>
@@ -22,6 +22,10 @@ import path from 'node:path';
 import { resolveAstroShellAstroPath } from './lib/astro-shell-resolve.mjs';
 
 const templateDir = path.resolve(process.argv[2] || '.');
+
+function normalizePixelSubdomain(value) {
+  return String(value || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/^-+|-+$/g, '') || 't';
+}
 
 // ─── Detect template type ───
 // Loveable/Vite exports sometimes include orphan src/layouts/*.astro; if we prefer that over
@@ -212,7 +216,8 @@ const PIXEL_BODY_SNIPPET = `
     } catch (_) { return ''; }
   }
   var PX_HOST = window.location.hostname.replace(/^www\./, '');
-  var PX_ENDPOINT = 'https://t.' + PX_HOST + '/e';
+  var PX_SUBDOMAIN = String(window.__PIXEL_SUBDOMAIN__ || 't').trim().toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/^-+|-+$/g, '') || 't';
+  var PX_ENDPOINT = 'https://' + PX_SUBDOMAIN + '.' + PX_HOST + '/e';
   function sendPixelBeacon(payload) {
     try {
       var q = new URLSearchParams();
@@ -368,6 +373,7 @@ const RUNTIME_CONFIG_VITE = `
   window.__CONVERSION_ID__ = import.meta.env.VITE_CONVERSION_ID || '';
   window.__VOLUUM_CLICK_URL__ = import.meta.env.VITE_VOLUUM_CLICK_URL || '';
   window.__GTAG_RELAY_HOST__ = import.meta.env.VITE_GTAG_RELAY_HOST || '';
+  window.__PIXEL_SUBDOMAIN__ = import.meta.env.VITE_PIXEL_SUBDOMAIN || 't';
   if (!window.__VOLUUM_DOMAIN__ && window.__VOLUUM_CLICK_URL__) {
     try {
       var __vh = new URL(String(window.__VOLUUM_CLICK_URL__)).hostname;
@@ -399,6 +405,10 @@ function loadDotEnv(dir) {
     }
   }
   return out;
+}
+
+function pixelSubdomainFromEnv(env) {
+  return normalizePixelSubdomain(env?.PUBLIC_PIXELSUBDOMAIN || env?.VITE_PIXEL_SUBDOMAIN || 't');
 }
 
 function voluumClickUrlFromEnv(env) {
@@ -580,6 +590,7 @@ function runtimeConfigFromEnvHtml(env) {
   const fsl = env.PUBLIC_FORMSTARTLABEL || env.VITE_FORM_START_LABEL || '';
   const fsub = env.PUBLIC_FORMSUBMITLABEL || env.VITE_FORM_SUBMIT_LABEL || '';
   const gtagRelayHost = env.PUBLIC_GTAGRELAYHOST || env.VITE_GTAG_RELAY_HOST || '';
+  const pixelSubdomain = pixelSubdomainFromEnv(env);
   return `
 <!-- Runtime config from .env (auto-injected, static HTML) -->
 <script data-cfasync="false">
@@ -590,6 +601,7 @@ function runtimeConfigFromEnvHtml(env) {
   window.__FORM_START_LABEL__ = ${JSON.stringify(fsl)};
   window.__FORM_SUBMIT_LABEL__ = ${JSON.stringify(fsub)};
   window.__GTAG_RELAY_HOST__ = ${JSON.stringify(gtagRelayHost)};
+  window.__PIXEL_SUBDOMAIN__ = ${JSON.stringify(pixelSubdomain)};
   if (!window.__VOLUUM_DOMAIN__ && window.__VOLUUM_CLICK_URL__) {
     try {
       var __vh = new URL(String(window.__VOLUUM_CLICK_URL__)).hostname;
@@ -613,6 +625,7 @@ const RUNTIME_CONFIG_ASTRO = `
   window.__FORM_START_LABEL__ = '%%PUBLIC_FORMSTARTLABEL%%';
   window.__FORM_SUBMIT_LABEL__ = '%%PUBLIC_FORMSUBMITLABEL%%';
   window.__GTAG_RELAY_HOST__ = '%%PUBLIC_GTAGRELAYHOST%%';
+  window.__PIXEL_SUBDOMAIN__ = '%%PUBLIC_PIXELSUBDOMAIN%%';
   if (!window.__VOLUUM_DOMAIN__ && window.__VOLUUM_CLICK_URL__) {
     try {
       var __vh = new URL(String(window.__VOLUUM_CLICK_URL__)).hostname;
@@ -719,18 +732,23 @@ function injectIntoAstro(filePath, projectRoot) {
 
   // Check if it already reads VOLUUMDOMAIN
   const hasVoluumVar = content.includes('PUBLIC_VOLUUMDOMAIN');
+  const hasPixelVar = content.includes('PUBLIC_PIXELSUBDOMAIN');
 
   // Add frontmatter variables if not present
-  if (!hasVoluumVar) {
+  if (!hasVoluumVar || !hasPixelVar) {
     const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
     if (fmMatch) {
-      const additions = '\nconst __voluumDomain = import.meta.env.PUBLIC_VOLUUMDOMAIN || \'\';\n'
-        + 'const __conversionId = import.meta.env.PUBLIC_CONVERSIONID || \'\';\n'
-        + 'const __voluumClickUrl = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || \'\';\n'
-        + 'const __formStartLabel = import.meta.env.PUBLIC_FORMSTARTLABEL || \'\';\n'
-        + 'const __formSubmitLabel = import.meta.env.PUBLIC_FORMSUBMITLABEL || \'\';\n'
-        + 'const __gtagRelayHost = import.meta.env.PUBLIC_GTAGRELAYHOST || \'\';';
-      const newFm = fmMatch[0].replace(/\r?\n---\s*$/, `${additions}\n---`);
+      const additions = [];
+      if (!hasVoluumVar) {
+        additions.push('const __voluumDomain = import.meta.env.PUBLIC_VOLUUMDOMAIN || \'\';');
+        additions.push('const __conversionId = import.meta.env.PUBLIC_CONVERSIONID || \'\';');
+        additions.push('const __voluumClickUrl = import.meta.env.PUBLIC_VOLUUM_CLICK_URL || \'\';');
+        additions.push('const __formStartLabel = import.meta.env.PUBLIC_FORMSTARTLABEL || \'\';');
+        additions.push('const __formSubmitLabel = import.meta.env.PUBLIC_FORMSUBMITLABEL || \'\';');
+        additions.push('const __gtagRelayHost = import.meta.env.PUBLIC_GTAGRELAYHOST || \'\';');
+      }
+      if (!hasPixelVar) additions.push('const __pixelSubdomain = import.meta.env.PUBLIC_PIXELSUBDOMAIN || \'t\';');
+      const newFm = fmMatch[0].replace(/\r?\n---\s*$/, `\n${additions.join('\n')}\n---`);
       content = content.replace(fmMatch[0], newFm);
     }
   }
@@ -743,12 +761,14 @@ function injectIntoAstro(filePath, projectRoot) {
     .replace("'%%PUBLIC_FORMSTARTLABEL%%'", '__formStartLabel')
     .replace("'%%PUBLIC_FORMSUBMITLABEL%%'", '__formSubmitLabel')
     .replace("'%%PUBLIC_GTAGRELAYHOST%%'", '__gtagRelayHost')
+    .replace("'%%PUBLIC_PIXELSUBDOMAIN%%'", hasPixelVar ? 'pixelSubdomain' : '__pixelSubdomain')
     // For Astro, use define:vars or template literals
     .replace('<script is:inline>', () => {
       const varName = hasVoluumVar ? 'voluumDomain' : '__voluumDomain';
       const cidName = hasVoluumVar ? 'conversionId' : '__conversionId';
       const clickName = hasVoluumVar ? 'voluumClickUrl' : '__voluumClickUrl';
-      return `<script is:inline define:vars={{ ${varName}, ${cidName}, ${clickName}, __formStartLabel, __formSubmitLabel, __gtagRelayHost }}>`;
+      const pixelName = hasPixelVar ? 'pixelSubdomain' : '__pixelSubdomain';
+      return `<script is:inline define:vars={{ ${varName}, ${cidName}, ${clickName}, __formStartLabel, __formSubmitLabel, __gtagRelayHost, ${pixelName} }}>`;
     })
     .replace("= '%%PUBLIC_VOLUUMDOMAIN%%'", () => {
       const varName = hasVoluumVar ? 'voluumDomain' : '__voluumDomain';
@@ -923,7 +943,8 @@ if (conversionId) {
 function fpPixel(eventName, extra) {
   try {
     var pxHost = window.location.hostname.replace(/^www\./, '');
-    var endpoint = 'https://t.' + pxHost + '/e';
+    var pxSubdomain = String(window.__PIXEL_SUBDOMAIN__ || 't').trim().toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/^-+|-+$/g, '') || 't';
+    var endpoint = 'https://' + pxSubdomain + '.' + pxHost + '/e';
     var cid = getVoluumClickId();
     var payload = { e: eventName, d: pxHost, ts: Date.now() };
     if (cid) { payload.cid = cid; payload.cpid = cid; payload.click_id = cid; }

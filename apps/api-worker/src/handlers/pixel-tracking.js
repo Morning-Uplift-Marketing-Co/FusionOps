@@ -6,7 +6,7 @@
 //   GET/POST/OPTIONS /v    Voluum/LeadsGate postback ingestion + relay
 //   GET /api/postbacks     Query voluum_postbacks table (operator UI)
 //
-// Both /e and /v use t.{domain}/* via Workers Routes.
+// Both /e and /v use <pixelSubdomain>.{domain}/* via Workers Routes.
 // /v writes voluum_postbacks then forwards to upstream tracker
 // (vd= param or env.DEFAULT_VOLUUM_POSTBACK_DOMAIN) with SSRF guard.
 //
@@ -272,7 +272,9 @@ async function handleVoluumPostback({ request, env, db, hostname, url, method })
     const leadId = p.get('lead_id') || p.get('txid') || '';
     const payout = parseFloat(p.get('payout') || p.get('price') || '0');
     const type = p.get('type') || 'soldLead';
-    const domain = hostname.replace(/^t\./, '');
+    const normalizedHostname = String(hostname || '').trim().toLowerCase();
+    const parts = normalizedHostname.split('.').filter(Boolean);
+    const domain = parts.length > 2 ? parts.slice(1).join('.') : normalizedHostname;
     const ip = request.headers.get('CF-Connecting-IP') || '';
     const ua = request.headers.get('User-Agent') || '';
     const raw = request.url;
