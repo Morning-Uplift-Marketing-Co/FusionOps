@@ -3,6 +3,8 @@
  * Tests: identifyFramework, detectDependencies, resolveEntryPoint, extractCssVariables, analyzeTemplate
  */
 
+import fs from 'node:fs';
+import path from 'node:path';
 import { describe, it, expect } from 'vitest';
 import {
   identifyFramework,
@@ -52,6 +54,10 @@ const BOLT_STATIC_PROJECT = {
 
 const MINIMAL_HTML = {
   'index.html': '<html><head><title>Minimal</title></head><body><h1>Hello</h1></body></html>',
+};
+
+const ASTRO_VERDANT_HTML = {
+  'index.html': fs.readFileSync(path.resolve('templates/astro-verdant/index_html.txt'), 'utf8'),
 };
 
 const SHADCN_CSS = {
@@ -318,6 +324,15 @@ describe('analyzeTemplate', () => {
 
   it('should fully analyze a static HTML project', () => {
     const result = analyzeTemplate(BOLT_STATIC_PROJECT);
+    expect(result.framework.id).toBe('html-static');
+    expect(result.entry.path).toBe('index.html');
+    expect(result.errors).toHaveLength(0);
+    expect(result.canPreview).toBe(true);
+    expect(result.canDeploy).toBe(true);
+  });
+
+  it('should fully analyze the astro-verdant HTML template fixture', () => {
+    const result = analyzeTemplate(ASTRO_VERDANT_HTML);
     expect(result.framework.id).toBe('html-static');
     expect(result.entry.path).toBe('index.html');
     expect(result.errors).toHaveLength(0);
