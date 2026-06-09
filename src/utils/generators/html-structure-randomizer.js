@@ -84,6 +84,7 @@ export function randomizeHtmlStructure(html, siteId, options = {}) {
     addComments = true,
     addDataAttrs = true,
     varyWhitespace = true,
+    reorderAttributes = true,
   } = options;
 
   let result = html;
@@ -108,6 +109,12 @@ export function randomizeHtmlStructure(html, siteId, options = {}) {
   // 4. Add random HTML comments between sections
   if (addComments) {
     result = addRandomComments(result, rng);
+  }
+
+  // 5. Reorder attributes on leaf content tags (safe: never touches
+  //    head/body/script/placeholder tokens that tracking injection relies on)
+  if (reorderAttributes) {
+    result = reorderElementAttributes(result, rng);
   }
 
   return result;
@@ -209,6 +216,37 @@ function addRandomDataAttributes(html, rng) {
     attrIdx++;
     return `<${tag} ${attr}="${value}"${attrs}>`;
   });
+
+  return result;
+}
+
+/**
+ * Reorder attributes on leaf content tags (img, a, input, button).
+ * Attribute order is cosmetic (no effect on rendering) but is a common
+ * build-tool fingerprint. Quotes/values are preserved exactly. Intentionally
+ * skips html/head/body/meta/link/script tags so tracking injection — which
+ * matches on `<head>`, `</body>`, and `'%%PUBLIC_*%%'` placeholders — is never
+ * disturbed.
+ */
+function reorderElementAttributes(html, rng) {
+  const tags = ['img', 'a', 'input', 'button'];
+  let result = html;
+
+  for (const tag of tags) {
+    const regex = new RegExp(`<${tag}((?:\\s+[\\w-]+(?:=(?:"[^"]*"|'[^']*'|[^\\s>]+))?)+)\\s*(/?)>`, 'gi');
+    result = result.replace(regex, (match, attrStr, selfClose) => {
+      const attrs = attrStr.match(/[\w-]+(?:=(?:"[^"]*"|'[^']*'|[^\s>]+))?/g) || [];
+      if (attrs.length < 2) return match;
+      if (!rngBool(rng, 0.6)) return match; // natural variance — not every element
+
+      const arr = [...attrs];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return `<${tag} ${arr.join(' ')}${selfClose ? ' /' : ''}>`;
+    });
+  }
 
   return result;
 }

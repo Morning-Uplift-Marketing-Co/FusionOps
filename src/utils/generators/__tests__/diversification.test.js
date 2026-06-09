@@ -376,6 +376,53 @@ describe('HTML Structure Randomizer', () => {
   });
 });
 
+// ─── Feature 3b: Attribute Reordering ───
+
+describe('Attribute Reordering', () => {
+  it('preserves all attribute values (just reorders)', () => {
+    const html = generatePlainHtml(mockSite); // has <input>, <button>, <a>
+    const out = randomizeHtmlStructure(html, 'attr-site', {
+      shuffleHead: false, addNoiseClasses: false, addComments: false, addDataAttrs: false,
+    });
+    // input attributes survive regardless of order
+    expect(out).toMatch(/<input[^>]*type="text"/);
+    expect(out).toMatch(/<input[^>]*placeholder="ZIP Code"/);
+    expect(out).toMatch(/<input[^>]*readonly/);
+    // footer links survive
+    expect(out).toContain('href="/privacy"');
+    expect(out).toContain('href="/terms"');
+  });
+
+  it('keeps onclick handler with embedded single quotes intact', () => {
+    const html = generatePlainHtml(mockSite);
+    const out = randomizeHtmlStructure(html, 'attr-site-2');
+    expect(out).toContain("this.textContent='Processing...'");
+  });
+
+  it('is deterministic for the same siteId', () => {
+    const html = generatePlainHtml(mockSite);
+    const r1 = randomizeHtmlStructure(html, 'attr-det');
+    const r2 = randomizeHtmlStructure(html, 'attr-det');
+    expect(r1).toBe(r2);
+  });
+
+  it('can be disabled', () => {
+    const html = '<body><a href="/x" class="y" data-z="1">link</a></body>';
+    const out = randomizeHtmlStructure(html, 'attr-off', {
+      shuffleHead: false, addNoiseClasses: false, addComments: false,
+      addDataAttrs: false, reorderAttributes: false,
+    });
+    expect(out).toBe(html);
+  });
+
+  it('never disturbs </body> (tracking injection anchor)', () => {
+    const html = generatePlainHtml(mockSite);
+    const out = randomizeHtmlStructure(html, 'attr-body');
+    expect(out).toContain('</body>');
+    expect(out).toContain('</head>');
+  });
+});
+
 // ─── Integration: All features combined with tracking ───
 
 describe('Full pipeline integration', () => {
