@@ -21,3 +21,11 @@ Risk note:
 - Existing pixel handler route matching is still path-based (`/e` and `/v`), so the functional routing contract did not change.
 - The only routing-sensitive change is host provisioning: custom pixel subdomains must remain a single DNS label so the worker can strip the first label and recover the apex domain correctly.
 - Backward compatibility is preserved because configs without `pixelSubdomain` still default to `t`.
+
+## Auto-assigned pixel subdomains
+
+- When a deploy config sets `pixelSubdomain`, the workflow still uses that explicit value after the same normalization rules as before.
+- When `pixelSubdomain` is missing or blank, the deploy workflow now derives a stable subdomain from the bare domain name instead of defaulting to `t`.
+- The auto pool is `['go', 'px', 'track', 'm', 'r', 's', 'c']`, which intentionally excludes `t` so auto-assigned brands are visibly varied.
+- The derived value is deterministic: the workflow hashes the bare domain and uses the hash index to pick one entry from the pool, so the same domain always resolves to the same auto subdomain across redeploys.
+- This means existing live brands currently on `t.` will migrate on their next deploy to their deterministic auto-assigned subdomain, and the workflow's DNS upsert, Workers route upsert, and endpoint verification steps will move them over in the same deploy.
