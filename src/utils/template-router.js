@@ -11,6 +11,11 @@ import { ADAPTER_RUNTIME_VERSION } from "../adapters/runtime-version.ts";
 import { TemplateRuntimeError } from "../adapters/template-runtime-error.ts";
 import { emitTemplateRuntimeEvent } from "../adapters/template-runtime-events.ts";
 
+// ─── Anti-fingerprinting: multi-framework generators ───
+import { generatePlainHtml } from "./generators/plain-html-generator.js";
+import { randomizeHtmlStructure } from "./generators/html-structure-randomizer.js";
+import { autoAssignDeployTarget } from "./deployers/deploy-target-auto.js";
+
 // Ensure templates are registered (side-effect import)
 import "#lp-template-generator/templates";
 
@@ -33,6 +38,20 @@ import { api } from "../services/api";
 
 export const DEFAULT_TEMPLATE_ID = "classic";
 
+// Plain HTML template IDs — use framework-free generator (anti-fingerprinting)
+const PLAIN_HTML_TEMPLATE_IDS = new Set(['plain-html', 'vanilla', 'no-framework']);
+
+/**
+ * Check if a template should use the plain HTML generator.
+ * Also auto-assigns plain HTML when site has no explicit templateId
+ * and its hash maps to the 'plain' bucket (~20% of sites).
+ */
+export function shouldUsePlainHtml(site) {
+  const tid = site?.templateId;
+  if (tid && PLAIN_HTML_TEMPLATE_IDS.has(tid)) return true;
+  return false;
+}
+
 function resolveTemplateId(site) {
   const rawId = site?.templateId || DEFAULT_TEMPLATE_ID;
   return resolveId(rawId);
@@ -40,6 +59,11 @@ function resolveTemplateId(site) {
 
 // Module template IDs for quick lookup
 const MODULE_TEMPLATE_IDS = ['classic', 'pdl-loans-v1', 'pdl-loans-v3', 'simple-lp', 'pet-care-loans', 'elastic-credits-v3', 'scratchpay-bridge', 'pet-loans-v1', 'installment-loans-v1', 'installment-loans-v2', 'pet-care-v2', 'installment-golden', 'pet-care-golden', 'leadgen-golden', 'flowbite-loan', 'hyperui-loan'];
+
+// Export new generators for external use
+export { generatePlainHtml } from "./generators/plain-html-generator.js";
+export { randomizeHtmlStructure } from "./generators/html-structure-randomizer.js";
+export { autoAssignDeployTarget } from "./deployers/deploy-target-auto.js";
 
 // Check if a template ID is a module template (used by wizard + build pipeline)
 export function isModuleTemplate(templateId) {
@@ -134,6 +158,16 @@ function generateVitePreviewPlaceholder(customTemplate, site) {
   <div class="vite-tag">⚡ ${badge} · Preview</div>
 </body>
 </html>`;
+}
+
+/**
+ * Finalize HTML: randomize structure (anti-fingerprinting) then inject tracking.
+ * Applied to ALL template outputs — bolt.new, Lovable, Astro, plain HTML.
+ * Order matters: randomize BEFORE tracking so tracking scripts stay intact.
+ */
+function finalizeHtml(html, site) {
+  const randomized = randomizeHtmlStructure(html, site?.id);
+  return ensureTrackingBaselineHtml(randomized, site);
 }
 
 function ensureTrackingBaselineHtml(html, site) {
@@ -887,7 +921,7 @@ export function renderTemplateToAssets(template, site) {
   // Debug: check if HTML was generated
   console.log('[Router] astroToHtmlPreview result length:', html?.length);
 
-  const trackedIndexHtml = ensureTrackingBaselineHtml(html, site);
+  const trackedIndexHtml = finalizeHtml(html, site);
   assets["/index.html"] = trackedIndexHtml;
   assets["/"] = trackedIndexHtml;
 
@@ -902,7 +936,7 @@ export function renderTemplateToAssets(template, site) {
     !applyHtml.includes('Preview Error') &&
     !applyHtml.includes('No index.astro found')
   ) {
-    const trackedApplyHtml = ensureTrackingBaselineHtml(applyHtml, site);
+    const trackedApplyHtml = finalizeHtml(applyHtml, site);
     assets["/apply.html"] = trackedApplyHtml;
     assets["/apply"] = trackedApplyHtml;
   }
@@ -962,7 +996,7 @@ export function renderTemplateToAssets(template, site) {
 
       const styleTagOpen = isTailwindSourceCss ? '<style type="text/tailwindcss">' : '<style>';
       const styleInjection = `${styleTagOpen}\n/* Injected from custom template CSS */\n${combinedCss}</style>\n</head>`;
-      assets["/index.html"] = ensureTrackingBaselineHtml(assets["/index.html"].replace('</head>', styleInjection), site);
+      assets["/index.html"] = finalizeHtml(assets["/index.html"].replace('</head>', styleInjection), site);
       assets["/"] = assets["/index.html"];
     }
   }
@@ -972,6 +1006,12 @@ export function renderTemplateToAssets(template, site) {
 
 export function generateHtmlByTemplate(site) {
   const templateId = resolveTemplateId(site);
+
+  // ─── Anti-fingerprinting: Plain HTML generator (no framework) ───
+  if (shouldUsePlainHtml(site)) {
+    return finalizeHtml(generatePlainHtml(site), site);
+  }
+
   const entry = registry[templateId];
 
   if (entry?.adapter) {
@@ -1023,11 +1063,11 @@ export function generateHtmlByTemplate(site) {
       adapterId: entry.adapter.id,
       adapterVersion: entry.adapter.version,
     });
-    return ensureTrackingBaselineHtml(rendered, site);
+    return finalizeHtml(rendered, site);
   }
 
   if (entry?.generate) {
-    return ensureTrackingBaselineHtml(entry.generate(site), site);
+    return finalizeHtml(entry.generate(site), site);
   }
 
   // Check if it's a custom API template (synchronously from primary registry cache)
@@ -1046,7 +1086,7 @@ export function generateHtmlByTemplate(site) {
         // Pre-built dist/index.html still contains raw placeholders that would otherwise
         // render literally in the preview iframe.
         const substituted = substituteSiteVariables(withBase, site);
-        return ensureTrackingBaselineHtml(substituted, site);
+        return finalizeHtml(substituted, site);
       }
 
       // Use the smart analyzer to choose the right rendering path
@@ -1058,14 +1098,14 @@ export function generateHtmlByTemplate(site) {
       // and dependency resolution instead of the Astro-specific parser.
       if (framework.id !== 'astro' || framework.confidence < 0.3) {
         try {
-          return ensureTrackingBaselineHtml(buildPreviewHtml(customTemplate.files, site, colorObj), site);
+          return finalizeHtml(buildPreviewHtml(customTemplate.files, site, colorObj), site);
         } catch (e) {
           console.warn('[Router] Preview runtime failed, falling back to astroToHtmlPreview:', e.message);
         }
       }
 
       // Astro templates: use the existing Astro-to-HTML compiler
-      return ensureTrackingBaselineHtml(astroToHtmlPreview(customTemplate.files, site), site);
+      return finalizeHtml(astroToHtmlPreview(customTemplate.files, site), site);
     }
   }
 
@@ -1074,7 +1114,7 @@ export function generateHtmlByTemplate(site) {
     try {
       const files = generateFromModule(templateId, site);
       if (files) {
-        return ensureTrackingBaselineHtml(astroToHtmlPreview(files, site), site);
+        return finalizeHtml(astroToHtmlPreview(files, site), site);
       }
     } catch (e) {
       console.warn('Module template generation failed for', templateId, e.message);
@@ -1082,7 +1122,7 @@ export function generateHtmlByTemplate(site) {
   }
 
   // Synchronous fallback HTML
-  return ensureTrackingBaselineHtml(astroToHtmlPreview(generateAstroProject(site), site), site);
+  return finalizeHtml(astroToHtmlPreview(generateAstroProject(site), site), site);
 }
 
 // Export a function to refresh custom templates cache (both router and registry)
@@ -1144,13 +1184,13 @@ export function generateDeployAssetsByTemplate(site) {
         const colorObj = getColorObj(site.colorId);
         try {
           const html = buildPreviewHtml(customTemplate.files, site, colorObj);
-          assets['/index.html'] = ensureTrackingBaselineHtml(html, site);
+          assets['/index.html'] = finalizeHtml(html, site);
           assets['/'] = assets['/index.html'];
         } catch (_e) {
           // Fallback: deploy index.html raw with tracking
           const htmlKey = Object.keys(customTemplate.files).find(k => k === 'index.html' || k.endsWith('/index.html'));
           if (htmlKey) {
-            assets['/index.html'] = ensureTrackingBaselineHtml(String(customTemplate.files[htmlKey]), site);
+            assets['/index.html'] = finalizeHtml(String(customTemplate.files[htmlKey]), site);
             assets['/'] = assets['/index.html'];
           }
         }
