@@ -17,7 +17,7 @@
 
 import { load as cheerioLoad } from 'cheerio';
 import { createClassNameMap, createDeterministicRng, generateDeterministicString } from '../utils/fingerprint-seeder.js';
-import { createHash } from 'node:crypto';
+import { hash53 } from '../utils/deterministic-hash.js';
 
 export class AntiFingerprint {
   /**
@@ -159,7 +159,7 @@ export class AntiFingerprint {
     $('[aria-label]').each((i, el) => {
       const oldLabel = $(el).attr('aria-label');
       if (oldLabel) {
-        const hash = createHash('sha1').update(`${siteId}:${oldLabel}`).digest('hex').slice(0, 8);
+        const hash = hash53(`${siteId}:${oldLabel}`).toString(16).padStart(13, '0').slice(0, 8);
         const newLabel = `aria_${hash}`;
         $(el).attr('aria-label', newLabel);
       }
@@ -231,8 +231,8 @@ export class AntiFingerprint {
         if (attrs.length > 1) {
           // Sort attributes deterministically (by seed hash of attr name)
           attrs.sort((a, b) => {
-            const seedA = parseInt(createHash('sha1').update(`${siteId}:${a[0]}`).digest('hex').slice(0, 8), 16);
-            const seedB = parseInt(createHash('sha1').update(`${siteId}:${b[0]}`).digest('hex').slice(0, 8), 16);
+            const seedA = hash53(`${siteId}:${a[0]}`);
+            const seedB = hash53(`${siteId}:${b[0]}`);
             return seedA - seedB;
           });
           el.attribs = Object.fromEntries(attrs);

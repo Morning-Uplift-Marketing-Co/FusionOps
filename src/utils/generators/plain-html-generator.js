@@ -17,14 +17,14 @@
  * and ensureTrackingBaselineHtml() from template-router.js
  */
 
-import { createHash } from 'node:crypto';
 import seedrandom from 'seedrandom';
 import { COLORS, FONTS } from "../../constants/index.js";
+import { seedHex } from '../deterministic-hash.js';
 
 // ─── Seeded RNG per site ───
 
 function makeRng(siteId, namespace = 'html-gen') {
-  const seed = createHash('sha256').update(`${siteId}:${namespace}`).digest('hex').slice(0, 10);
+  const seed = seedHex(`${siteId}:${namespace}`, 10);
   return seedrandom(seed);
 }
 

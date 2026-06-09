@@ -13,7 +13,7 @@
  *   const target = autoAssignDeployTarget(site, settings);
  */
 
-import { createHash } from 'node:crypto';
+import { hash53 } from '../deterministic-hash.js';
 
 /**
  * Distribution weights — how likely each target gets picked.
@@ -30,8 +30,7 @@ const DISTRIBUTION_WEIGHTS = [
  * Deterministic hash of site.id → number 0-99
  */
 function siteHash(siteId) {
-  const hex = createHash('sha256').update(String(siteId || 'default')).digest('hex');
-  return parseInt(hex.slice(0, 4), 16) % 100;
+  return hash53(String(siteId || 'default')) % 100;
 }
 
 /**

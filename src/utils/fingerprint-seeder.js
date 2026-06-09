@@ -12,8 +12,8 @@
  * 3. RNG: seedrandom(String(seed)) → reproducible random sequence
  */
 
-import { createHash } from 'node:crypto';
 import seedrandom from 'seedrandom';
+import { seedHex } from './deterministic-hash.js';
 
 /**
  * Create deterministic RNG from siteId + namespace
@@ -28,10 +28,7 @@ import seedrandom from 'seedrandom';
 export function createDeterministicRng(siteId, namespace = 'default') {
   // Create deterministic hash from siteId + namespace
   const seedInput = `${siteId}:${namespace}`;
-  const hash = createHash('sha256').update(seedInput).digest('hex');
-
-  // Use first 10 hex characters as numeric seed (plenty of entropy)
-  const seedNumber = parseInt(hash.slice(0, 10), 16);
+  const seedNumber = parseInt(seedHex(seedInput, 10), 16);
 
   // Create seeded RNG: same seed input → identical sequence
   const rng = seedrandom(String(seedNumber));

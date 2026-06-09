@@ -18,11 +18,11 @@
  * All transformations are deterministic (same site.id → same output).
  */
 
-import { createHash } from 'node:crypto';
 import seedrandom from 'seedrandom';
+import { seedHex } from '../deterministic-hash.js';
 
 function makeRng(siteId, namespace = 'struct-rand') {
-  const seed = createHash('sha256').update(`${siteId}:${namespace}`).digest('hex').slice(0, 10);
+  const seed = seedHex(`${siteId}:${namespace}`, 10);
   return seedrandom(seed);
 }
 
