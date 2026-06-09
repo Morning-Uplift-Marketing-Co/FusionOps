@@ -1376,8 +1376,8 @@
     "hash": "f0ebb846b235c0f1ddc5262c2cddf50b"
   },
   "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\TemplateGenerator\\steps\\StepTemplateFromZip.jsx": {
-    "mtime": 1774251088.8603482,
-    "hash": "7fa2e4ef01c37e1bb58d91ae60b1e15b"
+    "mtime": 1781009660.9063737,
+    "hash": "babcd4d5b1417bc129949f7783172bc9"
   },
   "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\components\\TemplateGenerator\\steps\\StepTemplateInfo.jsx": {
     "mtime": 1771736470.0,
@@ -1796,16 +1796,16 @@
     "hash": "edb1378cafff987837cbbbd01a65b1f7"
   },
   "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\template-preview-runtime.js": {
-    "mtime": 1775616760.9607623,
-    "hash": "e30f107854f4272807003e129fcc7581"
+    "mtime": 1781009877.5269315,
+    "hash": "6c6b0726c5215962813d050fd7896ab9"
   },
   "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\template-registry.js": {
     "mtime": 1775616760.9617665,
     "hash": "d110c6258eca9b398d1984a24dc58f96"
   },
   "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\template-router.js": {
-    "mtime": 1780971049.149279,
-    "hash": "5bbf4a5b2f772be50c1c3fc7b8f049c9"
+    "mtime": 1781009699.3864162,
+    "hash": "06007d1d0cc013a4223af72eed2ae5c8"
   },
   "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\template-standard.js": {
     "mtime": 1779540656.5329204,
@@ -1895,9 +1895,17 @@
     "mtime": 1781008832.564435,
     "hash": "f7c0df2d16e316b3348e1af7fe2c7623"
   },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\generators\\template-parameterizer.js": {
+    "mtime": 1781010056.75148,
+    "hash": "537ece06b157d8a57963154f7b39f010"
+  },
   "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\generators\\__tests__\\diversification.test.js": {
     "mtime": 1781008546.8714442,
     "hash": "f4e0a1b43b038a29cc3b613ac205df82"
+  },
+  "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\generators\\__tests__\\parameterize-pipeline.test.js": {
+    "mtime": 1781010084.5240924,
+    "hash": "2c86856af147f3032f7845b62d4c8a9b"
   },
   "H:\\DEV\\projects\\ppc_project\\ppc-claude-web-V1\\src\\utils\\__tests__\\alpha-consolidate-monitoring.test.js": {
     "mtime": 1774031095.876317,

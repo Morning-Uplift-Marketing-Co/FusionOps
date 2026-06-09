@@ -75,8 +75,7 @@ jobs:
         run: |
           gh issue create \
             --title "Weekly: ${{ steps.stale.outputs.count }} stale branches to clean up" \
-            --body-file report.md \
-            --label "housekeeping"
+            --body-file report.md
         env:
           GH_TOKEN: ${{ github.token }}
 
