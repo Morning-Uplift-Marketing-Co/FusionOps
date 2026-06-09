@@ -8,7 +8,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { autoAssignDeployTarget, getDistributionSummary } from '../../deployers/deploy-target-auto.js';
-import { generatePlainHtml } from '../../generators/plain-html-generator.js';
+import { generatePlainHtml, pickCssStrategy, CSS_NAMING_STRATEGIES } from '../../generators/plain-html-generator.js';
 import { randomizeHtmlStructure } from '../../generators/html-structure-randomizer.js';
 
 // ─── Test fixtures ───
@@ -178,6 +178,58 @@ describe('Plain HTML Generator', () => {
     // inject-tracking.mjs needs these tags to inject tracking
     expect(html).toMatch(/<\/head>/);
     expect(html).toMatch(/<\/body>/);
+  });
+});
+
+// ─── Feature 2b: CSS Naming-Convention Strategies ───
+
+describe('CSS Naming Strategies', () => {
+  it('pickCssStrategy is deterministic for the same site.id', () => {
+    expect(pickCssStrategy('site-css-1')).toBe(pickCssStrategy('site-css-1'));
+    expect(pickCssStrategy(mockSite.id)).toBe(pickCssStrategy(mockSite.id));
+  });
+
+  it('only returns known strategies', () => {
+    for (let i = 0; i < 30; i++) {
+      expect(CSS_NAMING_STRATEGIES).toContain(pickCssStrategy(`strat-${i}`));
+    }
+  });
+
+  it('spreads sites across multiple strategies', () => {
+    const seen = new Set();
+    for (let i = 0; i < 40; i++) seen.add(pickCssStrategy(`spread-${i}`));
+    // With 4 strategies over 40 sites we expect at least 2 distinct paradigms
+    expect(seen.size).toBeGreaterThanOrEqual(2);
+  });
+
+  it('every strategy still produces valid, non-Tailwind, framework-free HTML', () => {
+    // Force each strategy by finding a site.id that maps to it
+    const idForStrategy = {};
+    for (let i = 0; i < 200 && Object.keys(idForStrategy).length < CSS_NAMING_STRATEGIES.length; i++) {
+      const id = `force-${i}`;
+      const s = pickCssStrategy(id);
+      if (!idForStrategy[s]) idForStrategy[s] = id;
+    }
+    for (const strategy of CSS_NAMING_STRATEGIES) {
+      const id = idForStrategy[strategy];
+      expect(id, `no id found for strategy ${strategy}`).toBeTruthy();
+      const html = generatePlainHtml({ ...mockSite, id });
+      expect(html).toContain('<!DOCTYPE html>');
+      expect(html).toContain('</head>');
+      expect(html).toContain('</body>');
+      // No Tailwind utility classes
+      expect(html).not.toMatch(/class="[^"]*\b(flex|grid|p-\d|m-\d|text-\w+|bg-\w+)\b/);
+      // No framework fingerprints
+      expect(html).not.toContain('__next');
+      expect(html).not.toContain('data-astro');
+    }
+  });
+
+  it('different paradigms yield structurally different class markup', () => {
+    // Two ids that resolve to different strategies should differ in output
+    const a = generatePlainHtml({ ...mockSite, id: 'force-0' });
+    const b = generatePlainHtml({ ...mockSite, id: 'force-3' });
+    expect(a).not.toBe(b);
   });
 });
 

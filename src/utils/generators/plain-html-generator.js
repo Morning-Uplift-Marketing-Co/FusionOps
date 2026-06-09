@@ -55,9 +55,48 @@ const FONT_FAMILIES = [
   { family: "'Lexend', sans-serif", import: "Lexend:wght@400;500;600;700;800" },
 ];
 
-// ─── Randomized CSS class name generator ───
+// ─── CSS naming-convention strategies (cross-network fingerprint diversity) ───
+// Each site deterministically adopts ONE class-naming paradigm so the network
+// is not a monoculture of identically-shaped class names. None of these emit
+// Tailwind-style utility strings.
+export const CSS_NAMING_STRATEGIES = ['short-random', 'bem', 'semantic', 'hashed'];
 
-function generateClassNames(rng, count = 20) {
+/**
+ * Deterministically pick a CSS naming strategy for a site.
+ * Same site.id → same strategy (stable across rebuilds).
+ */
+export function pickCssStrategy(siteId) {
+  const rng = makeRng(siteId, 'css-strategy');
+  return rngPick(rng, CSS_NAMING_STRATEGIES);
+}
+
+// Readable vocab variants for the `semantic` strategy (seeded pick adds
+// intra-strategy variety so two semantic sites still differ).
+const SEMANTIC_VOCAB = [
+  {
+    'wrapper': 'page-wrap', 'header': 'site-head', 'hero': 'hero-band', 'h1': 'hero-title',
+    'subtitle': 'hero-sub', 'cta-btn': 'action-button', 'trust-bar': 'trust-row', 'trust-item': 'trust-cell',
+    'form-card': 'lead-card', 'form-title': 'lead-title', 'form-sub': 'lead-note', 'input': 'field-control',
+    'reviews': 'voices', 'review-card': 'voice-card', 'review-name': 'voice-name', 'review-text': 'voice-body',
+    'footer': 'site-foot', 'badge': 'pill-tag', 'section-title': 'block-heading', 'amount-display': 'amount-box',
+    'how-it-works': 'steps-band',
+  },
+  {
+    'wrapper': 'shell', 'header': 'topbar', 'hero': 'intro', 'h1': 'headline',
+    'subtitle': 'tagline', 'cta-btn': 'primary-cta', 'trust-bar': 'badges', 'trust-item': 'badge-cell',
+    'form-card': 'apply-box', 'form-title': 'apply-head', 'form-sub': 'apply-hint', 'input': 'entry',
+    'reviews': 'testimonials', 'review-card': 'quote', 'review-name': 'quote-by', 'review-text': 'quote-text',
+    'footer': 'foot', 'badge': 'chip', 'section-title': 'heading', 'amount-display': 'figure',
+    'how-it-works': 'process',
+  },
+];
+
+// Block names for the `bem` strategy.
+const BEM_BLOCKS = ['lp', 'pg', 'site', 'ldg'];
+
+// ─── Randomized CSS class name generator (strategy-aware) ───
+
+function generateClassNames(rng, count = 20, strategy = 'short-random') {
   const prefixes = ['fx', 'lx', 'mx', 'nx', 'px', 'qx', 'rx', 'sx', 'tx', 'vx', 'wx', 'zx'];
   const map = {};
   const used = new Set();
@@ -69,16 +108,47 @@ function generateClassNames(rng, count = 20) {
     'footer', 'badge', 'section-title', 'amount-display', 'how-it-works',
   ];
 
+  // Pre-resolve per-strategy site-level choices (seeded, deterministic).
+  const vocab = strategy === 'semantic' ? rngPick(rng, SEMANTIC_VOCAB) : null;
+  const bemBlock = strategy === 'bem' ? rngPick(rng, BEM_BLOCKS) : null;
+
+  const uniq = (cls) => {
+    let candidate = cls;
+    let suffix = 2;
+    while (used.has(candidate)) { candidate = `${cls}-${suffix++}`; }
+    used.add(candidate);
+    return candidate;
+  };
+
   for (const name of needed.slice(0, count)) {
     let cls;
-    let attempts = 0;
-    do {
-      const prefix = rngPick(rng, prefixes);
-      const num = rngInt(rng, 1, 999);
-      cls = `${prefix}${num}`;
-      attempts++;
-    } while (used.has(cls) && attempts < 50);
-    used.add(cls);
+    if (strategy === 'bem') {
+      // block__element — e.g. lp__hero-band
+      cls = uniq(`${bemBlock}__${name.replace(/[^a-z0-9-]/g, '')}`);
+    } else if (strategy === 'semantic') {
+      // readable kebab-case from a seeded vocab
+      cls = uniq(vocab[name] || name);
+    } else if (strategy === 'hashed') {
+      // css-modules-like opaque token — letter + base36
+      let candidate;
+      let attempts = 0;
+      do {
+        candidate = `${rngPick(rng, prefixes).charAt(0)}${rngInt(rng, 100000, 9999999).toString(36)}`;
+        attempts++;
+      } while (used.has(candidate) && attempts < 50);
+      used.add(candidate);
+      cls = candidate;
+    } else {
+      // short-random (default): prefix + number, e.g. fx123
+      let candidate;
+      let attempts = 0;
+      do {
+        candidate = `${rngPick(rng, prefixes)}${rngInt(rng, 1, 999)}`;
+        attempts++;
+      } while (used.has(candidate) && attempts < 50);
+      used.add(candidate);
+      cls = candidate;
+    }
     map[name] = cls;
   }
   return map;
@@ -137,8 +207,11 @@ export function generatePlainHtml(site) {
   // Pick layout
   const layout = rngPick(rngLayout, LAYOUTS);
 
-  // Randomize class names
-  const cn = generateClassNames(rngCss, 20);
+  // Pick a CSS naming paradigm for this site (cross-network diversity)
+  const cssStrategy = pickCssStrategy(site.id);
+
+  // Randomize class names according to the chosen strategy
+  const cn = generateClassNames(rngCss, 20, cssStrategy);
 
   // Randomize review count
   const reviewCount = rngInt(rng, 2, 4);
