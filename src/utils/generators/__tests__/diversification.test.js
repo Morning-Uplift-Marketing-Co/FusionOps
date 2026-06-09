@@ -8,7 +8,14 @@
 
 import { describe, it, expect } from 'vitest';
 import { autoAssignDeployTarget, getDistributionSummary } from '../../deployers/deploy-target-auto.js';
-import { generatePlainHtml, pickCssStrategy, CSS_NAMING_STRATEGIES } from '../../generators/plain-html-generator.js';
+import {
+  generatePlainHtml,
+  pickCssStrategy,
+  CSS_NAMING_STRATEGIES,
+  pickStructureStrategy,
+  resolveStructureTags,
+  STRUCTURE_STRATEGIES,
+} from '../../generators/plain-html-generator.js';
 import { randomizeHtmlStructure } from '../../generators/html-structure-randomizer.js';
 
 // ─── Test fixtures ───
@@ -230,6 +237,69 @@ describe('CSS Naming Strategies', () => {
     const a = generatePlainHtml({ ...mockSite, id: 'force-0' });
     const b = generatePlainHtml({ ...mockSite, id: 'force-3' });
     expect(a).not.toBe(b);
+  });
+});
+
+// ─── Feature 2c: Structure Strategies (semantic vs div-soup) ───
+
+describe('Structure Strategies', () => {
+  it('pickStructureStrategy is deterministic', () => {
+    expect(pickStructureStrategy('struct-1')).toBe(pickStructureStrategy('struct-1'));
+  });
+
+  it('only returns known structure strategies', () => {
+    for (let i = 0; i < 30; i++) {
+      expect(STRUCTURE_STRATEGIES).toContain(pickStructureStrategy(`st-${i}`));
+    }
+  });
+
+  it('resolveStructureTags never returns empty tags', () => {
+    for (const strat of STRUCTURE_STRATEGIES) {
+      const tags = resolveStructureTags(strat, 'tag-site');
+      for (const v of Object.values(tags)) {
+        expect(v, `empty tag in ${strat}`).toBeTruthy();
+        expect(/^[a-z]+$/.test(v)).toBe(true);
+      }
+    }
+  });
+
+  it('semantic strategy emits HTML5 landmark tags', () => {
+    const tags = resolveStructureTags('semantic', 'sem-site');
+    expect(tags.wrapper).toBe('main');
+    expect(tags.header).toBe('header');
+    expect(tags.footer).toBe('footer');
+    const html = generatePlainHtml({ ...mockSite, id: 'force-semantic-test' });
+    // pick an id whose structure resolves to semantic to assert in output
+    let semId = null;
+    for (let i = 0; i < 200 && !semId; i++) {
+      if (pickStructureStrategy(`ss-${i}`) === 'semantic') semId = `ss-${i}`;
+    }
+    const semHtml = generatePlainHtml({ ...mockSite, id: semId });
+    expect(semHtml).toMatch(/<main[ >]/);
+    expect(semHtml).toContain('</main>');
+  });
+
+  it('div-soup strategy uses no semantic landmarks for the shell', () => {
+    let divId = null;
+    for (let i = 0; i < 200 && !divId; i++) {
+      if (pickStructureStrategy(`ds-${i}`) === 'div-soup') divId = `ds-${i}`;
+    }
+    const html = generatePlainHtml({ ...mockSite, id: divId });
+    expect(html).not.toMatch(/<main[ >]/);
+  });
+
+  it('all structure strategies produce balanced, valid HTML', () => {
+    for (let i = 0; i < 12; i++) {
+      const html = generatePlainHtml({ ...mockSite, id: `balance-${i}` });
+      expect(html).toContain('<!DOCTYPE html>');
+      expect(html).toContain('</body>');
+      // balanced landmark tags
+      for (const tag of ['main', 'header', 'footer', 'section']) {
+        const open = (html.match(new RegExp(`<${tag}[ >]`, 'g')) || []).length;
+        const close = (html.match(new RegExp(`</${tag}>`, 'g')) || []).length;
+        expect(open, `${tag} unbalanced in balance-${i}`).toBe(close);
+      }
+    }
   });
 });
 

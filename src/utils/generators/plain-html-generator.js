@@ -70,6 +70,47 @@ export function pickCssStrategy(siteId) {
   return rngPick(rng, CSS_NAMING_STRATEGIES);
 }
 
+// ─── Structure strategies (semantic vs div-soup landmarks) ───
+// Varies whether a site emits HTML5 semantic landmarks (<main>/<header>/
+// <section>/<footer>, an SSG/traditional look) or all-<div> (SPA-ish), per site.
+export const STRUCTURE_STRATEGIES = ['div-soup', 'semantic', 'mixed'];
+
+const STRUCTURE_ROLES = ['wrapper', 'header', 'hero', 'howItWorks', 'reviews', 'footer', 'formCard'];
+
+const SEMANTIC_TAG_BY_ROLE = {
+  wrapper: 'main', header: 'header', hero: 'section',
+  howItWorks: 'section', reviews: 'section', footer: 'footer', formCard: 'section',
+};
+
+/**
+ * Deterministically pick a structural strategy for a site.
+ */
+export function pickStructureStrategy(siteId) {
+  const rng = makeRng(siteId, 'structure-strategy');
+  return rngPick(rng, STRUCTURE_STRATEGIES);
+}
+
+/**
+ * Resolve a role→tagName map for the chosen structure strategy.
+ * Returns plain HTML tag names (never empty); 'div-soup' = all div.
+ */
+export function resolveStructureTags(strategy, siteId) {
+  const tags = {};
+  if (strategy === 'semantic') {
+    for (const role of STRUCTURE_ROLES) tags[role] = SEMANTIC_TAG_BY_ROLE[role];
+  } else if (strategy === 'mixed') {
+    const rng = makeRng(siteId, 'structure-tags');
+    for (const role of STRUCTURE_ROLES) {
+      tags[role] = rngBoolLocal(rng, 0.5) ? SEMANTIC_TAG_BY_ROLE[role] : 'div';
+    }
+  } else {
+    for (const role of STRUCTURE_ROLES) tags[role] = 'div';
+  }
+  return tags;
+}
+
+function rngBoolLocal(rng, p = 0.5) { return rng() < p; }
+
 // Readable vocab variants for the `semantic` strategy (seeded pick adds
 // intra-strategy variety so two semantic sites still differ).
 const SEMANTIC_VOCAB = [
@@ -213,6 +254,10 @@ export function generatePlainHtml(site) {
   // Randomize class names according to the chosen strategy
   const cn = generateClassNames(rngCss, 20, cssStrategy);
 
+  // Pick a structural paradigm (semantic landmarks vs div-soup)
+  const structureStrategy = pickStructureStrategy(site.id);
+  const tags = resolveStructureTags(structureStrategy, site.id);
+
   // Randomize review count
   const reviewCount = rngInt(rng, 2, 4);
   const reviews = generateReviews(site, rng, reviewCount);
@@ -241,15 +286,15 @@ export function generatePlainHtml(site) {
 
   // Build sections HTML
   const sectionHtml = {
-    hero: buildHeroSection(layout, cn, { h1, sub, cta, amountMin, amountMax, brand, primary, primaryLight, primaryDark }),
-    'how-it-works': buildHowItWorksSection(cn, rng, { primary, primaryLight }),
-    reviews: buildReviewsSection(cn, reviews, { primary, primaryLight }),
+    hero: buildHeroSection(layout, cn, { h1, sub, cta, amountMin, amountMax, brand, primary, primaryLight, primaryDark }, tags),
+    'how-it-works': buildHowItWorksSection(cn, rng, { primary, primaryLight }, tags),
+    reviews: buildReviewsSection(cn, reviews, { primary, primaryLight }, tags),
   };
 
   // Assemble body based on layout
   const bodyContent = buildLayout(layout, cn, sectionHtml, shuffledSections, {
-    formContent: buildFormSection(cn, { brand, cta, primary }),
-    footer: buildFooter(cn, { brand, phone, email, aprMin, aprMax }),
+    formContent: buildFormSection(cn, { brand, cta, primary }, tags),
+    footer: buildFooter(cn, { brand, phone, email, aprMin, aprMax }, tags),
     trust: buildTrustBar(cn, { primary }),
   });
 
@@ -297,26 +342,28 @@ body{font-family:${font.family};background:${bg};color:#1a1a2e;line-height:1.6;-
 </style>
 </head>
 <body>
-<div class="${cn['wrapper']}">
+<${tags.wrapper} class="${cn['wrapper']}">
 ${bodyContent}
-</div>
+</${tags.wrapper}>
 </body>
 </html>`;
 }
 
 // ─── Section builders ───
 
-function buildHeroSection(layout, cn, { h1, sub, cta, amountMin, amountMax, brand, primary, primaryLight, primaryDark }) {
+function buildHeroSection(layout, cn, { h1, sub, cta, amountMin, amountMax, brand, primary, primaryLight, primaryDark }, tags = {}) {
   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const hT = tags.header || 'div';
+  const heroT = tags.hero || 'div';
   return `
-  <div class="${cn['header']}">
+  <${hT} class="${cn['header']}">
     <strong style="font-size:14px;color:${primaryDark}">${esc(brand)}</strong>
-  </div>
-  <div class="${cn['hero']}">
+  </${hT}>
+  <${heroT} class="${cn['hero']}">
     <div class="${cn['badge']}">Loans ${amountMin} – ${amountMax}</div>
     <h1 class="${cn['h1']}">${esc(h1)}</h1>
     <p class="${cn['subtitle']}">${esc(sub)}</p>
-  </div>`;
+  </${heroT}>`;
 }
 
 function buildTrustBar(cn) {
@@ -331,36 +378,39 @@ function buildTrustBar(cn) {
   </div>`;
 }
 
-function buildFormSection(cn, { brand, cta, primary }) {
+function buildFormSection(cn, { brand, cta, primary }, tags = {}) {
+  const fT = tags.formCard || 'div';
   return `
-  <div class="${cn['form-card']}">
+  <${fT} class="${cn['form-card']}">
     <div class="${cn['form-title']}">Check Your Eligibility</div>
     <div class="${cn['form-sub']}">Takes less than 3 minutes — no obligation</div>
     <input class="${cn['input']}" type="text" placeholder="ZIP Code" readonly>
     <button class="${cn['cta-btn']}" onclick="this.textContent='Processing...'">${cta}</button>
-  </div>`;
+  </${fT}>`;
 }
 
-function buildHowItWorksSection(cn, rng, { primary, primaryLight }) {
+function buildHowItWorksSection(cn, rng, { primary, primaryLight }, tags = {}) {
+  const wT = tags.howItWorks || 'div';
   const steps = [
     { num: '1', text: 'Fill out the simple form' },
     { num: '2', text: 'Get matched with top lenders' },
     { num: '3', text: 'Receive funds as soon as tomorrow' },
   ];
   return `
-  <div class="${cn['how-it-works']}">
+  <${wT} class="${cn['how-it-works']}">
     <div class="${cn['section-title']}">How It Works</div>
     ${steps.map(s => `
     <div style="display:flex;align-items:center;gap:12px;padding:12px;background:#fff;border-radius:12px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.04)">
       <div style="width:28px;height:28px;border-radius:50%;background:${primaryLight};color:${primary};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0">${s.num}</div>
       <div style="font-size:12px;font-weight:600">${s.text}</div>
     </div>`).join('')}
-  </div>`;
+  </${wT}>`;
 }
 
-function buildReviewsSection(cn, reviews, { primary }) {
+function buildReviewsSection(cn, reviews, { primary }, tags = {}) {
+  const rT = tags.reviews || 'div';
   return `
-  <div class="${cn['reviews']}">
+  <${rT} class="${cn['reviews']}">
     <div class="${cn['section-title']}">What Our Customers Say</div>
     ${reviews.map(r => `
     <div class="${cn['review-card']}">
@@ -368,19 +418,20 @@ function buildReviewsSection(cn, reviews, { primary }) {
       <div class="${cn['review-text']}">${r.text}</div>
       ${r.location ? `<div style="font-size:10px;color:#cbd5e1;margin-top:4px">${r.location}</div>` : ''}
     </div>`).join('')}
-  </div>`;
+  </${rT}>`;
 }
 
-function buildFooter(cn, { brand, phone, email, aprMin, aprMax }) {
+function buildFooter(cn, { brand, phone, email, aprMin, aprMax }, tags = {}) {
   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const ftT = tags.footer || 'div';
   return `
-  <div class="${cn['footer']}">
+  <${ftT} class="${cn['footer']}">
     <div style="margin-bottom:8px">${esc(brand)} — ${esc(phone)}</div>
     <div style="margin-bottom:8px;font-size:10px">APR ranges from ${aprMin}% to ${aprMax}%. Not all applicants will qualify.</div>
     <div style="font-size:10px">
       <a href="/privacy">Privacy Policy</a> · <a href="/terms">Terms of Service</a>
     </div>
-  </div>`;
+  </${ftT}>`;
 }
 
 // ─── Layout assembler ───
